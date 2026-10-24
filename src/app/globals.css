@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Explicit Light & Dark display helpers */
+html.dark .show-on-light,
+html:not(.light) .show-on-light {
+  display: none !important;
+}
+html.light .show-on-light {
+  display: block !important;
+}
+
+html.light .show-on-dark {
+  display: none !important;
+}
+html.dark .show-on-dark,
+html:not(.light) .show-on-dark {
+  display: block !important;
+}
+
+:root {
+  --background: #000f25;
+  --foreground: #ffffff;
+  --content-bg: #000f25;
+  --text-color: #ffffff;
+  --navbar-bg: #000f25;
+  --leftSidebar-bg: #000f25;
+  --rightSidebar-bg: #000f25;
+  --footer-bg: #000f25;
+  --card-bg: #15273e;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+html.light {
+  --background: #f8fafc;
+  --foreground: #000000;
+  --content-bg: #f8fafc;
+  --text-color: #000000;
+  --navbar-bg: #ffffff;
+  --leftSidebar-bg: #f8fafc;
+  --rightSidebar-bg: #f1f5f9;
+  --footer-bg: #f1f5f9;
+  --card-bg: #EEF3FE;
+  --card-border: rgba(0, 0, 0, 0.5);
+}
+
+html.dark {
+  --background: #000f25;
+  --foreground: #ffffff;
+  --content-bg: #000f25;
+  --text-color: #ffffff;
+  --navbar-bg: #000f25;
+  --leftSidebar-bg: #000f25;
+  --rightSidebar-bg: #000f25;
+  --footer-bg: #000f25;
+  --card-bg: #15273e;
+  --card-border: rgba(255, 255, 255, 0.1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-navy: var(--text-color);
+  --color-navy-light: var(--text-color);
+  --color-paper: var(--content-bg);
+  --color-paper-dim: var(--card-bg);
+  --color-teal: #2dd4bf;
+  --color-teal-light: #5eead4;
+  --color-coral: #ff6b35;
+  --color-coral-hover: #ff5722;
+  --color-sage: #5ba8d9;
+  --color-sage-light: #7cbde8;
+  --color-green: #34d399;
+  --color-green-light: #6ee7b7;
+  --color-purple: #a78bfa;
+  --color-purple-light: #c4b5fd;
+  --color-pill: #f1f5f9;
+  --color-border: color-mix(in srgb, var(--text-color) 10%, var(--content-bg));
+  --color-border-light: color-mix(in srgb, var(--text-color) 15%, var(--content-bg));
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #000f25;
+    --foreground: #ffffff;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ── Live Exam Mode: Dark & Light Scoped Enhancements ── */
+html.dark [data-exam-page] {
+  background-color: #071321 !important;
+  color: #f1f5f9 !important;
+}
+html.dark [data-exam-page] .bg-white {
+  background-color: #0c1b2f !important;
+  color: #f1f5f9 !important;
+}
+html.dark [data-exam-page] .bg-slate-50 {
+  background-color: #071321 !important;
+}
+html.dark [data-exam-page] .bg-slate-100 {
+  background-color: #112238 !important;
+}
+html.dark [data-exam-page] .text-slate-900 {
+  color: #f8fafc !important;
+}
+html.dark [data-exam-page] .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+html.dark [data-exam-page] .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+html.dark [data-exam-page] .text-slate-600 {
+  color: #94a3b8 !important;
+}
+html.dark [data-exam-page] .text-slate-500 {
+  color: #94a3b8 !important;
+}
+html.dark [data-exam-page] .border-slate-200 {
+  border-color: #1e293b !important;
+}
+html.dark [data-exam-page] .border-slate-100 {
+  border-color: #17263c !important;
+}
+html.dark [data-exam-page] .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #17263c !important;
+}
+
+/* ── Universal Light Mode Card Border: 50% Opacity Black on All Cards Except Question Pages ── */
+html.light [class*="border-"][class*="CBDCF8"]:not([data-exam-page] *):not([data-exam-page]),
+html:not(.dark) [class*="border-"][class*="CBDCF8"]:not([data-exam-page] *):not([data-exam-page]),
+html.light [class*="bg-"][class*="EEF3FE"].border:not([data-exam-page] *):not([data-exam-page]),
+html:not(.dark) [class*="bg-"][class*="EEF3FE"].border:not([data-exam-page] *):not([data-exam-page]),
+html.light [class*="bg-"][class*="card-bg"].border:not([data-exam-page] *):not([data-exam-page]),
+html:not(.dark) [class*="bg-"][class*="card-bg"].border:not([data-exam-page] *):not([data-exam-page]),
+html.light [class*="border-"][class*="card-border"]:not([data-exam-page] *):not([data-exam-page]),
+html:not(.dark) [class*="border-"][class*="card-border"]:not([data-exam-page] *):not([data-exam-page]),
+html.light article.border:not([data-exam-page] *):not([data-exam-page]),
+html:not(.dark) article.border:not([data-exam-page] *):not([data-exam-page]) {
+  border-color: rgba(0, 0, 0, 0.5) !important;
+}

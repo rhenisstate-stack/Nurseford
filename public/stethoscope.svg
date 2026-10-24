@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 360" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Left earpiece -->
+  <path d="M60 40c-8 0-15 7-15 15v15c0 13 11 24 24 24" />
+  <circle cx="45" cy="40" r="3" />
+  <!-- Right earpiece -->
+  <path d="M140 40c8 0 15 7 15 15v15c0 13-11 24-24 24" />
+  <circle cx="155" cy="40" r="3" />
+  <!-- Y-junction and tubing -->
+  <path d="M69 94c-3 8-5 17-5 26 0 55 36 62 36 106 0 18-8 28-8 28" />
+  <path d="M131 94c3 8 5 17 5 26 0 55-36 62-36 106 0 18 8 28 8 28" />
+  <!-- Chest piece -->
+  <ellipse cx="100" cy="280" rx="30" ry="40" />
+  <ellipse cx="100" cy="280" rx="20" ry="28" />
+  <circle cx="100" cy="280" r="12" />
+  <!-- Connecting tube to chest piece -->
+  <path d="M92 310c-3 5-8 8-14 8" />
+  <path d="M108 310c3 5 8 8 14 8" />
+</svg>
