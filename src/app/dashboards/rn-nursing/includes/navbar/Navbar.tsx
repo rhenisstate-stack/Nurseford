@@ -4,6 +4,8 @@ import UserDropdown from "./partials/UserDropdown";
 import ThemeModeToggle from "@/components/common/theme/ThemeModeToggle";
 
 import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext";
+import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
+import HeedMessageBell from "./partials/HeedMessageBell";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -14,6 +16,7 @@ import DashboardNavbarSearch from "@/components/common/dashboards/navbar/Dashboa
 
 const Navbar: React.FC = () => {
   const { theme } = useThemeContext();
+  const { user, loading: userLoading } = useCurrentSystemUser();
 
   /** LEFT SIDEBAR */
   const {
@@ -69,6 +72,7 @@ const Navbar: React.FC = () => {
       {/* RIGHT: Theme Toggle + Login/Register */}
       <div className="flex items-center gap-2 shrink-0">
         <ThemeModeToggle />
+        {!userLoading && user && <HeedMessageBell />}
         <UserDropdown />
       </div>
     </header>

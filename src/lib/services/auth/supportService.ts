@@ -3,7 +3,7 @@ import { apiFetch } from "@/lib/api/api/api";
 // Supported actions
 export type SupportAction = "Store" | "Update" | "Delete" | "AbsoluteFetch" | "RelativeFetch" | "CurrentFetch" | "DistinctFetch" | "DiscreteFetch" | "NominalFetch" | "LiveFetch";
 import { renderSystemSessionHeaders } from "@/lib/services/partial/helper/systemSessionHeaders";
-
+export type ClientReadStatus = "Unread" | "Read" | "Later" | "Bookmarked" | "Flagged" | "Pinned" | "Starred";
 // Supported types
 export type SupportType =
   | "SupportSocial"
@@ -17,10 +17,57 @@ export type SupportType =
 
 // Generic response type
 export interface StrataResponse<T = unknown> {
+  success?: boolean;
   message?: string;
   error?: string;
   data?: T;
 }
+
+// Mirrors HeedSystemUserMessageResponseDto (camelCase from ASP.NET)
+export interface SupportMessageItem {
+  id: number;
+  guidId: string;
+  userId?: number | null;
+  userGuidId?: string | null;
+  userName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  category: string;
+  priority: string;
+  status: string; // Open | Responded | Resolved
+  title: string;
+  message: string;
+  isRead: boolean;
+  readAt?: string | null;
+  clientReadStatus: ClientReadStatus;
+  clientReadAt?: string | null;
+  target: string;
+  response?: string | null;
+  respondedAt?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+// Mirrors PaginationResponseDto<T>
+export interface SupportMessagePage {
+  items: SupportMessageItem[];
+  skewPage: number;
+  skewPerPage: number;
+  skewTotal: number;
+  skewTotalPages?: number;
+  skewSearch?: string | null;
+  skewSortColumn?: string | null;
+  skewSortDirection?: string | null;
+}
+
+const buildQueryString = (payload?: Record<string, unknown>): string => {
+  const params = new URLSearchParams();
+  Object.entries(payload ?? {}).forEach(([key, value]) => {
+    if (value === null || value === undefined || value === "") return;
+    params.append(key, String(value));
+  });
+  return params.toString();
+};
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // Map Each combination of SupportType + Action to Internal API route
@@ -96,7 +143,7 @@ const ROUTE_MAP: Record<SupportType, Record<SupportAction, string>> = {
     DiscreteFetch: "/api/auth/support/2fa",
     NominalFetch: "/api/auth/support/2fa",
     LiveFetch: "/api/auth/support/2fa",
-  },  
+  },
   SupportAccount: {
     Store: "/api/auth/support/account",
     Update: "/api/auth/support/account",
@@ -148,24 +195,25 @@ export const supportService = async <T = unknown, Payload = Record<string, unkno
       targetAction === "AbsoluteFetch"
         ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=absolute`
         : targetAction === "CurrentFetch"
-        ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=current`
-        : targetAction === "RelativeFetch"
-        ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=relative`
-        : targetAction === "DistinctFetch"
-        ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=distinct`
-        : targetAction === "DiscreteFetch"
-        ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=discrete`
-        : targetAction === "NominalFetch"
-        ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=nominal`
-        : targetAction === "LiveFetch"
-        ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=live`
-        : ROUTE_MAP[supportType][targetAction];
+          ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=current`
+          : targetAction === "RelativeFetch"
+            ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=relative`
+            : targetAction === "DistinctFetch"
+              ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=distinct`
+              : targetAction === "DiscreteFetch"
+                ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=discrete`
+                : targetAction === "NominalFetch"
+                  ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=nominal`
+                  : targetAction === "LiveFetch"
+                    ? `${ROUTE_MAP[supportType][targetAction]}?fetchtype=live`
+                    : ROUTE_MAP[supportType][targetAction];
 
-    // Append payload as query params for GET
-    const route =
-      methodMap[targetAction] === "GET" && payload
-        ? `${baseRoute}&${new URLSearchParams(payload as Record<string, string>).toString()}`
-        : baseRoute;
+    // Append payload as query params for GET (skips null / undefined / empty)
+    const query =
+      method === "GET" ? buildQueryString(payload as Record<string, unknown>) : "";
+    const route = query
+      ? `${baseRoute}${baseRoute.includes("?") ? "&" : "?"}${query}`
+      : baseRoute;
 
     // Session headers
     const sessionHeaders = renderSystemSessionHeaders();
@@ -229,7 +277,7 @@ export const supportService = async <T = unknown, Payload = Record<string, unkno
         }
       }
 
-    // JSON (NO FILES)
+      // JSON (NO FILES)
     } else if (method !== "GET") {
       console.log("🔍 [supportService] Creating JSON payload");
       headers["Content-Type"] = "application/json";
@@ -298,6 +346,31 @@ export const submitSupportIssue = (payload: {
   category: string;
   message: string;
 }) => supportService("SupportMessage", "Store", payload);
+
+// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+// Support message reads (authenticated via x-casto-line / x-casto-badge)
+export const fetchRelativeSupportMessages = (params: {
+  dynamicItems?: number;
+  dynamicSearch?: string;
+  dynamicClientStatus?: ClientReadStatus;
+}) => supportService<SupportMessageItem[]>("SupportMessage", "RelativeFetch", params);
+
+// Single or bulk — the user marks their own messages Read / Unread / Later / Starred
+export const updateSupportMessageClientStatus = (guidIds: string[], status: ClientReadStatus) =>
+  supportService("SupportMessage", "Update", { guidIds, status });
+
+export const fetchDistinctSupportMessages = (params: {
+  identifier: string; // parent message GuidId
+  dynamicPage?: number;
+  dynamicPerPage?: number;
+  dynamicSearch?: string;
+  dynamicSortColumn?: string | null;
+  dynamicSortDirection?: "asc" | "desc";
+}) => supportService<SupportMessagePage>("SupportMessage", "DistinctFetch", params);
+
+export const fetchCurrentSupportMessage = (params: { identifier: string }) =>
+  supportService<SupportMessageItem>("SupportMessage", "CurrentFetch", params);
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
