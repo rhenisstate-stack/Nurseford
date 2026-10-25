@@ -3,6 +3,8 @@ import Footer from '@/app/(web)/includes/footer';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import ScrollToTopButton from '@/components/common/ScrollToTopButton';
+import Whastapp from '@/app/(web)/includes/partials/Whastapp';
+import Tawkto from '@/app/(web)/includes/partials/Tawkto';
 import { APP_NAME } from '@/lib/config/config';
 import '@/styles/web/rhenis.css';
 
@@ -46,6 +48,8 @@ export default function WebLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-grow">{children}</main>
       <Footer />
       <ScrollToTopButton />
+      <Whastapp />
+      <Tawkto />
     </div>
   );
 }
