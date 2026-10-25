@@ -14,6 +14,7 @@ import { isValidPhoneNumber } from 'react-phone-number-input'
 import { APP_NAME } from '@/lib/config/config';
 import { registerUser } from '@/lib/services/auth/registerService'
 import { session } from '@/lib/services/auth/sessionService'
+import { redirectToSocialProvider } from '@/lib/services/auth/socialService'
 import { DEFAULT_USER_ROLE } from '@/lib/constants/roles'
 import { setUsernameCookie } from '@/lib/utils/sessions/generateSystemUserSessionCookies';
 const role = DEFAULT_USER_ROLE;
@@ -64,6 +65,12 @@ export default function RegisterPage() {
     const router = useRouter()
     const [selectedProvider, setSelectedProvider] = useState<'email' | 'google' | null>(null)
 
+    const handleSocialClick = (provider: Parameters<typeof redirectToSocialProvider>[0]['provider']) => {
+        redirectToSocialProvider({ provider, context: 'register', redirectPath: '/pages/entrance' }).catch((err) => {
+            console.error(`Social redirect (${provider}) failed:`, err)
+            setError('Could not start social sign-up. Please try again.')
+        })
+    }
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target
@@ -295,129 +302,129 @@ export default function RegisterPage() {
 
                     {/* Social Login Buttons */}
                     <div>
-                            <p className="text-center text-gray-500 text-xs font-semibold tracking-wide uppercase mb-1.5">
-                                Sign in with
-                            </p>
-                                        <div className="flex justify-center">
-              <button
-                type="button"
-                className="flex items-center justify-center gap-2.5 border border-gray-300 py-1.5 px-3 rounded-xl hover:bg-gray-50 transition text-gray-800 w-full font-medium shadow-xs text-xs sm:text-sm"
-                onClick={() => setSelectedProvider('google')}
-              >
-                <FcGoogle className="text-xl" />
-                <span className="text-sm font-semibold">Google</span>
-              </button>
-            </div>
+                        <p className="text-center text-gray-500 text-xs font-semibold tracking-wide uppercase mb-1.5">
+                            Sign in with
+                        </p>
+                        <div className="flex justify-center">
+                            <button
+                                type="button"
+                                className="flex items-center justify-center gap-2.5 border border-gray-300 py-1.5 px-3 rounded-xl hover:bg-gray-50 transition text-gray-800 w-full font-medium shadow-xs text-xs sm:text-sm"
+                                onClick={() => handleSocialClick('google')}
+                            >
+                                <FcGoogle className="text-xl" />
+                                <span className="text-sm font-semibold">Google</span>
+                            </button>
                         </div>
+                    </div>
 
-                        <div className="text-center text-xs">
-                            <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-yellow-800 via-gray-300 to-green-600 bg-[length:200%_100%] [animation:shimmer_3s_linear_infinite]">
-                                or continue with email
-                            </span>
-                        </div>
+                    <div className="text-center text-xs">
+                        <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-yellow-800 via-gray-300 to-green-600 bg-[length:200%_100%] [animation:shimmer_3s_linear_infinite]">
+                            or continue with email
+                        </span>
+                    </div>
 
-                        <style>{`
+                    <style>{`
                             @keyframes shimmer {
                             0% { background-position: 200% 0; }
                             100% { background-position: -200% 0; }
                             }
                         `}</style>
 
-                        {/* Alert Message */}
-                        {(error || success) && (
-                            <div className="flex justify-center">
-                                <div
-                                    className={`relative max-w-md w-full px-4 py-3 rounded-xl shadow-md text-sm flex items-center gap-3
+                    {/* Alert Message */}
+                    {(error || success) && (
+                        <div className="flex justify-center">
+                            <div
+                                className={`relative max-w-md w-full px-4 py-3 rounded-xl shadow-md text-sm flex items-center gap-3
                                     ${error ? 'bg-red-100 border border-red-200 text-red-800' : ''}
                                     ${success ? 'bg-green-100 border border-green-200 text-green-800' : ''}
                                 `}
-                                >
-                                    {/* Emoji */}
-                                    <span className="flex items-center justify-center leading-none">
-                                        {error ? '⚠️' : '✅'}
-                                    </span>
+                            >
+                                {/* Emoji */}
+                                <span className="flex items-center justify-center leading-none">
+                                    {error ? '⚠️' : '✅'}
+                                </span>
 
-                                    {/* Message Text */}
-                                    <span className="flex-1 leading-none">
-                                        {error || success}
-                                    </span>
+                                {/* Message Text */}
+                                <span className="flex-1 leading-none">
+                                    {error || success}
+                                </span>
 
-                                    {/* Close Button */}
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setError('')
-                                            setSuccess('')
-                                        }}
-                                        className={`absolute top-2 right-2 font-bold hover:text-gray-700 ${error ? 'text-red-800' : 'text-green-800'}`}
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-
-                        {/* If authenticated, show dashboard button */}
-                        {isAuthenticated ? (
-                            <div className="text-center">
+                                {/* Close Button */}
                                 <button
-                                    onClick={() => router.push('/dashboards')}
-                                    className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-semibold transition"
+                                    type="button"
+                                    onClick={() => {
+                                        setError('')
+                                        setSuccess('')
+                                    }}
+                                    className={`absolute top-2 right-2 font-bold hover:text-gray-700 ${error ? 'text-red-800' : 'text-green-800'}`}
                                 >
-                                    🚀 Dive in &amp; Continue
+                                    ✕
                                 </button>
                             </div>
-                        ) : (
-                            <form onSubmit={handleRegister} className="space-y-2">
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-0.5">Enter Name</label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        required
-                                        value={form.name}
-                                        onChange={handleChange}
-                                        className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
+                        </div>
+                    )}
 
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-0.5">Enter Email</label>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        autoComplete="email"
-                                        autoCapitalize="none"
-                                        spellCheck={false}
-                                        required
-                                        value={form.email}
-                                        onChange={handleChange}
-                                        className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-cyan-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
 
-                                <div className="mb-4">
-                                    <label className="block text-xs font-medium text-gray-700 mb-0.5">
-                                        Enter Phone{' '}
-                                        {form.phone && form.phone.length > 6 && !phoneValid && (
-                                            <span className="text-red-500 text-xs">(Invalid phone number)</span>
-                                        )}
-                                    </label>
+                    {/* If authenticated, show dashboard button */}
+                    {isAuthenticated ? (
+                        <div className="text-center">
+                            <button
+                                onClick={() => router.push('/dashboards')}
+                                className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 font-semibold transition"
+                            >
+                                🚀 Dive in &amp; Continue
+                            </button>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleRegister} className="space-y-2">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-0.5">Enter Name</label>
+                                <input
+                                    type="text"
+                                    name="name"
+                                    required
+                                    value={form.name}
+                                    onChange={handleChange}
+                                    className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
 
-                                    <PhoneInput
-                                        international
-                                        defaultCountry={userCountry}
-                                        value={form.phone}
-                                        onChange={handlePhoneChange}
-                                        name="phone"
-                                        className="w-full border border-gray-300 rounded-lg px-2.5 py-1 focus-within:ring-2 focus-within:ring-blue-500 transition-all"
-                                        countrySelectProps={{
-                                            className: "text-blue-600 text-sm",
-                                        }}
-                                    />
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-0.5">Enter Email</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    autoComplete="email"
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    required
+                                    value={form.email}
+                                    onChange={handleChange}
+                                    className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-cyan-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
 
-                                    <style jsx global>{`
+                            <div className="mb-4">
+                                <label className="block text-xs font-medium text-gray-700 mb-0.5">
+                                    Enter Phone{' '}
+                                    {form.phone && form.phone.length > 6 && !phoneValid && (
+                                        <span className="text-red-500 text-xs">(Invalid phone number)</span>
+                                    )}
+                                </label>
+
+                                <PhoneInput
+                                    international
+                                    defaultCountry={userCountry}
+                                    value={form.phone}
+                                    onChange={handlePhoneChange}
+                                    name="phone"
+                                    className="w-full border border-gray-300 rounded-lg px-2.5 py-1 focus-within:ring-2 focus-within:ring-blue-500 transition-all"
+                                    countrySelectProps={{
+                                        className: "text-blue-600 text-sm",
+                                    }}
+                                />
+
+                                <style jsx global>{`
                                     .PhoneInputInput {
                                     width: 100%;
                                     font-size: 1rem; /* text-sm */
@@ -435,223 +442,223 @@ export default function RegisterPage() {
                                     }
                                 `}</style>
 
-                                </div>
+                            </div>
 
 
 
-                                {/* 🔑 PASSWORD FIELDS (if allowed) */}
-                                {(form.loginMethod === "password" || form.loginMethod === "both") && (
-                                    <div className="animate-fadeIn space-y-3">
-                                        <div>
-                                            <div className="flex justify-between items-center mb-1">
-                                                <label className="block text-sm font-medium text-gray-700">
-                                                    Enter Password
-                                                </label>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={generatePassword}
-                                                    className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200"
-                                                >
-                                                    Generate
-                                                </button>
-                                            </div>
-
-                                            <div className="relative">
-                                                <input
-                                                    type={showPassword ? "text" : "password"}
-                                                    name="password"
-                                                    required={form.loginMethod === "password" || form.loginMethod === "both"}
-                                                    value={form.password}
-                                                    maxLength={24}
-                                                    onChange={handleChange}
-                                                    className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-green-700 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowPassword(!showPassword)}
-                                                    className="absolute top-2.5 right-3 text-gray-500 hover:text-gray-700"
-                                                >
-                                                    {showPassword ? <FaEyeSlash /> : <FaEye />}
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {/* CONFIRM PASSWORD */}
-                                        <div>
-                                                    <label className="block text-xs font-medium text-gray-700 mb-0.5">
-                                                        Confirm Password
-                                                    </label>
-
-                                                    <div className="relative">
-                                                        <input
-                                                            type={showConfirmPassword ? "text" : "password"}
-                                                            name="confirmPassword"
-                                                            autoComplete="new-password"
-                                                            required={form.loginMethod === "password" || form.loginMethod === "both"}
-                                                            value={form.confirmPassword}
-                                                            onChange={handleChange}
-                                                            maxLength={24}
-                                                            className={`w-full border ${form.password &&
-                                                                form.confirmPassword &&
-                                                                form.password !== form.confirmPassword
-                                                                ? "border-red-300"
-                                                                : "border-gray-300"
-                                                                } rounded-lg px-3 py-2 text-md text-green-700 
-                                                            focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10`}
-                                                        />
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                                            className="absolute top-2.5 right-3 text-gray-500 hover:text-gray-700"
-                                                        >
-                                                            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                                                        </button>
-                                                    </div>
-
-                                                    {form.password &&
-                                                        form.confirmPassword &&
-                                                        form.password !== form.confirmPassword && (
-                                                            <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
-                                                        )}
-                                                </div>
-                                    </div>
-                                )}
-
-                                {/* 🔢 PIN FIELDS (if allowed) */}
-                                {(form.loginMethod === "pin" || form.loginMethod === "both") && (
-                                    <div className="animate-fadeIn space-y-3">
+                            {/* 🔑 PASSWORD FIELDS (if allowed) */}
+                            {(form.loginMethod === "password" || form.loginMethod === "both") && (
+                                <div className="animate-fadeIn space-y-3">
+                                    <div>
                                         <div className="flex justify-between items-center mb-1">
                                             <label className="block text-sm font-medium text-gray-700">
-                                                Enter  PIN (4–24 digits)
+                                                Enter Password
                                             </label>
 
                                             <button
                                                 type="button"
-                                                onClick={() => generatePin(16)} // generate 16-digit PIN
+                                                onClick={generatePassword}
                                                 className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200"
                                             >
                                                 Generate
                                             </button>
                                         </div>
 
-                                        {/* PIN Input */}
-                                        <div className="relative mb-3">
+                                        <div className="relative">
                                             <input
-                                                type={showPin ? "text" : "password"}
-                                                name="pin"
+                                                type={showPassword ? "text" : "password"}
+                                                name="password"
+                                                required={form.loginMethod === "password" || form.loginMethod === "both"}
+                                                value={form.password}
                                                 maxLength={24}
-                                                pattern="[0-9]*"
+                                                onChange={handleChange}
+                                                className="w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs sm:text-sm text-green-700 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute top-2.5 right-3 text-gray-500 hover:text-gray-700"
+                                            >
+                                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* CONFIRM PASSWORD */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-0.5">
+                                            Confirm Password
+                                        </label>
+
+                                        <div className="relative">
+                                            <input
+                                                type={showConfirmPassword ? "text" : "password"}
+                                                name="confirmPassword"
+                                                autoComplete="new-password"
+                                                required={form.loginMethod === "password" || form.loginMethod === "both"}
+                                                value={form.confirmPassword}
+                                                onChange={handleChange}
+                                                maxLength={24}
+                                                className={`w-full border ${form.password &&
+                                                    form.confirmPassword &&
+                                                    form.password !== form.confirmPassword
+                                                    ? "border-red-300"
+                                                    : "border-gray-300"
+                                                    } rounded-lg px-3 py-2 text-md text-green-700 
+                                                            focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10`}
+                                            />
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                className="absolute top-2.5 right-3 text-gray-500 hover:text-gray-700"
+                                            >
+                                                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                                            </button>
+                                        </div>
+
+                                        {form.password &&
+                                            form.confirmPassword &&
+                                            form.password !== form.confirmPassword && (
+                                                <p className="mt-1 text-xs text-red-500">Passwords do not match</p>
+                                            )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 🔢 PIN FIELDS (if allowed) */}
+                            {(form.loginMethod === "pin" || form.loginMethod === "both") && (
+                                <div className="animate-fadeIn space-y-3">
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            Enter  PIN (4–24 digits)
+                                        </label>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => generatePin(16)} // generate 16-digit PIN
+                                            className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded hover:bg-blue-200"
+                                        >
+                                            Generate
+                                        </button>
+                                    </div>
+
+                                    {/* PIN Input */}
+                                    <div className="relative mb-3">
+                                        <input
+                                            type={showPin ? "text" : "password"}
+                                            name="pin"
+                                            maxLength={24}
+                                            pattern="[0-9]*"
+                                            inputMode="numeric"
+                                            required={showPinFields}
+                                            value={form.pin || ""}
+                                            onChange={e => {
+                                                const value = e.target.value.replace(/\D/g, "")
+                                                if (value.length <= 24) {
+                                                    setForm(prev => ({ ...prev, pin: value }))
+                                                }
+                                            }}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-md text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPin(!showPin)}
+                                            className="absolute top-2.5 right-3 text-gray-500 hover:text-gray-700"
+                                        >
+                                            {showPin ? <FaEyeSlash /> : <FaEye />}
+                                        </button>
+                                    </div>
+
+                                    {/* Confirm PIN */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-700 mb-0.5">
+                                            Confirm PIN
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type={showConfirmPin ? "text" : "password"}
+                                                name="pin_confirmation"
+                                                maxLength={24}
                                                 inputMode="numeric"
                                                 required={showPinFields}
-                                                value={form.pin || ""}
-                                                onChange={e => {
-                                                    const value = e.target.value.replace(/\D/g, "")
-                                                    if (value.length <= 24) {
-                                                        setForm(prev => ({ ...prev, pin: value }))
-                                                    }
-                                                }}
+                                                value={form.pin_confirmation || ""}
+                                                onChange={e =>
+                                                    setForm(prev => ({
+                                                        ...prev,
+                                                        pin_confirmation: e.target.value.replace(/\D/g, "")
+                                                    }))
+                                                }
                                                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-md text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
                                             />
                                             <button
                                                 type="button"
-                                                onClick={() => setShowPin(!showPin)}
+                                                onClick={() => setShowConfirmPin(!showConfirmPin)}
                                                 className="absolute top-2.5 right-3 text-gray-500 hover:text-gray-700"
                                             >
-                                                {showPin ? <FaEyeSlash /> : <FaEye />}
+                                                {showConfirmPin ? <FaEyeSlash /> : <FaEye />}
                                             </button>
                                         </div>
 
-                                        {/* Confirm PIN */}
-                                        <div>
-                                            <label className="block text-xs font-medium text-gray-700 mb-0.5">
-                                                Confirm PIN
-                                            </label>
-                                            <div className="relative">
-                                                <input
-                                                    type={showConfirmPin ? "text" : "password"}
-                                                    name="pin_confirmation"
-                                                    maxLength={24}
-                                                    inputMode="numeric"
-                                                    required={showPinFields}
-                                                    value={form.pin_confirmation || ""}
-                                                    onChange={e =>
-                                                        setForm(prev => ({
-                                                            ...prev,
-                                                            pin_confirmation: e.target.value.replace(/\D/g, "")
-                                                        }))
-                                                    }
-                                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-md text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowConfirmPin(!showConfirmPin)}
-                                                    className="absolute top-2.5 right-3 text-gray-500 hover:text-gray-700"
-                                                >
-                                                    {showConfirmPin ? <FaEyeSlash /> : <FaEye />}
-                                                </button>
-                                            </div>
-
-                                            {form.pin &&
-                                                form.pin_confirmation &&
-                                                form.pin !== form.pin_confirmation && (
-                                                    <p className="mt-1 text-xs text-red-500">PINs do not match</p>
-                                                )}
-                                        </div>
-
+                                        {form.pin &&
+                                            form.pin_confirmation &&
+                                            form.pin !== form.pin_confirmation && (
+                                                <p className="mt-1 text-xs text-red-500">PINs do not match</p>
+                                            )}
                                     </div>
-                                )}
 
-                                <div className="flex items-start gap-2">
-                                    <input
-                                        type="checkbox"
-                                        name="agree"
-                                        checked={form.agree}
-                                        onChange={handleChange}
-                                        className="mt-1 accent-blue-600"
-                                    />
-                                    <label className="text-sm text-gray-600">
-                                        I agree to the{' '}
-                                        <Link href="/pages/terms" className="text-blue-600 underline hover:text-blue-800">
-                                            Terms and Conditions
-                                        </Link>
-                                    </label>
                                 </div>
+                            )}
+
+                            <div className="flex items-start gap-2">
+                                <input
+                                    type="checkbox"
+                                    name="agree"
+                                    checked={form.agree}
+                                    onChange={handleChange}
+                                    className="mt-1 accent-blue-600"
+                                />
+                                <label className="text-sm text-gray-600">
+                                    I agree to the{' '}
+                                    <Link href="/pages/terms" className="text-blue-600 underline hover:text-blue-800">
+                                        Terms and Conditions
+                                    </Link>
+                                </label>
+                            </div>
 
 
-                                <button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="w-full bg-blue-600 text-white py-1.5 rounded-lg hover:bg-yellow-900 font-semibold transition text-xs sm:text-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full bg-blue-600 text-white py-1.5 rounded-lg hover:bg-yellow-900 font-semibold transition text-xs sm:text-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
+                                {isLoading ? 'Registering . . . ⚓' : 'Submit and Register'}
+                            </button>
+
+                            {/* Submit */}
+                            {error && (
+                                <p className="text-sm text-red-700 text-center font-medium">{error}</p>
+                            )}
+
+                            {/* Links */}
+                            <div className="mt-3 flex flex-row space-x-3 w-full">
+                                <Link
+                                    href="/auth/support"
+                                    className="flex-1 text-center bg-white border border-indigo-600 text-indigo-600 font-semibold py-1.5 px-3 rounded-lg hover:bg-indigo-50 hover:scale-105 transition-all duration-300 text-xs sm:text-sm"
                                 >
-                                    {isLoading ? 'Registering . . . ⚓' : 'Submit and Register'}
-                                </button>
+                                    Having Issues ?
+                                </Link>
+                                <Link
+                                    href={LOGIN_PATH}
+                                    className="flex-1 text-center bg-white border border-indigo-600 text-indigo-600 font-semibold py-1.5 px-3 rounded-lg hover:bg-indigo-50 hover:scale-105 transition-all duration-300 text-xs sm:text-sm"
+                                >
+                                    Login Instead ?
+                                </Link>
+                            </div>
 
-                                {/* Submit */}
-                                {error && (
-                                    <p className="text-sm text-red-700 text-center font-medium">{error}</p>
-                                )}
-
-                                {/* Links */}
-                                <div className="mt-3 flex flex-row space-x-3 w-full">
-                                    <Link
-                                        href="/auth/support"
-                                        className="flex-1 text-center bg-white border border-indigo-600 text-indigo-600 font-semibold py-1.5 px-3 rounded-lg hover:bg-indigo-50 hover:scale-105 transition-all duration-300 text-xs sm:text-sm"
-                                    >
-                                        Having Issues ?
-                                    </Link>
-                                    <Link
-                                        href={LOGIN_PATH}
-                                        className="flex-1 text-center bg-white border border-indigo-600 text-indigo-600 font-semibold py-1.5 px-3 rounded-lg hover:bg-indigo-50 hover:scale-105 transition-all duration-300 text-xs sm:text-sm"
-                                    >
-                                        Login Instead ?
-                                    </Link>
-                                </div>
-
-                            </form>
-                        )}
-                    </div>
+                        </form>
+                    )}
+                </div>
 
             </div>
         </main>

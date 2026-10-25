@@ -14,6 +14,7 @@ import { useEffect } from 'react'
 import { session } from '@/lib/services/auth/sessionService'
 import { DEFAULT_USER_ROLE } from '@/lib/constants/roles'
 import { useSearchParams } from 'next/navigation'
+import { redirectToSocialProvider } from '@/lib/services/auth/socialService'
 import { EXAM_OPTIONS, examDashboardHref } from '@/lib/constants/dashboards/examOptions'
 import { getStoredSelectedExam, setStoredSelectedExam } from '@/lib/constants/dashboards/examSelectionStorage'
 
@@ -75,6 +76,13 @@ export default function WebLoginPage() {
 
   const [showPin, setShowPin] = useState(false);
   const role = DEFAULT_USER_ROLE; // hidden, fixed role
+
+  const handleSocialClick = (provider: Parameters<typeof redirectToSocialProvider>[0]['provider']) => {
+    redirectToSocialProvider({ provider, context: 'login', redirectPath: '/pages/entrance' }).catch((err) => {
+      console.error(`Social redirect (${provider}) failed:`, err)
+      setError('Could not start social sign-in. Please try again.')
+    })
+  }
 
   const [selectedExam, setSelectedExam] = useState<string>(() => {
     const stored = getStoredSelectedExam()
@@ -251,7 +259,7 @@ export default function WebLoginPage() {
             <button
               type="button"
               className="flex items-center justify-center gap-2 border border-gray-300 py-1.5 px-3 rounded-lg hover:bg-gray-50 transition text-gray-800 w-full font-medium shadow-xs text-xs sm:text-sm"
-              onClick={() => setSelectedProvider('google')}
+              onClick={() => handleSocialClick('google')}
             >
               <FcGoogle className="text-lg" />
               <span className="text-xs sm:text-sm font-semibold">Google</span>
