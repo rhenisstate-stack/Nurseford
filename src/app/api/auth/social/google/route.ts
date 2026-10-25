@@ -15,7 +15,10 @@ export async function GET(req: NextRequest) {
   });
   
   const providerUrl = backendResponse.headers.get("location");
-
+  if (!providerUrl) {
+    console.error("Social route (Google) backend body:", await backendResponse.text());
+  }
+  
   if (!providerUrl) {
     console.error("Social route (Google): backend did not return a Location header", {
       status: backendResponse.status,
