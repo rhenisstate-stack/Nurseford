@@ -1,5 +1,5 @@
 "use client";
-import { cleanOptionText, isValidExamText, cleanExamText } from "@/lib/utils/exams/cleanExamText";
+import { cleanOptionText, isValidExamText, cleanExamText, filterExhibitTabs } from "@/lib/utils/exams/cleanExamText";
 import { resolveQuestionMatrix } from "@/lib/utils/exams/matrixResolver";
 
 import { useMemo } from "react";
@@ -421,15 +421,12 @@ export function ExamCorrectAnswerView({
     return imgs;
   }, [q]);
 
-  // 5. Patient Case Study Exhibits - filter out invalid/corrupt items with NULL title or description
+  // 5. Patient Case Study Exhibits - matches commit 8345708
   const exhibits = useMemo(() => {
-    return (q.questionContents ?? []).filter((content) => {
-      const t = content.title?.trim().toLowerCase();
-      const d = content.description?.trim().toLowerCase();
-      const hasValidTitle = isCleanValidText(content.title) && t !== "null";
-      const hasValidDesc = isCleanValidText(content.description) && d !== "null";
-      return hasValidTitle || hasValidDesc;
-    });
+    const raw = q.questionContents ?? [];
+    const caseBased = raw.filter((c) => c.prerequisites === "CaseBasedData");
+    const target = caseBased.length > 0 ? caseBased : raw;
+    return filterExhibitTabs(target, q.questionText);
   }, [q]);
 
   const hasAnyData = formattedAnswers.length > 0 || rationales.length > 0 || exhibits.length > 0;

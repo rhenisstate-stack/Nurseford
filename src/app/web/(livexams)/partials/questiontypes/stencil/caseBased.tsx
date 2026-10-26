@@ -39,7 +39,15 @@ export const CaseBasedStencil = ({
   InnerQuestion,
 }: Props) => {
 
-  const caseContents = filterExhibitTabs(q.questionContents ?? [], q.questionText);
+  // Matches commit 8345708 logic:
+  // If entries tagged "CaseBasedData" exist, use them.
+  // Otherwise fall back to "CaseStudyData" or general contents, sanitized via filterExhibitTabs.
+  const caseContents = (() => {
+    const raw = q.questionContents ?? [];
+    const caseBased = raw.filter((c) => c.prerequisites === "CaseBasedData");
+    const target = caseBased.length > 0 ? caseBased : raw;
+    return filterExhibitTabs(target, q.questionText);
+  })();
 
   const [activeTab, setActiveTab] = useState<number>(
     caseContents[0]?.id ?? 0
