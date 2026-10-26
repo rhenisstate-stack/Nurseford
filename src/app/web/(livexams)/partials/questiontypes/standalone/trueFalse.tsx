@@ -6,6 +6,7 @@ import type {
   StrataSessionQuestionOption,
 } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionToolbar } from "../../components/QuestionToolbar";
+import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
 
 interface Props {
@@ -119,58 +120,43 @@ export const TrueFalseQuestion = ({
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
-      {!hideQuestionHeader && (
-        <div className="flex items-center gap-3">
-          <div className="shrink-0 py-1 px-2 rounded
-            bg-gradient-to-br from-yellow-800 to-rose-600 text-white
-            flex items-center justify-center text-xs md:text-sm font-bold shadow-md">
-            {questionNumber}
-          </div>
-          <div
-            className="flex-1 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: q.questionText ?? "" }}
-          />
-        </div>
-      )}
+      <QuestionPromptHeader
+        questionNumber={questionNumber}
+        questionText={q.questionText}
+        metaQuestionText={q.metaQuestionText}
+        hideQuestionHeader={hideQuestionHeader}
+      />
 
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      {!hideQuestionHeader &&
-        q.metaQuestionText &&
-        q.metaQuestionText.trim().toLowerCase() !== "null" && (
-          <div
-            className="text-sm px-2 text-gray-500 italic"
-            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
-          />
-        )}
-
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      <div className="flex gap-3">
+      <div className="mt-3 space-y-2">
         {q.questionOptions?.map((opt: StrataSessionQuestionOption) => {
+          const isPicked = picked === opt.id;
           const state = getState(opt.id);
+
+          let rowColorClasses = "border-slate-300 dark:border-slate-700 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-800 dark:text-slate-200";
+
+          if (state === "correct") {
+            rowColorClasses = "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-300";
+          } else if (state === "wrong") {
+            rowColorClasses = "border-red-400 bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-200 ring-1 ring-red-300";
+          } else if (isPicked) {
+            rowColorClasses = "border-blue-500/80 dark:border-blue-500/60 bg-blue-50/60 dark:bg-blue-950/40 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 text-blue-950 dark:text-blue-100 ring-1 ring-blue-500/20";
+          }
+
           return (
             <label
               key={opt.id}
-              className={`flex items-center gap-2 cursor-pointer border rounded px-4 py-2 text-sm transition
-                ${state === "correct" ? "border-emerald-400 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-300" : ""}
-                ${state === "wrong" ? "border-red-400 bg-red-50 text-red-700 ring-1 ring-red-300" : ""}
-                ${state === "idle" ? "hover:bg-green-300" : ""}
-              `}
+              className={`flex items-start gap-3 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-md border transition cursor-pointer select-none shadow-2xs ${rowColorClasses}`}
             >
               <input
                 type="radio"
                 name={`q-${q.id}`}
                 value={opt.id}
-                checked={picked === opt.id}
-                className="w-4 h-4 md:w-5 md:h-5 cursor-pointer shrink-0"
+                checked={isPicked}
+                className="w-4 h-4 cursor-pointer shrink-0 mt-0.5 accent-blue-600 dark:accent-blue-500"
                 onChange={() => handlePick(opt.id)}
               />
-              <span>
+              <span className="flex-1 text-sm sm:text-base font-normal leading-normal">
                 {opt.answerContent || opt.option}
-                {opt.description && (
-                  <span className="ml-1 text-xs"> - - ({opt.description})</span>
-                )}
               </span>
               {state === "correct" && <span className="text-xs font-bold text-emerald-600 shrink-0">✓</span>}
               {state === "wrong" && <span className="text-xs font-bold text-red-500 shrink-0">✗</span>}

@@ -8,6 +8,7 @@ import SearchBar from './search';
 import ThemeModeToggle from '@/components/common/theme/ThemeModeToggle';
 import { useCurrentSystemUser } from '@/lib/hooks/users/account/current/useCurrentSystemUser';
 import UserAccountDropdown from '@/components/common/user/UserAccountDropdown';
+import HeedMessageBell from './HeedMessageBell';
 
 const examLinks = [
   { label: 'TEAS 7 PREP', href: '/pages/exams/ati-teas' },
@@ -213,6 +214,7 @@ export default function Navbar() {
         {/* Auth buttons */}
         <div className="hidden lg:flex items-center gap-3">
           <ThemeModeToggle />
+          {!loading && signedIn && <HeedMessageBell />}
           {loading ? (
             <>
               <div className="h-10 w-24 rounded-full bg-paper-dim animate-pulse" />
@@ -252,6 +254,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2 lg:hidden">
           <SearchBar compact />
           <ThemeModeToggle />
+          {!loading && signedIn && <HeedMessageBell />}
           <button
             className="text-navy p-1"
             onClick={() => setMobileOpen((prev) => !prev)}

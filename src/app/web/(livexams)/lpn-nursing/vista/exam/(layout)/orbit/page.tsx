@@ -68,8 +68,10 @@ function packageMatchesExam(pkg: DiscreteSubscriptionPackage, exam: ExamCoreType
   return !!examGuid && examGuid === pkg.terminalClusterGuidId;
 }
 
+const isPaidValue = (v: string | null | undefined) => v === "Paid" || v === "Yes";
+
 function subscriptionIsActive(sub: { subscriptionStatus: string; subscriptionHasPaid: string; validFrom: string; validUntil?: string | null }): boolean {
-  if (sub.subscriptionStatus !== "Active" || sub.subscriptionHasPaid !== "Yes") return false;
+  if (sub.subscriptionStatus !== "Active" || !isPaidValue(sub.subscriptionHasPaid)) return false;
   const now = new Date();
   if (sub.validFrom && new Date(sub.validFrom) > now) return false;
   if (sub.validUntil && new Date(sub.validUntil) < now) return false;
@@ -98,7 +100,7 @@ function resolveSubscriptionAccess(packages: DiscreteSubscriptionPackage[], exam
   const anySub = matched.flatMap((p) => p.userSubscriptions ?? [])[0];
   let reason = "You Do Not Have An Active Subscription For This Exam's Content ⚓";
   if (anySub) {
-    if (anySub.subscriptionHasPaid !== "Yes") reason = "Your Subscription Payment is Not Confirmed — Please Complete Payment ⚓";
+    if (!isPaidValue(anySub.subscriptionHasPaid)) reason = "Your Subscription Payment is Not Confirmed — Please Complete Payment ⚓";
     else if (anySub.subscriptionStatus !== "Active") reason = `Your Subscription Status is "${anySub.subscriptionStatus}" — It Must Be "Active" ⚓`;
     else if (anySub.validUntil && new Date(anySub.validUntil) < new Date()) reason = "Your Subscription Has Expired ⚓";
   }

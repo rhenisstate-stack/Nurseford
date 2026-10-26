@@ -5,8 +5,9 @@ import { useState } from "react";
 import { FiArrowLeft, FiMail, FiCheckCircle } from "react-icons/fi";
 import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClasp";
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
+import { sendEmailVerificationCode, confirmEmailVerificationCode } from "@/lib/services/auth/supportService";
 
-const CURRENT_PANEL = "ati-teas";
+const CURRENT_PANEL = "nclex-pn";
 
 function InfoRow({ label, value }: { label: string; value?: string | number | null }) {
   return (
@@ -29,37 +30,60 @@ export default function VerifyEmailPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   const primaryEmail = user?.emails?.find((e) => e.isPrimary);
   const alreadyVerified = !!primaryEmail?.isVerified;
 
+  const startResendCooldown = () => {
+    setResendCooldown(60);
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+
   const handleSendCode = async () => {
+    if (!user) {
+      setMessage({ text: "You need to be signed in to verify your email.", ok: false });
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
-      // const result = await sendEmailVerificationCode();
-      // if (result?.error) throw new Error(result.error);
-      await new Promise((r) => setTimeout(r, 400));
+      const result = await sendEmailVerificationCode(user.guidId, user.email);
+      if (result?.error) throw new Error(result.error);
       setCodeSent(true);
-      setMessage({ text: `Verification code sent to ${user?.email} ⚓`, ok: true });
+      setMessage({ text: result?.message ?? "Verification code sent.", ok: true });
+      startResendCooldown();
     } catch (err) {
       console.error("❌ [VerifyEmailPage] Failed to send code:", err);
-      setMessage({ text: "Failed to send verification code. Please try again.", ok: false });
+      setMessage({ text: err instanceof Error ? err.message : "Failed to send verification code.", ok: false });
     } finally {
       setBusy(false);
     }
   };
 
   const handleConfirm = async () => {
+    if (!user) {
+      setMessage({ text: "You need to be signed in to verify your email.", ok: false });
+      return;
+    }
     setBusy(true);
     setMessage(null);
     try {
-      // const result = await confirmEmailVerificationCode(code);
-      // if (result?.error) throw new Error(result.error);
-      await new Promise((r) => setTimeout(r, 400));
-      setMessage({ text: "Email verified successfully ⚓", ok: true });
+      const result = await confirmEmailVerificationCode(user.guidId, user.email, code);
+      if (result?.error) throw new Error(result.error);
+      setMessage({ text: result?.message ?? "Email verified successfully.", ok: true });
     } catch (err) {
       console.error("❌ [VerifyEmailPage] Failed to confirm code:", err);
-      setMessage({ text: "Invalid or expired code. Please try again.", ok: false });
+      setMessage({ text: err instanceof Error ? err.message : "Invalid or expired code.", ok: false });
     } finally {
       setBusy(false);
     }
@@ -68,7 +92,7 @@ export default function VerifyEmailPage() {
   if (loading) {
     return (
       <main
-        className="pt-14 flex items-center justify-center"
+        className="pt-16 flex items-center justify-center"
         style={{ marginLeft: leftWidth, marginRight: rightWidth, minHeight: `calc(100vh - ${navHeight}px)` }}
       >
         <p className="text-sm font-bold opacity-60 text-[var(--text-color)]">Loading . . . ⚓</p>
@@ -79,7 +103,7 @@ export default function VerifyEmailPage() {
   if (!user) {
     return (
       <main
-        className="pt-14 flex flex-col items-center justify-center gap-4 text-center px-4"
+        className="pt-16 flex flex-col items-center justify-center gap-4 text-center px-4"
         style={{ marginLeft: leftWidth, marginRight: rightWidth, minHeight: `calc(100vh - ${navHeight}px)` }}
       >
         <p className="text-sm font-bold opacity-70 text-[var(--text-color)]">
@@ -97,7 +121,7 @@ export default function VerifyEmailPage() {
 
   return (
     <main
-      className="pt-14 transition-all duration-300 ease-in-out overflow-x-hidden"
+      className="pt-16 transition-all duration-300 ease-in-out overflow-x-hidden"
       style={{
         marginLeft: leftWidth,
         marginRight: rightWidth,
@@ -106,7 +130,7 @@ export default function VerifyEmailPage() {
         color: "var(--content-text)",
       }}
     >
-      <div className="p-3 md:p-4 space-y-5 w-full max-w-2xl mx-auto">
+      <div className="p-3 md:p-4 space-y-5 w-full max-w-5xl mx-auto">
 
         <Link
           href={`/dashboards/${CURRENT_PANEL}/auth/account/security/profile`}
@@ -118,7 +142,7 @@ export default function VerifyEmailPage() {
 
         {/* Current user info */}
         <div className="rounded-2xl border border-[var(--text-color)]/15 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-cyan-500/10 backdrop-blur-xl px-5 py-5 flex items-center gap-4">
-          
+
           <div>
             <h1 className="text-lg font-bold text-[var(--text-color)] flex items-center gap-2">
               <FiMail className="w-4 h-4 text-indigo-500" />
@@ -133,21 +157,28 @@ export default function VerifyEmailPage() {
           <InfoRow label="Status" value={alreadyVerified ? "Verified" : "Not Verified"} />
         </div>
 
+        {message && (
+          <p className={`text-md text-center font-semibold ${message.ok ? "text-emerald-600" : "text-rose-600"}`}>
+            {message.text}
+          </p>
+        )}
+
         {/* ─────────────────────────────────────────────────────────────────────── */}
         {alreadyVerified ? (
-          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 md:p-5 flex items-center gap-3">
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 md:p-5 flex flex-col items-center justify-center gap-3 text-center">
             <FiCheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />
             <p className="text-xs text-[var(--text-color)] opacity-80">
               Your email address is already verified — no further action needed.
             </p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-[var(--text-color)]/15 bg-[var(--content-bg)] p-4 md:p-5 space-y-4">
+          <div className="rounded-2xl border border-[var(--text-color)]/15 bg-[var(--content-bg)] p-4 md:p-5 space-y-4 flex flex-col items-center text-center">
             {!codeSent ? (
               <>
                 <p className="text-xs text-[var(--text-color)] opacity-70">
                   We&apos;ll send a verification code to <strong>{user.email}</strong>.
                 </p>
+
                 <button
                   onClick={handleSendCode}
                   disabled={busy}
@@ -158,33 +189,40 @@ export default function VerifyEmailPage() {
               </>
             ) : (
               <>
-                <p className="text-xs text-[var(--text-color)] opacity-70">
+                <p className="text-md text-[var(--text-color)] opacity-70">
                   Enter the code sent to your email address.
                 </p>
+
                 <input
                   type="text"
-                  inputMode="numeric"
-                  maxLength={6}
+                  maxLength={8}
                   value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                  placeholder="000000"
-                  className="w-40 text-center tracking-[0.5em] rounded-lg border border-[var(--text-color)]/20 bg-[var(--content-bg)] px-3 py-2 text-lg font-mono text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+                  onChange={(e) => setCode(e.target.value)}
+                  onPaste={(e) => {
+                    e.preventDefault()
+                    const pasted = e.clipboardData.getData("text").trim()
+                    setCode(pasted.slice(0, 8))
+                  }}
+                  placeholder="········"
+                  className="w-90 text-center tracking-[0.5em] rounded-lg border border-[var(--text-color)] bg-[var(--content-bg)] px-3 py-2 text-lg font-mono text-[var(--text-color)] focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
                 />
-                <div className="flex gap-2">
+
+                <div className="flex items-center justify-center gap-2">
                   <button
                     onClick={handleConfirm}
-                    disabled={busy || code.length !== 6}
+                    disabled={busy || code.length < 4}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100"
                   >
                     <FiCheckCircle className="w-4 h-4" />
-                    {busy ? "Verifying…" : "Confirm Code"}
+                    {busy ? "Verifying…" : "Submit & Confirm Code"}
                   </button>
                   <button
                     onClick={handleSendCode}
-                    disabled={busy}
-                    className="px-4 py-2.5 rounded-xl font-semibold text-xs text-[var(--text-color)] opacity-60 hover:opacity-100 transition"
+                    disabled={busy || resendCooldown > 0}
+                    className="px-4 py-2.5 rounded-xl font-semibold text-xs text-[var(--text-color)] border p-2
+                    opacity-60 hover:opacity-100 transition disabled:opacity-30 disabled:cursor-not-allowed"
                   >
-                    Resend Code
+                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"}
                   </button>
                 </div>
               </>
@@ -192,11 +230,6 @@ export default function VerifyEmailPage() {
           </div>
         )}
 
-        {message && (
-          <p className={`text-xs font-semibold ${message.ok ? "text-emerald-600" : "text-rose-600"}`}>
-            {message.text}
-          </p>
-        )}
 
       </div>
     </main>

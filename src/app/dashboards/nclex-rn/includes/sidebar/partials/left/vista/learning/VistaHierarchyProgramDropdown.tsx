@@ -5,7 +5,7 @@ import { FolderTree, ChevronDown, ChevronRight } from "lucide-react";
 import { Tooltip } from "@/components/dashboards/includes/sidebar/tooltips/SidebarTooltip";
 import { useThemeContext } from "@/lib/contexts/panel/layout/theme/PanelThemeContext";
 
-const TARGET_PANEL = "ati-teas";
+const TARGET_PANEL = "nclex-rn";
 const TARGET_GROUP = "learning";
 const BASE_ROUTE = `/dashboards/${TARGET_PANEL}/vista/${TARGET_GROUP}/programs/absolute`;
 

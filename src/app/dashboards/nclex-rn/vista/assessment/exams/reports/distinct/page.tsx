@@ -449,7 +449,7 @@ export default function DistinctExamResultsPage() {
         ? `&score=${targetAttempt.percentageScore}`
         : "";
 
-    const passedParam =
+  const passedParam =
       targetAttempt?.passed !== undefined && targetAttempt?.passed !== null
         ? `&passed=${targetAttempt.passed}`
         : "";
@@ -753,7 +753,7 @@ export default function DistinctExamResultsPage() {
 
             <div className="flex items-center justify-end gap-2 flex-shrink-0">
               <Link
-                href={`/dashboards/nclex-rn/vista/stats/progress`}
+                href={`/dashboards/nclex-rn/vista/assessment/exams/progress/absolute?identifier=${exam.examGuidId ?? exam.guidId}`}
                 className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition whitespace-nowrap"
               >
                 View My Progress

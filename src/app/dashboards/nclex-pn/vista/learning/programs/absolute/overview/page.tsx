@@ -19,11 +19,11 @@ const VISTA_STRATA_PANEL = "nclex-pn";
 const VISTA_STRATA_LEVEL = "Programs";
 const VISTA_STRATA_NAME = "Program";
 // const VISTA_STRATA_GROUP = "program";
-const VISTA_CHILD_LEVEL = "Courses";  // For Distinct Child Redirection
+const VISTA_CHILD_LEVEL = "Exams";  // For Distinct Child Redirection
 const VISTA_DEFAULT_PERPAGE_LIST = 12;
 const VISTA_STRATA = VISTA_STRATA_LEVEL.toLocaleLowerCase();
 const VISTA_CHILD_STRATA = VISTA_CHILD_LEVEL.toLocaleLowerCase();
-const BASE_CHILD_ROUTE = `/dashboards/${VISTA_STRATA_PANEL}/vista/learning/${VISTA_CHILD_STRATA}`;
+const BASE_CHILD_ROUTE = `/dashboards/${VISTA_STRATA_PANEL}/vista/${VISTA_CHILD_STRATA}`;
 const BASE_TOGGLE_ROUTE = `/dashboards/${VISTA_STRATA_PANEL}/vista/${VISTA_STRATA}`;
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -197,7 +197,7 @@ export default function SubCategoriesPage() {
   // Render
   return (
     <main
-      className="pt-14 transition-all duration-300 ease-in-out overflow-x-hidden"
+      className="pt-16 transition-all duration-300 ease-in-out overflow-x-hidden"
       style={{
         marginLeft: leftWidth,
         marginRight: rightWidth,

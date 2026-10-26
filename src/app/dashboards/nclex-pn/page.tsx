@@ -107,11 +107,11 @@ export default function NclexPnHomePage() {
 
   const handleAction = (action: NclexAction) => {
     if (action === "practice") {
-      router.push(`/dashboards/nclex-pn/practice/domains/110`);
+      router.push(`/dashboards/${PANEL_SLUG}/exams/nclex-pn-practice-exams/1cb41630-1203-42ae-8844-92afa60eea9b`);
       return;
     }
     if (action === "readiness") {
-      router.push(`/dashboards/nclex-pn/practice/domains/111`);
+      router.push(`/dashboards/${PANEL_SLUG}/exams/nclex-pn-readiness-assessment-tests/176de88a-d9de-48d3-a76f-24f1e71f016c`);
       return;
     }
     setPopupDefaultMode(action);
@@ -222,7 +222,7 @@ export default function NclexPnHomePage() {
               </div>
 
               <Link
-                href={`/web/lpn-nursing/vista/exam/generic?mode=Exam&identifier=${activeExam.guidId ?? activeExam.id}`}
+                href={`/web/${PANEL_SLUG}/vista/exam/generic?mode=Exam&identifier=${activeExam.guidId ?? activeExam.id}`}
                 className="inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl font-bold text-xs md:text-sm bg-emerald-500 text-white hover:bg-emerald-600 transition-colors duration-200 shrink-0"
               >
                 Continue Exam
@@ -246,7 +246,7 @@ export default function NclexPnHomePage() {
         }}
         defaultMode={popupDefaultMode}
         panelSlug={PANEL_SLUG}
-        livePanelSlug="lpn-nursing"
+        livePanelSlug={PANEL_SLUG}
         examType="nclex-pn"
       />
       {/* Performance Index and Nursing Study Notes/Guides — phone mode only (bottom above footer) */}

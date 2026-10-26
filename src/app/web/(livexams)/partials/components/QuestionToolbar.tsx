@@ -1,105 +1,16 @@
-// src\app\web\(nursing)\atiteas\vista\exam\(layout)\partials\components\QuestionToolbar.tsx
 'use client';
+import { cleanOptionText, isValidExamText, cleanExamText } from "@/lib/utils/exams/cleanExamText";
+// src\app\web\(nursing)\atiteas\vista\exam\(layout)\partials\components\QuestionToolbar.tsx
 
-import { useState } from "react";
-import ImageViewer from "./ImageViewer";
-import Image from "next/image";
+import { useState, useEffect, useCallback } from "react";
 import type {
     StrataSessionQuestionFull,
     StrataSessionCorrectAnswer,
 } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
-import { Star, Pin, Bookmark, Flag, X, MessageSquare }
-    from "lucide-react"; import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
-
-
-// Strips HTML tags from rich-text fields (openEndedAnswer, etc.) so raw markup never renders or leaks onto screen — displays plain readable text only.
-function stripHtml(html: string): string {
-    if (typeof window === "undefined") {
-        return html.replace(/<[^>]*>/g, "").trim();
-    }
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    return (div.textContent || div.innerText || "").trim();
-}
-
-type CorrectAnswerItem = { answer: string; description?: string };
-
-type MatrixType = NonNullable<StrataSessionQuestionFull["questionMatrices"]>[number];
-
-// Answers are rendered with dangerouslySetInnerHTML, so escape header/cell text.
-function escapeHtml(value: string): string {
-    return value
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-}
-
-function parseHeaders(raw?: string | null): string[] {
-    try {
-        const parsed = JSON.parse(raw ?? "[]");
-        return Array.isArray(parsed) ? parsed.map((h) => String(h ?? "")) : [];
-    } catch {
-        return [];
-    }
-}
-
-// One line per row:  Row Header → [ Cell Value ]
-// Rows with several correct cells (multiple select) are joined on one line.
-function buildMatrixAnswers(matrix?: MatrixType | null): CorrectAnswerItem[] {
-    if (!matrix) return [];
-
-    const rowHeaders = parseHeaders(matrix.rowHeaders);
-    const columnHeaders = parseHeaders(matrix.columnHeaders);
-    const byRow = new Map<number, string[]>();
-
-    const absent = matrix.instructions === "CellDataAbsent";
-
-    (matrix.cells ?? [])
-        .filter((c) => c.isCorrect && (absent || (c.cellValue != null && c.cellValue !== "")))
-        .forEach((c) => {
-            const colLabel = columnHeaders[c.columnIndex] ?? `Col ${c.columnIndex + 1}`;
-            const cellValue = absent ? colLabel : String(c.cellValue);
-
-            // Cell value equals the column header in your payload, so show it once.
-            const text =
-                cellValue === colLabel
-                    ? `<strong>[ ${escapeHtml(cellValue)} ]</strong>`
-                    : `<em>${escapeHtml(colLabel)}</em> <strong>[ ${escapeHtml(cellValue)} ]</strong>`;
-
-            byRow.set(c.rowIndex, [...(byRow.get(c.rowIndex) ?? []), text]);
-        });
-
-    return Array.from(byRow.entries())
-        .sort(([a], [b]) => a - b)
-        .map(([rowIndex, parts]) => ({
-            answer: `<em>${escapeHtml(rowHeaders[rowIndex] ?? `Row ${rowIndex + 1}`)}</em> → ${parts.join(", ")}`,
-        }));
-}
-
-
-// Correct cells for the standalone matrix types. In "CellDataAbsent" mode cells have
-// no text, so the row and column headers identify the answer.
-function buildMatrixCellAnswers(matrix?: MatrixType | null): CorrectAnswerItem[] {
-    if (!matrix) return [];
-
-    const absent = matrix.instructions === "CellDataAbsent";
-    const rowHeaders = parseHeaders(matrix.rowHeaders);
-    const columnHeaders = parseHeaders(matrix.columnHeaders);
-
-    return (matrix.cells ?? [])
-        .filter((c) => c.isCorrect && (absent || (c.cellValue != null && c.cellValue !== "")))
-        .map((c) => {
-            const rowLabel = escapeHtml(rowHeaders[c.rowIndex] ?? `Row ${c.rowIndex + 1}`);
-            const colLabel = escapeHtml(columnHeaders[c.columnIndex] ?? `Col ${c.columnIndex + 1}`);
-            return {
-                answer: absent
-                    ? `<em>${rowLabel}</em> → <strong>[ ${colLabel} ]</strong>`
-                    : `<em>${rowLabel}</em> → <em>${colLabel}</em> : <strong>[ ${escapeHtml(String(c.cellValue))} ]</strong>`,
-                description: c.explanation ?? undefined,
-            };
-        });
-}
+import { Star, Pin, Bookmark, Flag, X, MessageSquare, Lightbulb }
+    from "lucide-react";
+import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { ExamCorrectAnswerView } from "./ExamCorrectAnswerView";
 
 interface Props {
     q: StrataSessionQuestionFull;
@@ -110,7 +21,7 @@ interface Props {
     sectionGuidId: string;
 }
 
-function QuestionFeedbackButton({
+export function QuestionFeedbackButton({
     q, examId, examGuidId, sectionId, sectionGuidId, submitTool, initialText, initialRating, hasExisting
 }: {
     q: StrataSessionQuestionFull;
@@ -218,8 +129,6 @@ function QuestionFeedbackButton({
 // test      → hint + star + pin + bookmark + flag  (no correct answer)
 // review    → correct answer + star + pin + bookmark + flag (no hint)
 // tutor     → hint + correct answer + star + pin + bookmark  (no flag)
-const broadcastAction = (questionId: number, kind: "star" | "pin" | "bookmark" | "flag", value: boolean) =>
-    window.dispatchEvent(new CustomEvent("exam:question:action", { detail: { questionId, kind, value } }));
 
 export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectionGuidId }: Props) {
 
@@ -267,14 +176,20 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
 
 
     //  Derive hint ─
-    const hint: string | null =
-        q.questionCorrectAnswers
-            ?.map((ca: StrataSessionCorrectAnswer) => ca.hint)
-            .find(Boolean) ?? null;
+    const hint: string | null = (() => {
+        for (const ca of q.questionCorrectAnswers ?? []) {
+            if (ca.hint && isValidExamText(ca.hint) && ca.hint.trim().toLowerCase() !== "null") return ca.hint.trim();
+        }
+        const rootHint = (q as unknown as { hint?: string }).hint;
+        if (rootHint && isValidExamText(rootHint) && rootHint.trim().toLowerCase() !== "null") return rootHint.trim();
+        return null;
+    })();
 
     // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
     // Derive correct answers ─────────────────────────────────────────────────
     const qType = (q.type ?? "").toLowerCase().trim();
+
+    type CorrectAnswerItem = { answer: string; description?: string };
 
     const correctAnswers: CorrectAnswerItem[] = (() => {
         switch (qType) {
@@ -299,7 +214,9 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
                     .filter(Boolean) as CorrectAnswerItem[];
             }
 
-            case "multipleselect": {
+            case "multipleselect":
+            case "checkbox":
+            case "checkboxes": {
                 return q.questionCorrectAnswers
                     .map((ca) => {
                         const opt = q.questionOptions.find((o) => o.id === ca.questionOptionId);
@@ -322,7 +239,25 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
             case "openended": {
                 return q.questionCorrectAnswers
                     .map((ca) => {
-                        const answer = ca.openEndedAnswer ? stripHtml(ca.openEndedAnswer) : null;
+                        const answer = ca.openEndedAnswer ?? null;
+                        return answer ? { answer } : null;
+                    })
+                    .filter(Boolean) as CorrectAnswerItem[];
+            }
+
+            case "shortanswer": {
+                return q.questionCorrectAnswers
+                    .map((ca) => {
+                        const answer = ca.openEndedAnswer ?? ca.description ?? null;
+                        return answer ? { answer } : null;
+                    })
+                    .filter(Boolean) as CorrectAnswerItem[];
+            }
+
+            case "essay": {
+                return q.questionCorrectAnswers
+                    .map((ca) => {
+                        const answer = ca.openEndedAnswer ?? null;
                         return answer ? { answer } : null;
                     })
                     .filter(Boolean) as CorrectAnswerItem[];
@@ -407,8 +342,7 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
                     .filter(Boolean) as CorrectAnswerItem[];
             }
 
-            case "blankselect":
-            case "casebasedblankselect": {
+            case "blankselect": {
                 return q.questionCorrectAnswers
                     .map((ca) => {
                         const r = JSON.parse(ca.validationRules ?? "{}") as {
@@ -508,41 +442,16 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
                     .filter(Boolean) as CorrectAnswerItem[];
             }
 
-            case "highlight": {
-                const passage = q.questionContents?.[0]?.title ?? "";
-
-                const correctOptionIds = q.questionCorrectAnswers
-                    .filter((ca) => ca.isCorrect && ca.questionOptionId != null)
-                    .map((ca) => ca.questionOptionId);
-
-                const optionByLabel = new Map<string, typeof q.questionOptions[number]>();
-                (q.questionOptions ?? []).forEach((opt) => {
-                    if (opt.label != null) optionByLabel.set(String(opt.label), opt);
-                });
-
-                const regex = /\[\[\[(\d+)\]([\s\S]*?)\]\]/g;
-                const results: CorrectAnswerItem[] = [];
-                let match: RegExpExecArray | null;
-
-                while ((match = regex.exec(passage)) !== null) {
-                    const label = match[1];
-                    const text = match[2].trim();
-                    const opt = optionByLabel.get(label);
-
-                    if (opt && correctOptionIds.includes(opt.id) && text) {
-                        results.push({ answer: text });
-                    }
-                }
-
-                return results;
+            case "tabularmatrix": {
+                return q.questionCorrectAnswers
+                    .map((ca) => {
+                        const answer = ca.description ?? null;
+                        return answer ? { answer } : null;
+                    })
+                    .filter(Boolean) as CorrectAnswerItem[];
             }
 
-            case "matrixsinglechoice":
-            case "matrixmultipleselect": {
-                return buildMatrixCellAnswers(q.questionMatrices?.[0]);
-            }
-
-            case "casebasedmultipleselect": {
+            case "casebased": {
                 return q.questionCorrectAnswers
                     .filter((ca) => ca.isCorrect && ca.questionOptionId != null)
                     .map((ca) => {
@@ -558,9 +467,69 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
                     .filter(Boolean) as CorrectAnswerItem[];
             }
 
-            case "casebasedmatrixsinglechoice":
-            case "casebasedmatrixmultipleselect": {
-                return buildMatrixAnswers(q.questionMatrices?.[0]);
+            case "casebaseddropdown": {
+                return q.questionCorrectAnswers
+                    .map((ca) => {
+                        const opt = q.questionOptions.find((o) => o.id === ca.questionOptionId);
+                        const answer = opt?.option ?? opt?.answerContent ?? null;
+                        return answer ? { answer, description: opt?.description ?? undefined } : null;
+                    })
+                    .filter(Boolean) as CorrectAnswerItem[];
+            }
+
+            case "casebasedhighlight": {
+                return q.questionCorrectAnswers
+                    .map((ca) => {
+                        const answer = ca.openEndedAnswer ?? ca.description ?? null;
+                        return answer ? { answer } : null;
+                    })
+                    .filter(Boolean) as CorrectAnswerItem[];
+            }
+
+            case "casebasedcheckbox": {
+                return q.questionCorrectAnswers
+                    .map((ca) => {
+                        const opt = q.questionOptions.find((o) => o.id === ca.questionOptionId);
+                        const answer = opt?.answerContent ?? opt?.option ?? null;
+                        return answer ? { answer, description: opt?.description ?? undefined } : null;
+                    })
+                    .filter(Boolean) as CorrectAnswerItem[];
+            }
+
+            case "casebaseddynamicdraganddrop": {
+                return q.questionCorrectAnswers
+                    .slice()
+                    .sort((a, b) => Number(a.correctOrder ?? 0) - Number(b.correctOrder ?? 0))
+                    .map((ca) => {
+                        const opt = q.questionOptions.find((o) => o.id === ca.questionOptionId);
+                        const answer = opt ? `${opt.option} → ${opt.answerContent}` : ca.description ?? null;
+                        return answer ? { answer, description: opt?.description ?? undefined } : null;
+                    })
+                    .filter(Boolean) as CorrectAnswerItem[];
+            }
+
+            case "casebaseddistinctdraganddrop": {
+                return q.questionCorrectAnswers
+                    .slice()
+                    .sort((a, b) => Number(a.correctOrder ?? 0) - Number(b.correctOrder ?? 0))
+                    .map((ca) => {
+                        const opt = q.questionOptions.find((o) => o.id === ca.questionOptionId);
+                        const answer = opt ? `${opt.option} → ${opt.answerContent}` : ca.description ?? null;
+                        return answer ? { answer, description: opt?.description ?? undefined } : null;
+                    })
+                    .filter(Boolean) as CorrectAnswerItem[];
+            }
+
+            case "casebasedstratifieddraganddrop": {
+                return q.questionCorrectAnswers
+                    .slice()
+                    .sort((a, b) => Number(a.correctOrder ?? 0) - Number(b.correctOrder ?? 0))
+                    .map((ca, i) => {
+                        const opt = q.questionOptions.find((o) => o.id === ca.questionOptionId);
+                        const label = opt?.option ?? opt?.answerContent ?? ca.description ?? null;
+                        return label ? { answer: `${i + 1}. ${label}`, description: opt?.description ?? undefined } : null;
+                    })
+                    .filter(Boolean) as CorrectAnswerItem[];
             }
 
             default: {
@@ -576,38 +545,35 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
 
     // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    const handleStar = async () => {
+    const handleStar = useCallback(async () => {
         const next = !starred;
         setStarred(next);
-        broadcastAction(q.id, "star", next);
         await submitTool("ActionQuestionStar", {
             examId, examGuidId, sectionId, sectionGuidId,
             questionId: q.id, questionGuidId: q.guidId,
             actionValue: String(next),
         });
-    };
+    }, [starred, submitTool, examId, examGuidId, sectionId, sectionGuidId, q.id, q.guidId]);
 
-    const handlePin = async () => {
+    const handlePin = useCallback(async () => {
         const next = !pinned;
         setPinned(next);
-        broadcastAction(q.id, "pin", next);
         await submitTool("ActionQuestionPin", {
             examId, examGuidId, sectionId, sectionGuidId,
             questionId: q.id, questionGuidId: q.guidId,
             actionValue: String(next),
         });
-    };
+    }, [pinned, submitTool, examId, examGuidId, sectionId, sectionGuidId, q.id, q.guidId]);
 
-    const handleBookmark = async () => {
+    const handleBookmark = useCallback(async () => {
         const next = !bookmarked;
         setBookmarked(next);
-        broadcastAction(q.id, "bookmark", next);
         await submitTool("ActionQuestionBookmark", {
             examId, examGuidId, sectionId, sectionGuidId,
             questionId: q.id, questionGuidId: q.guidId,
             actionValue: String(next),
         });
-    };
+    }, [bookmarked, submitTool, examId, examGuidId, sectionId, sectionGuidId, q.id, q.guidId]);
 
     const handleFlagSubmit = async () => {
         if (!flagReason.trim()) return;
@@ -618,253 +584,199 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
             actionContent: flagReason,
         });
         setFlagged(true);
-        broadcastAction(q.id, "flag", true);
         setFlagModal(false);
         setFlagReason("");
     };
 
+    // Keep action states updated when question changes
+    useEffect(() => {
+        const actions = (q.questionActions ?? []).map(a => {
+            try { return { ...a, _parsed: JSON.parse(a.actionContent ?? "{}") }; }
+            catch { return { ...a, _parsed: {} }; }
+        });
+        const star = actions.find(a => a._parsed.Star !== undefined);
+        const pin = actions.find(a => a._parsed.Pin !== undefined);
+        const bmark = actions.find(a => a._parsed.Bookmark !== undefined);
+        const flag = actions.find(a => a._parsed.Flag !== undefined);
+
+        setStarred(!!star?._parsed.Star);
+        setPinned(!!pin?._parsed.Pin);
+        setBookmarked(!!bmark?._parsed.Bookmark);
+        setFlagged(!!flag?._parsed.Flag);
+    }, [q.id, q.questionActions]);
+
+    // Broadcast toolbar state to sticky footer
+    useEffect(() => {
+        window.dispatchEvent(new CustomEvent("exam:toolbar:state", {
+            detail: {
+                questionId: q.id,
+                starred,
+                pinned,
+                bookmarked,
+                flagged,
+                canShowFlag,
+            }
+        }));
+    }, [q.id, starred, pinned, bookmarked, flagged, canShowFlag]);
+
+    // Listen to mobile sticky footer actions
+    useEffect(() => {
+        const onStar = () => { void handleStar(); };
+        const onPin = () => { void handlePin(); };
+        const onBookmark = () => { void handleBookmark(); };
+        const onFlag = () => { setFlagModal(true); };
+
+        window.addEventListener("exam:star", onStar);
+        window.addEventListener("exam:pin", onPin);
+        window.addEventListener("exam:bookmark", onBookmark);
+        window.addEventListener("exam:flag", onFlag);
+
+        return () => {
+            window.removeEventListener("exam:star", onStar);
+            window.removeEventListener("exam:pin", onPin);
+            window.removeEventListener("exam:bookmark", onBookmark);
+            window.removeEventListener("exam:flag", onFlag);
+        };
+    }, [handleStar, handlePin, handleBookmark]);
+
     return (
 
         // BORDER LINE
-        <div className="mt-4 border-t border-dashed pt-3 space-y-2">
+        <div className="mt-4 border-t border-slate-200 pt-3 space-y-3">
 
             {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-            {/*  ROW: action buttons  */}
-            <div className="flex items-center justify-end gap-2 flex-wrap">
-
-                {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-                {/* Show Hint */}
-                {canShowHint && hint && (
-                    <button
-                        onClick={() => { setShowHint((v) => !v); setShowCorrect(false); }}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-md bg-amber-400 hover:bg-green-500 text-black transition"
-                    >
-                        <>
-                            <span className="hidden sm:inline">
-                                {showHint ? "Hide Hint" : "Show Hint"}
-                            </span>
-
-                            <span className="sm:hidden">
-                                {showHint ? "Hide" : "Hint"}
-                            </span>
-                        </>
-                    </button>
-                )}
-                {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-                {/* Show Correct Answer */}
-                {canShowCorrectAnswer && correctAnswers.length > 0 && (
-                    <button
-                        onClick={() => { setShowCorrect((v) => !v); setShowHint(false); }}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-md bg-emerald-600 hover:bg-purple-700 text-white transition"
-                    >
-                        <>
-                            <span className="hidden sm:inline">
-                                {showCorrect ? "Hide Answer" : "Show Correct Answer"}
-                            </span>
-
-                            <span className="sm:hidden">
-                                {showCorrect ? "Hide" : "Answer"}
-                            </span>
-                        </>
-                    </button>
-                )}
-                {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-                {/* Divider */}
-                <div className="w-px h-5 bg-red-500 mx-1" />
-
-                {/* Question Feedback */}
-                <QuestionFeedbackButton
-                    q={q}
-                    examId={examId}
-                    examGuidId={examGuidId}
-                    sectionId={sectionId}
-                    sectionGuidId={sectionGuidId}
-                    submitTool={submitTool}
-                    initialText={
-                        typeof existingFeedback?._parsed.Feedback === "string"
-                            ? existingFeedback._parsed.Feedback
-                            : typeof existingFeedback?._parsed.Feedback === "object" && existingFeedback._parsed.Feedback !== null
-                                ? (existingFeedback._parsed.Feedback as { ActionContent?: string }).ActionContent ?? ""
-                                : ""
-                    }
-                    initialRating={
-                        typeof existingFeedback?._parsed.Feedback === "object" && existingFeedback._parsed.Feedback !== null
-                            ? Number(
-                                (existingFeedback._parsed.Feedback as { ActionValue?: string; Value?: string; value?: string }).ActionValue
-                                ?? (existingFeedback._parsed.Feedback as { Value?: string }).Value
-                                ?? (existingFeedback._parsed.Feedback as { value?: string }).value
-                                ?? 88
-                            )
-                            : existingFeedback?._parsed.Rating ?? existingFeedback?._parsed.rating ?? 88
-                    }
-                    hasExisting={!!existingFeedback} />
-
-                {/* Star */}
+            {/* ROW: action buttons */}
+            <div data-no-font-scale className="flex items-center justify-between min-h-[38px] gap-1 sm:gap-2 pt-1 w-full flex-nowrap sm:flex-wrap">
+                {/* 1. Left: Previous */}
                 <button
-                    onClick={handleStar}
-                    title="Star"
-                    className={`p-1.5 rounded-md border transition ${starred
-                        ? "bg-yellow-400 border-yellow-400 text-white"
-                        : "border-gray-300 text-gray-400 hover:border-yellow-400 hover:text-yellow-400"
-                        }`}
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent("exam:prev"))}
+                    className="order-1 px-2.5 sm:px-4 py-1.5 rounded-md border border-[#800000]/60 dark:border-rose-500/60 text-[#800000] dark:text-rose-300 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 font-semibold text-xs sm:text-sm transition flex items-center gap-1 cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
                 >
-                    <Star size={14} />
+                    ← Previous
                 </button>
-                {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-                {/* Pin */}
-                <button
-                    onClick={handlePin}
-                    title="Pin"
-                    className={`p-1.5 rounded-md border transition ${pinned
-                        ? "bg-green-500 border-green-500 text-white"
-                        : "border-gray-300 text-gray-400 hover:border-green-500 hover:text-green-500"
-                        }`}
-                >
-                    <Pin size={14} />
-                </button>
-                {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-                {/* Bookmark */}
-                <button
-                    onClick={handleBookmark}
-                    title="Bookmark"
-                    className={`p-1.5 rounded-md border transition ${bookmarked
-                        ? "bg-blue-500 border-blue-500 text-white"
-                        : "border-gray-300 text-gray-400 hover:border-blue-500 hover:text-blue-500"
-                        }`}
-                >
-                    <Bookmark size={14} />
-                </button>
-                {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-                {/* Flag */}
-                {canShowFlag && (
+
+                {/* 2. Middle: Hint, Show Correct Answer, and (on sm+ only) Star, Pin, Bookmark, Flag */}
+                <div className="order-2 flex items-center justify-center gap-1 sm:gap-2 flex-nowrap sm:flex-wrap sm:mx-auto">
+                    {/* Show Hint */}
+                    {canShowHint && hint && (
+                        <button
+                            type="button"
+                            onClick={() => { setShowHint((v) => !v); setShowCorrect(false); }}
+                            className={`px-2.5 sm:px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md border transition shadow-2xs cursor-pointer shrink-0 whitespace-nowrap ${
+                                showHint
+                                    ? "border-amber-500 text-amber-800 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-900/50 ring-1 ring-amber-500/40"
+                                    : "border-amber-500/80 text-amber-700 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/60 dark:hover:bg-amber-900/40"
+                            }`}
+                        >
+                            <span className="sm:hidden">{showHint ? "Hide Hint" : "Hint"}</span>
+                            <span className="hidden sm:inline">{showHint ? "Hide Hint" : "Show Hint"}</span>
+                        </button>
+                    )}
+
+                    {/* Show Correct Answer */}
+                    {canShowCorrectAnswer && (
+                        <button
+                            type="button"
+                            onClick={() => { setShowCorrect((v) => !v); setShowHint(false); }}
+                            className={`px-2 sm:px-3.5 py-1.5 text-[11px] sm:text-sm font-semibold rounded-md border transition shadow-2xs cursor-pointer shrink-0 whitespace-nowrap ${
+                                showCorrect
+                                    ? "border-emerald-500 text-emerald-800 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-900/50 ring-1 ring-emerald-500/40"
+                                    : "border-emerald-500/80 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40"
+                            }`}
+                        >
+                            <span className="sm:hidden">{showCorrect ? "Hide Answer" : "Show Correct Answer"}</span>
+                            <span className="hidden sm:inline">{showCorrect ? "Hide Answer" : "Show Correct Answer"}</span>
+                        </button>
+                    )}
+
+                    {/* Star (Hidden on mobile phones, shown on tablets & computer) */}
                     <button
-                        onClick={() => setFlagModal(true)}
-                        title="Flag"
-                        className={`p-1.5 rounded-md border transition ${flagged
-                            ? "bg-red-500 border-red-500 text-white"
-                            : "border-gray-300 text-gray-400 hover:border-red-500 hover:text-red-500"
+                        type="button"
+                        onClick={handleStar}
+                        title="Star"
+                        className={`hidden sm:inline-flex p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${starred
+                            ? "bg-amber-400 border-amber-400 text-white"
+                            : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-transparent"
                             }`}
                     >
-                        <Flag size={14} />
+                        <Star size={14} className={starred ? "fill-current" : ""} />
                     </button>
-                )}
 
+                    {/* Pin (Hidden on mobile phones, shown on tablets & computer) */}
+                    <button
+                        type="button"
+                        onClick={handlePin}
+                        title="Pin"
+                        className={`hidden sm:inline-flex p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${pinned
+                            ? "bg-green-600 border-green-600 text-white"
+                            : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-transparent"
+                            }`}
+                    >
+                        <Pin size={14} className={pinned ? "fill-current" : ""} />
+                    </button>
+
+                    {/* Bookmark (Hidden on mobile phones, shown on tablets & computer) */}
+                    <button
+                        type="button"
+                        onClick={handleBookmark}
+                        title="Bookmark"
+                        className={`hidden sm:inline-flex p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${bookmarked
+                            ? "bg-blue-600 border-blue-600 text-white"
+                            : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-transparent"
+                            }`}
+                    >
+                        <Bookmark size={14} className={bookmarked ? "fill-current" : ""} />
+                    </button>
+
+                    {/* Flag (Hidden on mobile phones, shown on tablets & computer) */}
+                    {canShowFlag && (
+                        <button
+                            type="button"
+                            onClick={() => setFlagModal(true)}
+                            title="Flag"
+                            className={`hidden sm:inline-flex p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${flagged
+                                ? "bg-red-600 border-red-600 text-white"
+                                : "border-red-300 dark:border-red-500/60 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 bg-transparent"
+                                }`}
+                        >
+                            <Flag size={14} className={flagged ? "fill-current" : ""} />
+                        </button>
+                    )}
+                </div>
+
+                {/* 3. Right: Next */}
+                <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent("exam:next"))}
+                    className="order-3 px-2.5 sm:px-4 py-1.5 rounded-md border border-blue-500/80 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 font-semibold text-xs sm:text-sm transition flex items-center gap-1 cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
+                >
+                    Next →
+                </button>
             </div>
-            {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-            {/*  HINT ACCORDION  */}
+
+            {/* ── HINT BOX (Clue 💡 banner matching reference) ── */}
             {showHint && hint && (
-                <div className="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-900">
-                    <span className="font-semibold">Clue 🪝:  </span>
-                    {hint}
+                <div className="w-full rounded-md bg-[#fffbeb] dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 p-3 sm:p-4 text-xs sm:text-sm text-amber-950 dark:text-amber-100 flex items-start justify-between gap-3 shadow-2xs mt-3 animate-in fade-in duration-200">
+                    <div className="leading-relaxed">
+                        <span className="font-bold text-amber-800 dark:text-amber-300">Clue 💡 : </span>
+                        <span dangerouslySetInnerHTML={{ __html: hint }} />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setShowHint(false)}
+                        className="text-amber-700 dark:text-amber-400 hover:text-amber-950 dark:hover:text-white shrink-0 p-0.5 rounded cursor-pointer"
+                        title="Hide Clue"
+                    >
+                        <X size={15} />
+                    </button>
                 </div>
             )}
 
-            {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-            {/*  CORRECT ANSWER ACCORDION  */}
-            {showCorrect && correctAnswers.length > 0 && (
-                <div className="rounded-md bg-emerald-50 border border-emerald-200 px-4 py-3 text-emerald-900 space-y-3"
-                    style={{ fontSize: "var(--exam-content-font-base)" }}>
-
-                    {/* Label */}
-                    <div className="font-bold">
-                        {qType === "matching" && "Correct Pairs"}
-                        {qType === "orderingnumber" && "Correct Order"}
-                        {qType === "orderingitem" && "Correct Sequence"}
-                        {qType === "orderingdragdrop" && "Correct Order"}
-                        {qType === "openended" && "Model/Reference Answer"}
-                        {qType === "shortanswer" && "Expected Answer"}
-                        {qType === "numericresponse" && "Correct Value"}
-                        {qType === "hotspot" && "Correct Region"}
-                        {qType === "blankfill" && "Correct Fill"}
-                        {(qType === "blankselect" || qType === "casebasedblankselect") && "Correct Selection"}
-                        {qType === "highlight" && "Correct Highlight(s)"}
-                        {qType === "matrixsinglechoice" && "Correct Cell"}
-                        {qType === "matrixmultipleselect" && "Correct Cells"}
-                        {qType === "casebasedmatrixsinglechoice" && "Correct Cell"}
-                        {qType === "casebasedmatrixmultipleselect" && "Correct Cells"}
-                        {!["matching", "orderingnumber", "orderingitem", "orderingdragdrop", "openended",
-                            "numericresponse", "hotspot", "blankfill", "blankselect", "casebasedblankselect", "highlight",
-                            "matrixsinglechoice", "matrixmultipleselect",
-                            "casebasedmatrixsinglechoice", "casebasedmatrixmultipleselect",
-                        ].includes(qType) && "Correct Answer"}
-                    </div>
-
-                    {/* Correct answer values */}
-                    <ul className="list-disc list-inside space-y-1">
-                        {correctAnswers.map((item, i) => (
-                            <li key={i}>
-                                <span dangerouslySetInnerHTML={{ __html: item.answer }} />
-                                {item.description && qType !== "multipleimage" && (
-                                    <span className="ml-1 text-xs text-emerald-700">
-                                        {/* - - ({item.description}) */}
-                                    </span>
-                                )}
-                                {item.description && qType === "multipleimage" && (() => {
-                                    const { imageUrl, caption } = JSON.parse(item.description);
-                                    return (
-                                        <div className="mt-1 space-y-1">
-                                            <div className="relative w-40 h-24 rounded border border-emerald-200 overflow-hidden bg-gray-50">
-                                                <Image
-                                                    src={imageUrl}
-                                                    alt={item.answer}
-                                                    fill
-                                                    sizes="160px"
-                                                    className="object-contain"
-                                                />
-                                            </div>
-                                            {caption && (
-                                                <span className="text-xs text-emerald-700"> ({caption})</span>
-                                            )}
-                                        </div>
-                                    );
-                                })()}
-                            </li>
-                        ))}
-                    </ul>
-
-                    {/* Seperator border line  */}
-                    <div className="h-px w-full bg-gradient-to-r from-green-500 via-purple-500 to-green-500 opacity-20" />
-
-                    {/* Description — shown if any correctAnswer has a description (deduplicated rationale text) */}
-                    {q.questionCorrectAnswers.some((ca) => ca.description) && (
-                        <div className="space-y-1">
-                            <div className="font-bold text-emerald-800">Rationale</div>
-                            {Array.from(
-                                new Map(
-                                    q.questionCorrectAnswers
-                                        .filter((ca) => ca.description)
-                                        .map((ca) => [ca.description, ca])  // key by description text — deduplicates identical entries
-                                ).values()
-                            ).map((ca, i) => (
-                                <div
-                                    key={i}
-                                    className="text-emerald-800 leading-relaxed"
-                                    dangerouslySetInnerHTML={{ __html: ca.description! }}
-                                />
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Seperator border line  */}
-                    <div className="h-px w-full bg-gradient-to-r from-green-500 via-purple-500 to-green-500 opacity-20" />
-                    {/* Explanation images — shown if any correctAnswer has an explanationImage */}
-                    {q.questionCorrectAnswers.some((ca) => ca.explanationImage && ca.explanationImage !== "NULL") && (
-                        <div className="space-y-2">
-                            <div className="font-bold text-emerald-800">Depiction</div>
-                            <div className="flex flex-wrap gap-2">
-                                {q.questionCorrectAnswers
-                                    .filter((ca) => ca.explanationImage && ca.explanationImage !== "NULL")
-                                    .map((ca, i) => (
-                                        <ImageViewer
-                                            key={i}
-                                            src={`/api/media/${ca.explanationImage?.replace(/^\/+/, "")}`}
-                                            alt={`Portrait ${i + 1}`}
-                                        />
-                                    ))}
-                            </div>
-                        </div>
-                    )}
-
+            {/* ── CORRECT ANSWER ACCORDION ── */}
+            {showCorrect && (
+                <div className="w-full pt-1 animate-in fade-in duration-200">
+                    <ExamCorrectAnswerView question={q} mode={mode} onClose={() => setShowCorrect(false)} />
                 </div>
             )}
             {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}

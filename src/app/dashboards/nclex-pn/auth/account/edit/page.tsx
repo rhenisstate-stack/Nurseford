@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import { FiArrowLeft, FiSave, FiUser } from "react-icons/fi";
 import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClasp";
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
+import { updateCurrentUserProfile } from "@/lib/services/auth/supportService";
 
-const CURRENT_PANEL = "ati-teas";
+const CURRENT_PANEL = "nclex-pn";
 
 interface ProfileFormState {
   gender: string;
@@ -120,11 +121,8 @@ export default function ProfileEditPage() {
     setSaving(true);
     setSaveMessage(null);
     try {
-      // ⚠️ ASSUMPTION: swap this stub for your real service call, e.g.:
-      // const result = await updateCurrentUserProfile(form);
-      // if (result?.error) throw new Error(result.error);
-      await new Promise((resolve) => setTimeout(resolve, 400)); // simulated latency
-
+      const result = await updateCurrentUserProfile(form);
+      if (result?.error) throw new Error(result.error);
       setSaveMessage({ text: "Profile updated successfully ⚓", ok: true });
     } catch (err) {
       console.error("❌ [ProfileEditPage] Failed to save profile:", err);
@@ -137,7 +135,7 @@ export default function ProfileEditPage() {
   if (loading) {
     return (
       <main
-        className="pt-14 flex items-center justify-center"
+        className="pt-16 flex items-center justify-center"
         style={{ marginLeft: leftWidth, marginRight: rightWidth, minHeight: `calc(100vh - ${navHeight}px)` }}
       >
         <p className="text-sm font-bold opacity-60 text-[var(--text-color)]">Loading profile . . . ⚓</p>
@@ -148,7 +146,7 @@ export default function ProfileEditPage() {
   if (!user) {
     return (
       <main
-        className="pt-14 flex flex-col items-center justify-center gap-4 text-center px-4"
+        className="pt-16 flex flex-col items-center justify-center gap-4 text-center px-4"
         style={{ marginLeft: leftWidth, marginRight: rightWidth, minHeight: `calc(100vh - ${navHeight}px)` }}
       >
         <p className="text-sm font-bold opacity-70 text-[var(--text-color)]">
@@ -166,7 +164,7 @@ export default function ProfileEditPage() {
 
   return (
     <main
-      className="pt-14 transition-all duration-300 ease-in-out overflow-x-hidden"
+      className="pt-16 transition-all duration-300 ease-in-out overflow-x-hidden"
       style={{
         marginLeft: leftWidth,
         marginRight: rightWidth,

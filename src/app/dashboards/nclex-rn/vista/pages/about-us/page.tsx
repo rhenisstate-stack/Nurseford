@@ -13,7 +13,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-const CURRENT_PANEL = "ati-teas";
+const CURRENT_PANEL = "nclex-rn";
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ export default function AboutUsPage() {
 
   return (
     <main
-      className="pt-14 transition-all duration-300 ease-in-out overflow-x-hidden"
+      className="pt-16 transition-all duration-300 ease-in-out overflow-x-hidden"
       style={{
         marginLeft: leftWidth,
         marginRight: rightWidth,
@@ -86,7 +86,7 @@ export default function AboutUsPage() {
             was scattered across a dozen apps, PDFs, and outdated question
             banks. We set out to bring notes, resource categories, practice
             exams, and progress tracking into one focused workspace — built
-            for TEAS 7 Prep, HESI A2, RN, LPN, and beyond.
+            for ATI TEAS, HESI A2, RN, LPN, and beyond.
           </p>
           <p className="text-sm leading-relaxed opacity-75 text-[var(--text-color)]">
             Today, that same idea drives everything we ship: less friction,

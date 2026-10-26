@@ -79,6 +79,7 @@ export interface CaseContentLike {
  * 1. Rejects internal question sentence metadata (e.g. BlankSelectData)
  * 2. Rejects duplicate entries of the main question prompt
  * 3. Rejects entries where both title and description are empty/null
+ * 4. Deduplicates tabs by normalized title (resolves duplicate tabs when both CaseBasedData and CaseStudyData exist)
  */
 export function filterExhibitTabs<T extends CaseContentLike>(
   contents: T[] = [],
@@ -86,7 +87,7 @@ export function filterExhibitTabs<T extends CaseContentLike>(
 ): T[] {
   const cleanQText = stripHtmlTags(questionText).toLowerCase().trim();
 
-  return contents.filter((c) => {
+  const valid = contents.filter((c) => {
     const rawTitle = (c.title ?? "").trim();
     const rawDesc = (c.description ?? "").trim();
     const cleanTitle = cleanTabTitle(rawTitle);
@@ -108,6 +109,29 @@ export function filterExhibitTabs<T extends CaseContentLike>(
 
     return true;
   });
+
+  // Deduplicate twin clone exhibits:
+  // Only filters out entries that are TRUE duplicates (identical title AND identical content).
+  // If two exhibits share the same title but have DIFFERENT descriptions (e.g. multiple progress notes),
+  // BOTH are kept so nothing legitimate is ever blocked.
+  const result: T[] = [];
+  const seenSignatures = new Set<string>();
+
+  for (const c of valid) {
+    const titleKey = cleanTabTitle(c.title).toLowerCase().trim() || "clinical notes";
+    const descKey = stripHtmlTags(c.description ?? "").toLowerCase().replace(/\s+/g, " ").trim();
+    const signature = `${titleKey}:::${descKey}`;
+
+    if (seenSignatures.has(signature)) {
+      // Identical twin clone (same title and identical text) -> safe to omit
+      continue;
+    }
+
+    seenSignatures.add(signature);
+    result.push(c);
+  }
+
+  return result;
 }
 
 /**
