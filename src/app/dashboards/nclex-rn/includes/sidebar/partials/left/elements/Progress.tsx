@@ -29,7 +29,7 @@ export default function ProgressView({
     (theme.leftSidebar === "system" ? theme.global : theme.leftSidebar) === "light";
 
   return (
-    <Link href="/dashboards/nclex-rn/vista/stats/progress">
+    <Link href="/dashboards/nclex-rn/vista/assessment/exams/progress/absolute">
       <div
         onClick={handleItemClick}
         onMouseEnter={(e) => handleItemHover("My Progress", e)}
@@ -40,7 +40,7 @@ export default function ProgressView({
         ${!isOpened && "justify-center"}`}
       >
         <BarChart3 className="w-5 h-5" />
-        {isOpened && <span className="ml-3">My Progress</span>}
+        {isOpened && <span className="ml-3">My Exam Progress</span>}
 
         {!isOpened && hoveredItem === "My Progress" && (
           <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>

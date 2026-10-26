@@ -92,6 +92,8 @@ export function SubjectPlaceholderGrid({
           "hesi-a2",
           "rn-nursing",
           "lpn-nursing",
+          "nclex-rn",
+          "nclex-pn",
         ].includes(examTypeSafe);
         const href = hasCustomExamsRoute
           ? `/dashboards/${examTypeSafe}/exams/${card.slug}/${identifier}`

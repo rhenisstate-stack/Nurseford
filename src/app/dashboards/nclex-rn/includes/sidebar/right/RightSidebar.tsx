@@ -24,8 +24,8 @@ import { APP_TITLE, APP_ACRONYM } from "@/lib/config/config";
 
 export default function RightSidebar() {
 
-  const DASHBOARD_NAME = "Ati-Teas";
-  const PROGRAM_PANEL = "ati-teas";
+  const DASHBOARD_NAME = "Nclex-Rn";
+  const PROGRAM_PANEL = "nclex-rn";
 
   const { state, open, close } = useRightSidebar();
 
@@ -111,7 +111,7 @@ export default function RightSidebar() {
       className={`fixed top-16 right-0 z-40 flex flex-col h-[calc(100vh-64px)]
       ${sidebarWidth}
       transition-all duration-300 ease-in-out
-      shadow-md border-l border-[var(--text-color)]/10`}
+      shadow-md border-l`}
       style={{
         backgroundColor: "var(--rightSidebar-bg)",
         color: "var(--text-color)",
@@ -121,7 +121,8 @@ export default function RightSidebar() {
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
       {/* Header */}
       <div
-        className={`flex items-center justify-between px-4 py-3 border-b border-[var(--text-color)]/10`}
+        className={`flex items-center justify-between px-4 py-3 border-b
+        ${isLightSidebar ? "border-gray-200" : "border-gray-700"}`}
       >
         <div className={`flex-1 ${!isOpened && "justify-center flex"}`}>
           <Link
@@ -139,7 +140,7 @@ export default function RightSidebar() {
           <button
             onClick={close}
             aria-label="Close sidebar"
-            className="p-1 rounded hover:bg-[var(--text-color)]/10"
+            className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
           >
             <X className="w-4 h-4" />
           </button>
@@ -157,7 +158,7 @@ export default function RightSidebar() {
             onMouseEnter={(e) => handleItemHover("Dashboard", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-            border-1 border-transparent hover:border-[var(--text-color)]/40 select-none
+            border-1 border-transparent hover:border-gray-900 select-none
             ${isLightSidebar ? "text-[var(--text-color)]" : "text-[var(--text-color)]"}
             ${!isOpened && "justify-center"}`}
           >
@@ -181,7 +182,7 @@ export default function RightSidebar() {
             onMouseEnter={(e) => handleItemHover("Home", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border-1 border-transparent hover:border-[var(--text-color)]/40 select-none
+              border-1 border-transparent hover:border-gray-900 select-none
               ${isLightSidebar ? "text-[var(--text-color)]" : "text-[var(--text-color)]"}
               ${!isOpened && "justify-center"}`}
           >
@@ -270,7 +271,7 @@ export default function RightSidebar() {
             onMouseEnter={(e) => handleItemHover("Reports", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-            border border-transparent hover:border-[var(--text-color)]/40 select-none
+            border border-transparent hover:border-gray-900 select-none
             ${isLightSidebar ? "text-[var(--text-color)]" : "text-[var(--text-color)]"}
             ${!isOpened && "justify-center"}`}
           >
@@ -325,7 +326,7 @@ export default function RightSidebar() {
             onMouseEnter={(e) => handleItemHover("Progress", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-            border border-transparent hover:border-[var(--text-color)]/40 select-none
+            border border-transparent hover:border-gray-900 select-none
             ${isLightSidebar
                 ? "text-[var(--text-color)]"
                 : "text-[var(--text-color)]"
@@ -352,7 +353,7 @@ export default function RightSidebar() {
             onMouseEnter={(e) => handleItemHover("My Subscriptions", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+              border border-transparent hover:border-gray-900 select-none
               ${isLightSidebar
                 ? "text-[var(--text-color)]"
                 : "text-[var(--text-color)]"
@@ -379,7 +380,7 @@ export default function RightSidebar() {
             onMouseEnter={(e) => handleItemHover("Subscription Packages", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+              border border-transparent hover:border-gray-900 select-none
               ${isLightSidebar
                 ? "text-[var(--text-color)]"
                 : "text-[var(--text-color)]"

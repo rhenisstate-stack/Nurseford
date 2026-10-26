@@ -1,37 +1,51 @@
-// src\app\web\(nursing)\atiteas\vista\exam\(layout)\generic\page.tsx
+// src/app/web/(livexams)/nclex-pn/vista/exam/(layout)/generic/page.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useLiveStrataExamContext } from "@/lib/contexts/panel/assessment/LiveStrataExamContext";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
-import { QuestionTypes } from "../../../../../partials/dispatcher/QuestionTypes";
-import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import ImpelModal from "@/app/(web)/auth/modals/Impel";
-import LoginModal from "@/app/(web)/auth/modals/Login";
-import RegisterModal from "@/app/(web)/auth/modals/Register";
-
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
-
+import { getUsernameCookie } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
+import { QuestionTypes } from "../../../../../partials/dispatcher/QuestionTypes";
+import { CustomMiniCalculator } from "@/components/panel/exam/tools/CustomMiniCalculator";
+import ImpelUserAuthetication from "@/components/auth/modal/ImpelUserAuthetication";
+import { ExamSubscriptionPaywallModal } from "@/components/panel/exam/modals/ExamSubscriptionPaywallModal";
+import { useExamSubscriptionAccess } from "@/lib/hooks/nexus/subscription/packages/useExamSubscriptionAccess";
+import UserAccountDropdown from "@/components/common/user/UserAccountDropdown";
+import { FiChevronDown } from "react-icons/fi";
 import {
-  useDiscreteDominionSubscriptionPackages,
-  DiscreteSubscriptionPackage,
-} from "@/lib/hooks/nexus/subscription/packages/dicreate/useDiscreteDominionSubscriptionPackages";
+  ArrowLeft,
+  ArrowRight,
+  Calculator,
+  HelpCircle,
+  LogOut,
+  FileText,
+  Hourglass,
+  Clock,
+  Flag,
+  CheckCircle2,
+  X,
+  RotateCcw,
+  Sun,
+  Moon,
+  LayoutList,
+  Settings,
+  Pause,
+  SquarePower,
+  Star,
+  Bookmark,
+  Pin,
+} from "lucide-react";
+import { useExamFontSize } from "@/lib/contexts/web/assessment/theme/ExamFontSizeContext";
+import { useExamTheme } from "@/lib/contexts/web/assessment/theme/ExamThemeContext";
+import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
 
-import AuthRequiredModal, {
-  shouldSuppressAuthAlert,
-  suppressAuthAlertForever,
-  suppressAuthAlertTemporarily,
-} from "../../../../../partials/auth/AlertModal";
-
-import SubscriptionAlertModal, {
-  shouldSuppressSubscriptionAlert,
-  suppressSubscriptionAlertForever,
-} from "../../../../../partials/subscription/AlertModal";
-
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // TYPES
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface FlatQuestion {
   question: Parameters<typeof QuestionTypes.render>[0];
@@ -42,124 +56,9 @@ interface FlatQuestion {
   total: number;
 }
 
-// ───────────────────────────────────────────────────────────────────────────
-// ACCESS CONTROL — Subscription Match + StrataAccessGroup Restriction
-// ───────────────────────────────────────────────────────────────────────────
-
-type ExamSessionType = NonNullable<ReturnType<typeof useLiveStrataExamContext>["examSession"]>;
-type ExamCoreType = ExamSessionType["exam"];
-
-// Maps a package's terminalClusterTableName to the matching guid field on the exam
-const TABLE_TO_EXAM_GUID_FIELD: Record<string, keyof ExamCoreType> = {
-  strata_programs: "programGuidId",
-  strata_courses: "courseGuidId",
-  strata_subjects: "subjectGuidId",
-  strata_units: "unitGuidId",
-  strata_lessons: "lessonGuidId",
-  strata_topics: "topicGuidId",
-  strata_concepts: "conceptGuidId",
-  strata_facts: "factGuidId",
-};
-
-function packageMatchesExam(pkg: DiscreteSubscriptionPackage, exam: ExamCoreType | undefined): boolean {
-  if (!exam || !pkg.terminalClusterTableName || !pkg.terminalClusterGuidId) return false;
-  const guidField = TABLE_TO_EXAM_GUID_FIELD[pkg.terminalClusterTableName];
-  if (!guidField) return false;
-  const examGuid = exam[guidField] as string | undefined;
-  return !!examGuid && examGuid === pkg.terminalClusterGuidId;
-}
-
-function subscriptionIsActive(sub: { subscriptionStatus: string; subscriptionHasPaid: string; validFrom: string; validUntil?: string | null }): boolean {
-  if (sub.subscriptionStatus !== "Active" || sub.subscriptionHasPaid !== "Yes") return false;
-  const now = new Date();
-  if (sub.validFrom && new Date(sub.validFrom) > now) return false;
-  if (sub.validUntil && new Date(sub.validUntil) < now) return false;
-  return true;
-}
-
-type AccessCheckResult = {
-  hasFullAccess: boolean;
-  matchedPackages: DiscreteSubscriptionPackage[];
-  denialReason: string | null;
-};
-
-// ⚠️ ASSUMPTION: userSubscriptions returned per package are already scoped to
-// the authenticated caller. If the endpoint instead returns every subscriber's
-// rows, filter here on a userId field once that's confirmed on UserSubscriptionPackage.
-function resolveSubscriptionAccess(packages: DiscreteSubscriptionPackage[], exam: ExamCoreType | undefined): AccessCheckResult {
-  const matched = packages.filter((p) => packageMatchesExam(p, exam));
-  if (matched.length === 0) return { hasFullAccess: false, matchedPackages: [], denialReason: null };
-
-  for (const pkg of matched) {
-    if (pkg.userSubscriptions?.some(subscriptionIsActive)) {
-      return { hasFullAccess: true, matchedPackages: matched, denialReason: null };
-    }
-  }
-
-  const anySub = matched.flatMap((p) => p.userSubscriptions ?? [])[0];
-  let reason = "You Do Not Have An Active Subscription For This Exam's Content ⚓";
-  if (anySub) {
-    if (anySub.subscriptionHasPaid !== "Yes") reason = "Your Subscription Payment is Not Confirmed — Please Complete Payment ⚓";
-    else if (anySub.subscriptionStatus !== "Active") reason = `Your Subscription Status is "${anySub.subscriptionStatus}" — It Must Be "Active" ⚓`;
-    else if (anySub.validUntil && new Date(anySub.validUntil) < new Date()) reason = "Your Subscription Has Expired ⚓";
-  }
-  return { hasFullAccess: false, matchedPackages: matched, denialReason: reason };
-}
-
-// ⚠️ ASSUMPTION: accessGroup / accessValue will exist on the exam root; today
-// they're only modeled on StrataSessionQuestionFull. Swap this cast out once confirmed.
-type ExamWithAccessRules = ExamCoreType & { accessGroup?: string; accessValue?: number; targetQuestions?: string | null };
-
-function parseTargetQuestionIds(raw: string | null | undefined): number[] {
-  if (!raw) return [];
-  try {
-    const t = JSON.parse(raw);
-    return Array.isArray(t?.ids) ? t.ids.map(Number).filter((n: number) => !isNaN(n)) : [];
-  } catch {
-    return [];
-  }
-}
-
-function applyAccessGroupRestriction(flat: FlatQuestion[], accessGroup: string | undefined, accessValue: number | undefined): FlatQuestion[] {
-  if (!accessGroup || accessGroup === "Unlimited" || accessGroup === "Duration") return flat;
-
-  if (accessGroup === "Amount") {
-    return flat.slice(0, Math.max(0, accessValue ?? flat.length));
-  }
-
-  if (accessGroup === "Percentage") {
-    const pct = Math.max(0, Math.min(100, accessValue ?? 100));
-    return flat.slice(0, Math.ceil((flat.length * pct) / 100));
-  }
-
-  return flat;
-}
-
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-// Ordering: questions with an order come first, ascending. Questions without one keep their existing relative position (return 0), because Array.sort is stable.
-function parseQuestionOrder(raw: unknown): number | null {
-  if (raw === null || raw === undefined) return null;
-  const s = String(raw).trim();
-  if (s === "") return null;
-  const n = Number(s);
-  return Number.isFinite(n) ? n : null; // "NULL", "abc", etc. count as "no order"
-}
-
-// Questions with an order come first, ascending. Questions without one keep their
-// existing relative position (return 0), because Array.sort is stable.
-function compareQuestionOrder(a: unknown, b: unknown): number {
-  const oa = parseQuestionOrder((a as { order?: string | null }).order);
-  const ob = parseQuestionOrder((b as { order?: string | null }).order);
-  if (oa !== null && ob !== null) return oa - ob;
-  if (oa !== null) return -1;
-  if (ob !== null) return 1;
-  return 0;
-}
-
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 function flattenQuestions(
   sections: NonNullable<
@@ -169,8 +68,7 @@ function flattenQuestions(
   const flat: Omit<FlatQuestion, "globalIndex" | "total">[] = [];
 
   for (const section of sections ?? []) {
-    const orderedQuestions = [...(section.questions ?? [])].sort(compareQuestionOrder);
-    for (const q of orderedQuestions) {
+    for (const q of section.questions ?? []) {
       flat.push({
         question: q,
         sectionName: section.name,
@@ -187,382 +85,29 @@ function flattenQuestions(
   }));
 }
 
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-// SHARED STATUS BOX
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-function AccessLimitCard({
-  total,
-  isLoggedIn,
-  onUnlock,
-}: {
-  total: number;
-  isLoggedIn: boolean;
-  onUnlock: () => void;
-}) {
-  return (
-    <div className="mx-4 my-6 px-4 py-3 rounded-xl border border-amber-300 bg-gradient-to-r from-amber-100 via-yellow-100 to-green-100 text-center">
-      <p className="text-sm font-bold text-amber-900">
-        You&apos;ve Reached The End Of The {total} Free Questions ⚓
-      </p>
-      <p className="text-xs text-gray-700 mt-1">
-        {isLoggedIn ? "Subscribe To Unlock All Questions Of This Exam" : "Log In To Continue With This Exam"}
-      </p>
-      <button
-        onClick={onUnlock}
-        className="mt-2 px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition"
-      >
-        {isLoggedIn ? "Subscribe Now" : "Log In / Register"}
-      </button>
-    </div>
-  );
+function formatCountdown(secs: number) {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  return [
+    h > 0 ? `${h}h` : null,
+    `${String(m).padStart(2, "0")}m`,
+    `${String(s).padStart(2, "0")}s`,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHARED STATUS BOX
+// ─────────────────────────────────────────────────────────────────────────────
 
 function StatusBox({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className="min-h-screen flex items-start justify-center pt-20"
-      style={{ backgroundColor: "var(--exam-content-bg)", color: "var(--exam-content-text)" }}
-    >
-      <div
-        className="px-6 py-4 rounded-lg border bg-gradient-to-br from-purple-300 via-green-200 to-purple-300 shadow-md font-bold"
-        style={{ fontSize: "var(--exam-content-font-lg)" }}
-      >
+    <div className="min-h-screen flex items-center justify-center bg-slate-100 p-6">
+      <div className="px-8 py-6 rounded-2xl border border-slate-200 bg-white shadow-xl font-bold text-slate-800 text-center max-w-md">
         {children}
       </div>
-    </div>
-  );
-}
-
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-// QUESTION HEADER  (section label + question number + progress bar)
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-function QuestionHeader({
-  current,
-  total,
-  sectionName,
-  onJump,
-}: {
-  current: number;
-  total: number;
-  sectionName: string;
-  onJump: (index: number) => void;
-}) {
-  const progress = (current / total) * 100;
-  const barRef = useRef<HTMLDivElement | null>(null);
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  const [hoverPercent, setHoverPercent] = useState<number>(0);
-  const isDragging = useRef(false);
-
-  const percentToIndex = useCallback((clientX: number): number => {
-    if (!barRef.current) return current;
-    const rect = barRef.current.getBoundingClientRect();
-    let percent = (clientX - rect.left) / rect.width;
-    percent = Math.max(0, Math.min(1, percent));
-    return Math.max(1, Math.min(total, Math.round(percent * total)));
-  }, [total, current]);
-
-  const getHoverPercent = useCallback((clientX: number): number => {
-    if (!barRef.current) return 0;
-    const rect = barRef.current.getBoundingClientRect();
-    return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * 100;
-  }, []);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    setHoverIndex(percentToIndex(e.clientX));
-    setHoverPercent(getHoverPercent(e.clientX));
-    if (isDragging.current) onJump(percentToIndex(e.clientX));
-  }, [percentToIndex, getHoverPercent, onJump]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (!isDragging.current) setHoverIndex(null);
-  }, []);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    isDragging.current = true;
-    onJump(percentToIndex(e.clientX));
-
-    const onMove = (ev: MouseEvent) => {
-      setHoverIndex(percentToIndex(ev.clientX));
-      setHoverPercent(getHoverPercent(ev.clientX));
-      onJump(percentToIndex(ev.clientX));
-    };
-    const onUp = () => {
-      isDragging.current = false;
-      setHoverIndex(null);
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }, [percentToIndex, getHoverPercent, onJump]);
-
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    onJump(percentToIndex(e.clientX));
-  }, [percentToIndex, onJump]);
-
-  return (
-    <div
-      className="px-4 py-2 border-b"
-      style={{ backgroundColor: "var(--exam-upper-nav-bg)", color: "var(--exam-upper-nav-text)" }}
-    >
-      <div className="flex items-center gap-2">
-
-        {/* SECTION */}
-        <span
-          className="shrink-0 font-semibold uppercase tracking-wide whitespace-nowrap"
-          style={{ fontSize: "var(--exam-upper-nav-font-sm)", color: "var(--exam-upper-nav-text)" }}
-        >
-          {sectionName} -
-        </span>
-
-        {/* QUESTION COUNT */}
-        <span
-          className="shrink-0 font-semibold whitespace-nowrap"
-          style={{ fontSize: "var(--exam-upper-nav-font-sm)", color: "var(--exam-upper-nav-text)" }}
-        >
-          - Question :{" "}
-          <span className="text-indigo-600">{current}</span>
-          <span className="font-normal opacity-50"> / {total}</span>
-        </span>
-
-        {/* PROGRESS BAR WRAPPER — extra vertical padding = bigger click/hover zone, visually still thin */}
-        <div
-          className="flex-1 relative cursor-pointer py-2"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-          onMouseDown={handleMouseDown}
-          onClick={handleClick}
-        >
-
-          {/* HOVER TOOLTIP */}
-          {hoverIndex !== null && (
-            <div
-              className="absolute -top-6 -translate-x-1/2 flex flex-col items-center z-[1000] pointer-events-none"
-              style={{ left: `${hoverPercent}%` }}
-            >
-              <div className="bg-indigo-700 text-white text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap shadow-xl">
-                Q {hoverIndex}
-              </div>
-              <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-indigo-700" />
-            </div>
-          )}
-
-          {/* TRACK — h-1.5 keeps it thin */}
-          <div
-            ref={barRef}
-            className="relative h-1.5 rounded-full bg-gray-200 overflow-visible"
-          >
-
-            {/* GLOW PULSE at hover position */}
-            {hoverIndex !== null && (
-              <div
-                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-indigo-400 opacity-40 pointer-events-none"
-                style={{
-                  left: `${hoverPercent}%`,
-                  boxShadow: "0 0 8px 4px rgba(99,102,241,0.5)",
-                  transition: "left 30ms linear",
-                }}
-              />
-            )}
-
-            {/* FILL */}
-            <div
-              className="absolute top-0 h-full rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 pointer-events-none"
-              style={{ width: `${progress}%`, transition: "width 300ms ease" }}
-            />
-
-            {/* RIDING DOT */}
-            <div
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 pointer-events-none"
-              style={{ left: `${progress}%`, transition: "left 300ms ease" }}
-            >
-              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 border-indigo-600 shadow-sm text-[8px] font-bold text-indigo-600 select-none">
-                {current}
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-// IN-PAGE NAV  — calls handlers directly (same component, no events needed)
-//               clicking here updates currentIndex → triggers exam:state broadcast
-//               → Footer stays in sync automatically
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-function InPageNav({
-  current,
-  total,
-  onPrev,
-  onNext,
-  onJump,
-  flat,
-  lastAction,
-}: {
-  current: number;
-  total: number;
-  onPrev: () => void;
-  onNext: () => void;
-  onJump: (index: number) => void;
-  flat: FlatQuestion[];
-  lastAction?: { label: string; onClick: () => void } | null;
-}) {
-  const MAX_DOTS = 8;
-  const isLast = current === total;
-
-  const getVisiblePages = () => {
-    if (total <= MAX_DOTS) {
-      return Array.from({ length: total }, (_, i) => i + 1);
-    }
-    let start = Math.max(1, current - 3);
-    let end = start + MAX_DOTS - 1;
-    if (end > total) {
-      end = total;
-      start = total - MAX_DOTS + 1;
-    }
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  };
-
-  const visiblePages = getVisiblePages();
-
-  return (
-    <div className="flex items-center justify-center gap-16 px-4 py-4 mt-4 border-t border-dashed border-gray-200">
-
-      {/* Prev — with tooltip */}
-      <div className="relative group">
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
-          <div className="bg-gray-800 text-white text-[10px] font-medium px-2 py-1 rounded whitespace-nowrap">
-            Previous Question
-          </div>
-          <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800" />
-        </div>
-        <button
-          onClick={onPrev}
-          disabled={current === 1}
-          className="flex items-center gap-1 px-4 py-2 text-sm border border-gray-400 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
-        >
-          <ArrowLeft size={14} />
-          Prior
-        </button>
-      </div>
-
-      {/* Center Dots */}
-      <div className="flex items-center gap-3">
-
-        {visiblePages[0] > 1 && (
-          <>
-            <span
-              className="text-sm font-medium text-gray-500 cursor-pointer hover:text-indigo-600 transition"
-              onClick={() => onJump(1)}
-            >
-              1
-            </span>
-            {visiblePages[0] > 2 && <span className="text-gray-400">...</span>}
-          </>
-        )}
-
-        {visiblePages.map((page) => {
-          const active = page === current;
-          const item = flat[page - 1];
-          const questionType = item?.question?.type ?? "";
-
-          return (
-            <div key={page} className="relative group">
-
-              {/* Tooltip */}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
-                <div className="bg-gray-900 text-white text-[10px] font-medium px-2 py-1 rounded whitespace-nowrap">
-                  {questionType}
-                </div>
-                <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900" />
-              </div>
-
-              {/* Dot — now clickable */}
-              <div
-                onClick={() => onJump(page)}
-                className={`
-                  flex items-center justify-center rounded-full font-bold
-                  transition-all duration-300 cursor-pointer
-                  ${active
-                    ? "w-7 h-7 bg-indigo-600 text-white text-[10px] shadow-md"
-                    : "w-4 h-4 bg-gray-300 text-gray-600 text-[8px] hover:bg-indigo-400 hover:text-white"
-                  }
-                `}
-              >
-                {page}
-              </div>
-
-            </div>
-          );
-        })}
-
-        {visiblePages[visiblePages.length - 1] < total && (
-          <>
-            {visiblePages[visiblePages.length - 1] < total - 1 && (
-              <span className="text-gray-400">...</span>
-            )}
-            <span
-              className="text-sm font-medium text-gray-500 cursor-pointer hover:text-indigo-600 transition"
-              onClick={() => onJump(total)}
-            >
-              {total}
-            </span>
-          </>
-        )}
-
-      </div>
-
-      {/* Next → Submit on last question (Subscribe/Log In when access-limited) */}
-      {isLast && lastAction ? (
-        <button
-          onClick={lastAction.onClick}
-          className="flex items-center gap-1 px-4 py-2 text-sm border border-amber-500 text-amber-800 bg-amber-50 rounded-lg hover:bg-amber-100 font-semibold transition"
-        >
-          {lastAction.label}
-          <ArrowRight size={14} />
-        </button>
-      ) : isLast ? (
-        <div className="relative group">
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
-            <div className="bg-emerald-800 text-white text-[10px] font-medium px-2 py-1 rounded whitespace-nowrap">
-              Confirm &amp; Submit Exam
-            </div>
-            <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-emerald-800" />
-          </div>
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent("exam:submit"))}
-            className="flex items-center gap-1 px-4 py-2 text-sm border border-emerald-500 text-emerald-600 bg-emerald-50 rounded-lg hover:bg-emerald-100 font-semibold transition"
-          >
-            Submit
-            <ArrowRight size={14} />
-          </button>
-        </div>
-      ) : (
-        <div className="relative group">
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
-            <div className="bg-gray-800 text-white text-[10px] font-medium px-2 py-1 rounded whitespace-nowrap">
-              Next Question
-            </div>
-            <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-800" />
-          </div>
-          <button
-            onClick={onNext}
-            disabled={current === total}
-            className="flex items-center gap-1 px-4 py-2 text-sm border border-indigo-500 text-indigo-600 rounded-lg hover:bg-indigo-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
-          >
-            Next
-            <ArrowRight size={14} />
-          </button>
-        </div>
-      )}
-
     </div>
   );
 }
@@ -576,35 +121,175 @@ function SubmitToast() {
   if (submitStatus === "idle") return null;
 
   return (
-    <div className={`
+    <div
+      className={`
       hidden md:flex fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999]
       items-center gap-2 px-4 py-2 rounded-full
       shadow-lg border text-xs font-semibold whitespace-nowrap
       transition-all duration-300
       animate-in fade-in slide-in-from-bottom-3
-      ${submitStatus === "saving" ? "bg-slate-100 border-slate-300 text-slate-500" : ""}
+      ${submitStatus === "saving" ? "bg-slate-100 border-slate-300 text-slate-600" : ""}
       ${submitStatus === "saved" ? "bg-emerald-50 border-emerald-300 text-emerald-700" : ""}
       ${submitStatus === "error" ? "bg-red-50 border-red-300 text-red-600" : ""}
-    `}>
+    `}
+    >
       {submitStatus === "saving" && <span className="animate-spin inline-block">⏳</span>}
       {submitStatus === "saved" && <span>✓</span>}
       {submitStatus === "error" && <span>✕</span>}
       <span>
-        {submitStatus === "saving" && "Saving . . . ⚓"}
-        {submitStatus === "saved" && (submitMessage ?? "Saved Successfully ⚓")}
-        {submitStatus === "error" && (submitMessage ?? "Failed to Save — Check Internet Connection ⚓")}
+        {submitStatus === "saving" && "Saving answer..."}
+        {submitStatus === "saved" && (submitMessage ?? "Saved Successfully")}
+        {submitStatus === "error" && (submitMessage ?? "Failed to Save — Check Connection")}
       </span>
     </div>
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CALCULATOR MODAL
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+function CalculatorModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[10005] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-xs bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="bg-[#0c1929] px-4 py-3 flex items-center justify-between text-white">
+          <div className="flex items-center gap-2">
+            <Calculator size={16} className="text-cyan-400" />
+            <h3 className="font-bold text-xs uppercase tracking-wider">Calculator</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition cursor-pointer"
+          >
+            <X size={15} />
+          </button>
+        </div>
+        <div className="p-4 bg-slate-50">
+          <CustomMiniCalculator />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELP MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+
+function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[10005] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="bg-[#0c1929] px-5 py-4 flex items-center justify-between text-white">
+          <div className="flex items-center gap-2">
+            <HelpCircle size={18} className="text-cyan-400" />
+            <h3 className="font-bold text-sm">Exam Instructions &amp; Help</h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <div className="p-5 space-y-4 text-xs sm:text-sm text-slate-600">
+          <div className="flex items-start gap-3">
+            <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0 text-xs">
+              1
+            </span>
+            <div>
+              <p className="font-semibold text-slate-800">Navigation</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Use the <strong>Previous</strong> and <strong>Next</strong> buttons or click any question number on the left sidebar to jump directly.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-bold shrink-0 text-xs">
+              2
+            </span>
+            <div>
+              <p className="font-semibold text-slate-800">Flag for Review</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Click <strong>Flag for Review</strong> on the question card or toggle <strong>Mark for Review</strong> at the bottom to flag questions you want to revisit.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold shrink-0 text-xs">
+              3
+            </span>
+            <div>
+              <p className="font-semibold text-slate-800">Calculator &amp; Tools</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Access the built-in mini calculator anytime by clicking the <strong>Calculator</strong> button in the top navigation bar.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold shrink-0 text-xs">
+              4
+            </span>
+            <div>
+              <p className="font-semibold text-slate-800">Ending &amp; Submitting</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Click <strong>End Exam</strong> in the top header or <strong>Submit Exam</strong> on the final question. You will see an answer summary before confirming.
+              </p>
+            </div>
+          </div>
+          <div className="pt-2">
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs sm:text-sm transition cursor-pointer"
+            >
+              Got it, Resume Exam
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // RESUME POSITION TOAST
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 function ResumePositionToast({
-  savedIndex,      // 0-based
+  savedIndex,
   flatTotal,
   storageKey,
   onAccept,
@@ -632,32 +317,19 @@ function ResumePositionToast({
   return (
     <div className="fixed top-[35%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9998] w-[calc(100%-2rem)] max-w-md animate-in fade-in zoom-in-95 duration-300">
       <div className="bg-white border border-indigo-200 rounded-xl shadow-2xl overflow-hidden">
-
-        {/* Header */}
         <div className="bg-indigo-600 px-4 py-2.5 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-white text-sm font-bold">Resume Where You Left Last ⚓</span>
-          </div>
-          <button
-            onClick={onDismiss}
-            className="text-indigo-200 hover:text-white transition"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+          <span className="text-white text-sm font-bold">Resume Where You Left Last</span>
+          <button onClick={onDismiss} className="text-indigo-200 hover:text-white transition">
+            <X size={16} />
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-4 py-3">
           <p className="text-sm text-gray-700 mb-3">
-            You Were On{" "}
-            <span className="font-black text-indigo-600 text-base">Question {questionNumber}</span>
-            <span className="text-gray-400 text-xs"> / {flatTotal}</span>
-            {" "}— Jump Back There ?
+            You were on <span className="font-bold text-indigo-600 text-base">Question {questionNumber}</span>
+            <span className="text-gray-400 text-xs"> / {flatTotal}</span> — jump back there?
           </p>
 
-          {/* Mini progress */}
           <div className="h-1.5 w-full bg-gray-100 rounded-full mb-3 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-full transition-all"
@@ -665,39 +337,36 @@ function ResumePositionToast({
             />
           </div>
 
-          {/* Primary actions */}
           <div className="flex gap-2 mb-2">
             <button
               onClick={onAccept}
-              className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition"
+              className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition cursor-pointer"
             >
               Go to Q {questionNumber}
             </button>
             <button
               onClick={onDismiss}
-              className="flex-1 py-2 border border-gray-300 hover:bg-purple-300 text-gray-900 text-sm font-medium rounded-lg transition"
+              className="flex-1 py-2 border border-gray-300 hover:bg-slate-50 text-gray-800 text-sm font-medium rounded-lg transition cursor-pointer"
             >
               Start from Q 1
             </button>
           </div>
 
-          {/* Secondary actions */}
           <div className="flex gap-2">
             <button
               onClick={handleAlwaysGo}
-              className="flex-1 py-1.5 border border-indigo-200 text-indigo-900 text-xs font-medium rounded-lg hover:bg-green-200 transition"
+              className="flex-1 py-1.5 border border-indigo-200 text-indigo-900 text-xs font-medium rounded-lg hover:bg-indigo-50 transition cursor-pointer"
             >
-              Always Resume for This Exam
+              Always Resume
             </button>
             <button
               onClick={handleNeverAsk}
-              className="flex-1 py-1.5 border border-red-800 text-black text-xs font-medium rounded-lg hover:bg-yellow-500 transition"
+              className="flex-1 py-1.5 border border-slate-200 text-slate-600 text-xs font-medium rounded-lg hover:bg-slate-100 transition cursor-pointer"
             >
-              Never Ask Again !
+              Never Ask Again
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );
@@ -711,6 +380,7 @@ function SubmitConfirmModal({
   open,
   onConfirm,
   onCancel,
+  onChooseDifferentExam,
   examTitle,
   totalQuestions,
   answeredCount,
@@ -718,6 +388,7 @@ function SubmitConfirmModal({
   open: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  onChooseDifferentExam?: () => void;
   examTitle: string;
   totalQuestions: number;
   answeredCount: number;
@@ -727,7 +398,9 @@ function SubmitConfirmModal({
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCancel(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onCancel]);
@@ -736,94 +409,238 @@ function SubmitConfirmModal({
 
   return (
     <div
-      className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}
+      className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onCancel();
+      }}
     >
       <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-
-        {/* Header */}
-        <div className="bg-green-200 px-4 py-3 text-indigo-800 text-center">
-          <h2 className="text-base font-black tracking-tight"> Confirm &amp; Submit Exam ⚓</h2>
-          <p className="text-emerald-800 text-xs mt-0.5 truncate">{examTitle}</p>
+        <div className="bg-[#0c1929] px-5 py-4 text-white text-center">
+          <h2 className="text-base font-bold tracking-tight">Kindly Confirm to End Exam</h2>
+          <p className="text-slate-400 text-xs mt-0.5 truncate">{examTitle}</p>
         </div>
 
-        {/* Body */}
-        <div className="px-5 py-4 space-y-3">
-
-          {/* Progress ring area */}
-          <div className="flex items-center justify-center gap-4">
-            {/* Circle */}
-            <div className="relative w-16 h-16 flex-shrink-0">
+        <div className="px-5 py-5 space-y-4">
+          <div className="flex items-center justify-center gap-5">
+            <div className="relative w-16 h-16 shrink-0">
               <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
                 <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" strokeWidth="3" />
                 <circle
-                  cx="18" cy="18" r="15.9" fill="none"
+                  cx="18"
+                  cy="18"
+                  r="15.9"
+                  fill="none"
                   stroke={percentage === 100 ? "#16a34a" : percentage >= 50 ? "#ca8a04" : "#dc2626"}
                   strokeWidth="3"
                   strokeDasharray={`${percentage} ${100 - percentage}`}
                   strokeLinecap="round"
                 />
               </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-black text-slate-700">
+              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-800">
                 {percentage}%
               </span>
             </div>
 
-            {/* Stats */}
-            <div className="space-y-1 text-sm">
+            <div className="space-y-1.5 text-xs sm:text-sm">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                <span className="text-slate-600">Answered : <span className="font-bold text-emerald-600">{answeredCount}</span></span>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span className="text-slate-600">
+                  Answered: <span className="font-bold text-emerald-600">{answeredCount}</span>
+                </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0" />
-                <span className="text-slate-600">Remaining : <span className="font-bold text-red-500">{remaining}</span></span>
+                <span className="w-2 h-2 rounded-full bg-red-400 shrink-0" />
+                <span className="text-slate-600">
+                  Remaining: <span className="font-bold text-red-500">{remaining}</span>
+                </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-slate-400 flex-shrink-0" />
-                <span className="text-slate-600">Total Qs : <span className="font-bold text-slate-700">{totalQuestions}</span></span>
+                <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                <span className="text-slate-600">
+                  Total Questions: <span className="font-bold text-slate-800">{totalQuestions}</span>
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Warning if unanswered */}
           {remaining > 0 && (
-            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              <span className="text-amber-500 text-sm flex-shrink-0">⚠️</span>
-              <p className="text-xs text-amber-700 font-medium">
-                You Still Have <span className="font-black">{remaining}</span> Unanswered {remaining === 1 ? "question" : "questions"}. Unanswered Questions Will be Marked Incorrect 🪝
+            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+              <span className="text-amber-500 text-sm shrink-0">⚠️</span>
+              <p className="text-xs text-amber-800 font-medium">
+                You still have <span className="font-bold">{remaining}</span> unanswered {remaining === 1 ? "question" : "questions"}. Unanswered questions will be scored as incorrect.
               </p>
             </div>
           )}
 
-          {/* Good luck */}
           <p className="text-center text-xs text-slate-500 font-medium">
-            {percentage === 100 ? "🎉 All Questions Answered — Best of Luck 🪝" : "Good Luck — You've Got This 🪝"}
+            {percentage === 100 ? "All questions answered — best of luck!" : "Are you ready to submit your exam?"}
           </p>
 
-          {/* Actions */}
           <div className="flex gap-2 pt-1">
             <button
               onClick={onCancel}
-              className="flex-1 py-2 rounded-xl border bg-yellow-300 border-slate-300 text-slate-600 text-sm font-semibold hover:bg-slate-50 transition"
+              className="flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs sm:text-sm font-semibold hover:bg-slate-50 transition cursor-pointer"
             >
-              Cancel &amp; Close
+              Cancel &amp; Return
             </button>
             <button
               onClick={onConfirm}
-              className="flex-1 py-2 rounded-xl bg-green-300 hover:bg-purple-400 text-black text-sm font-bold transition"
+              className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold transition shadow-sm cursor-pointer"
             >
-              Confirm &amp; Submit
+              Confirm &amp; End
             </button>
           </div>
 
+          {onChooseDifferentExam && (
+            <button
+              type="button"
+              onClick={onChooseDifferentExam}
+              className="w-full py-2 px-3 text-xs text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 pt-1"
+            >
+              <RotateCcw size={13} />
+              <span>Choose a Different Exam instead</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// CHOOSE EXAM CONFIRM MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ChooseExamModal({
+  open,
+  onClose,
+  examSession,
+}: {
+  open: boolean;
+  onClose: () => void;
+  examSession: ReturnType<typeof useLiveStrataExamContext>["examSession"];
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const identifier = searchParams.get("identifier") ?? "";
+  const resolvedIdentifier =
+    examSession?.exam?.assessmentGuidId ??
+    examSession?.exam?.assessmentId?.toString() ??
+    identifier;
+
+  const handleGoBack = () => {
+    onClose();
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      window.history.back();
+    } else {
+      router.push("/dashboards");
+    }
+  };
+
+  const handleOpenCards = () => {
+    onClose();
+    const target = resolvedIdentifier
+      ? `/dashboards/nclex-pn/vista/exams/distinct/overview?identifier=${resolvedIdentifier}`
+      : `/dashboards`;
+    router.push(target);
+  };
+
+  const handleOpenList = () => {
+    onClose();
+    const target = resolvedIdentifier
+      ? `/dashboards/nclex-pn/vista/exams/distinct/outline?identifier=${resolvedIdentifier}`
+      : `/dashboards`;
+    router.push(target);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[10010] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="bg-indigo-600 px-5 py-3.5 flex items-center justify-between text-white">
+          <div className="flex items-center gap-2">
+            <RotateCcw size={16} className="text-indigo-200" />
+            <h2 className="text-sm font-bold text-white">Choose a Different Exam</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg text-indigo-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-5 space-y-4">
+          <div className="text-center">
+            <p className="text-sm text-slate-800 font-semibold">
+              Leave this exam session?
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              Your current progress and answers have been safely saved.
+            </p>
+          </div>
+
+          <div className="space-y-2 pt-1">
+            {/* Primary Action: Go Back to Exams List / Previous Page */}
+            <button
+              onClick={handleGoBack}
+              className="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+            >
+              <ArrowLeft size={15} />
+              <span>Go Back to Exams</span>
+            </button>
+
+            {/* Quick Browse Options */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleOpenCards}
+                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer text-center"
+              >
+                Browse Cards
+              </button>
+              <button
+                onClick={handleOpenList}
+                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer text-center"
+              >
+                Browse List
+              </button>
+            </div>
+
+            {/* Cancel Button */}
+            <button
+              onClick={onClose}
+              className="w-full py-2 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition cursor-pointer mt-1"
+            >
+              Cancel &amp; Stay on Exam
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ATTEMPTS EXCEEDED MODAL
+// ─────────────────────────────────────────────────────────────────────────────
 
 function AttemptsExceededModal({
   open,
@@ -842,18 +659,6 @@ function AttemptsExceededModal({
   const [complainText, setComplainText] = useState("");
   const [complainRating, setComplainRating] = useState(30);
   const [complainSent, setComplainSent] = useState(false);
-
-  const VISTA_STRATA_PANEL = "atiteas";
-  const VISTA_STRATA = "exams";
-  const BASE_TOGGLE_ROUTE = `/dashboards/${VISTA_STRATA_PANEL}/vista/${VISTA_STRATA}`;
-
-  const resolvedIdentifier =
-    examSession?.exam?.assessmentGuidId ??
-    examSession?.exam?.assessmentId?.toString() ??
-    "";
-
-  const overviewUrl = `${BASE_TOGGLE_ROUTE}/distinct/overview${resolvedIdentifier ? `?identifier=${resolvedIdentifier}` : ""}`;
-  const outlineUrl = `${BASE_TOGGLE_ROUTE}/distinct/outline${resolvedIdentifier ? `?identifier=${resolvedIdentifier}` : ""}`;
 
   useEffect(() => {
     if (open) {
@@ -879,62 +684,29 @@ function AttemptsExceededModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[10010] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[10010] flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
       <div className="w-full max-w-sm rounded-2xl border border-red-200 bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-
-        {/* ── HEADER ── */}
-        <div className="bg-green-700 px-4 py-3 text-white text-center">
-          <h2 className="text-base font-black">Attempts Exhausted ⚓</h2>
-          <p className="text-xs mt-0.5 text-red-200">You Have Used All Allowed Exam Attempts</p>
+        <div className="bg-red-700 px-4 py-3 text-white text-center">
+          <h2 className="text-base font-bold">Attempts Exhausted</h2>
+          <p className="text-xs mt-0.5 text-red-200">You have used all allowed attempts</p>
         </div>
 
-        {/* ── MAIN VIEW ── */}
         {view === "main" && (
           <div className="px-5 py-5 space-y-4">
-            <div className="text-center text-6xl">🚫</div>
-
+            <div className="text-center text-5xl">🚫</div>
             <p className="text-sm text-gray-700 font-medium text-center">
-              You have Used All{" "}
-              <span className="font-black text-red-700">{attemptsAllowed}</span>{" "}
-              Allowed Attempt{attemptsAllowed !== 1 ? "s" : ""} for this Exam.
+              You have used all <span className="font-bold text-red-700">{attemptsAllowed}</span> allowed attempt{attemptsAllowed !== 1 ? "s" : ""} for this exam.
             </p>
-
-            <p className="text-xs text-gray-500 text-center">
-              You Cannot Retake This Exam. Please Choose a Different Exam or Contact Your Exam Provider if You Believe This is an Error 🪝
-            </p>
-
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700 text-center">
-              📌 If you feel this is UnFair or an Error, Please Contact {" "}
-              <span className="font-bold">Exam Administrator / Provider</span> For Assistance.
-            </div>
-
-            {/* Row 1 — exam navigation */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => window.location.href = overviewUrl}
-                className="py-2.5 rounded-xl bg-indigo-200 hover:bg-yellow-400 text-black text-sm font-bold transition"
-              >
-                Open and Choose a Different Exam [ Cards ]
-              </button>
-              <button
-                onClick={() => window.location.href = outlineUrl}
-                className="py-2.5 rounded-xl bg-slate-200 hover:bg-yellow-400 text-black text-sm font-bold transition"
-              >
-                Open and Choose a Different Exam [ List ]
-              </button>
-            </div>
-
-            {/* Row 2 — complaint + exit */}
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={() => setView("complain")}
-                className="py-2.5 rounded-xl bg-orange-300 hover:bg-orange-600 text-black text-sm font-bold transition"
+                className="py-2.5 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-bold transition cursor-pointer"
               >
-                📩 Send a Complaint
+                📩 Send Feedback
               </button>
               <button
                 onClick={onExit}
-                className="py-2.5 rounded-xl border border-green-800 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold transition"
+                className="py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold transition cursor-pointer"
               >
                 ✕ Exit Exam
               </button>
@@ -942,143 +714,229 @@ function AttemptsExceededModal({
           </div>
         )}
 
-        {/* COMPLAINT VIEW */}
         {view === "complain" && (
           <div className="px-5 py-5 space-y-4">
             {complainSent ? (
               <div className="text-center py-6 space-y-2">
                 <div className="text-4xl">✅</div>
-                <p className="text-sm font-bold text-emerald-700">Complaint Submitted ⚓</p>
-                <p className="text-xs text-gray-500">Thank you — Your Feedback has Been Recorded.</p>
+                <p className="text-sm font-bold text-emerald-700">Feedback Submitted</p>
               </div>
             ) : (
               <>
-                <p className="text-sm font-semibold text-gray-800 text-center">Send a Complaint to The Exam Provider</p>
+                <p className="text-sm font-semibold text-gray-800 text-center">Send Message to Exam Provider</p>
                 <textarea
                   rows={4}
                   value={complainText}
                   onChange={(e) => setComplainText(e.target.value)}
-                  placeholder="Describe your Issue or Complaint Here . . . ✒️"
-                  className="w-full border border-orange-900 rounded-lg p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  placeholder="Describe your issue or question..."
+                  className="w-full border border-slate-300 rounded-xl p-3 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <div>
-                  <label className="text-xs font-medium text-gray-600 block mb-1">
-                    Satisfaction Rating — {" "}
-                    <span className="text-orange-600 font-bold">{complainRating}%</span>
-                  </label>
-                  <input
-                    type="range" min={0} max={100}
-                    value={complainRating}
-                    onChange={(e) => setComplainRating(Number(e.target.value))}
-                    className="w-full accent-orange-500"
-                  />
-                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => setView("main")}
-                    className="py-2 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-100 transition"
+                    className="py-2 rounded-xl border border-gray-300 text-gray-600 text-xs font-medium hover:bg-gray-100 transition cursor-pointer"
                   >
-                    ← Go Back
+                    ← Back
                   </button>
                   <button
                     onClick={handleComplainSubmit}
                     disabled={!complainText.trim()}
-                    className="py-2 rounded-xl bg-green-300 hover:bg-orange-600 text-black text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    className="py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-40 transition cursor-pointer"
                   >
-                    Submit Complaint
+                    Submit
                   </button>
                 </div>
               </>
             )}
           </div>
         )}
-
       </div>
     </div>
   );
 }
 
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// SUBMIT RESULT MODAL
+// ─────────────────────────────────────────────────────────────────────────────
 
 function SubmitResultModal({
   open,
   success,
   message,
   onClose,
-  onViewResults,
+  onChooseDifferentExam,
 }: {
   open: boolean;
   success: boolean;
   message: string | null;
   onClose: (startFresh: boolean) => void;
-  onViewResults: () => void;
+  onChooseDifferentExam?: () => void;
 }) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[10003] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[10003] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
       <div className="w-full max-w-sm rounded-2xl border bg-white shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-
-        <div className={`px-4 py-3 text-center ${success ? "bg-green-200" : "bg-red-200"}`}>
-          <h2 className="text-base font-black text-indigo-900">
-            {success ? "Exam Submitted Successfully ⚓" : "Exam Submission Failed ⚓"}
+        <div className={`px-4 py-3 text-center ${success ? "bg-emerald-600 text-white" : "bg-red-600 text-white"}`}>
+          <h2 className="text-base font-bold">
+            {success ? "Exam Submitted Successfully" : "Exam Submission Failed"}
           </h2>
         </div>
 
         <div className="px-5 py-5 space-y-4 text-center">
           <div className="text-5xl">{success ? "🎉" : "⚠️"}</div>
-          <p className="text-sm font-semibold text-gray-700">
-            {message ?? (success ? "Your Exam Has been Submitted and Marked Successfully." : "Something Went Wrong, Check Internet & Ensure Logged In")}
+          <p className="text-sm font-semibold text-slate-700">
+            {message ?? (success ? "Your exam has been submitted and scored." : "Something went wrong. Please check your connection.")}
           </p>
 
-          {!success && (
-            <p className="text-xs font-bold text-amber-800 bg-yellow-100 border border-amber-900 rounded-lg px-3 py-2">
-              💡 Your answers are still saved — you can retry submission or start a new attempt.
-            </p>
-          )}
-
-          {/* Primary actions — Results / Close */}
           <div className="flex gap-2">
-            <button
-              onClick={onViewResults}
-              className="flex-1 py-2.5 rounded-xl text-black font-bold text-sm transition bg-gradient-to-r from-green-200 via-yellow-400 to-cyan-200 border hover:from-indigo-700 hover:via-yellow-800 hover:to-cyan-800 hover:text-white"
-            >
-              Open &amp; View Results
-            </button>
             <button
               onClick={() => onClose(false)}
-              className="flex-1 py-2.5 rounded-xl text-black font-bold text-sm transition bg-gradient-to-r from-green-200 via-yellow-400 to-cyan-200 border hover:from-indigo-700 hover:via-yellow-800 hover:to-cyan-800 hover:text-white"
+              className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm transition cursor-pointer"
             >
-              Cancel &amp; Close
+              View Results
             </button>
-          </div>
-
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-xs text-gray-400 font-medium">Next Attempt Options</span>
-            </div>
-          </div>
-
-          {/* Secondary actions — attempt management */}
-          <div className="flex gap-2">
             <button
               onClick={() => onClose(true)}
-              className="flex-1 py-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition"
+              className="flex-1 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm transition cursor-pointer"
             >
-              ✨ Start New Attempt
-              <span className="block text-[9px] font-normal text-emerald-600 mt-0.5">Clears prior answers</span>
+              New Attempt
             </button>
+          </div>
+
+          {onChooseDifferentExam && (
             <button
-              onClick={() => onClose(false)}
-              className="flex-1 py-2.5 rounded-xl border-2 border-indigo-300 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 text-xs font-bold transition"
+              type="button"
+              onClick={onChooseDifferentExam}
+              className="w-full py-2.5 px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 cursor-pointer border border-indigo-200 mt-1"
             >
-              📋 Keep Prior Answers
-              <span className="block text-[9px] font-normal text-indigo-600 mt-0.5">Preloads last attempt</span>
+              <RotateCcw size={14} />
+              <span>Choose a Different Exam</span>
             </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QUESTION NAVIGATOR MODAL
+// ─────────────────────────────────────────────────────────────────────────────
+
+function QuestionNavigatorModal({
+  open,
+  onClose,
+  total,
+  currentIndex,
+  onSelect,
+  answeredMap,
+  allowedMaxIndex,
+  onRequireLogin,
+  onRequireSubscribe,
+  isGuest,
+}: {
+  open: boolean;
+  onClose: () => void;
+  total: number;
+  currentIndex: number;
+  onSelect: (index: number) => void;
+  answeredMap: Record<number, boolean>;
+  allowedMaxIndex?: number;
+  onRequireLogin?: () => void;
+  onRequireSubscribe?: () => void;
+  isGuest?: boolean;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[10010] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0c1929] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="bg-[#10B981] px-5 py-3.5 flex items-center justify-between text-white">
+          <div className="flex items-center gap-2">
+            <LayoutList size={18} />
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Question Navigator</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg text-emerald-100 hover:text-white hover:bg-white/10 transition cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="p-5 max-h-[70vh] overflow-y-auto space-y-4">
+          <div className="flex items-center justify-center gap-3 sm:gap-4 text-xs font-semibold pb-2 border-b border-slate-200 dark:border-white/10 flex-wrap">
+            <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+              <span className="w-3.5 h-3.5 rounded bg-blue-600 inline-block" /> Current
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+              <span className="w-3.5 h-3.5 rounded bg-emerald-600 inline-block" /> Answered
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+              <span className="w-3.5 h-3.5 rounded border border-slate-300 dark:border-slate-600 inline-block" /> Unanswered
+            </span>
+            {typeof allowedMaxIndex === "number" && allowedMaxIndex < total - 1 && (
+              <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                <span className="text-xs">🔒</span> Locked
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+            {Array.from({ length: total }, (_, i) => {
+              const isCurrent = i === currentIndex;
+              const isAnswered = Boolean(answeredMap[i]);
+              const isLocked = typeof allowedMaxIndex === "number" && i > allowedMaxIndex;
+
+              const handleClick = () => {
+                if (isLocked) {
+                  onClose();
+                  if (isGuest) {
+                    onRequireLogin?.();
+                  } else {
+                    onRequireSubscribe?.();
+                  }
+                  return;
+                }
+                onSelect(i);
+                onClose();
+              };
+
+              return (
+                <button
+                  key={i}
+                  onClick={handleClick}
+                  title={isLocked ? (isGuest ? "Login required" : "Subscription required") : `Question ${i + 1}`}
+                  className={`h-9 rounded-lg text-xs font-bold transition flex items-center justify-center cursor-pointer shadow-2xs relative ${
+                    isCurrent
+                      ? "bg-blue-600 text-white ring-2 ring-blue-400 ring-offset-1"
+                      : isLocked
+                        ? "bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 opacity-60 hover:opacity-100"
+                        : isAnswered
+                          ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                          : "border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  <span>{i + 1}</span>
+                  {isLocked && <span className="text-[10px] ml-0.5">🔒</span>}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1086,141 +944,386 @@ function SubmitResultModal({
   );
 }
 
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // LIVE EXAM PAGE
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
-export default function GenericLiveExamPage() {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const currentUrl = searchParams.toString()
-    ? `${pathname}?${searchParams.toString()}`
-    : pathname;
-
+export default function LiveExamPage() {
   const { examSession, loading, error } = useLiveStrataExamContext();
+  const { user } = useCurrentSystemUser();
+  const userName = user?.userName?.trim() || getUsernameCookie() || "Guest";
+  const userInitial = (userName.charAt(0) || "G").toUpperCase();
+
   const storageKey = examSession?.exam?.guidId
     ? `dynamic_live_exam_current_question_position_${examSession.exam.guidId}`
     : null;
+
   const [currentIndex, setCurrentIndex] = useState(0); // 0-based
-  const [modalStage, setModalStage] = useState<"impel" | "login" | "register">("impel");
-  const [loginInitialEmail, setLoginInitialEmail] = useState("");
-  const [loginInitialMessage, setLoginInitialMessage] = useState("");
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [attemptsBlocked, setAttemptsBlocked] = useState(false);
 
-  const { filteredSubscriptionPackages: subscriptionPackages } =
-    useDiscreteDominionSubscriptionPackages({ page: 1, perPage: 200 });
+  const pathname = usePathname();
+  const programSlug = useMemo(() => {
+    const match = pathname?.match(/\/(nclex-rn|nclex-pn|rn-nursing|lpn-nursing|ati-teas|hesi-a2|cna|ged|pre-nursing|certification)/);
+    return match?.[1] || "nclex-pn";
+  }, [pathname]);
 
-  const [showAccessDeniedModal, setShowAccessDeniedModal] = useState(false);
-  const [durationSecondsLeft, setDurationSecondsLeft] = useState<number | null>(null);
-  const [durationExpired, setDurationExpired] = useState(false);
-
-  const [authRequired, setAuthRequired] = useState(false);
-  const [showAuthAlert, setShowAuthAlert] = useState(false);
-
-  const { submitExam, answeredCount: sessionAnsweredCount, setSecondsLeft, submitTool } = useLiveExamActionContext();
-
-  // ── Prior Attempt Preview Banner ──────────────────────────────────────
-  // Populated from the results page's "Open Attempt" flow — present only
-  // when viewing a specific past attempt, not the live/current one.
-  const previewAttemptParam = searchParams.get("attempt");
-  const previewScoreParam = searchParams.get("score");
-  const previewPassedParam = searchParams.get("passed");
-  const previewPassMarkParam = searchParams.get("passmark");
-
-  const [showPriorAttemptBanner, setShowPriorAttemptBanner] = useState(
-    previewAttemptParam !== null
-  );
-
-  // First answer submitted this session means the user has started a new
-  // attempt — the banner no longer reflects what they're looking at.
-  useEffect(() => {
-    if (sessionAnsweredCount > 0) {
-      setShowPriorAttemptBanner(false);
+  const isGuest = useMemo(() => {
+    if (!user || !user.id) {
+      const cookieUser = getUsernameCookie();
+      return !cookieUser || cookieUser.toLowerCase() === "guest";
     }
-  }, [sessionAnsweredCount]);
+    return false;
+  }, [user]);
 
-  // Check attempts exhausted on load — status is irrelevant, count is truth
+  const { isSubscribed, subscriptionsLoading } = useExamSubscriptionAccess({
+    user,
+    isGuest,
+    programSlug,
+    exam: examSession?.exam,
+  });
+
+  // Modals
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [chooseExamOpen, setChooseExamOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const handleShareExam = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(window.location.href);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    }
+  };
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [resumeToast, setResumeToast] = useState<{ savedIndex: number } | null>(null);
+  const [submitResult, setSubmitResult] = useState<{ open: boolean; success: boolean; message: string | null }>({
+    open: false,
+    success: false,
+    message: null,
+  });
+
+  const [flaggedIds, setFlaggedIds] = useState<Record<number, boolean>>({});
+  const [splitLayout, setSplitLayout] = useState(false);
+
+  const [mobileToolbarState, setMobileToolbarState] = useState<{
+    starred: boolean;
+    pinned: boolean;
+    bookmarked: boolean;
+    flagged: boolean;
+    canShowFlag: boolean;
+  }>({
+    starred: false,
+    pinned: false,
+    bookmarked: false,
+    flagged: false,
+    canShowFlag: true,
+  });
+
+  useEffect(() => {
+    const handleToolbarState = (e: Event) => {
+      const detail = (e as CustomEvent<{
+        starred?: boolean;
+        pinned?: boolean;
+        bookmarked?: boolean;
+        flagged?: boolean;
+        canShowFlag?: boolean;
+      }>).detail;
+      if (detail) {
+        setMobileToolbarState({
+          starred: Boolean(detail.starred),
+          pinned: Boolean(detail.pinned),
+          bookmarked: Boolean(detail.bookmarked),
+          flagged: Boolean(detail.flagged),
+          canShowFlag: detail.canShowFlag !== false,
+        });
+      }
+    };
+    window.addEventListener("exam:toolbar:state", handleToolbarState);
+    return () => {
+      window.removeEventListener("exam:toolbar:state", handleToolbarState);
+    };
+  }, []);
+
+  const {
+    getAnswer,
+    submitExam,
+    pauseExam,
+    answeredCount: sessionAnsweredCount,
+    secondsLeft,
+    setSecondsLeft,
+    saveResidualDuration,
+    submitTool,
+  } = useLiveExamActionContext();
+
+  const { scaleGlobal, resetFontSizes, fontSizes } = useExamFontSize();
+  const { isDark, toggleTheme } = useExamTheme();
+
+  // Check attempts exhausted on load
   useEffect(() => {
     if (!examSession) return;
     const attemptsAllowed = examSession.exam?.attemptsAllowed ?? 0;
-    if (attemptsAllowed === 0) return; // 0 = unlimited
+    if (attemptsAllowed === 0) return;
     const sessionRow = examSession.examActions?.find(
       (a: { actionType: string; attemptCount?: number; residualDuration?: number; status?: string }) =>
         a.actionType === "Pause"
-    ); const attemptCount = sessionRow?.attemptCount ?? 0;
+    );
+    const attemptCount = sessionRow?.attemptCount ?? 0;
     if (attemptCount >= attemptsAllowed) {
       setAttemptsBlocked(true);
     }
   }, [examSession]);
 
+  // Derive flat list
+  const flat = useMemo(() => {
+    return examSession ? flattenQuestions(examSession.sections) : [];
+  }, [examSession]);
+  const flatTotal = flat.length;
+
+  // Progressive Paywall Limits:
+  // - Guest (not logged in): First 10 questions (indices 0 to 9)
+  // - Registered user: 30% of total questions (first 10 count inside this 30%)
+  // - Subscribed user: 100% of questions (unlimited)
+  const GUEST_LIMIT = 10;
+  const REGISTERED_PERCENT = 0.30;
+
+  const allowedMaxIndex = useMemo(() => {
+    if (flatTotal === 0) return 0;
+    if (isSubscribed) return flatTotal - 1;
+    if (isGuest) return Math.min(flatTotal - 1, GUEST_LIMIT - 1);
+    const regLimit = Math.max(GUEST_LIMIT, Math.floor(flatTotal * REGISTERED_PERCENT));
+    return Math.min(flatTotal - 1, regLimit - 1);
+  }, [flatTotal, isSubscribed, isGuest]);
+
+  const registeredLimitCount = useMemo(() => {
+    return Math.max(GUEST_LIMIT, Math.floor(flatTotal * REGISTERED_PERCENT));
+  }, [flatTotal]);
+
+  // Set in-progress markers in storage on exam load
   useEffect(() => {
-    const onAuthRequired = () => {
-      // Full login/register flow already open — don't yank the user back to
-      // Impel mid-flow. This is what caused "reduced back to impel" on retry.
-      if (authRequired) return;
-      if (shouldSuppressAuthAlert()) return;
-      setShowAuthAlert(true);
-    };
-    window.addEventListener("exam:auth:required", onAuthRequired);
-    return () => window.removeEventListener("exam:auth:required", onAuthRequired);
-  }, [authRequired]);
+    if (!examSession?.exam) return;
+    const guidId = examSession.exam.guidId;
+    const id = examSession.exam.id;
+    const examPayload = JSON.stringify({
+      id: examSession.exam.id,
+      guidId: examSession.exam.guidId,
+      title: examSession.exam.title,
+      subjectName: examSession.exam.subjectName || examSession.exam.assessmentName,
+      courseName: examSession.exam.courseName,
+      questionsCount: examSession.exam.questionsCount || flatTotal || 0,
+      startedAt: new Date().toISOString(),
+    });
+    try {
+      if (guidId) {
+        localStorage.setItem(`exam_in_progress_${guidId}`, examPayload);
+        sessionStorage.setItem(`exam_in_progress_${guidId}`, examPayload);
+        if (examSession.exam.title) {
+          localStorage.setItem(`exam_title_${guidId}`, examSession.exam.title);
+          sessionStorage.setItem(`exam_title_${guidId}`, examSession.exam.title);
+        }
+      }
+      if (id) {
+        localStorage.setItem(`exam_in_progress_${id}`, examPayload);
+        sessionStorage.setItem(`exam_in_progress_${id}`, examPayload);
+        if (examSession.exam.title) {
+          localStorage.setItem(`exam_title_${id}`, examSession.exam.title);
+          sessionStorage.setItem(`exam_title_${id}`, examSession.exam.title);
+        }
+      }
+    } catch {}
+  }, [examSession?.exam, flatTotal]);
 
-  const authFlowOpenedRef = useRef(false);
+  const answeredMap = useMemo(() => {
+    const map: Record<number, boolean> = {};
+    flat.forEach((item, idx) => {
+      const a = getAnswer(item.question.id);
+      if (a != null || item.question.savedUserAnswer != null) {
+        map[idx] = true;
+      }
+    });
+    return map;
+  }, [flat, getAnswer]);
 
-  const openAuthFlow = useCallback(() => {
-    authFlowOpenedRef.current = true;
-    setShowAuthAlert(false);
-    setModalStage("impel");
-    setAuthRequired(true);
-    setExamPaused(true); // block nav/submit only once the real auth modal is up
-  }, []);
-
-  const closeAuthAlert = useCallback((dontShowAgain: boolean) => {
-    setShowAuthAlert(false);
-    if (dontShowAgain) suppressAuthAlertForever();
-    else suppressAuthAlertTemporarily();
-  }, []);
-
-  // Restore residual duration from backend on load ────────────────────────
+  // Initialize flagged, starred, pinned, bookmarked questions from backend
   useEffect(() => {
-    if (!examSession) return;
-    const sessionRow = examSession.examActions?.find(
-      (a: { actionType: string; attemptCount?: number; status?: string }) =>
-        a.actionType === "Pause"
-    ); if (sessionRow?.residualDuration && sessionRow.residualDuration > 0) {
-      setSecondsLeft(Math.round(sessionRow.residualDuration * 60));
+    if (!examSession?.sections) return;
+    const initialFlags: Record<number, boolean> = {};
+
+    for (const s of examSession.sections) {
+      for (const q of s.questions ?? []) {
+        for (const a of q.questionActions ?? []) {
+          try {
+            const parsed = JSON.parse(a.actionContent ?? "{}");
+            if (parsed.Flag) initialFlags[q.id] = true;
+          } catch {
+            // ignore non-json action content
+          }
+        }
+      }
     }
-  }, [examSession, setSecondsLeft]);
+    setFlaggedIds(initialFlags);
+  }, [examSession]);
 
+  // Exam state checks
   const [examPaused, setExamPaused] = useState(false);
   const [isCancelled, setIsCancelled] = useState(
-    examSession?.examActions?.[0]?.status === "Cancelled"
+    false
   );
-  const isBlocked = examPaused || isCancelled;
+  const isBlocked = examPaused;
   const isBlockedRef = useRef(isBlocked);
-  useEffect(() => { isBlockedRef.current = isBlocked; }, [isBlocked]);
+  useEffect(() => {
+    isBlockedRef.current = isBlocked;
+  }, [isBlocked]);
 
-  const [resumeToast, setResumeToast] = useState<{ savedIndex: number } | null>(null);
-  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  useEffect(() => {
+    const row = examSession?.examActions?.[0];
+    if (!row) return;
+    // Past cancelled attempts do not block active practice sessions
+    if (row.status === "Paused") setExamPaused(true);
+  }, [examSession]);
 
-  const [submitResult, setSubmitResult] = useState<{ open: boolean; success: boolean; message: string | null }>({
-    open: false, success: false, message: null,
-  });
-  const [preloadPrior, setPreloadPrior] = useState(false);
+  useEffect(() => {
+    const onPaused = () => setExamPaused(true);
+    const onResume = () => {
+      setExamPaused(false);
+      setIsCancelled(false);
+    };
+    window.addEventListener("exam:paused", onPaused);
+    window.addEventListener("exam:resume", onResume);
+    return () => {
+      window.removeEventListener("exam:paused", onPaused);
+      window.removeEventListener("exam:resume", onResume);
+    };
+  }, []);
+
+  // Timer logic
+  const examMode = (examSession?.exam?.selectedMode ?? "").toLowerCase().trim();
+  const isStrictMode = examMode === "exam" || examMode === "test";
+  const totalSeconds = (examSession?.exam?.duration ?? 0) * 60;
+
+  const examActions = examSession?.examActions ?? [];
+  const latestAction = examActions[examActions.length - 1];
+  const backendResidualSeconds = latestAction?.residualDuration
+    ? Math.round(latestAction.residualDuration * 60)
+    : null;
+
+  const [timeWarning, setTimeWarning] = useState(false);
+  const [timeUp, setTimeUp] = useState(false);
 
   const isNewAttempt = examSession?.examActions?.[0]?.status === "Completed";
   const currentAttemptNumber = examSession?.examActions?.[0]?.attemptCount ?? 0;
 
+  // Seed timer
+  useEffect(() => {
+    if (totalSeconds <= 0) return;
+    const attemptModeKeyTimer = examSession?.exam?.guidId
+      ? `exam_attempt_mode_${examSession.exam.guidId}`
+      : null;
+    const attemptModeTimer = attemptModeKeyTimer ? sessionStorage.getItem(attemptModeKeyTimer) : null;
+    const shouldResetTimer = isNewAttempt && attemptModeTimer !== "prior";
+
+    const startFrom = shouldResetTimer ? totalSeconds : (backendResidualSeconds ?? totalSeconds);
+    setSecondsLeft(startFrom);
+    setTimeWarning(false);
+    setTimeUp(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalSeconds, isNewAttempt, backendResidualSeconds]);
+
+  // Countdown tick
+  useEffect(() => {
+    if (totalSeconds <= 0) return;
+    if (timeUp) return;
+    if (examPaused) return;
+
+    const warningThreshold = Math.floor(totalSeconds * 0.2);
+
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => {
+        const next = prev - 1;
+        if (next <= warningThreshold) setTimeWarning(true);
+        if (next <= 0) {
+          clearInterval(interval);
+          setTimeUp(true);
+          return 0;
+        }
+        return next;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [totalSeconds, timeUp, setSecondsLeft, examPaused]);
+
+  // Strict mode time-up auto submit
+  useEffect(() => {
+    if (!timeUp || !isStrictMode) return;
+    const examId = examSession?.exam?.id ?? 0;
+    const examGuidId = examSession?.exam?.guidId ?? "";
+    if (!examId || !examGuidId) return;
+    submitExam({ examId, examGuidId, reason: "Time up — Auto Submitted" });
+  }, [timeUp, isStrictMode, examSession, submitExam]);
+
+  // Periodic residual duration autosave
+  const secondsLeftRef = useRef(secondsLeft);
+  useEffect(() => {
+    secondsLeftRef.current = secondsLeft;
+  }, [secondsLeft]);
+
+  useEffect(() => {
+    const examId = examSession?.exam?.id ?? 0;
+    const examGuidId = examSession?.exam?.guidId ?? "";
+    if (!examId || !examGuidId) return;
+
+    const saveResidual = () => {
+      saveResidualDuration({
+        examId,
+        examGuidId,
+        residualDuration: parseFloat((secondsLeftRef.current / 60).toFixed(4)),
+        reason: "Periodic Residual Duration Autosave (2-Minute Interval)",
+        status: "true",
+      });
+    };
+
+    const periodicTimer = setInterval(saveResidual, 2 * 60 * 1000);
+    let hideTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = setTimeout(saveResidual, 300);
+      } else {
+        if (hideTimer) {
+          clearTimeout(hideTimer);
+          hideTimer = null;
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("beforeunload", saveResidual);
+
+    return () => {
+      clearInterval(periodicTimer);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("beforeunload", saveResidual);
+      if (hideTimer) clearTimeout(hideTimer);
+    };
+  }, [examSession?.exam?.id, examSession?.exam?.guidId, saveResidualDuration]);
+
+  // Answer count calculation
   const answeredCount = useMemo(() => {
     if (!examSession) return sessionAnsweredCount;
 
-    // Fresh attempt chosen — only count live answers from this session
-    if (isNewAttempt && !preloadPrior) {
+    const attemptModeKey = examSession.exam?.guidId
+      ? `exam_attempt_mode_${examSession.exam.guidId}`
+      : null;
+    const isFreshAttempt = isNewAttempt && (attemptModeKey ? sessionStorage.getItem(attemptModeKey) !== "prior" : true);
+
+    if (isFreshAttempt) {
       return sessionAnsweredCount;
     }
 
-    // Count questions whose savedUserAnswer matches the current attempt number
     const allQuestions = (examSession.sections ?? []).flatMap(
       (s: { questions?: { savedUserAnswer?: { attemptNumber?: number } }[] }) =>
         s.questions ?? []
@@ -1231,295 +1334,132 @@ export default function GenericLiveExamPage() {
     ).length;
 
     return Math.max(currentAttemptAnswered, sessionAnsweredCount);
-  }, [examSession, sessionAnsweredCount, isNewAttempt, preloadPrior, currentAttemptNumber]);
+  }, [examSession, sessionAnsweredCount, isNewAttempt, currentAttemptNumber]);
 
-  // Stamp window so question components can read it on mount
-  // Also honour the sessionStorage choice set by the SubmitResultModal
-  useEffect(() => {
-    if (!examSession?.exam?.guidId) return;
-    const modeKey = `exam_attempt_mode_${examSession.exam.guidId}`;
-    const targetAttemptKey = `exam_attempt_target_number_${examSession.exam.guidId}`;
-    const savedMode = sessionStorage.getItem(modeKey);
-    const savedTargetAttempt = sessionStorage.getItem(targetAttemptKey);
+  const questionsRemaining = Math.max(0, flatTotal - answeredCount);
 
-    if (savedMode === "prior") {
-      setPreloadPrior(true);
-      (window as Window & { __examIsNewAttempt?: boolean }).__examIsNewAttempt = false;
-
-      if (savedTargetAttempt !== null) {
-        const targetAttemptNumber = parseInt(savedTargetAttempt, 10);
-        (window as Window & { __examTargetAttemptNumber?: number }).__examTargetAttemptNumber = targetAttemptNumber;
-        window.dispatchEvent(
-          new CustomEvent("exam:attempt:prior", { detail: { attemptNumber: targetAttemptNumber } })
-        );
-        sessionStorage.removeItem(targetAttemptKey);
-      } else {
-        window.dispatchEvent(new CustomEvent("exam:attempt:prior"));
-      }
-
-      sessionStorage.removeItem(modeKey);
-    } else if (savedMode === "fresh") {
-      setPreloadPrior(false);
-      (window as Window & { __examIsNewAttempt?: boolean }).__examIsNewAttempt = true;
-      window.dispatchEvent(new CustomEvent("exam:attempt:fresh"));
-      sessionStorage.removeItem(modeKey);
-      sessionStorage.removeItem(targetAttemptKey);
-    } else {
-      (window as Window & { __examIsNewAttempt?: boolean }).__examIsNewAttempt = isNewAttempt && !preloadPrior;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [examSession?.exam?.guidId]);
-
-  // Expose current attempt number globally so question components can detect stale answers
-  useEffect(() => {
-    if (!examSession) return;
-    const currentAttempt = examSession.examActions?.[0]?.attemptCount ?? 0;
-    (window as Window & { __examCurrentAttempt?: number }).__examCurrentAttempt = currentAttempt;
-  }, [examSession]);
-
-  useEffect(() => {
-    const row = examSession?.examActions?.[0];
-    if (!row) return;
-    setIsCancelled(row.status === "Cancelled");
-    if (row.status === "Paused") setExamPaused(true);
-  }, [examSession]);
-
-  useEffect(() => {
-    const onPaused = () => setExamPaused(true);
-    const onResume = () => { setExamPaused(false); setIsCancelled(false); };
-    window.addEventListener("exam:paused", onPaused);
-    window.addEventListener("exam:resume", onResume);
-    return () => {
-      window.removeEventListener("exam:paused", onPaused);
-      window.removeEventListener("exam:resume", onResume);
-    };
-  }, []);
-
-
-  // ── Resolve Subscription Access Against This Exam's Learning Hierarchy ──
-  const subscriptionAccess = useMemo<AccessCheckResult>(
-    () => resolveSubscriptionAccess(subscriptionPackages, examSession?.exam),
-    [subscriptionPackages, examSession?.exam]
-  );
-
-  // Public exams bypass subscription checks and accessGroup restrictions
-  // entirely — every question is shown, unlimited, no duration cap.
-  const isPublicAccess = examSession?.exam?.accessType === "Public";
-
-  // Ref (not state) so this stays true across re-renders even though
-  // `subscriptionAccess` is a new object every time examSession/subscriptionPackages
-  const subscriptionAlertShownRef = useRef(false);
-
-  useEffect(() => {
-    if (!examSession) return;
-    if (isPublicAccess) return;
-    if (subscriptionAlertShownRef.current) return;
-    if (subscriptionAccess.matchedPackages.length > 0 && !subscriptionAccess.hasFullAccess) {
-      if (shouldSuppressSubscriptionAlert(examSession.exam?.guidId)) return;
-      subscriptionAlertShownRef.current = true;
-      setShowAccessDeniedModal(true);
-    }
-  }, [examSession, subscriptionAccess, isPublicAccess]);
-
-  const closeSubscriptionAlert = useCallback((dontShowAgain: boolean) => {
-    setShowAccessDeniedModal(false);
-    if (dontShowAgain) suppressSubscriptionAlertForever(examSession?.exam?.guidId);
-  }, [examSession?.exam?.guidId]);
-
-  const examAccess = examSession?.exam as ExamWithAccessRules | undefined;
-
-  const { user, loading: userLoading } = useCurrentSystemUser();
-  const isLoggedIn = !!user;
-
-  // Derive flat list (safe before data arrives), then gate it
-  const rawFlat = examSession ? flattenQuestions(examSession.sections) : [];
-
-  // Guest on a non-public exam → only the curated targetQuestions
-  const guestIds = useMemo(() => parseTargetQuestionIds(examAccess?.targetQuestions), [examAccess?.targetQuestions]);
-  const guestLocked = !isPublicAccess && !userLoading && !isLoggedIn && guestIds.length > 0;
-
-  const restrictedFlat = isPublicAccess
-    ? rawFlat
-    : guestLocked
-      ? rawFlat.filter((f) => guestIds.includes(Number((f.question as { id?: number }).id)))
-      : subscriptionAccess.hasFullAccess
-        ? rawFlat
-        : applyAccessGroupRestriction(rawFlat, examAccess?.accessGroup, examAccess?.accessValue);
-
-  const flat = restrictedFlat.map((item, i) => ({ ...item, globalIndex: i + 1, total: restrictedFlat.length }));
-  const flatTotal = flat.length;
-
-  // Logged-in (or guest without curated questions) user who was actually cut off
-  // by the Amount / Percentage restriction → show Subscribe instead of Submit
-  const accessLocked =
-    !isPublicAccess &&
-    !guestLocked &&
-    !userLoading &&
-    !subscriptionAccess.hasFullAccess &&
-    restrictedFlat.length < rawFlat.length;
-
-  const handleUnlock = useCallback(() => {
-    if (!isLoggedIn) { openAuthFlow(); return; }
-    setShowAccessDeniedModal(true);
-  }, [isLoggedIn, openAuthFlow]);
-
-  // After logging in through the prompt → just reload, never show the login again
-  useEffect(() => {
-    if (userLoading) return;
-    if (authFlowOpenedRef.current && isLoggedIn) {
-      authFlowOpenedRef.current = false;
-      setAuthRequired(false);
-      setShowAuthAlert(false);
-      window.location.reload();
-    }
-  }, [userLoading, isLoggedIn]);
-
-  // What the footer should show on the last question instead of Submit
-  const lockAction: "subscribe" | "login" | null =
-    accessLocked || guestLocked ? (isLoggedIn ? "subscribe" : "login") : null;
-
-  // Footer's Subscribe / Log In button
-  useEffect(() => {
-    const onUnlock = () => handleUnlock();
-    window.addEventListener("exam:unlock", onUnlock);
-    return () => window.removeEventListener("exam:unlock", onUnlock);
-  }, [handleUnlock]);
-
-  // Guest reached the last curated question → open the existing AuthRequiredModal.
-  // Bypasses the "do not show again" suppression on purpose: this is a gate, not a nag.
-  useEffect(() => {
-    if (!guestLocked || flatTotal === 0) return;
-    if (currentIndex !== flatTotal - 1) return;
-    if (authRequired) return;
-    setShowAuthAlert(true);
-  }, [guestLocked, currentIndex, flatTotal, authRequired]);
-
-  // Single source of truth for navigation
-  // Both InPageNav and Footer call these. InPageNav calls directly; Footer via window events. 
+  // Navigation handlers
   const handlePrev = useCallback(() => {
-    if (isBlockedRef.current) { window.dispatchEvent(new CustomEvent("exam:paused:intercept")); return; }
+    if (isBlockedRef.current) {
+      window.dispatchEvent(new CustomEvent("exam:paused:intercept"));
+      return;
+    }
     setCurrentIndex((i) => Math.max(0, i - 1));
   }, []);
 
-  const handleNext = useCallback((total: number) => {
-    if (isBlockedRef.current) { window.dispatchEvent(new CustomEvent("exam:paused:intercept")); return; }
-    setCurrentIndex((i) => Math.min(total - 1, i + 1));
-  }, []);
+  const handleNext = useCallback((total?: number) => {
+    if (isBlockedRef.current) {
+      window.dispatchEvent(new CustomEvent("exam:paused:intercept"));
+      return;
+    }
+    const maxTotal = typeof total === "number" && total > 0 ? total : flatTotal;
 
-  // Listen for Footer events
+    // Check paywall gating before moving forward
+    if (currentIndex >= allowedMaxIndex) {
+      if (isGuest) {
+        setShowLoginModal(true);
+        return;
+      }
+      if (!isSubscribed) {
+        setShowSubscriptionModal(true);
+        return;
+      }
+    }
+
+    setCurrentIndex((i) => Math.min(maxTotal - 1, i + 1));
+  }, [flatTotal, currentIndex, allowedMaxIndex, isGuest, isSubscribed]);
+
+  // Listen for navigation window events
   useEffect(() => {
     const onPrev = () => handlePrev();
     const onNext = (e: Event) =>
-      handleNext((e as CustomEvent<{ total: number }>).detail.total);
+      handleNext((e as CustomEvent<{ total?: number }>).detail?.total);
 
-    // Jump To Question ──────────────────────────────────────────────────────────────
     const onJump = (e: Event) => {
-      if (isBlockedRef.current) { window.dispatchEvent(new CustomEvent("exam:paused:intercept")); return; }
-      const idx = (e as CustomEvent<{ index: number }>).detail.index; // 0-based
+      if (isBlockedRef.current) {
+        window.dispatchEvent(new CustomEvent("exam:paused:intercept"));
+        return;
+      }
+      const idx = (e as CustomEvent<{ index: number }>).detail.index;
+      if (idx > allowedMaxIndex) {
+        if (isGuest) {
+          setShowLoginModal(true);
+        } else if (!isSubscribed) {
+          setShowSubscriptionModal(true);
+        }
+        return;
+      }
       setCurrentIndex(Math.min(Math.max(0, idx), flatTotal - 1));
-    };
-    // ──────────────────────────────────────────────────────────────────────────
-
-    // Also respond to state:request (so the navigator gets current position)
-    const onStateRequest = () => {
-      window.dispatchEvent(
-        new CustomEvent("exam:state", {
-          detail: { currentIndex, total: flatTotal },
-        })
-      );
     };
 
     window.addEventListener("exam:prev", onPrev);
     window.addEventListener("exam:next", onNext as EventListener);
     window.addEventListener("exam:jump", onJump as EventListener);
-    window.addEventListener("exam:state:request", onStateRequest);
 
     return () => {
       window.removeEventListener("exam:prev", onPrev);
       window.removeEventListener("exam:next", onNext as EventListener);
       window.removeEventListener("exam:jump", onJump as EventListener);
-      window.removeEventListener("exam:state:request", onStateRequest);
     };
-  }, [handlePrev, handleNext, currentIndex, flatTotal]);
+  }, [handlePrev, handleNext, flatTotal, allowedMaxIndex, isGuest, isSubscribed]);
 
-
-  // Broadcast state to Footer after every navigation (from either source)
-  // Includes total so Footer never works with a stale 0.
-  useEffect(() => {
-    window.dispatchEvent(
-      new CustomEvent("exam:state", {
-        detail: { currentIndex, total: flatTotal, answeredCount, lockAction },
-      })
-    );
-  }, [currentIndex, flatTotal, answeredCount, lockAction]);
-
-  // On first load, if ?question=<guidId> is in the URL, jump to that question
-  useEffect(() => {
-    if (flatTotal === 0) return;
-    const params = new URLSearchParams(window.location.search);
-    const targetGuid = params.get("target");
-    if (!targetGuid) return;
-    const idx = flat.findIndex((q) => q.question.guidId === targetGuid);
-    if (idx !== -1) setCurrentIndex(idx);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flatTotal]); // intentionally omit `flat` — we only want to run once when data first loads
-
-
-  // Check sessionStorage on first data load — show toast or silently restore
+  // Session storage position restore
   useEffect(() => {
     if (flatTotal === 0 || !storageKey) return;
-
     const saved = sessionStorage.getItem(storageKey);
     if (saved === null) return;
-
     const idx = parseInt(saved, 10);
     if (isNaN(idx) || idx <= 0 || idx >= flatTotal) return;
 
     const neverKey = `${storageKey}_never_ask`;
     const defaultKey = `${storageKey}_default`;
 
-    // User said "never ask again" — just stay at Q1 silently
-    if (sessionStorage.getItem(neverKey) === "true") return;
+    const clampedIdx = Math.min(idx, allowedMaxIndex);
 
-    // User said "always resume" — jump silently, no toast
+    if (sessionStorage.getItem(neverKey) === "true") return;
     if (sessionStorage.getItem(defaultKey) === "always") {
-      setCurrentIndex(idx);
+      setCurrentIndex(clampedIdx);
       return;
     }
+    setResumeToast({ savedIndex: clampedIdx });
+  }, [flatTotal, storageKey, allowedMaxIndex]);
 
-    // Otherwise show the toast
-    setResumeToast({ savedIndex: idx });
-
-  }, [flatTotal, storageKey]);
-
-
-  // Persist current position to sessionStorage
+  // Persist current position
   useEffect(() => {
     if (!storageKey || flatTotal === 0) return;
     sessionStorage.setItem(storageKey, String(currentIndex));
   }, [currentIndex, storageKey, flatTotal]);
 
-
+  // Listen for submit request
   useEffect(() => {
     const onSubmitRequest = () => {
-      if (isBlockedRef.current) { window.dispatchEvent(new CustomEvent("exam:paused:intercept")); return; }
+      if (isBlockedRef.current) {
+        window.dispatchEvent(new CustomEvent("exam:paused:intercept"));
+        return;
+      }
       setShowSubmitConfirm(true);
     };
     window.addEventListener("exam:submit", onSubmitRequest as EventListener);
     return () => window.removeEventListener("exam:submit", onSubmitRequest as EventListener);
   }, []);
 
-
+  // Submit confirmation handler
   const handleConfirmedSubmit = useCallback(async () => {
     if (!examSession?.exam?.id || !examSession?.exam?.guidId) return;
     const key = `dynamic_live_exam_current_question_position_${examSession.exam.guidId}`;
-    sessionStorage.removeItem(key);
+    try {
+      sessionStorage.removeItem(key);
+      localStorage.removeItem(`exam_in_progress_${examSession.exam.guidId}`);
+      sessionStorage.removeItem(`exam_in_progress_${examSession.exam.guidId}`);
+      localStorage.removeItem(`exam_in_progress_${examSession.exam.id}`);
+      sessionStorage.removeItem(`exam_in_progress_${examSession.exam.id}`);
+    } catch {}
     setShowSubmitConfirm(false);
 
     const result = await submitExam({
-      examId: examSession.exam.id!,
-      examGuidId: examSession.exam.guidId!,
-      reason: "User Submitted Exam ⚓",
+      examId: examSession.exam.id,
+      examGuidId: examSession.exam.guidId,
+      reason: "User Submitted Exam",
       status: "Completed",
     });
 
@@ -1530,185 +1470,730 @@ export default function GenericLiveExamPage() {
     });
   }, [examSession, submitExam]);
 
-  //  Duration Access Group — Count Down, Force-Submit On Expiry 
-  useEffect(() => {
-    if (!examSession) return;
-    if (isPublicAccess) return;
-    if (guestLocked) return;
-    if (subscriptionAccess.hasFullAccess) return;
-    if (examAccess?.accessGroup !== "Duration") return;
-    if (durationSecondsLeft !== null) return;
-    setDurationSecondsLeft(Math.max(0, Math.round((examAccess?.accessValue ?? 0) * 60)));
-  }, [examSession, subscriptionAccess.hasFullAccess, examAccess, durationSecondsLeft, isPublicAccess, guestLocked]);
+  // Toggle flag handler
+  const safeIndex = Math.min(currentIndex, Math.max(0, flatTotal - 1));
+  const current = flat[safeIndex];
+
+  const handleToggleFlag = useCallback(async () => {
+    if (!current?.question?.id || !examSession?.exam?.id || !examSession?.exam?.guidId) return;
+    const qId = current.question.id;
+    const qGuidId = current.question.guidId;
+    const nextFlagState = !flaggedIds[qId];
+
+    setFlaggedIds((prev) => ({ ...prev, [qId]: nextFlagState }));
+
+    await submitTool("ActionQuestionFlag", {
+      examId: examSession.exam.id,
+      examGuidId: examSession.exam.guidId,
+      sectionId: current.sectionId,
+      sectionGuidId: current.sectionGuidId,
+      questionId: qId,
+      questionGuidId: qGuidId,
+      actionValue: nextFlagState ? "Flagged" : "Unflagged",
+      actionContent: JSON.stringify({ Flag: nextFlagState }),
+    });
+  }, [current, examSession, flaggedIds, submitTool]);
 
   useEffect(() => {
-    if (durationSecondsLeft === null) return;
-
-    if (durationSecondsLeft <= 0) {
-      if (!durationExpired) {
-        setDurationExpired(true);
-        setShowSubmitConfirm(false);
-        handleConfirmedSubmit();
+    if (!current?.question) return;
+    const actions = (current.question.questionActions ?? []).map((a: { actionContent?: string }) => {
+      try {
+        return { ...a, _parsed: JSON.parse(a.actionContent ?? "{}") };
+      } catch {
+        return { ...a, _parsed: {} };
       }
-      return;
+    });
+    const star = actions.find((a: { _parsed: Record<string, unknown> }) => a._parsed.Star !== undefined);
+    const pin = actions.find((a: { _parsed: Record<string, unknown> }) => a._parsed.Pin !== undefined);
+    const bmark = actions.find((a: { _parsed: Record<string, unknown> }) => a._parsed.Bookmark !== undefined);
+    const flag = actions.find((a: { _parsed: Record<string, unknown> }) => a._parsed.Flag !== undefined);
+
+    setMobileToolbarState((prev) => ({
+      ...prev,
+      starred: Boolean(star?._parsed?.Star),
+      pinned: Boolean(pin?._parsed?.Pin),
+      bookmarked: Boolean(bmark?._parsed?.Bookmark),
+      flagged: Boolean(flag?._parsed?.Flag || (current.question && flaggedIds[current.question.id])),
+    }));
+  }, [current, flaggedIds]);
+
+  const handleTogglePause = useCallback(async () => {
+    if (examPaused) {
+      setExamPaused(false);
+      setIsCancelled(false);
+      window.dispatchEvent(new CustomEvent("exam:resume"));
+    } else {
+      setExamPaused(true);
+      window.dispatchEvent(new CustomEvent("exam:paused"));
+      if (examSession?.exam?.id && examSession?.exam?.guidId) {
+        pauseExam({
+          examId: examSession.exam.id,
+          examGuidId: examSession.exam.guidId,
+          residualDuration: parseFloat((secondsLeftRef.current / 60).toFixed(4)),
+          reason: "User paused exam",
+        });
+      }
     }
-
-    const t = setTimeout(() => setDurationSecondsLeft((s) => (s !== null ? s - 1 : s)), 1000);
-    return () => clearTimeout(t);
-  }, [durationSecondsLeft, durationExpired, handleConfirmedSubmit]);
-
-  // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  // LOADING / ERROR / EMPTY GUARDS
-  if (loading)
-    return <StatusBox>Loading Live Exam . . . ⚓</StatusBox>;
+  }, [examPaused, examSession, pauseExam]);
+  if (loading) return <StatusBox>Loading Live Exam...</StatusBox>;
 
   if (error) {
     if (error.includes("Access Denied")) {
       return (
         <>
-          <StatusBox>{error}</StatusBox>
-
-          <ImpelModal
-            isOpen={modalStage === "impel"}
-            onClose={() => window.history.back()}
-            onChooseLogin={() => setModalStage("login")}
-            onChooseRegister={() => setModalStage("register")}
-          />
-          <LoginModal
-            isOpen={modalStage === "login"}
-            onClose={() => window.history.back()}
-            onSwitchToRegister={() => setModalStage("register")}
-            initialEmail={loginInitialEmail}
-            initialMessage={loginInitialMessage}
-            redirectPath={currentUrl}
-          />
-          <RegisterModal
-            isOpen={modalStage === "register"}
-            onClose={() => window.history.back()}
-            onSwitchToLogin={(email, message) => {
-              setLoginInitialEmail(email);
-              setLoginInitialMessage(message);
-              setModalStage("login");
-            }}
-          />
+          <StatusBox>
+            <div className="flex flex-col items-center gap-4">
+              <span>{error}</span>
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
+              >
+                Log In
+              </button>
+            </div>
+          </StatusBox>
+          <ImpelUserAuthetication open={showLoginModal} onClose={() => setShowLoginModal(false)} />
         </>
       );
     }
-
     return <StatusBox>{error}</StatusBox>;
   }
 
-  if (!examSession)
-    return <StatusBox>No Exam Data Found ⚓</StatusBox>;
-
-  if (flatTotal === 0)
-    return <StatusBox>Neither Sections Nor Questions Are Available ⚓</StatusBox>;
-
-  // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  // CURRENT QUESTION  (safeIndex guards stale currentIndex on data reload)
-  const safeIndex = Math.min(currentIndex, flatTotal - 1);
-  const current = flat[safeIndex];
-
-  // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  // RENDER
-  return (
-    <main
-      className="w-full select-none"
-      style={{
-        backgroundColor: "var(--exam-content-bg)",
-        color: "var(--exam-content-text)",
-        fontSize: "var(--exam-content-font-base)",
-      }}
-    >
-
-      {durationSecondsLeft !== null && !subscriptionAccess.hasFullAccess && !isPublicAccess && (
-        <div className="px-4 py-1 text-xs font-bold text-center bg-amber-100 text-amber-800 border-b border-amber-300">
-          Limited Access — Time Remaining : {Math.floor(durationSecondsLeft / 60)}m {String(durationSecondsLeft % 60).padStart(2, "0")}s
-        </div>
-      )}
-
-      {showPriorAttemptBanner && previewAttemptParam !== null && (
-        <div className="px-4 py-2 text-xs font-bold text-center bg-indigo-100 text-indigo-800 border-b border-indigo-300 flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
-          <span>
-            Viewing Attempt {parseInt(previewAttemptParam, 10) + 1}
-            {previewScoreParam !== null && ` — Score : ${previewScoreParam}%`}
-            {previewPassMarkParam !== null && ` (Pass Mark : ${previewPassMarkParam}%)`}
-            {previewPassedParam !== null && (previewPassedParam === "true" ? " (Passed)" : " (Not Passed)")}
-          </span>
-          <span className="opacity-70 font-semibold">
-            — Answering Any Question Will Start A New Attempt Automatically ⚓
-          </span>
-        </div>
-      )}
-
-      {/* Section + question number + progress */}
-      <QuestionHeader
-        current={current.globalIndex}
-        total={current.total}
-        sectionName={current.sectionName}
-        onJump={(n) => {
-          if (isBlocked) { window.dispatchEvent(new CustomEvent("exam:paused:intercept")); return; }
-          setCurrentIndex(n - 1);
-        }}
-      />
-
-      {/* Question body */}
-      <div
-        className="px-4 py-4"
-        style={{ color: "var(--exam-content-text)", fontSize: "var(--exam-content-font-base)" }}
-      >
-        {QuestionTypes.render(
-          current.question,
-          current.globalIndex,
-          examSession.exam.selectedMode,
-          {
-            examId: examSession.exam.id ?? 0,
-            examGuidId: examSession.exam.guidId ?? "",
-            sectionId: current.sectionId,
-            sectionGuidId: current.sectionGuidId,
-          }
-        )}
-      </div>
-
-      {/* In-page Prev / dot-pager / Next */}
-      <InPageNav
-        current={current.globalIndex}
-        total={current.total}
-        onPrev={handlePrev}
-        onNext={() => handleNext(current.total)}
-        onJump={(n) => {
-          if (isBlocked) { window.dispatchEvent(new CustomEvent("exam:paused:intercept")); return; }
-          setCurrentIndex(n - 1);
-        }}
-        flat={flat}
-        lastAction={accessLocked ? { label: isLoggedIn ? "Subscribe" : "Log In", onClick: handleUnlock } : null}
-      />
-
-      {/* Access limit — Subscribe prompt on the last free question */}
-      {accessLocked && current.globalIndex === flatTotal && (
-        <AccessLimitCard total={flatTotal} isLoggedIn={isLoggedIn} onUnlock={handleUnlock} />
-      )}
-
-      {/* Guest preview limit — shown on the last curated question */}
-      {guestLocked && current.globalIndex === flatTotal && (
-        <div className="mx-4 mb-4 px-4 py-3 rounded-xl border border-indigo-300 bg-gradient-to-r from-indigo-100 via-purple-100 to-green-100 text-center">
-          <p className="text-sm font-bold text-indigo-900">
-            You&apos;ve Reached The End Of The {flatTotal} Preview Questions ⚓
+  if (!examSession) return <StatusBox>No Exam Data Found</StatusBox>;
+  if (flatTotal === 0) {
+    return (
+      <StatusBox>
+        <div className="flex flex-col items-center gap-2.5 py-1">
+          <p className="text-base font-bold text-slate-800">
+            No Questions Available for this Exam
           </p>
-          <p className="text-xs text-gray-700 mt-1">Log In To Access More Questions Of This Exam</p>
+          <p className="text-xs font-normal text-slate-500 leading-relaxed">
+            This exam currently has 0 questions in the system database. Please select another exam that contains questions.
+          </p>
           <button
-            onClick={openAuthFlow}
-            className="mt-2 px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition"
+            onClick={() => window.history.back()}
+            className="mt-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition cursor-pointer"
           >
-            Log In / Register
+            ← Back to Exams
           </button>
         </div>
-      )}
+      </StatusBox>
+    );
+  }
 
-      {/* Global Answer / Action Save Toast */}
+  const isCurrentFlagged = Boolean(current && flaggedIds[current.question.id]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="min-h-screen bg-white dark:bg-[#001326] text-slate-900 dark:text-slate-100 flex flex-col select-none transition-colors duration-200">
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 1. TOP HEADER (ROW 1: BRAND, TITLE, STATS, CALCULATOR) */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <header className="relative z-50 w-full bg-[#EBF1FA] dark:bg-[#071321] text-slate-900 dark:text-slate-100 px-3 sm:px-6 py-2 border-b border-blue-200/60 dark:border-white/10 transition-colors">
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
+          {/* Left: Brand Logo, Exam Title, Total Questions */}
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <Link
+              href="/"
+              title="Return to Home"
+              className="inline-flex items-center gap-2 group cursor-pointer hover:opacity-80 transition-opacity duration-150 w-fit"
+            >
+              <div className="relative w-6 h-6 sm:w-7 sm:h-7 shrink-0 group-hover:scale-105 transition-transform">
+                <Image
+                  src="/logo/logo.png"
+                  alt="Rhenis Nursing"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              <span className="font-bold text-sm sm:text-base text-[#1E3A8A] dark:text-[#60A5FA] tracking-tight group-hover:underline">
+                Rhenis Nursing
+              </span>
+            </Link>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-bold text-xs sm:text-sm text-[#0D9488] dark:text-teal-400 tracking-tight truncate max-w-[280px] sm:max-w-md">
+                {examSession?.exam?.title || "Exam"}
+              </span>
+              {(() => {
+                const s = resolveExamSeason(examSession?.exam?.season, examSession?.exam?.title, examSession?.exam?.description);
+                if (!s) return null;
+                return (
+                  <span className="hidden sm:inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                    {s} {examSession?.exam?.year ? examSession.exam.year : ""}
+                  </span>
+                );
+              })()}
+            </div>
+
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span>Total Questions : <span>{flatTotal}</span></span>
+              {isSubscribed && (
+                <span className="hidden sm:inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                  Full Access
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Username, Questions Left, Time Left */}
+          <div className="shrink-0 text-right space-y-0.5 whitespace-nowrap">
+            <div className="flex items-center justify-end gap-1.5">
+              <UserAccountDropdown
+                currentDashboard={programSlug}
+                align="right"
+                customTrigger={({ isOpen, toggle, userName: uName, userInitial: uInitial, avatarSrc }) => (
+                  <button
+                    type="button"
+                    onClick={toggle}
+                    className="group inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg hover:bg-blue-100/70 dark:hover:bg-white/10 transition-colors cursor-pointer text-left"
+                    aria-expanded={isOpen}
+                    title="Account Menu"
+                  >
+                    <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-300 text-[10px] font-bold shrink-0 border border-blue-300/60 dark:border-blue-700/60">
+                      {avatarSrc ? (
+                        <Image
+                          src={avatarSrc}
+                          alt={uName || userName || "User"}
+                          width={20}
+                          height={20}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        uInitial || userInitial || "U"
+                      )}
+                    </div>
+                    <span className="font-bold text-xs sm:text-sm text-blue-600 dark:text-blue-400 uppercase tracking-wide truncate max-w-[120px] sm:max-w-[180px]">
+                      {uName || userName}
+                    </span>
+                    <FiChevronDown
+                      className={`w-3.5 h-3.5 text-blue-600 dark:text-blue-400 transition-transform duration-200 ${
+                        isOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                )}
+              />
+              {isSubscribed && (
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                  Pro
+                </span>
+              )}
+            </div>
+
+            <div className="text-xs font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+              Questions Left : <span>{questionsRemaining}</span>
+            </div>
+
+            <div className="text-xs font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+              Time Left :{" "}
+              <span className="text-red-600 dark:text-red-400 font-bold font-mono whitespace-nowrap inline-block">
+                {totalSeconds > 0 ? formatCountdown(secondsLeft) : "Untimed"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 2. ACTION BAR (ROW 2: NAVIGATOR, CALCULATOR, THEME TOGGLE, SETTINGS, PAUSE, END) */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <div className="w-full bg-[#C5D5F6] dark:bg-[#0C1A30] border-b border-blue-200/80 dark:border-white/10 px-3 sm:px-6 py-1.5 transition-colors">
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-3">
+          {/* Left: Question Navigator, Settings, Calculator */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              className="p-1.5 rounded border border-emerald-500/80 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40 transition cursor-pointer shadow-2xs"
+              title="Open Question Navigator"
+            >
+              <LayoutList size={16} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setHelpOpen(true)}
+              className="p-1.5 rounded border border-emerald-500/80 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40 transition cursor-pointer shadow-2xs"
+              title="Exam Settings & Help"
+            >
+              <Settings size={15} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCalcOpen(true)}
+              className="p-1.5 rounded border border-blue-500/80 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 transition cursor-pointer shadow-2xs"
+              title="Open Calculator"
+            >
+              <Calculator size={16} />
+            </button>
+          </div>
+
+          {/* Right: Theme Toggle, Pause, End */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-1.5 rounded border border-slate-400/80 dark:border-slate-600 text-slate-700 dark:text-slate-300 bg-slate-100/60 dark:bg-slate-800/40 hover:bg-slate-200/60 dark:hover:bg-slate-700/50 transition cursor-pointer shadow-2xs"
+              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDark ? (
+                <Sun size={15} className="text-amber-500 dark:text-amber-300" />
+              ) : (
+                <Moon size={15} className="text-blue-600 dark:text-blue-300" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleTogglePause}
+              className="px-2.5 sm:px-3 py-1.5 rounded border border-amber-500/80 text-amber-700 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/60 dark:hover:bg-amber-900/40 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              title={examPaused ? "Resume Exam" : "Pause Exam"}
+            >
+              <Pause size={13} className="fill-current" />
+              <span>{examPaused ? "Resume" : "Pause"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowSubmitConfirm(true)}
+              className="px-2.5 sm:px-3 py-1.5 rounded border border-red-500/80 text-red-700 dark:text-red-400 bg-red-50/50 dark:bg-red-950/30 hover:bg-red-100/60 dark:hover:bg-red-900/40 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              title="End Exam"
+            >
+              <SquarePower size={13} />
+              <span>End</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 3. MAIN CONTENT: QUESTION AREA */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <main
+        id="exam-question-viewport"
+        className="flex-1 max-w-[1440px] mx-auto w-full px-4 sm:px-8 py-5 pb-28"
+        style={{
+          ["--exam-font-desktop-base" as string]: `${(fontSizes?.content?.base ?? 16) - 3}px`,
+          ["--exam-font-desktop-sm" as string]: `${Math.max(9, (fontSizes?.content?.sm ?? 13) - 3)}px`,
+          ["--exam-font-desktop-lg" as string]: `${(fontSizes?.content?.lg ?? 20) - 3}px`,
+          ["--exam-font-desktop-xl" as string]: `${(fontSizes?.content?.xl ?? 24) - 3}px`,
+
+          ["--exam-font-mobile-base" as string]: `${(fontSizes?.content?.base ?? 16) - 4}px`,
+          ["--exam-font-mobile-sm" as string]: `${Math.max(9, (fontSizes?.content?.sm ?? 13) - 4)}px`,
+          ["--exam-font-mobile-lg" as string]: `${(fontSizes?.content?.lg ?? 20) - 4}px`,
+          ["--exam-font-mobile-xl" as string]: `${(fontSizes?.content?.xl ?? 24) - 4}px`,
+        }}
+      >
+        <style>{`
+          /* Default Phone Mode (< 640px) - reduced by 4 times A- (-4px) */
+          #exam-question-viewport {
+            font-size: var(--exam-font-mobile-base, 12px);
+          }
+          #exam-question-viewport .text-xs {
+            font-size: var(--exam-font-mobile-sm, 9px) !important;
+          }
+          #exam-question-viewport .text-sm,
+          #exam-question-viewport .text-base {
+            font-size: var(--exam-font-mobile-base, 12px) !important;
+          }
+          #exam-question-viewport .text-lg {
+            font-size: var(--exam-font-mobile-lg, 16px) !important;
+          }
+          #exam-question-viewport .text-xl {
+            font-size: var(--exam-font-mobile-xl, 20px) !important;
+          }
+          #exam-question-viewport .exhibit-content-body {
+            font-size: var(--exam-font-mobile-base, 12px) !important;
+          }
+
+          /* Computer & Tablet Mode (>= 640px) - reduced by 3 times A- (-3px) */
+          @media (min-width: 640px) {
+            #exam-question-viewport {
+              font-size: var(--exam-font-desktop-base, 13px);
+            }
+            #exam-question-viewport .text-xs,
+            #exam-question-viewport .sm\\:text-xs {
+              font-size: var(--exam-font-desktop-sm, 10px) !important;
+            }
+            #exam-question-viewport .text-sm,
+            #exam-question-viewport .sm\\:text-sm,
+            #exam-question-viewport .text-base,
+            #exam-question-viewport .sm\\:text-base {
+              font-size: var(--exam-font-desktop-base, 13px) !important;
+            }
+            #exam-question-viewport .text-lg,
+            #exam-question-viewport .sm\\:text-lg {
+              font-size: var(--exam-font-desktop-lg, 17px) !important;
+            }
+            #exam-question-viewport .text-xl,
+            #exam-question-viewport .sm\\:text-xl {
+              font-size: var(--exam-font-desktop-xl, 21px) !important;
+            }
+            #exam-question-viewport .exhibit-content-body {
+              font-size: calc(var(--exam-font-desktop-base, 13px) + 1px) !important;
+            }
+          }
+
+          #exam-question-viewport [data-no-font-scale] .text-xs,
+          #exam-question-viewport [data-no-font-scale] .sm\\:text-xs,
+          #exam-question-viewport [data-no-font-scale] .text-sm,
+          #exam-question-viewport [data-no-font-scale] .sm\\:text-sm {
+            font-size: 0.8125rem !important;
+          }
+
+          /* Exhibit content: runs naturally without scroll box */
+          #exam-question-viewport .exhibit-content-body {
+            max-height: none !important;
+            overflow-y: visible !important;
+            width: 100% !important;
+          }
+
+          /* Tables inside exhibits - seen as a whole without altering font size */
+          #exam-question-viewport .exhibit-content-body table {
+            width: 100% !important;
+            max-width: 100% !important;
+            border-collapse: collapse !important;
+            margin-top: 0.5rem !important;
+            margin-bottom: 0.5rem !important;
+            border: 1px solid #cbd5e1 !important;
+          }
+          .dark #exam-question-viewport .exhibit-content-body table {
+            border-color: #334155 !important;
+          }
+
+          #exam-question-viewport .exhibit-content-body th,
+          #exam-question-viewport .exhibit-content-body td {
+            border: 1px solid #cbd5e1 !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+            overflow-wrap: break-word !important;
+            hyphens: auto !important;
+            min-width: 0 !important;
+            width: auto !important;
+          }
+          .dark #exam-question-viewport .exhibit-content-body th,
+          .dark #exam-question-viewport .exhibit-content-body td {
+            border-color: #334155 !important;
+          }
+
+          /* On mobile phones (< 640px): tight horizontal padding so all columns fit within the screen as a whole */
+          @media (max-width: 639px) {
+            #exam-question-viewport .exhibit-content-body table {
+              font-size: var(--exam-font-mobile-base, 12px) !important;
+              display: table !important;
+            }
+            #exam-question-viewport .exhibit-content-body th,
+            #exam-question-viewport .exhibit-content-body td {
+              padding: 4px 2px !important;
+              text-align: center !important;
+              line-height: 1.25 !important;
+            }
+            #exam-question-viewport .exhibit-content-body th:first-child,
+            #exam-question-viewport .exhibit-content-body td:first-child {
+              text-align: left !important;
+              padding-left: 4px !important;
+            }
+          }
+
+          /* On computer & tablet: comfortable padding */
+          @media (min-width: 640px) {
+            #exam-question-viewport .exhibit-content-body th,
+            #exam-question-viewport .exhibit-content-body td {
+              padding: 6px 10px !important;
+              text-align: left !important;
+            }
+          }
+        `}</style>
+        {current && (
+          <div className={splitLayout ? "grid grid-cols-1 lg:grid-cols-2 gap-8" : "w-full"}>
+            {QuestionTypes.render(
+              current.question,
+              current.globalIndex,
+              examSession.exam.selectedMode,
+              {
+                examId: examSession.exam.id ?? 0,
+                examGuidId: examSession.exam.guidId ?? "",
+                sectionId: current.sectionId,
+                sectionGuidId: current.sectionGuidId,
+              }
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 4. STICKY BOTTOM FOOTER NAVIGATION */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      <footer className="fixed bottom-0 inset-x-0 bg-[#E8EDF5] dark:bg-[#071321] border-t border-slate-300/80 dark:border-white/10 py-2 px-3 sm:px-6 shadow-md z-40 transition-colors">
+        {/* DESKTOP & TABLET MODE (sm: and up) - exactly original computer mode */}
+        <div className="hidden sm:flex max-w-[1440px] mx-auto items-center justify-between gap-2 sm:gap-4">
+          {/* Left: Previous */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={handlePrev}
+              className="px-3.5 sm:px-4 py-1.5 rounded border border-[#800000]/60 dark:border-rose-500/60 text-[#800000] dark:text-rose-300 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 font-semibold text-xs sm:text-sm transition cursor-pointer shadow-2xs shrink-0 active:scale-[0.98]"
+            >
+              ← Previous
+            </button>
+          </div>
+
+          {/* Center: Choose Different Exam & Font Resizing Controls */}
+          <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+            <button
+              onClick={() => setChooseExamOpen(true)}
+              className="px-3 sm:px-4 py-1.5 rounded border border-emerald-500/80 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/60 text-xs sm:text-sm font-semibold transition cursor-pointer shadow-2xs shrink-0"
+            >
+              ← Choose Different Exam
+            </button>
+
+            <div className="flex items-center justify-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => scaleGlobal(-1)}
+                title="Decrease Font Size (A-)"
+                className="px-3 py-1 rounded border border-red-300 dark:border-red-900/60 text-xs font-bold text-red-500 dark:text-red-400 bg-white/80 dark:bg-white/5 hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95 transition cursor-pointer"
+              >
+                A-
+              </button>
+              <button
+                type="button"
+                onClick={() => scaleGlobal(1)}
+                title="Increase Font Size (A+)"
+                className="px-3 py-1 rounded border border-blue-400 dark:border-blue-900/60 text-xs font-bold text-blue-600 dark:text-blue-400 bg-white/80 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-950/30 active:scale-95 transition cursor-pointer"
+              >
+                A+
+              </button>
+              <button
+                type="button"
+                onClick={resetFontSizes}
+                title="Reset Font Size"
+                className="px-3 py-1 rounded border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer"
+              >
+                Reset Font
+              </button>
+            </div>
+          </div>
+
+          {/* Right: Next / Submit Exam Button */}
+          {currentIndex === flatTotal - 1 ? (
+            <button
+              type="button"
+              onClick={() => setShowSubmitConfirm(true)}
+              className="shrink-0 flex items-center gap-1.5 px-5 sm:px-6 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-sm transition cursor-pointer active:scale-[0.98]"
+            >
+              <span>Submit Exam</span>
+              <CheckCircle2 size={16} />
+            </button>
+          ) : currentIndex >= allowedMaxIndex ? (
+            <button
+              type="button"
+              onClick={() => handleNext(flatTotal)}
+              className="shrink-0 flex items-center gap-1.5 px-4 sm:px-5 py-1.5 rounded bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs sm:text-sm shadow-sm transition cursor-pointer active:scale-[0.98]"
+            >
+              <span>{isGuest ? "Next (Sign in to Continue) 🔒" : "Unlock Full Exam 👑"}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleNext(flatTotal)}
+              className="shrink-0 flex items-center gap-1.5 px-5 sm:px-7 py-1.5 rounded border border-blue-500/80 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 font-semibold text-xs sm:text-sm shadow-2xs transition cursor-pointer active:scale-[0.98]"
+            >
+              <span>Next →</span>
+            </button>
+          )}
+        </div>
+
+        {/* MOBILE PHONES MODE (< sm) - 2 rows */}
+        <div className="flex sm:hidden flex-col gap-2 w-full max-w-[1440px] mx-auto">
+          {/* Upper row: Left (A-, A+, Reset font) ... space ... Right (Star, Bookmark, Pin, Flag) */}
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => scaleGlobal(-1)}
+                title="Decrease Font Size (A-)"
+                className="px-2.5 py-1 rounded border border-red-300 dark:border-red-900/60 text-xs font-bold text-red-500 dark:text-red-400 bg-white/80 dark:bg-white/5 hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95 transition cursor-pointer"
+              >
+                A-
+              </button>
+              <button
+                type="button"
+                onClick={() => scaleGlobal(1)}
+                title="Increase Font Size (A+)"
+                className="px-2.5 py-1 rounded border border-blue-400 dark:border-blue-900/60 text-xs font-bold text-blue-600 dark:text-blue-400 bg-white/80 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-950/30 active:scale-95 transition cursor-pointer"
+              >
+                A+
+              </button>
+              <button
+                type="button"
+                onClick={resetFontSizes}
+                title="Reset Font Size"
+                className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer"
+              >
+                Reset font
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              {/* Star */}
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("exam:star"))}
+                title="Star"
+                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${
+                  mobileToolbarState.starred
+                    ? "bg-amber-400 border-amber-400 text-white"
+                    : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
+                }`}
+              >
+                <Star size={14} className={mobileToolbarState.starred ? "fill-current" : ""} />
+              </button>
+
+              {/* Bookmark */}
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("exam:bookmark"))}
+                title="Bookmark"
+                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${
+                  mobileToolbarState.bookmarked
+                    ? "bg-blue-600 border-blue-600 text-white"
+                    : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
+                }`}
+              >
+                <Bookmark size={14} className={mobileToolbarState.bookmarked ? "fill-current" : ""} />
+              </button>
+
+              {/* Pin */}
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("exam:pin"))}
+                title="Pin"
+                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${
+                  mobileToolbarState.pinned
+                    ? "bg-green-600 border-green-600 text-white"
+                    : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
+                }`}
+              >
+                <Pin size={14} className={mobileToolbarState.pinned ? "fill-current" : ""} />
+              </button>
+
+              {/* Flag */}
+              {mobileToolbarState.canShowFlag && (
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent("exam:flag"))}
+                  title="Flag"
+                  className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${
+                    mobileToolbarState.flagged
+                      ? "bg-red-600 border-red-600 text-white"
+                      : "border-red-300 dark:border-red-500/60 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 bg-white/80 dark:bg-white/5"
+                  }`}
+                >
+                  <Flag size={14} className={mobileToolbarState.flagged ? "fill-current" : ""} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Lower row: Left (Previous) ... Middle (Choose Different Exam) ... Right (Next / Submit) */}
+          <div className="flex items-center justify-between gap-1.5 w-full">
+            <button
+              type="button"
+              onClick={handlePrev}
+              className="px-3 py-1.5 rounded border border-[#800000]/60 dark:border-rose-500/60 text-[#800000] dark:text-rose-300 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 font-semibold text-xs transition cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
+            >
+              ← Previous
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setChooseExamOpen(true)}
+              className="px-2 py-1.5 rounded border border-emerald-500/80 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/60 text-xs font-semibold transition cursor-pointer shadow-2xs truncate text-center"
+            >
+              ← Choose Different Exam
+            </button>
+
+            {currentIndex === flatTotal - 1 ? (
+              <button
+                type="button"
+                onClick={() => setShowSubmitConfirm(true)}
+                className="shrink-0 flex items-center justify-center gap-1 px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-[0.98] whitespace-nowrap"
+              >
+                <span>Submit</span>
+                <CheckCircle2 size={14} />
+              </button>
+            ) : currentIndex >= allowedMaxIndex ? (
+              <button
+                type="button"
+                onClick={() => handleNext(flatTotal)}
+                className="shrink-0 flex items-center justify-center gap-1 px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-[0.98] whitespace-nowrap"
+              >
+                <span>{isGuest ? "Login 🔒" : "Subscribe 👑"}</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleNext(flatTotal)}
+                className="shrink-0 flex items-center gap-1 px-4 py-1.5 rounded border border-blue-500/80 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-[0.98] whitespace-nowrap"
+              >
+                <span>Next →</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </footer>
+
+      {/* ─────────────────────────────────────────────────────────────────── */}
+      {/* 5. MODALS & TOASTS */}
+      {/* ─────────────────────────────────────────────────────────────────── */}
       <SubmitToast />
 
-      {/* Resume Position Toast */}
+      <QuestionNavigatorModal
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        total={flatTotal}
+        currentIndex={currentIndex}
+        onSelect={(idx) => setCurrentIndex(idx)}
+        answeredMap={answeredMap}
+        allowedMaxIndex={allowedMaxIndex}
+        onRequireLogin={() => setShowLoginModal(true)}
+        onRequireSubscribe={() => setShowSubscriptionModal(true)}
+        isGuest={isGuest}
+      />
+
+      {examPaused && (
+        <div className="fixed inset-0 z-[10005] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#0c1929] border border-amber-300 dark:border-amber-700/60 rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+              <Pause size={24} className="fill-current" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Exam Paused</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                The timer has stopped. You can resume at any time.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleTogglePause}
+              className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-bold transition cursor-pointer shadow-xs"
+            >
+              Resume Exam
+            </button>
+          </div>
+        </div>
+      )}
+
+      <CalculatorModal open={calcOpen} onClose={() => setCalcOpen(false)} />
+
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+
       {resumeToast && storageKey && (
         <ResumePositionToast
           savedIndex={resumeToast.savedIndex}
@@ -1724,58 +2209,6 @@ export default function GenericLiveExamPage() {
         />
       )}
 
-      {/* Subscription Access Modal */}
-      <SubscriptionAlertModal
-        open={showAccessDeniedModal}
-        reason={subscriptionAccess.denialReason ?? "Subscribe To Unlock All Questions Of This Exam ⚓"}
-        examGuidId={examSession?.exam?.guidId}
-        onClose={closeSubscriptionAlert}
-      />
-
-      <AuthRequiredModal
-        open={showAuthAlert}
-        onClose={closeAuthAlert}
-        onLogin={openAuthFlow}
-      />
-
-      {authRequired && (
-        <>
-          <ImpelModal
-            isOpen={modalStage === "impel"}
-            onClose={() => {
-              setAuthRequired(false);
-              window.dispatchEvent(new CustomEvent("exam:resume"));
-            }}
-            onChooseLogin={() => setModalStage("login")}
-            onChooseRegister={() => setModalStage("register")}
-          />
-          <LoginModal
-            isOpen={modalStage === "login"}
-            onClose={() => {
-              setAuthRequired(false);
-              window.dispatchEvent(new CustomEvent("exam:resume"));
-            }}
-            onSwitchToRegister={() => setModalStage("register")}
-            initialEmail={loginInitialEmail}
-            initialMessage={loginInitialMessage}
-            redirectPath={currentUrl}
-          />
-          <RegisterModal
-            isOpen={modalStage === "register"}
-            onClose={() => {
-              setAuthRequired(false);
-              window.dispatchEvent(new CustomEvent("exam:resume"));
-            }}
-            onSwitchToLogin={(email, message) => {
-              setLoginInitialEmail(email);
-              setLoginInitialMessage(message);
-              setModalStage("login");
-            }}
-          />
-        </>
-      )}
-
-      {/* Attempts Exceeded Modal */}
       <AttemptsExceededModal
         open={attemptsBlocked}
         attemptsAllowed={examSession?.exam?.attemptsAllowed ?? 0}
@@ -1784,23 +2217,32 @@ export default function GenericLiveExamPage() {
         submitTool={submitTool}
       />
 
-      {/* Submit Confirm Modal */}
+      <ChooseExamModal
+        open={chooseExamOpen}
+        onClose={() => setChooseExamOpen(false)}
+        examSession={examSession}
+      />
+
       <SubmitConfirmModal
         open={showSubmitConfirm}
         onConfirm={handleConfirmedSubmit}
         onCancel={() => setShowSubmitConfirm(false)}
+        onChooseDifferentExam={() => {
+          setShowSubmitConfirm(false);
+          setChooseExamOpen(true);
+        }}
         examTitle={examSession?.exam?.title ?? "Exam"}
         totalQuestions={flatTotal}
-        answeredCount={answeredCount} />
+        answeredCount={answeredCount}
+      />
 
       <SubmitResultModal
         open={submitResult.open}
         success={submitResult.success}
         message={submitResult.message}
-        onViewResults={() => {
-          if (examSession?.exam?.guidId) {
-            router.push(`/dashboards/nalex-pn/vista/assessment/exams/results/distinct?identifier=${examSession.exam.guidId}`);
-          }
+        onChooseDifferentExam={() => {
+          setSubmitResult({ open: false, success: false, message: null });
+          setChooseExamOpen(true);
         }}
         onClose={(startFresh: boolean) => {
           if (examSession?.exam?.guidId) {
@@ -1818,18 +2260,25 @@ export default function GenericLiveExamPage() {
         }}
       />
 
-    </main>
+      <ImpelUserAuthetication
+        open={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={() => {
+          setShowLoginModal(false);
+          if (typeof window !== "undefined") {
+            window.location.reload();
+          }
+        }}
+      />
+
+      <ExamSubscriptionPaywallModal
+        open={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        examTitle={examSession?.exam?.title ?? "Exam Practice Session"}
+        totalQuestions={flatTotal}
+        allowedQuestions={registeredLimitCount}
+        programSlug={programSlug}
+      />
+    </div>
   );
 }
-
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-
-// User selects answer → local state updates immediately (optimistic)
-//                     → debounced POST/PUT to backend (300-500ms after last change)
-//                     → "Saved ✓" pulse on success
-//                     → on failure → show "Save failed, retrying..." + retry
-
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-// The End By : B.L.S.M.C ;  -  Skewblanc - The Winds Chase Us ⚓
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

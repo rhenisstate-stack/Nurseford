@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
 import {
@@ -738,12 +739,28 @@ const CourseCard = ({
       ? Math.round((course.doneCount / course.questionCount) * 100)
       : 0;
 
+  const standaloneCourseId =
+    course.examType === "nclex-rn"
+      ? "8ceb8bea-c04b-4a55-94ba-5d6368bdcaaa"
+      : "3f25e1cf-dc97-4c77-a8be-1c2472dae993";
+
+  const subjectId = course.backendSubjectGuid || course.guidId || String(course.id);
+  const examsHref =
+    course.category === "clientNeed"
+      ? `/dashboards/${course.examType}?action=custom`
+      : `/dashboards/${course.examType}/exams/standalone-questions-${course.examType}/${standaloneCourseId}/exams/${subjectId}?subjectName=${encodeURIComponent(
+          course.title
+        )}`;
+
   return (
     <div className="rounded-xl sm:rounded-2xl border border-[#CBDCF8] dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] p-2.5 sm:p-3 md:p-3.5 flex flex-col gap-2 sm:gap-2.5 hover:border-blue-400 dark:hover:border-white/20 shadow-xs hover:shadow-md transition-all duration-200">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-[var(--text-color)] leading-snug truncate flex-1 min-w-0">
+        <Link
+          href={examsHref}
+          className="text-xs sm:text-sm font-bold text-slate-900 dark:text-[var(--text-color)] leading-snug truncate flex-1 min-w-0 hover:text-blue-600 dark:hover:text-[#2FD9C4] transition-colors"
+        >
           {course.title}
-        </h3>
+        </Link>
         <button
           onClick={() => setBookmarked((b) => !b)}
           aria-label={bookmarked ? "Remove bookmark" : "Bookmark course"}
@@ -788,13 +805,21 @@ const CourseCard = ({
 
       <DifficultyBar easy={course.easyPct} medium={course.mediumPct} hard={course.hardPct} />
 
-      <button
-        onClick={onCreateCustomTest}
-        className="mt-auto inline-flex items-center justify-center gap-1.5 w-full px-3 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs bg-[#2FD9C4] text-[#08111F] hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-xs"
-      >
-        <Play className="w-3 h-3 fill-current" />
-        Create Custom Test
-      </button>
+      <div className="mt-auto flex items-center gap-2">
+        <Link
+          href={examsHref}
+          className="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs bg-[#1877F2] text-white hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-xs text-center"
+        >
+          <Play className="w-3 h-3 fill-current" />
+          Access Exams
+        </Link>
+        <button
+          onClick={onCreateCustomTest}
+          className="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs bg-[#2FD9C4] text-[#08111F] hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-xs"
+        >
+          Custom Test
+        </button>
+      </div>
     </div>
   );
 };

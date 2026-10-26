@@ -1,39 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { FolderTree } from "lucide-react";
-import { Tooltip } from "@/components/dashboards/includes/sidebar/tooltips/SidebarTooltip";
-import { useThemeContext } from "@/lib/contexts/panel/layout/theme/PanelThemeContext";
+import { BookOpen } from "lucide-react";
 import { useRelativeStrataPrograms } from "@/lib/hooks/nexus/strata/learning/programs/relative/useRelativeStrataPrograms";
+import { useDistinctStrataCourses } from "@/lib/hooks/nexus/strata/learning/courses/distinct/useDistinctStrataCourses";
 import { usePathname } from "next/navigation";
-
-const SEGMENT_ORDER = [
-  "ATI_TEAS",
-  "HESI_A2",
-  "PRE_NURSING",
-  "RN_NURSING",
-  "LPN_NURSING",
-  "GED",
-  "CNA",
-  "CERTIFICATION",
-] as const;
+import { useMemo } from "react";
 
 const SEGMENT_DASHBOARD_MAP: Record<string, string> = {
-  ATI_TEAS: "ati-teas",
-  HESI_A2: "hesi-a2",
-  PRE_NURSING: "pre-nursing",
-  RN_NURSING: "rn-nursing",
-  LPN_NURSING: "lpn-nursing",
-  GED: "ged",
-  CNA: "cna",
-  CERTIFICATION: "certification",
+  NCLEX_PN: 'nclex-pn',
+  HESI_A2: 'hesi-a2',
+  PRE_NURSING: 'pre-nursing',
+  RN_NURSING: 'rn-nursing',
+  LPN_NURSING: 'lpn-nursing',
+  NCLEX_RN: 'nclex-rn',
+  ATI_TEAS: 'ati-teas',
+  CERTIFICATION: 'certification',
 };
 
-// Segment that has a dedicated distinct-courses overview page wired up so far.
-// Extend this map as more segments get their own overview page built.
-const SEGMENT_DISTINCT_COURSES_ROUTE: Record<string, string> = {
-  ATI_TEAS: "/dashboards/ati-teas/vista/learning/courses/distinct/overview",
-};
+// Shared "learning" group + "subjects" child-strata slug used for the
+// course -> subjects redirect. Mirrors BASE_CHILD_ROUTE in SubCategoriesPage.
+const VISTA_STRATA_GROUP = "learning";
+const VISTA_CHILD_STRATA = "subjects";
 
 interface Props {
   isOpened: boolean;
@@ -45,104 +33,106 @@ interface Props {
   side?: "left" | "right";
 }
 
-export default function VistaHierarchyProgramOutline({
-  isOpened,
-  hoveredItem,
-  handleItemHover,
-  handleMouseLeave,
-  tooltipPosition,
-  handleItemClick,
-}: Props) {
-  const { theme } = useThemeContext();
+// ───────────────────────────────────────────────────────────────────────────
+// Courses List (courses of the current program only)
+// ───────────────────────────────────────────────────────────────────────────
+interface ProgramCoursesListProps {
+  parentIdentifier: string;
+  dashboardSlug: string;
+}
+
+function ProgramCoursesList({
+  parentIdentifier,
+  dashboardSlug,
+}: ProgramCoursesListProps) {
+  const { filteredCourses } = useDistinctStrataCourses({
+    parentIdentifier,
+    page: 1,
+    perPage: 50,
+    sortColumn: null,
+    sortDirection: "asc",
+  });
+
+  // Order ascending (1 at the top). Non-numeric or missing order goes to the bottom,
+  // ties fall back to the name so the list is always stable.
+  const sortedCourses = useMemo(() => {
+    const orderOf = (value: unknown) => {
+      const n = parseInt(String(value ?? "").trim(), 10);
+      return Number.isNaN(n) ? Number.MAX_SAFE_INTEGER : n;
+    };
+
+    return [...(filteredCourses ?? [])].sort(
+      (a, b) =>
+        orderOf(a.order) - orderOf(b.order) ||
+        String(a.name ?? "").localeCompare(String(b.name ?? ""))
+    );
+  }, [filteredCourses]);
+
+  const baseChildRoute = `/dashboards/${dashboardSlug}/vista/${VISTA_STRATA_GROUP}/${VISTA_CHILD_STRATA}`;
+
+  if (sortedCourses.length === 0) {
+    return (
+      <div className="py-1 text-[11px] italic opacity-50 text-[var(--text-color)]">
+        No Courses Yet
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {sortedCourses.map((course) => {
+        const courseIdentifier = course.guidId ?? course.id;
+
+        return (
+          <Link
+            key={courseIdentifier}
+            href={`${baseChildRoute}/distinct/overview?identifier=${courseIdentifier}`}
+            className="
+              flex items-center gap-2 px-2 py-3 rounded-md
+              text-sm font-semibold truncate
+              text-[var(--text-color)] opacity-80
+              hover:opacity-100 hover:bg-white/10
+              transition
+            "
+          >
+            <BookOpen className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{course.name}</span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// Main Component
+// ───────────────────────────────────────────────────────────────────────────
+export default function VistaHierarchyProgramOutline({ isOpened }: Props) {
   const { programs } = useRelativeStrataPrograms();
   const pathname = usePathname();
 
-  const isLightSidebar =
-    (theme.leftSidebar === "system" ? theme.global : theme.leftSidebar) === "light";
+  // Nothing to show when the sidebar is collapsed
+  if (!isOpened) return null;
 
-  const visiblePrograms = SEGMENT_ORDER.flatMap((seg) =>
-    programs.filter((program) => program.segment === seg)
-  );
+  // Current program = the one whose dashboard slug matches the current URL
+  const currentProgram = programs.find((program) => {
+    const slug = SEGMENT_DASHBOARD_MAP[program.segment ?? ""];
+    if (!slug || !pathname) return false;
 
-  // Split into "wired up" (has a dedicated distinct-courses route) vs "the rest"
-  const wiredPrograms = visiblePrograms.filter(
-    (program) => SEGMENT_DISTINCT_COURSES_ROUTE[program.segment ?? ""]
-  );
-  const otherPrograms = visiblePrograms.filter(
-    (program) => !SEGMENT_DISTINCT_COURSES_ROUTE[program.segment ?? ""]
-  );
+    const base = `/dashboards/${slug}`;
+    return pathname === base || pathname.startsWith(`${base}/`);
+  });
 
-  const renderProgramItem = (program: (typeof visiblePrograms)[number]) => {
-    const segment = program.segment ?? "";
-    const dashboardSlug = SEGMENT_DASHBOARD_MAP[segment];
-    if (!dashboardSlug) return null;
+  if (!currentProgram) return null;
 
-    const distinctCoursesRoute = SEGMENT_DISTINCT_COURSES_ROUTE[segment];
-    const href = distinctCoursesRoute
-      ? `${distinctCoursesRoute}?identifier=${program.guidId}`
-      : `/dashboards/${dashboardSlug}`;
-
-    const hoverKey = `Program-${program.guidId}`;
-    const isActive = pathname?.startsWith(`/dashboards/${dashboardSlug}`);
-
-    return (
-      <div key={program.guidId} className="relative">
-        <Link href={href}>
-          <div
-            onClick={handleItemClick}
-            onMouseEnter={(e) => handleItemHover(hoverKey, e)}
-            onMouseLeave={handleMouseLeave}
-            className={`flex items-center p-1 rounded-lg transition cursor-pointer
-            border-1 select-none
-            ${isActive
-                ? "border-[var(--text-color)] bg-[var(--text-color)]/10 text-[var(--text-color)] font-medium"
-                : `border-transparent hover:border-[var(--text-color)] ${isLightSidebar ? "text-[var(--text-color)]" : "text-[var(--text-color)]"}`}
-            ${!isOpened ? "justify-center" : "justify-start"}`}
-          >
-            <FolderTree className="w-5 h-5 shrink-0" />
-            {isOpened && <span className="ml-3 text-sm font-bold truncate">{program.name}</span>}
-          </div>
-        </Link>
-
-        {!isOpened && hoveredItem === hoverKey && (
-          <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
-            {program.name}
-          </Tooltip>
-        )}
-      </div>
-    );
-  };
+  const dashboardSlug = SEGMENT_DASHBOARD_MAP[currentProgram.segment ?? ""];
 
   return (
-    <div className="relative space-y-1">
-      {wiredPrograms.length > 0 && (
-        <>
-          {isOpened && (
-            <div className="px-2 pt-1 pb-0.5 text-[10px] font-bold uppercase tracking-wider opacity-50 text-[var(--text-color)]">
-              You on this Active Program
-            </div>
-          )}
-          {!isOpened && (
-            <div className="mx-2 h-px bg-[var(--text-color)]/20" />
-          )}
-          {wiredPrograms.map(renderProgramItem)}
-        </>
-      )}
-
-      {wiredPrograms.length > 0 && otherPrograms.length > 0 && (
-        <div className="my-3 border-t border-[var(--text-color)]/20" />
-      )}
-
-      {otherPrograms.length > 0 && (
-        <>
-          {isOpened && (
-            <div className="px-2 pt-1 pb-0.5 text-[10px] font-bold uppercase tracking-wider opacity-50 text-[var(--text-color)]">
-              Check out Other Programs ?
-            </div>
-          )}
-          {otherPrograms.map(renderProgramItem)}
-        </>
-      )}
+    <div className="relative mt-1 mb-2">
+      <ProgramCoursesList
+        parentIdentifier={currentProgram.guidId}
+        dashboardSlug={dashboardSlug}
+      />
     </div>
   );
 }

@@ -36,8 +36,8 @@ export default function SubCategoriesPage() {
 
   type SortDirection = "asc" | "desc";
 
-  const [sortColumn, setSortColumn] = useState<keyof StrataItem | null>("id");
-  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+  const [sortColumn, setSortColumn] = useState<keyof StrataItem | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
   // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -238,7 +238,7 @@ export default function SubCategoriesPage() {
   // Render
   return (
     <main
-      className="pt-14 transition-all duration-300 ease-in-out overflow-x-hidden"
+      className="pt-16 transition-all duration-300 ease-in-out overflow-x-hidden"
       style={{
         marginLeft: leftWidth,
         marginRight: rightWidth,

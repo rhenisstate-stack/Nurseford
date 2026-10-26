@@ -23,7 +23,7 @@ const VISTA_CHILD_LEVEL = "Exams";  // For Distinct Child Redirection
 const VISTA_DEFAULT_PERPAGE_LIST = 12;
 const VISTA_STRATA = VISTA_STRATA_LEVEL.toLocaleLowerCase();
 const VISTA_CHILD_STRATA = VISTA_CHILD_LEVEL.toLocaleLowerCase();
-const BASE_CHILD_ROUTE = `/dashboards/${VISTA_STRATA_PANEL}/vista/assessment/${VISTA_CHILD_STRATA}`;
+const BASE_CHILD_ROUTE = `/dashboards/${VISTA_STRATA_PANEL}/vista/strata/${VISTA_STRATA_GROUP}/learning/${VISTA_CHILD_STRATA}`;
 const BASE_TOGGLE_ROUTE = `/dashboards/${VISTA_STRATA_PANEL}/vista/${VISTA_STRATA_GROUP}/${VISTA_STRATA}`;
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -238,7 +238,7 @@ export default function SubCategoriesPage() {
   // Render
   return (
     <main
-      className="pt-14 transition-all duration-300 ease-in-out overflow-x-hidden"
+      className="pt-16 transition-all duration-300 ease-in-out overflow-x-hidden"
       style={{
         marginLeft: leftWidth,
         marginRight: rightWidth,
