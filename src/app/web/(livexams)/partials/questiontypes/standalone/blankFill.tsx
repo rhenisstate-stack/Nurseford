@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionToolbar } from "../../components/QuestionToolbar";
+import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
 
 interface Props {
@@ -178,30 +179,12 @@ export const BlankFillQuestion = ({
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
-      {!hideQuestionHeader && (
-        <div className="flex items-center gap-3">
-          <div className="shrink-0 py-1 px-2 rounded
-            bg-gradient-to-br from-green-800 to-blue-600 text-white
-            flex items-center justify-center text-xs md:text-sm font-bold shadow-md">
-            {questionNumber}
-          </div>
-          <div
-            className="flex-1 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: q.questionText ?? "" }}
-          />
-        </div>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      {!hideQuestionHeader &&
-        q.metaQuestionText &&
-        q.metaQuestionText.trim().toLowerCase() !== "null" && (
-          <div
-            className="text-sm px-2 text-gray-500 italic"
-            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
-          />
-        )}
+      <QuestionPromptHeader
+        questionNumber={questionNumber}
+        questionText={q.questionText}
+        metaQuestionText={q.metaQuestionText}
+        hideQuestionHeader={hideQuestionHeader}
+      />
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
@@ -247,6 +230,23 @@ export const BlankFillQuestion = ({
           );
         })}
       </div>
+
+      {!parts.some((p) => p.type === "blank") && (
+        <div className="mt-3 space-y-2">
+          <input
+            type="text"
+            value={values["blank1"] ?? values["answer"] ?? Object.values(values)[0] ?? ""}
+            onChange={(e) => setValue("blank1", e.target.value)}
+            placeholder="Type your answer here..."
+            className="w-full max-w-md rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#001326] px-3 py-2 text-sm sm:text-base text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition shadow-2xs"
+          />
+          {showFeedback && q.questionCorrectAnswers?.[0]?.openEndedAnswer && (
+            <div className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
+              Correct Answer: {q.questionCorrectAnswers[0].openEndedAnswer}
+            </div>
+          )}
+        </div>
+      )}
 
       <QuestionToolbar q={q} mode={mode} examId={examId} examGuidId={examGuidId} sectionId={sectionId} sectionGuidId={sectionGuidId} />
     </div>

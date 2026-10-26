@@ -7,6 +7,7 @@ import type {
   StrataSessionQuestionOption,
 } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionToolbar } from "../../components/QuestionToolbar";
+import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
 
 interface Props {
@@ -205,21 +206,13 @@ export const OrderingItemQuestion = ({
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
-      {!hideQuestionHeader && (
-        <div className="flex items-center gap-3">
-          <div className="shrink-0 py-1 px-2 rounded
-            bg-gradient-to-br from-yellow-800 to-purple-600 text-white
-            flex items-center justify-center text-xs md:text-sm font-bold shadow-md">
-            {questionNumber}
-          </div>
-          <div
-            className="flex-1 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: q.questionText ?? "" }}
-          />
-        </div>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
+      <QuestionPromptHeader
+        questionNumber={questionNumber}
+        questionText={q.questionText}
+        metaQuestionText={q.metaQuestionText}
+        hideQuestionHeader={hideQuestionHeader}
+      />
+{/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
       {!hideQuestionHeader &&
         q.metaQuestionText &&

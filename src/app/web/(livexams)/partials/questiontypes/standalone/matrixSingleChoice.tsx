@@ -1,10 +1,11 @@
-// src\app\web\(livexams)\ati-teas\vista\exam\(layout)\partials\questiontypes\standalone\matrixSingleChoice.tsx
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionToolbar } from "../../components/QuestionToolbar";
+import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { resolveQuestionMatrix } from "@/lib/utils/exams/matrixResolver";
 
 interface Props {
   q: StrataSessionQuestionFull;
@@ -27,50 +28,17 @@ export const MatrixSingleChoiceQuestion = ({
   sectionGuidId,
   hideQuestionHeader,
 }: Props) => {
-
   const m = (mode ?? "").toLowerCase().trim();
   const showFeedback = m === "review" || m === "tutor";
 
-  const matrix = q.questionMatrices?.[0] ?? null;
+  const matrix = useMemo(() => resolveQuestionMatrix(q), [q]);
 
-  // "CellDataAbsent" = grid of bare choice controls, headers carry all the meaning.
-  // null / "CellDataPresent" / anything else = existing behaviour.
-  const cellDataAbsent = matrix?.instructions === "CellDataAbsent";
-
-  // Placeholder text saved when cell data was OFF ("Row n / Column n") counts as no cell data
-  const isPlaceholderValue = (v: string | null | undefined, rowIdx: number, colIdx: number) =>
-    (v ?? "").trim() === `Row ${rowIdx + 1} / Column ${colIdx + 1}`;
-
-  const rowHeaders: string[] = (() => {
-    if (!matrix?.rowHeaders) return [];
-    try {
-      const parsed = JSON.parse(matrix.rowHeaders);
-      return Array.isArray(parsed) ? parsed.map((h) => String(h ?? "")) : [];
-    } catch {
-      return [];
-    }
-  })();
-
-  const columnHeaders: string[] = (() => {
-    if (!matrix?.columnHeaders) return [];
-    try {
-      const parsed = JSON.parse(matrix.columnHeaders);
-      return Array.isArray(parsed) ? parsed.map((h) => String(h ?? "")) : [];
-    } catch {
-      return [];
-    }
-  })();
-
+  const rowHeaders = matrix?.rowHeaders ?? [];
+  const columnHeaders = matrix?.columnHeaders ?? [];
   const rowCount = matrix?.rowCount ?? rowHeaders.length;
   const columnCount = matrix?.columnCount ?? columnHeaders.length;
-
-  // rowIndex-colIndex -> cell, for quick lookup while rendering the grid
-  const cellByPosition = new Map<string, typeof matrix extends null ? never : NonNullable<typeof matrix>["cells"][number]>();
-  (matrix?.cells ?? []).forEach((cell) => {
-    cellByPosition.set(`${cell.rowIndex}-${cell.columnIndex}`, cell);
-  });
-
-  const correctCellId = (matrix?.cells ?? []).find((c) => c.isCorrect)?.id ?? null;
+  const cellByPosition = matrix?.cellByPosition ?? new Map();
+  const correctCellIds = matrix?.correctCellIds ?? [];
 
   const { getAnswer, submitAnswer } = useLiveExamActionContext();
 
@@ -104,7 +72,6 @@ export const MatrixSingleChoiceQuestion = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savedCellId]);
 
-  // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   // NEW ATTEMPT GUARD
   useEffect(() => {
     const onFresh = () => setPicked(null);
@@ -116,8 +83,6 @@ export const MatrixSingleChoiceQuestion = ({
       window.removeEventListener("exam:attempt:prior", onPrior);
     };
   }, [persistedCellId]);
-
-  // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
   const handlePick = (cellId: number) => {
     setPicked(cellId);
@@ -136,7 +101,7 @@ export const MatrixSingleChoiceQuestion = ({
 
   const getState = (cellId: number): "correct" | "wrong" | "selected" | "missed" | "idle" => {
     const isPicked = picked === cellId;
-    const isCorrect = correctCellId === cellId;
+    const isCorrect = correctCellIds.includes(cellId);
 
     if (!showFeedback) return isPicked ? "selected" : "idle";
 
@@ -146,37 +111,15 @@ export const MatrixSingleChoiceQuestion = ({
     return "idle";
   };
 
-  if (!matrix) {
+  if (!matrix || rowHeaders.length === 0 || columnHeaders.length === 0) {
     return (
       <div className="pt-1 space-y-2">
-
-        {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-        {!hideQuestionHeader && (
-          <div className="flex items-center gap-3">
-            <div className="shrink-0 py-1 px-2 rounded
-            bg-gradient-to-br from-yellow-800 to-blue-600 text-white
-            flex items-center justify-center text-xs md:text-sm font-bold shadow-md">
-              {questionNumber}
-            </div>
-            <div
-              className="flex-1 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: q.questionText ?? "" }}
-            />
-          </div>
-        )}
-
-        {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-        {!hideQuestionHeader && q.metaQuestionText && (
-          <div
-            className="text-sm px-2 text-gray-500 italic"
-            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
-          />
-        )}
-
-        {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
+        <QuestionPromptHeader
+          questionNumber={questionNumber}
+          questionText={q.questionText}
+          metaQuestionText={q.metaQuestionText}
+          hideQuestionHeader={hideQuestionHeader}
+        />
         <div className="text-sm text-amber-600 bg-amber-50 rounded-md px-3 py-2">
           ⚠️ No matrix data available for this question.
         </div>
@@ -186,36 +129,13 @@ export const MatrixSingleChoiceQuestion = ({
   }
 
   return (
-    <div className="pt-1 space-y-2">
-
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      {!hideQuestionHeader && (
-        <div className="flex items-center gap-3">
-          <div className="shrink-0 py-1 px-2 rounded
-            bg-gradient-to-br from-yellow-800 to-pink-600 text-white
-            flex items-center justify-center text-xs md:text-sm font-bold shadow-md">
-            {questionNumber}
-          </div>
-          <div
-            className="flex-1 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: q.questionText ?? "" }}
-          />
-        </div>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      {!hideQuestionHeader &&
-        q.metaQuestionText &&
-        q.metaQuestionText.trim().toLowerCase() !== "null" && (
-          <div
-            className="text-sm px-2 text-gray-500 italic"
-            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
-          />
-        )}
-
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
+    <div className="pt-1 space-y-3">
+      <QuestionPromptHeader
+        questionNumber={questionNumber}
+        questionText={q.questionText}
+        metaQuestionText={q.metaQuestionText}
+        hideQuestionHeader={hideQuestionHeader}
+      />
 
       {(matrix.title || matrix.description) && (
         <div className="space-y-0.5 text-center">
@@ -228,39 +148,35 @@ export const MatrixSingleChoiceQuestion = ({
         </div>
       )}
 
-      <div className="overflow-x-auto w-fit max-w-5xl overflow-x-auto border border-gray-200 rounded-lg">
+      <div className="w-full max-w-4xl overflow-x-auto border border-gray-200 dark:border-white/10 rounded-xl shadow-xs">
         <table className="min-w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th className="border-b border-r border-gray-200 bg-gray-50 px-3 py-2 text-left text-xs font-semibold text-gray-500 whitespace-nowrap">
-                {matrix.topLeftCell ?? ""}
+              <th className="border-b border-r border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3.5 py-1.5 sm:py-2 text-left text-sm md:text-base font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                {matrix.topLeftCell || "Assessment / Findings"}
               </th>
               {Array.from({ length: columnCount }).map((_, colIdx) => (
                 <th
                   key={colIdx}
-                  className="border-b border-gray-200 bg-gray-50 px-3 py-2 text-center text-xs font-semibold text-gray-600 whitespace-nowrap"
+                  className="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-1.5 sm:py-2 text-center text-sm md:text-base font-bold text-slate-900 dark:text-white whitespace-nowrap"
                 >
                   {columnHeaders[colIdx] ?? ""}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-100 dark:divide-white/5">
             {Array.from({ length: rowCount }).map((_, rowIdx) => (
-              <tr key={rowIdx}>
-                <th className="border-r border-b border-gray-200 bg-gray-50 px-3 py-2 text-left text-xs font-semibold text-gray-600 whitespace-nowrap align-top">
+              <tr key={rowIdx} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
+                <th className="border-r border-b border-gray-200 dark:border-white/10 bg-gray-50/70 dark:bg-white/[0.02] px-3.5 py-1 sm:py-1.5 text-left text-[15px] md:text-[17px] font-bold text-slate-900 dark:text-white align-middle leading-tight">
                   {rowHeaders[rowIdx] ?? ""}
                 </th>
                 {Array.from({ length: columnCount }).map((_, colIdx) => {
                   const cell = cellByPosition.get(`${rowIdx}-${colIdx}`);
-                  const placeholderOnly = !!cell && isPlaceholderValue(cell.cellValue, rowIdx, colIdx);
-                  const showBare = cellDataAbsent || placeholderOnly;
-                  const hasContent = !!cell && cell.cellValue != null && cell.cellValue !== "" && !placeholderOnly;
 
-                  if (!cell || (!showBare && !hasContent)) {
-                    // Blank cell — nothing to show, nothing to select
+                  if (!cell) {
                     return (
-                      <td key={colIdx} className="border-b border-gray-100 px-3 py-2 align-top" />
+                      <td key={colIdx} className="border-b border-gray-100 dark:border-white/5 px-2 py-1 sm:py-1.5 text-center align-middle" />
                     );
                   }
 
@@ -268,52 +184,41 @@ export const MatrixSingleChoiceQuestion = ({
                   const isPicked = picked === cell.id;
 
                   return (
-                    <td key={colIdx} className="border-b border-gray-100 px-2 py-2 align-top">
+                    <td
+                      key={colIdx}
+                      onClick={() => handlePick(cell.id)}
+                      className="border-b border-gray-100 dark:border-white/5 px-2 py-1 sm:py-1.5 text-center align-middle cursor-pointer hover:bg-teal-50/20 dark:hover:bg-white/[0.02] transition-colors"
+                    >
                       <div
-                        role="button"
+                        role="radio"
+                        aria-checked={isPicked}
                         tabIndex={0}
-                        onClick={() => handlePick(cell.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePick(cell.id);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
                             handlePick(cell.id);
                           }
                         }}
-                        aria-label={`${rowHeaders[rowIdx] ?? ""} / ${columnHeaders[colIdx] ?? ""}`}
-                        className={`relative rounded-md border-2 px-3 py-2 cursor-pointer select-none transition
-                          ${showBare ? "flex items-center justify-center min-w-[3rem] min-h-[2.5rem]" : ""}
-                          ${state === "idle" ? "border-gray-200 bg-white hover:border-indigo-300 hover:bg-indigo-50" : ""}
-                          ${state === "selected" ? "border-indigo-400 bg-indigo-50" : ""}
-                          ${state === "correct" ? "border-emerald-400 bg-emerald-50" : ""}
-                          ${state === "wrong" ? "border-red-400 bg-red-50" : ""}
-                          ${state === "missed" ? "border-dashed border-amber-400 bg-amber-50" : ""}
+                        className={`relative inline-flex items-center justify-center w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border cursor-pointer select-none transition-all mx-auto
+                          ${isPicked ? "border-teal-600 bg-white dark:bg-white/10 ring-2 ring-teal-500/20" : "border-slate-400 dark:border-white/40 bg-white dark:bg-white/10 hover:border-teal-600"}
+                          ${state === "correct" ? "!border-emerald-600 ring-2 !ring-emerald-500/20" : ""}
+                          ${state === "wrong" ? "!border-red-500 ring-2 !ring-red-500/20" : ""}
                         `}
                       >
-                        <input
-                          type="radio"
-                          name={`matrix-single-${q.id}`}
-                          checked={isPicked}
-                          onChange={() => handlePick(cell.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className={showBare
-                            ? "w-4 h-4 cursor-pointer"
-                            : "absolute top-1 right-1 w-3.5 h-3.5 cursor-pointer"}
-                        />
-                        {!showBare && (
-                          <span className="block pr-4 text-xs md:text-sm text-gray-800">
+                        {isPicked && (
+                          <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${state === "correct" ? "bg-emerald-600" : state === "wrong" ? "bg-red-500" : "bg-teal-600"}`} />
+                        )}
+                        {cell.cellValue &&
+                        !/^(null|undefined)$/i.test(cell.cellValue.trim()) &&
+                        cell.cellValue.trim().toLowerCase() !== (columnHeaders[colIdx] ?? "").trim().toLowerCase() ? (
+                          <span className="ml-5 text-[15px] md:text-[17px] font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
                             {cell.cellValue}
                           </span>
-                        )}
-
-                        {state === "correct" && (
-                          <span className="absolute -top-1.5 -left-1.5 text-[10px] font-bold text-emerald-600 bg-white rounded-full">✓</span>
-                        )}
-                        {state === "wrong" && (
-                          <span className="absolute -top-1.5 -left-1.5 text-[10px] font-bold text-red-500 bg-white rounded-full">✗</span>
-                        )}
-                        {state === "missed" && (
-                          <span className="absolute -top-1.5 -left-1.5 text-[10px] font-bold text-amber-600 bg-white rounded-full">•</span>
-                        )}
+                        ) : null}
                       </div>
                     </td>
                   );

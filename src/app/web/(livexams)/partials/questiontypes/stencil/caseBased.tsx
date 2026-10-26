@@ -1,13 +1,11 @@
-// src\app\web\(livexams)\ati-teas\vista\exam\(layout)\partials\questiontypes\stencil\caseBased.tsx
+// src\app\web\(livexams)\rn-nursing\vista\exam\(layout)\partials\questiontypes\stencil\caseBased.tsx
 'use client';
 
-import { useState, type ComponentType } from "react";
+import { useState, useEffect, type ComponentType } from "react";
 import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
+import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
+import { filterExhibitTabs, cleanTabTitle } from "@/lib/utils/exams/cleanExamText";
 
-// Contract every standalone question-type component must satisfy to be pluggable
-// into this stencil. hideQuestionHeader lets the inner component suppress its own
-// number-badge + questionText, since the stencil renders that once itself, above
-// the case passage tabs.
 export interface InnerQuestionProps {
   q: StrataSessionQuestionFull;
   questionNumber?: number;
@@ -30,13 +28,6 @@ interface Props {
   InnerQuestion: ComponentType<InnerQuestionProps>;
 }
 
-// Generic stencil for every StrataQuestionType.CaseBased* variant (19 total).
-// Renders the shared case passage/scenario viewer (tabs + content) FIRST — exactly
-// as the old CaseBasedQuestion component did — then delegates the actual
-// answer-collection UI (and its own toolbar) to whichever standalone base
-// component is passed in via InnerQuestion. This file is never used directly by
-// the dispatcher — merged/CaseBasedDynamics.tsx is the linker that decides which
-// InnerQuestion to hand this stencil, based on q.type.
 export const CaseBasedStencil = ({
   q,
   questionNumber,
@@ -48,67 +39,77 @@ export const CaseBasedStencil = ({
   InnerQuestion,
 }: Props) => {
 
-  // Only entries tagged "CaseBasedData" are case passages and become tabs.
-  const cases = (q.questionContents ?? []).filter(
-    (c) => c.prerequisites === "CaseBasedData"
+  const caseContents = filterExhibitTabs(q.questionContents ?? [], q.questionText);
+
+  const [activeTab, setActiveTab] = useState<number>(
+    caseContents[0]?.id ?? 0
   );
 
-  const [activeTab, setActiveTab] = useState<number>(cases[0]?.id ?? 0);
-  const activeContent = cases.find((c) => c.id === activeTab);
+  useEffect(() => {
+    if (caseContents.length > 0 && !caseContents.some((c) => c.id === activeTab)) {
+      setActiveTab(caseContents[0].id);
+    }
+  }, [caseContents, activeTab]);
+
+  const activeContent = caseContents.find((c) => c.id === activeTab) || caseContents[0];
+  const activeDesc = activeContent?.description && !/^(null|undefined)$/i.test(activeContent.description.trim())
+    ? activeContent.description
+    : "";
 
   return (
-    <div className="p-0 space-y-2">
+    <div className="p-0 space-y-3">
+      {/* Question number + stem rendered ONCE with standard older system styling */}
+      <QuestionPromptHeader
+        questionNumber={questionNumber}
+        questionText={q.questionText}
+      />
 
-      {/* Question number + stem — rendered ONCE here; InnerQuestion's own header is suppressed via hideQuestionHeader */}
-      <div className="flex items-center gap-3">
-        <div className="shrink-0 py-1 px-2 rounded
-          bg-gradient-to-br from-yellow-800 to-blue-600 text-white
-          flex items-center justify-center text-xs md:text-sm font-bold shadow-md">
-          {questionNumber}
-        </div>
-        <div
-          className="flex-1 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: q.questionText ?? "" }}
-        />
-      </div>
-
-      {/* Case passage / scenario tabs — always shown first, before the answer control */}
-      {cases.length > 0 && (
-        <div className="rounded-lg border border-indigo-200 overflow-hidden">
-          <div className="flex justify-between border-b border-indigo-200 bg-indigo-50 overflow-x-auto">
-            {cases.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => setActiveTab(c.id)}
-                className={`flex-1 min-w-[80px] px-3 py-2 text-xs font-semibold whitespace-nowrap transition-colors
-                  ${activeTab === c.id
-                    ? "bg-white text-indigo-700 border-b-2 border-indigo-600 shadow-sm"
-                    : "text-gray-500 hover:text-indigo-600 hover:bg-indigo-100"
+      {/* Case passage / scenario tabs (Nurses' Notes, Vital Signs, etc.) */}
+      {caseContents.length > 0 && (
+        <div className="my-3">
+          <div className="flex items-end overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar-button]:hidden">
+            {caseContents.map((c) => {
+              const isActive = activeTab === c.id;
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setActiveTab(c.id)}
+                  className={`px-4 py-2 text-xs sm:text-sm whitespace-nowrap transition cursor-pointer ${
+                    isActive
+                      ? "font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-[#001326] border-t border-l border-r border-slate-300 dark:border-slate-600 rounded-t-md border-b-0"
+                      : "font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 bg-transparent border-b border-slate-300 dark:border-slate-700 border-t-0 border-l-0 border-r-0 rounded-none hover:bg-slate-50 dark:hover:bg-slate-800/20"
                   }`}
-              >
-                {c.title}
-              </button>
-            ))}
+                >
+                  {cleanTabTitle(c.title) || "Clinical Notes"}
+                </button>
+              );
+            })}
+            <div className="flex-1 border-b border-slate-300 dark:border-slate-700 self-stretch" />
           </div>
           {activeContent && (
             <div
-              className="p-3 bg-white text-sm text-gray-700 leading-relaxed max-h-52 overflow-y-auto prose prose-sm"
-              dangerouslySetInnerHTML={{ __html: activeContent.description ?? "" }}
+              className="exhibit-content-body py-3 px-0.5 sm:px-1 text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar-button]:hidden"
+              dangerouslySetInnerHTML={{ __html: activeDesc }}
             />
           )}
         </div>
       )}
 
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      {q.metaQuestionText && q.metaQuestionText.trim().toLowerCase() !== "null" && (
-        <div
-          className="text-md p-2 text-green-900 bg-green-50 rounded-md"
-          dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
-        />
+      {/* Separation border line after exhibit and before meta */}
+      {caseContents.length > 0 && (
+        <div className="border-b border-slate-300 dark:border-slate-700 my-3" />
       )}
 
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
+      {/* Meta Question below separation line and above Choices */}
+      {q.metaQuestionText && q.metaQuestionText.toLowerCase().trim() !== "null" && (
+        <div className="pt-1 pb-2 mb-2">
+          <div
+            className="text-base sm:text-lg text-blue-700 dark:text-blue-400 font-bold italic leading-snug"
+            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
+          />
+        </div>
+      )}
 
       {/* Delegate the actual answer UI + its own toolbar to the underlying standalone component */}
       <InnerQuestion
