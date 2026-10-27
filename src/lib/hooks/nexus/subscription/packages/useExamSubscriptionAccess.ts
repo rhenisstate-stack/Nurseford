@@ -228,14 +228,49 @@ export function subscriptionIsActive(sub: UserSubscriptionPackage): boolean {
 }
 
 /**
- * A package is ONLY active and paid if the logged-in user actually has an active subscription record in userSubscriptions.
- * NEVER check pkg.status because pkg.status is just the catalog store status of the package definition in Rhenis!
+ * Checks if a specific Provider subscription record (Stripe, Paystack, etc.) is active and unexpired
+ */
+function isProviderSubscriptionActive(pSub: any): boolean {
+  if (!pSub) return false;
+  const status = String(pSub.status || pSub.subscriptionStatus || pSub.providerStatus || "").trim().toLowerCase();
+  const isActive =
+    status === "active" ||
+    status === "valid" ||
+    status === "approved" ||
+    status === "completed" ||
+    status === "current" ||
+    status === "live" ||
+    status === "trialing";
+
+  if (!isActive) return false;
+
+  const start = pSub.validFrom || pSub.currentPeriodStart || pSub.startTime || pSub.purchaseDate;
+  if (isDateInFuture(start)) return false;
+
+  const expiry = pSub.validUntil || pSub.currentPeriodEnd || pSub.nextPaymentDate || pSub.nextDueDate || pSub.nextBillingTime || pSub.nextBillingOrPeriodEnd || pSub.expiresDate;
+  if (isDateExpired(expiry)) return false;
+
+  return true;
+}
+
+/**
+ * A package is active and paid if the logged-in user actually has an active subscription
+ * in userSubscriptions OR in any of the payment provider subscription sub-arrays.
  */
 export function isPackageActiveAndPaid(pkg: DiscreteSubscriptionPackage): boolean {
-  if (!Array.isArray(pkg.userSubscriptions) || pkg.userSubscriptions.length === 0) {
-    return false;
+  if (Array.isArray(pkg.userSubscriptions) && pkg.userSubscriptions.some(subscriptionIsActive)) {
+    return true;
   }
-  return pkg.userSubscriptions.some(subscriptionIsActive);
+
+  if (Array.isArray(pkg.stripeSubscriptions) && pkg.stripeSubscriptions.some(isProviderSubscriptionActive)) return true;
+  if (Array.isArray(pkg.payStackSubscriptions) && pkg.payStackSubscriptions.some(isProviderSubscriptionActive)) return true;
+  if (Array.isArray(pkg.payPalSubscriptions) && pkg.payPalSubscriptions.some(isProviderSubscriptionActive)) return true;
+  if (Array.isArray(pkg.flutterWaveSubscriptions) && pkg.flutterWaveSubscriptions.some(isProviderSubscriptionActive)) return true;
+  if (Array.isArray(pkg.intaSendSubscriptions) && pkg.intaSendSubscriptions.some(isProviderSubscriptionActive)) return true;
+  if (Array.isArray(pkg.appleSubscriptions) && pkg.appleSubscriptions.some(isProviderSubscriptionActive)) return true;
+  if (Array.isArray(pkg.mPesaSubscriptions) && pkg.mPesaSubscriptions.some(isProviderSubscriptionActive)) return true;
+
+  return false;
 }
 
 export function useExamSubscriptionAccess({
@@ -258,7 +293,9 @@ export function useExamSubscriptionAccess({
   const sessionCached = useMemo(() => {
     if (typeof window === "undefined" || !user?.userName || isGuest) return false;
     try {
-      return sessionStorage.getItem(`user_sub_${user.userName}_${programSlug}`) === "true";
+      const direct = sessionStorage.getItem(`user_sub_${user.userName}_${programSlug}`) === "true";
+      const universal = sessionStorage.getItem(`user_sub_universal_${user.userName}`) === "true";
+      return direct || universal;
     } catch {
       return false;
     }
@@ -271,7 +308,7 @@ export function useExamSubscriptionAccess({
     }
 
     return filteredSubscriptionPackages.some((pkg) => {
-      // Must be actively purchased by this user (non-empty userSubscriptions with Active + Yes)
+      // Must be actively purchased by this user
       const active = isPackageActiveAndPaid(pkg);
       if (!active) return false;
       return packageMatchesExam(pkg, exam, programSlug);
@@ -280,25 +317,51 @@ export function useExamSubscriptionAccess({
 
   const isSubscribed = useMemo(() => {
     if (isGuest) return false;
-    if (subscriptionsLoading) {
-      return sessionCached;
-    }
-    return hasDatabaseSubscription;
-  }, [isGuest, subscriptionsLoading, sessionCached, hasDatabaseSubscription]);
+    // 1. If database explicitly confirms active subscription, user is subscribed
+    if (hasDatabaseSubscription) return true;
+    // 2. If user already proved active subscription in this session, keep access active
+    // so network hiccups or background revalidations NEVER revoke access mid-exam
+    if (sessionCached) return true;
+    // 3. Otherwise, if query is still loading, wait for response
+    if (subscriptionsLoading) return false;
+    return false;
+  }, [isGuest, hasDatabaseSubscription, sessionCached, subscriptionsLoading]);
 
+  // Cache confirmed subscriptions in sessionStorage
   useEffect(() => {
-    if (!subscriptionsLoading && typeof window !== "undefined" && user?.userName && !isGuest) {
-      if (hasDatabaseSubscription) {
+    if (typeof window === "undefined" || !user?.userName || isGuest) return;
+
+    if (hasDatabaseSubscription) {
+      try {
+        sessionStorage.setItem(`user_sub_${user.userName}_${programSlug}`, "true");
+        const hasUniversal = filteredSubscriptionPackages?.some(
+          (pkg) => isUniversalPackage(pkg) && isPackageActiveAndPaid(pkg)
+        );
+        if (hasUniversal) {
+          sessionStorage.setItem(`user_sub_universal_${user.userName}`, "true");
+        }
+      } catch {}
+    }
+  }, [hasDatabaseSubscription, filteredSubscriptionPackages, user?.userName, programSlug, isGuest]);
+
+  // Only evict subscription cache on explicit user logout
+  useEffect(() => {
+    const handleLogout = () => {
+      if (typeof window !== "undefined") {
         try {
-          sessionStorage.setItem(`user_sub_${user.userName}_${programSlug}`, "true");
-        } catch {}
-      } else {
-        try {
-          sessionStorage.removeItem(`user_sub_${user.userName}_${programSlug}`);
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const k = sessionStorage.key(i);
+            if (k && k.startsWith("user_sub_")) keysToRemove.push(k);
+          }
+          keysToRemove.forEach((k) => sessionStorage.removeItem(k));
         } catch {}
       }
-    }
-  }, [hasDatabaseSubscription, subscriptionsLoading, user?.userName, programSlug, isGuest]);
+    };
+
+    window.addEventListener("session:logout", handleLogout);
+    return () => window.removeEventListener("session:logout", handleLogout);
+  }, []);
 
   return {
     isSubscribed,

@@ -27,7 +27,7 @@ export default function UpperStickyNavBar() {
     const [profileOpen, setProfileOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-    const userName = user?.userName?.trim() || "User";
+    const userName = user?.userName?.trim() || "Guest";
     const examTitle = examSession?.exam?.title ?? "Untitled Exam";
     const totalQuestions = examSession?.exam?.questionsCount ?? 0;
 

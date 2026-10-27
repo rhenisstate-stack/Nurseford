@@ -33,7 +33,7 @@ export default function UpperStickyNavBar() {
     const [profileOpen, setProfileOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement | null>(null);
 
-    const userName = user?.userName?.trim() || "User";
+    const userName = user?.userName?.trim() || "Guest";
     const examTitle = examSession?.exam?.title ?? "Untitled Exam";
     const totalQuestions = examSession?.exam?.questionsCount ?? 0;
 
@@ -450,13 +450,13 @@ export default function UpperStickyNavBar() {
                                         {avatarSrc ? (
                                             <Image
                                                 src={avatarSrc}
-                                                alt={uName || userName || "User"}
+                                                alt={uName || userName || "Guest"}
                                                 width={20}
                                                 height={20}
                                                 className="object-cover w-full h-full"
                                             />
                                         ) : (
-                                            uInitial || userName[0]?.toUpperCase() || "U"
+                                            uInitial || userName[0]?.toUpperCase() || "G"
                                         )}
                                     </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { dominionService } from "@/lib/services/nexus/dominion/dominionService";
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -225,11 +225,22 @@ export const useDiscreteDominionSubscriptionPackages = ({
   const [subscriptionPackageSearch, setSubscriptionPackageSearch] = useState("");
   const [skewTotal, setSkewTotal] = useState<number>(0);
   const [skewTotalPages, setSkewTotalPages] = useState<number>(1);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState<number>(0);
   const FETCH_TYPE = 'DiscreteFetch';
 
+  const refresh = useCallback(() => {
+    setRefreshKey((prev) => prev + 1);
+  }, []);
+
   useEffect(() => {
+    let cancelled = false;
+
     const fetchSubscriptionPackages = async () => {
       try {
+        setLoading(true);
+        setError(null);
         console.log("🚀 [useDiscreteDominionSubscriptionPackages] Fetching SubscriptionPackages ... 🪝");
         console.log("🧪 [Hook Params]", {
           subscriptionPackageSearch,
@@ -271,21 +282,34 @@ export const useDiscreteDominionSubscriptionPackages = ({
         const totalItems = result?.data?.skewTotal ?? 0;
         const totalPages = result?.data?.skewTotalPages ?? 1;
 
-        setSubscriptionPackages(items);
-        setFilteredSubscriptionPackages(items);
-        setSkewTotal(totalItems);
-        setSkewTotalPages(totalPages);
+        if (!cancelled) {
+          setSubscriptionPackages(items);
+          setFilteredSubscriptionPackages(items);
+          setSkewTotal(totalItems);
+          setSkewTotalPages(totalPages);
+        }
 
       } catch (err) {
         console.error(
           "❌ [useDiscreteDominionSubscriptionPackages] Failed to fetch SubscriptionPackages:",
           err
         );
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to fetch subscriptions");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchSubscriptionPackages();
-  }, [subscriptionPackageSearch, page, perPage, sortColumn, sortDirection]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [subscriptionPackageSearch, page, perPage, sortColumn, sortDirection, refreshKey]);
 
   // Pass SubscriptionPackages when search changes [ Frontend is just to display !]
   useEffect(() => {
@@ -299,13 +323,11 @@ export const useDiscreteDominionSubscriptionPackages = ({
     filteredSubscriptionPackages,
     subscriptionPackageSearch,
     setSubscriptionPackageSearch,
+    loading,
+    error,
+    refresh,
   };
 };
-
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-
-
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // The End By : B.L.S.M.C ;  -  Skewblanc - The Winds Chase Us ⚓

@@ -4,7 +4,7 @@ import { DEFAULT_USER_ROLE } from "@/lib/constants/roles";
 // Types for registration credentials
 export type RegisterCredentials = {
   username: string;
-  name: string;
+  name?: string;
   email: string;
   phone: string;
   password?: string;

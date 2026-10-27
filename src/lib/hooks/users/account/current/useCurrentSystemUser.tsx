@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { userService, UserAction } from "@/lib/services/users/user/userService";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
-import { getCookie, setUsernameCookie, getUsernameCookie } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
+import { getCookie, setUsernameCookie, getUsernameCookie, deleteUsernameCookie } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
 
 export interface SystemUser {
   id: number;
@@ -281,13 +281,9 @@ export const useCurrentSystemUser = () => {
 
     const fetchUser = async (attempt: number) => {
       try {
-        // console.log(`🚀 [useCurrentSystemUser] Fetching user: ${FETCH_ACTION}`);
-
         const result = await userService<SystemUser>(
           FETCH_ACTION
         );
-
-        // console.log("📥 [useCurrentSystemUser] Raw result:", result);
 
         if (result?.error) throw new Error(result.error);
 
@@ -297,7 +293,7 @@ export const useCurrentSystemUser = () => {
         if (cancelled) return;
 
         // LOGIC — Set user safely
-if (camelCasedResult && typeof camelCasedResult === "object") {
+        if (camelCasedResult && typeof camelCasedResult === "object") {
            // The backend user may be wrapped in `{data: {...}}`,
            // `{data: {items: [...]}}` or returned directly — find the actual
            // user record, then resolve its display name.
@@ -386,6 +382,8 @@ if (camelCasedResult && typeof camelCasedResult === "object") {
     fetchUser(0);
 
     const handleLogout = () => {
+      cancelled = true;
+      deleteUsernameCookie();
       setUser(null);
       setAuthenticated(false);
       setLoading(false);

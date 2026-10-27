@@ -38,26 +38,18 @@ function isCleanValidText(text?: string | null): boolean {
   return clean !== "null" && clean !== "none" && clean !== "undefined" && clean !== "n/a";
 }
 
-function getOptionLetter(opt: StrataSessionQuestionOption, index: number): string {
-  if (opt.option && /^[A-Z]$/i.test(opt.option.trim())) {
-    return opt.option.trim().toUpperCase();
-  }
-  const match = opt.option?.match(/Option\s+([A-Z])/i);
-  if (match) return match[1].toUpperCase();
-  if (opt.label && /^[A-Z]$/i.test(opt.label.trim())) {
-    return opt.label.trim().toUpperCase();
-  }
-  return String.fromCharCode(65 + index);
-}
-
 function getOptionText(opt: StrataSessionQuestionOption): string {
+  let val = "";
   if (
     opt.option &&
     (/^[A-Z]$/i.test(opt.option.trim()) || /^Option\s+[A-Z]$/i.test(opt.option.trim()))
   ) {
-    return opt.answerContent || opt.description || opt.option;
+    val = opt.answerContent || opt.description || opt.option || "";
+  } else {
+    val = opt.answerContent || opt.option || opt.description || "";
   }
-  return opt.answerContent || opt.option || opt.description || "";
+  const cleaned = cleanOptionText(val);
+  return cleaned.replace(/^[A-Z][\.\)\:\-]\s+/i, "").trim();
 }
 
 export function ExamCorrectAnswerView({
@@ -121,7 +113,7 @@ export function ExamCorrectAnswerView({
 
   // 2. Identify formatted correct answer list directly from backend records
   const formattedAnswers = useMemo(() => {
-    const items: { letter?: string; label?: string; value: string }[] = [];
+    const items: { label?: string; value: string }[] = [];
     const options = q.questionOptions ?? [];
     const cas = q.questionCorrectAnswers ?? [];
 
@@ -149,7 +141,6 @@ export function ExamCorrectAnswerView({
           opt?.answerContent || opt?.option || ca.description || ca.openEndedAnswer || "";
         if (isCleanValidText(val)) {
           items.push({
-            letter: blankNum,
             label: `Blank ${blankNum}`,
             value: val,
           });
@@ -180,7 +171,6 @@ export function ExamCorrectAnswerView({
         const val = ca.openEndedAnswer || ca.description || "";
         if (isCleanValidText(val)) {
           items.push({
-            letter: String(idx + 1),
             label,
             value: val,
           });
@@ -236,7 +226,6 @@ export function ExamCorrectAnswerView({
           const opt = options.find((o) => o.id === id);
           if (opt) {
             items.push({
-              letter: String(index + 1),
               label: `Step ${index + 1}`,
               value: opt.answerContent || opt.option || "",
             });
@@ -251,7 +240,6 @@ export function ExamCorrectAnswerView({
         const val = opt?.answerContent || opt?.option || ca.description || "";
         if (isCleanValidText(val)) {
           items.push({
-            letter: String(idx + 1),
             label: `Step ${idx + 1}`,
             value: val,
           });
@@ -297,7 +285,6 @@ export function ExamCorrectAnswerView({
         const val = ca.correctHighlight || ca.openEndedAnswer || ca.description || "";
         if (isCleanValidText(val)) {
           items.push({
-            letter: String(idx + 1),
             label: `Correct Finding ${idx + 1}`,
             value: val,
           });
@@ -312,7 +299,6 @@ export function ExamCorrectAnswerView({
         const opt = options.find((o) => o.id === ca.questionOptionId);
         const val = opt?.answerContent || ca.correctHotspot || ca.description || "Target Marker";
         items.push({
-          letter: String(idx + 1),
           label: `Location ${idx + 1}`,
           value: val,
         });
@@ -325,23 +311,19 @@ export function ExamCorrectAnswerView({
       options
         .filter((opt) => correctOptionIds.has(opt.id))
         .forEach((opt) => {
-          const optIndex = options.findIndex((o) => o.id === opt.id);
-          const letter = getOptionLetter(opt, optIndex >= 0 ? optIndex : 0);
           const text = getOptionText(opt);
-          items.push({
-            letter,
-            label: letter ? `Option ${letter}` : "",
-            value: text,
-          });
+          if (isCleanValidText(text)) {
+            items.push({
+              value: text,
+            });
+          }
         });
       if (items.length > 0) return items;
     }
 
     // Direct fallback from questionCorrectAnswers without synthesis
-    cas.forEach((ca, idx) => {
+    cas.forEach((ca) => {
       const opt = options.find((o) => o.id === ca.questionOptionId);
-      const optIndex = opt ? options.findIndex((o) => o.id === opt.id) : idx;
-      const letter = opt ? getOptionLetter(opt, optIndex) : String.fromCharCode(65 + idx);
       const val =
         opt?.answerContent ||
         opt?.option ||
@@ -349,11 +331,10 @@ export function ExamCorrectAnswerView({
         ca.description ||
         (ca as unknown as { answer?: string }).answer ||
         "";
-      if (isCleanValidText(val)) {
+      const cleanVal = cleanOptionText(val).replace(/^[A-Z][\.\)\:\-]\s+/i, "").trim();
+      if (isCleanValidText(cleanVal)) {
         items.push({
-          letter,
-          label: cas.length > 1 ? `Key ${idx + 1}` : undefined,
-          value: val,
+          value: cleanVal,
         });
       }
     });
@@ -454,12 +435,8 @@ export function ExamCorrectAnswerView({
                 className="rounded-lg border border-emerald-300/80 dark:border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 px-3 py-1.5 sm:px-3.5 sm:py-2 flex items-center justify-between gap-3 transition-all"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  {item.letter ? (
-                    <span className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded bg-emerald-600 text-white font-extrabold text-xs sm:text-sm shrink-0 shadow-2xs">
-                      {item.letter}
-                    </span>
-                  ) : item.label ? (
-                    <span className="inline-flex items-center px-3 py-1 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-950 dark:text-emerald-200 font-bold text-xs sm:text-sm shrink-0 border border-emerald-300 dark:border-emerald-500/30">
+                  {item.label ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-950 dark:text-emerald-200 font-bold text-xs sm:text-sm shrink-0 border border-emerald-300 dark:border-emerald-500/30">
                       {item.label}
                     </span>
                   ) : null}

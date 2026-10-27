@@ -170,8 +170,8 @@ export function SubjectExamsHierarchyPage({
         });
 
         const currentCached = subjectExamsHierarchyClientCache.get(cacheKey);
-        const resolvedSubName = rawItems[0]?.subjectName || currentCached?.subjectName || subjectName;
-        const resolvedCourseName = rawItems[0]?.courseName || currentCached?.courseName || "";
+        const resolvedSubName = (rawItems[0] as any)?.subjectName || currentCached?.subjectName || subjectName;
+        const resolvedCourseName = (rawItems[0] as any)?.courseName || currentCached?.courseName || "";
         subjectExamsHierarchyClientCache.set(cacheKey, {
           exams: sortedExams,
           courseName: resolvedCourseName,

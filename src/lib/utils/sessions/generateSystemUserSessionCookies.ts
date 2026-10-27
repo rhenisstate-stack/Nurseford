@@ -26,11 +26,12 @@ export const setCookie = (name: string, value: string, days = COOKIE_DAYS) => {
   }
 
   const expires = new Date(Date.now() + days * 86400000).toUTCString();
+  const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
   document.cookie =
     `${name}=${encoded}; ` +
     `expires=${expires}; path=${COOKIE_PATH}; ` +
-    `${isProd ? "Secure; " : ""}` +
-    `SameSite=Strict`;
+    `${isHttps ? "Secure; " : ""}` +
+    `SameSite=Lax`;
 };
 
 export const getCookie = (name: string): string | null => {
@@ -50,11 +51,34 @@ export const getCookie = (name: string): string | null => {
 
 export const deleteCookie = (name: string) => {
   if (typeof document === "undefined") return;
-  const expires = new Date(0).toUTCString();
-  document.cookie =
-    `${name}=; expires=${expires}; path=${COOKIE_PATH}; ` +
-    `${isProd ? "Secure; " : ""}` +
-    `SameSite=Strict`;
+  const past = "expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+  // Try multiple paths, samesite variants, and domains to ensure browser clears the cookie completely
+  const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+  const paths = ["/", "", currentPath];
+  const sameSites = ["Strict", "Lax", "None"];
+
+  for (const p of paths) {
+    const pathStr = p ? `; path=${p}` : "";
+    for (const ss of sameSites) {
+      const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+      const secureStr = ss === "None" || isHttps ? "; Secure" : "";
+      document.cookie = `${name}=; ${past}${pathStr}; SameSite=${ss}${secureStr}`;
+    }
+    // Also without SameSite
+    document.cookie = `${name}=; ${past}${pathStr}`;
+  }
+
+  // Domain-specific deletions
+  if (typeof window !== "undefined" && window.location.hostname) {
+    const hostname = window.location.hostname;
+    const domainParts = hostname.split(".");
+    if (domainParts.length > 1) {
+      const rootDomain = `.${domainParts.slice(-2).join(".")}`;
+      document.cookie = `${name}=; ${past}; path=/; domain=${rootDomain}`;
+      document.cookie = `${name}=; ${past}; path=/; domain=${hostname}`;
+    }
+  }
 };
 
 // ───────────────────────────────────────────────────────────────
@@ -70,11 +94,31 @@ const AUTH_COOKIES = [
 ] as const;
 
 /**
- * Wipes all auth session cookies.
+ * Wipes all auth session cookies and user-level storage caches.
  * Call on login (before writing new) and on logout.
  */
 export const clearAuthSessionCookies = () => {
   AUTH_COOKIES.forEach(deleteCookie);
+  deleteCookie("skew_blanc_session_username");
+
+  // Also purge local and session storage user markers
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem("skew_blanc_session_username");
+      localStorage.removeItem("skew_blanc_session_badge");
+      localStorage.removeItem("skew_blanc_session_line");
+
+      // Purge all cached user subscription keys: user_sub_*
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const k = sessionStorage.key(i);
+        if (k && (k.startsWith("user_sub_") || k.startsWith("skew_blanc_"))) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach((k) => sessionStorage.removeItem(k));
+    } catch {}
+  }
 };
 
 /**
@@ -132,20 +176,35 @@ export const resolveAndStoreIPAddress = async (): Promise<string | null> => {
   } catch { return null; }
 };
 
-export const setUsernameCookie = (username: string) => setCookie("skew_blanc_session_username", username);
+export const setUsernameCookie = (username: string) => {
+  setCookie("skew_blanc_session_username", username);
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem("skew_blanc_session_username", username);
+    } catch {}
+  }
+};
 
-export const getUsernameCookie = (): string | null => getCookie("skew_blanc_session_username");
+export const getUsernameCookie = (): string | null => {
+  const cookieVal = getCookie("skew_blanc_session_username");
+  if (cookieVal) return cookieVal;
+  if (typeof window !== "undefined") {
+    try {
+      return localStorage.getItem("skew_blanc_session_username");
+    } catch {}
+  }
+  return null;
+};
 
-export const deleteUsernameCookie = () => deleteCookie("skew_blanc_session_username");
-
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-
-
-
-
-
+export const deleteUsernameCookie = () => {
+  deleteCookie("skew_blanc_session_username");
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem("skew_blanc_session_username");
+    } catch {}
+  }
+};
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // The End by B.L.S.M.A.C -  The Winds Chase US !
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-

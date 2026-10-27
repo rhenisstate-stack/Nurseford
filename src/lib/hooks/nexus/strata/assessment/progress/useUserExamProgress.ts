@@ -14,6 +14,7 @@ export interface RecentExamActivity {
   questionsCount: number;
   questionsAnswered: number;
   coveragePercent: number;
+  percentage?: number;
   attemptsUsed: number;
   attemptsAllowed: number;
   residualDuration?: number;

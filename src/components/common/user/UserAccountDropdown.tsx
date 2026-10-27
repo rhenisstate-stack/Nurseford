@@ -20,7 +20,7 @@ import {
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
 import { dynamicLogoutService } from "@/lib/services/auth/logoutService";
 import { userService } from "@/lib/services/users/user/userService";
-import { clearAuthSessionCookies } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
+import { clearAuthSessionCookies, deleteUsernameCookie } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
 interface UserAccountDropdownProps {
   currentDashboard?: string;
   align?: "right" | "left" | "center";
@@ -104,7 +104,7 @@ export default function UserAccountDropdown({
 
   // Close on outside click
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
         setLogoutOptionsOpen(false);
@@ -129,6 +129,16 @@ export default function UserAccountDropdown({
   }, []);
 
   const handleLogout = async (fetchType: "distinct" | "relative") => {
+    // 1. Immediately clear auth cookies, username, and local caches so UI responds instantly
+    clearAuthSessionCookies();
+    deleteUsernameCookie();
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.clear();
+      } catch {}
+      window.dispatchEvent(new CustomEvent("session:logout"));
+    }
+
     try {
       const response = await dynamicLogoutService(targetDashboard, fetchType);
       const backendRedirect =
@@ -208,8 +218,8 @@ export default function UserAccountDropdown({
           {customTrigger({
             isOpen,
             toggle: () => setIsOpen((v) => !v),
-            userName: "",
-            userInitial: "?",
+            userName: "Guest",
+            userInitial: "G",
             avatarSrc: null,
           })}
           {isOpen && (

@@ -41,9 +41,24 @@ async function forwardToBackend(
     console.log(`🌿 [roleRoute] Forwarding ${method} to:`, url);
     if (method !== "GET") console.log("Request body:", JSON.stringify(body));
 
-    //  EXTRACT SESSION HEADERS FIRST
-    const castoLine = req.headers.get("x-casto-line");
-    const castoBadge = req.headers.get("x-casto-badge");
+    //  EXTRACT SESSION HEADERS FIRST (with cookie fallback)
+    let castoLine = req.headers.get("x-casto-line");
+    let castoBadge = req.headers.get("x-casto-badge");
+
+    if (!castoBadge) {
+      castoBadge = req.cookies.get("skew_blanc_session_badge")?.value || null;
+    }
+    if (!castoLine) {
+      const lineCookie = req.cookies.get("skew_blanc_session_line")?.value;
+      if (lineCookie) {
+        try {
+          const parsed = JSON.parse(decodeURIComponent(lineCookie));
+          castoLine = (castoBadge && parsed[castoBadge]) || (Object.values(parsed)[0] as string) || null;
+        } catch {
+          castoLine = lineCookie;
+        }
+      }
+    }
 
     const headers: HeadersInit = {
       "Content-Type": "application/json",

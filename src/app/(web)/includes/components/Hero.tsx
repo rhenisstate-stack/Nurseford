@@ -221,7 +221,7 @@ export default function Hero() {
               Start Your Career
               <span className="text-coral">.</span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl text-black dark:text-white font-medium leading-relaxed max-w-2xl mb-4 sm:mb-5 mx-auto">
+            <p className="text-[14px] sm:text-[16px] md:text-[18px] text-black dark:text-white font-medium leading-relaxed max-w-2xl mb-4 sm:mb-5 mx-auto">
               Question banks, study notes, and timed practice tests for TEAS 7,
               HESI A2, NCLEX-RN/PN, and RN &amp; LPN nursing exams — all in one
               place.

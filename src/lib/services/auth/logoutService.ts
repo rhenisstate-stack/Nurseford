@@ -16,6 +16,12 @@ export const dynamicLogoutService = async (
 ): Promise<LogoutApiResponse> => {
   let backendResponse: LogoutApiResponse = { success: false };
 
+  // 1. Immediately wipe client credentials so all listeners flip to Guest without waiting on backend
+  clearAuthSessionCookies();
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("session:logout"));
+  }
+
   try {
     backendResponse = (await apiFetch("/api/auth/logout", {
       method: "POST",
