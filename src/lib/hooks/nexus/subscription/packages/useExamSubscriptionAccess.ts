@@ -2,6 +2,7 @@
 
 import { useMemo, useEffect } from "react";
 import { SystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
+import { getUsernameCookie } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
 import {
   useDiscreteDominionSubscriptionPackages,
   DiscreteSubscriptionPackage,
@@ -57,25 +58,59 @@ export function isUniversalPackage(pkg: DiscreteSubscriptionPackage): boolean {
 }
 
 /**
- * Strict slug/name matching for fallback when hierarchy GUIDs are not available on exam
+ * Normalizes program slugs into family domains
+ * (e.g. rn-nursing and nclex-rn both belong to 'rn'; lpn-nursing and nclex-pn belong to 'pn')
+ */
+export function getProgramFamily(slug: string): string {
+  const p = (slug || "").toLowerCase().trim();
+  if (
+    p === "rn-nursing" ||
+    p === "nclex-rn" ||
+    (p.includes("rn") && !p.includes("pn") && !p.includes("lpn"))
+  ) {
+    return "rn";
+  }
+  if (
+    p === "lpn-nursing" ||
+    p === "nclex-pn" ||
+    p.includes("pn") ||
+    p.includes("lpn")
+  ) {
+    return "pn";
+  }
+  if (p === "ati-teas" || p.includes("teas")) return "teas";
+  if (p === "hesi-a2" || p.includes("hesi")) return "hesi";
+  if (p === "cna" || p.includes("cna")) return "cna";
+  if (p === "ged" || p.includes("ged")) return "ged";
+  return p;
+}
+
+/**
+ * Strict slug/name/target matching for fallback when hierarchy GUIDs are not available on exam
  */
 export function packageMatchesExamSlug(
   pkg: DiscreteSubscriptionPackage,
   programSlug: string = ""
 ): boolean {
-  const p = (programSlug || "").toLowerCase();
+  const p = (programSlug || "").toLowerCase().trim();
   const name = (pkg.name || "").toLowerCase();
   const cluster = (pkg.terminalClusterName || "").toLowerCase();
-  const combined = `${name} ${cluster}`;
+  const target = (pkg.target || "").toLowerCase();
+  const combined = `${name} ${cluster} ${target}`;
 
   // ATI TEAS
   if (p === "ati-teas" || p.includes("teas")) {
-    return combined.includes("teas") || cluster.includes("teas") || cluster.includes("ati");
+    return (
+      combined.includes("teas") ||
+      cluster.includes("teas") ||
+      cluster.includes("ati") ||
+      target.includes("teas")
+    );
   }
 
   // HESI A2
   if (p === "hesi-a2" || p.includes("hesi")) {
-    return combined.includes("hesi");
+    return combined.includes("hesi") || target.includes("hesi");
   }
 
   // RN Nursing / NCLEX-RN (must be RN, explicitly NOT PN or LPN)
@@ -86,12 +121,24 @@ export function packageMatchesExamSlug(
   ) {
     const isPn = /\b(pn|lpn|nclex-?pn|practical)\b/i.test(combined);
     if (isPn) return false;
-    return /\b(rn|nclex-?rn|registered\s*nurse)\b/i.test(combined);
+    return (
+      /\b(rn|nclex-?rn|registered\s*nurse)\b/i.test(combined) ||
+      combined.includes("rn")
+    );
   }
 
   // LPN / PN Nursing / NCLEX-PN (must be PN or LPN)
-  if (p === "lpn-nursing" || p === "nclex-pn" || p.includes("pn") || p.includes("lpn")) {
-    return /\b(pn|lpn|nclex-?pn|practical)\b/i.test(combined);
+  if (
+    p === "lpn-nursing" ||
+    p === "nclex-pn" ||
+    p.includes("pn") ||
+    p.includes("lpn")
+  ) {
+    return (
+      /\b(pn|lpn|nclex-?pn|practical)\b/i.test(combined) ||
+      combined.includes("pn") ||
+      combined.includes("lpn")
+    );
   }
 
   // CNA
@@ -232,7 +279,11 @@ export function subscriptionIsActive(sub: UserSubscriptionPackage): boolean {
  */
 function isProviderSubscriptionActive(pSub: any): boolean {
   if (!pSub) return false;
-  const status = String(pSub.status || pSub.subscriptionStatus || pSub.providerStatus || "").trim().toLowerCase();
+  const status = String(
+    pSub.status || pSub.subscriptionStatus || pSub.providerStatus || ""
+  )
+    .trim()
+    .toLowerCase();
   const isActive =
     status === "active" ||
     status === "valid" ||
@@ -244,10 +295,21 @@ function isProviderSubscriptionActive(pSub: any): boolean {
 
   if (!isActive) return false;
 
-  const start = pSub.validFrom || pSub.currentPeriodStart || pSub.startTime || pSub.purchaseDate;
+  const start =
+    pSub.validFrom ||
+    pSub.currentPeriodStart ||
+    pSub.startTime ||
+    pSub.purchaseDate;
   if (isDateInFuture(start)) return false;
 
-  const expiry = pSub.validUntil || pSub.currentPeriodEnd || pSub.nextPaymentDate || pSub.nextDueDate || pSub.nextBillingTime || pSub.nextBillingOrPeriodEnd || pSub.expiresDate;
+  const expiry =
+    pSub.validUntil ||
+    pSub.currentPeriodEnd ||
+    pSub.nextPaymentDate ||
+    pSub.nextDueDate ||
+    pSub.nextBillingTime ||
+    pSub.nextBillingOrPeriodEnd ||
+    pSub.expiresDate;
   if (isDateExpired(expiry)) return false;
 
   return true;
@@ -258,17 +320,48 @@ function isProviderSubscriptionActive(pSub: any): boolean {
  * in userSubscriptions OR in any of the payment provider subscription sub-arrays.
  */
 export function isPackageActiveAndPaid(pkg: DiscreteSubscriptionPackage): boolean {
-  if (Array.isArray(pkg.userSubscriptions) && pkg.userSubscriptions.some(subscriptionIsActive)) {
+  if (
+    Array.isArray(pkg.userSubscriptions) &&
+    pkg.userSubscriptions.some(subscriptionIsActive)
+  ) {
     return true;
   }
 
-  if (Array.isArray(pkg.stripeSubscriptions) && pkg.stripeSubscriptions.some(isProviderSubscriptionActive)) return true;
-  if (Array.isArray(pkg.payStackSubscriptions) && pkg.payStackSubscriptions.some(isProviderSubscriptionActive)) return true;
-  if (Array.isArray(pkg.payPalSubscriptions) && pkg.payPalSubscriptions.some(isProviderSubscriptionActive)) return true;
-  if (Array.isArray(pkg.flutterWaveSubscriptions) && pkg.flutterWaveSubscriptions.some(isProviderSubscriptionActive)) return true;
-  if (Array.isArray(pkg.intaSendSubscriptions) && pkg.intaSendSubscriptions.some(isProviderSubscriptionActive)) return true;
-  if (Array.isArray(pkg.appleSubscriptions) && pkg.appleSubscriptions.some(isProviderSubscriptionActive)) return true;
-  if (Array.isArray(pkg.mPesaSubscriptions) && pkg.mPesaSubscriptions.some(isProviderSubscriptionActive)) return true;
+  if (
+    Array.isArray(pkg.stripeSubscriptions) &&
+    pkg.stripeSubscriptions.some(isProviderSubscriptionActive)
+  )
+    return true;
+  if (
+    Array.isArray(pkg.payStackSubscriptions) &&
+    pkg.payStackSubscriptions.some(isProviderSubscriptionActive)
+  )
+    return true;
+  if (
+    Array.isArray(pkg.payPalSubscriptions) &&
+    pkg.payPalSubscriptions.some(isProviderSubscriptionActive)
+  )
+    return true;
+  if (
+    Array.isArray(pkg.flutterWaveSubscriptions) &&
+    pkg.flutterWaveSubscriptions.some(isProviderSubscriptionActive)
+  )
+    return true;
+  if (
+    Array.isArray(pkg.intaSendSubscriptions) &&
+    pkg.intaSendSubscriptions.some(isProviderSubscriptionActive)
+  )
+    return true;
+  if (
+    Array.isArray(pkg.appleSubscriptions) &&
+    pkg.appleSubscriptions.some(isProviderSubscriptionActive)
+  )
+    return true;
+  if (
+    Array.isArray(pkg.mPesaSubscriptions) &&
+    pkg.mPesaSubscriptions.some(isProviderSubscriptionActive)
+  )
+    return true;
 
   return false;
 }
@@ -290,20 +383,84 @@ export function useExamSubscriptionAccess({
     refresh: refreshSubscriptions,
   } = useDiscreteDominionSubscriptionPackages({ page: 1, perPage: 200 });
 
-  const sessionCached = useMemo(() => {
-    if (typeof window === "undefined" || !user?.userName || isGuest) return false;
+  // Resolve stable username even if user state is momentarily revalidating
+  const username = useMemo(() => {
+    if (user?.userName && user.userName.toLowerCase() !== "guest") {
+      return user.userName.toLowerCase().trim();
+    }
+    const cookieUser = getUsernameCookie();
+    if (cookieUser && cookieUser.toLowerCase() !== "guest") {
+      return cookieUser.toLowerCase().trim();
+    }
+    return null;
+  }, [user?.userName]);
+
+  const programFamily = useMemo(
+    () => getProgramFamily(programSlug),
+    [programSlug]
+  );
+
+  // Persistent Cross-Tab & Cross-Slug Cache (LocalStorage + SessionStorage)
+  // Guarantees that once a user is verified as subscribed, network hiccups,
+  // tab changes, or backend JWT expirations NEVER demote them to 30% paywall.
+  const persistentCached = useMemo(() => {
+    if (typeof window === "undefined" || !username || isGuest) return false;
     try {
-      const direct = sessionStorage.getItem(`user_sub_${user.userName}_${programSlug}`) === "true";
-      const universal = sessionStorage.getItem(`user_sub_universal_${user.userName}`) === "true";
-      return direct || universal;
+      const slugLower = (programSlug || "").toLowerCase().trim();
+      const directKey = `user_sub_${username}_${slugLower}`;
+      const familyKey = `user_sub_family_${username}_${programFamily}`;
+      const universalKey = `user_sub_universal_${username}`;
+
+      // 1. Check universal platform access
+      if (
+        localStorage.getItem(universalKey) === "true" ||
+        sessionStorage.getItem(universalKey) === "true"
+      ) {
+        return true;
+      }
+
+      // 2. Check direct program slug (e.g. rn-nursing)
+      if (
+        localStorage.getItem(directKey) === "true" ||
+        sessionStorage.getItem(directKey) === "true"
+      ) {
+        return true;
+      }
+
+      // 3. Check program family (e.g. rn covers both nclex-rn and rn-nursing; pn covers nclex-pn and lpn-nursing)
+      if (
+        localStorage.getItem(familyKey) === "true" ||
+        sessionStorage.getItem(familyKey) === "true"
+      ) {
+        return true;
+      }
+
+      // 4. Check active subscription detail with unexpired validUntil
+      const detailRaw =
+        localStorage.getItem(`user_sub_detail_${username}_${programFamily}`) ||
+        sessionStorage.getItem(`user_sub_detail_${username}_${programFamily}`);
+      if (detailRaw) {
+        try {
+          const parsed = JSON.parse(detailRaw);
+          if (parsed?.subscribed && !isDateExpired(parsed.validUntil)) {
+            return true;
+          }
+        } catch {}
+      }
+
+      return false;
     } catch {
       return false;
     }
-  }, [user?.userName, programSlug, isGuest]);
+  }, [username, programSlug, programFamily, isGuest]);
 
   const hasDatabaseSubscription = useMemo(() => {
     // If explicitly marked as guest or packages haven't loaded yet, not subscribed
-    if (isGuest || !filteredSubscriptionPackages || filteredSubscriptionPackages.length === 0) {
+    if (
+      isGuest ||
+      !filteredSubscriptionPackages ||
+      filteredSubscriptionPackages.length === 0
+    ) {
       return false;
     }
 
@@ -317,44 +474,90 @@ export function useExamSubscriptionAccess({
 
   const isSubscribed = useMemo(() => {
     if (isGuest) return false;
-    // 1. If database explicitly confirms active subscription, user is subscribed
+    // 1. If database currently confirms active subscription, user is subscribed
     if (hasDatabaseSubscription) return true;
-    // 2. If user already proved active subscription in this session, keep access active
-    // so network hiccups or background revalidations NEVER revoke access mid-exam
-    if (sessionCached) return true;
-    // 3. Otherwise, if query is still loading, wait for response
+    // 2. If user already proved active subscription in this browser, keep access permanently active!
+    // Background token expiration or empty API responses will NEVER revoke access mid-exam!
+    if (persistentCached) return true;
+    // 3. Otherwise, if query is still loading and we have no prior proof, wait
     if (subscriptionsLoading) return false;
     return false;
-  }, [isGuest, hasDatabaseSubscription, sessionCached, subscriptionsLoading]);
+  }, [isGuest, hasDatabaseSubscription, persistentCached, subscriptionsLoading]);
 
-  // Cache confirmed subscriptions in sessionStorage
+  // Cache confirmed subscriptions in both localStorage (permanent) and sessionStorage
   useEffect(() => {
-    if (typeof window === "undefined" || !user?.userName || isGuest) return;
+    if (typeof window === "undefined" || !username || isGuest) return;
 
     if (hasDatabaseSubscription) {
       try {
-        sessionStorage.setItem(`user_sub_${user.userName}_${programSlug}`, "true");
+        const slugLower = (programSlug || "").toLowerCase().trim();
+        const directKey = `user_sub_${username}_${slugLower}`;
+        const familyKey = `user_sub_family_${username}_${programFamily}`;
+        const universalKey = `user_sub_universal_${username}`;
+
+        localStorage.setItem(directKey, "true");
+        localStorage.setItem(familyKey, "true");
+        sessionStorage.setItem(directKey, "true");
+        sessionStorage.setItem(familyKey, "true");
+
+        // Cache any active subscription expiry date
+        const activeSub = filteredSubscriptionPackages
+          ?.filter(
+            (pkg) =>
+              isPackageActiveAndPaid(pkg) &&
+              packageMatchesExam(pkg, exam, programSlug)
+          )
+          ?.flatMap((pkg) => pkg.userSubscriptions || [])
+          ?.find(subscriptionIsActive);
+
+        if (activeSub) {
+          localStorage.setItem(
+            `user_sub_detail_${username}_${programFamily}`,
+            JSON.stringify({
+              subscribed: true,
+              validUntil: activeSub.validUntil || null,
+              cachedAt: Date.now(),
+            })
+          );
+        }
+
         const hasUniversal = filteredSubscriptionPackages?.some(
           (pkg) => isUniversalPackage(pkg) && isPackageActiveAndPaid(pkg)
         );
         if (hasUniversal) {
-          sessionStorage.setItem(`user_sub_universal_${user.userName}`, "true");
+          localStorage.setItem(universalKey, "true");
+          sessionStorage.setItem(universalKey, "true");
         }
       } catch {}
     }
-  }, [hasDatabaseSubscription, filteredSubscriptionPackages, user?.userName, programSlug, isGuest]);
+  }, [
+    hasDatabaseSubscription,
+    filteredSubscriptionPackages,
+    username,
+    programSlug,
+    programFamily,
+    exam,
+    isGuest,
+  ]);
 
   // Only evict subscription cache on explicit user logout
   useEffect(() => {
     const handleLogout = () => {
       if (typeof window !== "undefined") {
         try {
-          const keysToRemove: string[] = [];
+          const localKeys: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith("user_sub_")) localKeys.push(k);
+          }
+          localKeys.forEach((k) => localStorage.removeItem(k));
+
+          const sessionKeys: string[] = [];
           for (let i = 0; i < sessionStorage.length; i++) {
             const k = sessionStorage.key(i);
-            if (k && k.startsWith("user_sub_")) keysToRemove.push(k);
+            if (k && k.startsWith("user_sub_")) sessionKeys.push(k);
           }
-          keysToRemove.forEach((k) => sessionStorage.removeItem(k));
+          sessionKeys.forEach((k) => sessionStorage.removeItem(k));
         } catch {}
       }
     };
