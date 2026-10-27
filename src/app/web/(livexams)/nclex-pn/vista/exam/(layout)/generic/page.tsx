@@ -533,13 +533,6 @@ function ChooseExamModal({
   }, [open, onClose]);
 
   if (!open) return null;
-
-  const identifier = searchParams.get("identifier") ?? "";
-  const resolvedIdentifier =
-    examSession?.exam?.assessmentGuidId ??
-    examSession?.exam?.assessmentId?.toString() ??
-    identifier;
-
   const handleGoBack = () => {
     onClose();
     if (typeof window !== "undefined" && window.history.length > 1) {
@@ -547,22 +540,6 @@ function ChooseExamModal({
     } else {
       router.push("/dashboards");
     }
-  };
-
-  const handleOpenCards = () => {
-    onClose();
-    const target = resolvedIdentifier
-      ? `/dashboards/nclex-pn/vista/exams/distinct/overview?identifier=${resolvedIdentifier}`
-      : `/dashboards`;
-    router.push(target);
-  };
-
-  const handleOpenList = () => {
-    onClose();
-    const target = resolvedIdentifier
-      ? `/dashboards/nclex-pn/vista/exams/distinct/outline?identifier=${resolvedIdentifier}`
-      : `/dashboards`;
-    router.push(target);
   };
 
   return (
@@ -607,22 +584,6 @@ function ChooseExamModal({
               <ArrowLeft size={15} />
               <span>Go Back to Exams</span>
             </button>
-
-            {/* Quick Browse Options */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={handleOpenCards}
-                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer text-center"
-              >
-                Browse Cards
-              </button>
-              <button
-                onClick={handleOpenList}
-                className="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition cursor-pointer text-center"
-              >
-                Browse List
-              </button>
-            </div>
 
             {/* Cancel Button */}
             <button
