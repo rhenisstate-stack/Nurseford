@@ -594,7 +594,8 @@ export const useLiveStrataExam = ({
                     dynamicSortDirection: "desc",
                   }
                 );
-                const items = res?.data?.items ?? [];
+                const rawData = (res?.data || res) as { items?: StrataItem[]; Items?: StrataItem[] } | undefined;
+                const items = rawData?.items || rawData?.Items || (Array.isArray(rawData) ? (rawData as unknown as StrataItem[]) : []);
                 return {
                   subjectId: subjId,
                   exams: items.map((e) => ({
@@ -657,7 +658,8 @@ export const useLiveStrataExam = ({
                     dynamicPerPage: 500,
                   }
                 );
-                return res?.data ?? null;
+                const session = res?.data?.exam ? res.data : (res as unknown as StrataExamSessionResponse)?.exam ? (res as unknown as StrataExamSessionResponse) : null;
+                return session;
               } catch (e) {
                 console.warn(`[useLiveStrataExam] Failed to fetch live exam ${id}:`, e);
                 return null;
@@ -717,7 +719,7 @@ export const useLiveStrataExam = ({
           .filter(Boolean);
 
         if (builderMode === "questions" || (examIds.length > 1 && !builderMode)) {
-          // Fetch all exams in parallel
+          // Fetch all exams in parallel with resilient subject-to-exam fallback
           const liveSessions = await Promise.all(
             examIds.map(async (id) => {
               try {
@@ -732,11 +734,53 @@ export const useLiveStrataExam = ({
                     dynamicPerPage: 500,
                   }
                 );
-                return res?.data ?? null;
+                if (res?.data?.exam) return res.data;
+                if ((res as unknown as StrataExamSessionResponse)?.exam) {
+                  return res as unknown as StrataExamSessionResponse;
+                }
+                if (res?.error) {
+                  console.warn(`[useLiveStrataExam] Live exam fetch error for ${id}:`, res.error);
+                }
               } catch (e) {
                 console.warn(`[useLiveStrataExam] Failed to fetch live exam ${id}:`, e);
-                return null;
               }
+
+              // Fallback: If identifier is a subject ID/GUID instead of an exam ID, resolve nominal exams under it
+              try {
+                const nomRes = await strataService<{ items?: StrataItem[] }>(
+                  "Exam",
+                  "NominalFetch",
+                  {
+                    identifier: id,
+                    dynamicLearningStrataName: "subject",
+                    dynamicPage: 1,
+                    dynamicPerPage: 10,
+                  }
+                );
+                const rawItems = (nomRes?.data as { items?: StrataItem[] })?.items || (nomRes as unknown as { items?: StrataItem[] })?.items || [];
+                if (rawItems.length > 0) {
+                  const fallbackExamId = String(rawItems[0].guidId || rawItems[0].id);
+                  const retryRes = await strataService<StrataExamSessionResponse>(
+                    "Exam",
+                    FETCH_TYPE,
+                    {
+                      identifier: fallbackExamId,
+                      dynamicExamLayout: selectedLayout,
+                      dynamicExamMode: selectedMode,
+                      dynamicPage: 1,
+                      dynamicPerPage: 500,
+                    }
+                  );
+                  if (retryRes?.data?.exam) return retryRes.data;
+                  if ((retryRes as unknown as StrataExamSessionResponse)?.exam) {
+                    return retryRes as unknown as StrataExamSessionResponse;
+                  }
+                }
+              } catch (fallbackErr) {
+                console.warn(`[useLiveStrataExam] Nominal fallback failed for ${id}:`, fallbackErr);
+              }
+
+              return null;
             })
           );
 

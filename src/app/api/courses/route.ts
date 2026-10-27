@@ -125,6 +125,48 @@ async function fetchBackendSubjectUnits(subjectId: number | string, sessionHeade
   }
 }
 
+async function fetchBackendSubjectExams(subjectId: number | string, sessionHeaders: SessionHeaders = {}): Promise<DashboardSubCategory[]> {
+  const query = new URLSearchParams({
+    fetchtype: "nominal",
+    identifier: String(subjectId),
+    dynamicLearningStrataName: "subject",
+    dynamicPage: "1",
+    dynamicPerPage: "100",
+    dynamicSortColumn: "id",
+    dynamicSortDirection: "asc",
+  });
+
+  try {
+    const res = await fetch(
+      `${getBackendBaseUrl()}/api/castoline/strata/assessment/exams/list/nominal?${query.toString()}`,
+      { method: "GET", headers: { "Content-Type": "application/json", ...sessionHeaders }, next: { revalidate: 300 } }
+    );
+    if (!res.ok) return [];
+    const raw = (await res.json()) as Record<string, unknown>;
+    const converted = convertBackendKeysToCamel(raw) as {
+      data?: {
+        items?: Array<{
+          id?: number | string;
+          guidId?: string;
+          title?: string;
+          questionsCount?: number;
+        }>;
+      };
+    };
+    const items = converted.data?.items ?? [];
+    return items.map((e, index) => ({
+      id: String(e.guidId || e.id),
+      title: e.title || `Exam ${index + 1}`,
+      questionCount: e.questionsCount && e.questionsCount > 0 ? e.questionsCount : 45,
+      usedCount: 0,
+      order: index + 1,
+    }));
+  } catch (err) {
+    console.error(`❌ [/api/courses] exams fetch failed for subject ${subjectId}:`, err);
+    return [];
+  }
+}
+
 async function fetchBackendPrograms(sessionHeaders: SessionHeaders = {}): Promise<BackendProgramItem[]> {
   // NOTE: the programs /list/distinct endpoint requires a Parent Identifier and
   // 400s ("Parent Identifier is Required ⚓") — the absolute list is the only
@@ -277,7 +319,15 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         });
       }
 
-      // Enrich empty/0-count subcategories from reference catalogue
+      // If units are empty, fetch the real nominal exams under this subject from the backend
+      if (subCategories.length === 0) {
+        const subjectIdentifier = s.guidId ?? s.id ?? "";
+        if (subjectIdentifier) {
+          subCategories = await fetchBackendSubjectExams(subjectIdentifier, sessionHeaders);
+        }
+      }
+
+      // Enrich empty/0-count subcategories from reference catalogue only as last resort
       if (
         subCategories.length === 0 &&
         matchedPlaceholder &&
@@ -290,7 +340,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
       const calculatedQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
       const questionCount =
         calculatedQuestions > 0 ? calculatedQuestions : (matchedPlaceholder?.questionCount ?? 0);
-      const examCount = matchedPlaceholder?.examCount ?? 0;
+      const examCount = subCategories.length > 0 ? subCategories.length : (matchedPlaceholder?.examCount ?? 0);
       const easyPct = matchedPlaceholder?.easyPct ?? 0;
       const mediumPct = matchedPlaceholder?.mediumPct ?? 0;
       const hardPct = matchedPlaceholder?.hardPct ?? 0;

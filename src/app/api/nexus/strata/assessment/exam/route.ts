@@ -134,7 +134,7 @@ async function forwardToBackend(
     }
 
     // Fallback: If unauthenticated guest is previewing live exam questions (e.g. first 10 questions free)
-    const isLiveExamPath = backendPath.includes("list/live") || fetchtype === "live";
+    const isLiveExamPath = backendPath.includes("list/live") || backendPath.includes("list/nominal") || fetchtype === "live" || fetchtype === "nominal";
     if (!castoLine && isLiveExamPath) {
       const guestAuth = await getGuestPreviewToken();
       if (guestAuth) {

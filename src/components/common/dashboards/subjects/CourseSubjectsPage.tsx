@@ -69,7 +69,8 @@ export function CourseSubjectsPage({
           : (s.examCount || 1) * 45);
       return {
         id: typeof s.id === "number" ? s.id : (Number(s.id) || index + 1),
-        guidId: String(s.id),
+        guidId: s.guidId || String(s.id),
+        backendSubjectGuid: s.guidId || String(s.id),
         examType: panelSlug,
         title: s.name,
         category: "subject",
