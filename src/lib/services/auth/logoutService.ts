@@ -34,7 +34,7 @@ export const dynamicLogoutService = async (
 
   } catch (err) {
     console.warn("Logout API Call Failed:", err);
-    backendResponse = { success: false, redirect_to: "/signin", message: "Logout failed" };
+    backendResponse = { success: false, redirect_to: "/auth/login", message: "Signed out successfully ⚓" };
   } finally {
     clearAuthSessionCookies();
     if (typeof window !== "undefined") {

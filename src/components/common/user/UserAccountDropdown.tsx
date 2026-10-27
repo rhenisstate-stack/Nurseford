@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   FiLogIn,
   FiUserPlus,
@@ -128,6 +128,40 @@ export default function UserAccountDropdown({
     };
   }, []);
 
+  const VALID_DASHBOARDS = useMemo(
+    () => new Set(["ati-teas", "hesi-a2", "lpn-nursing", "nclex-pn", "nclex-rn", "rn-nursing"]),
+    []
+  );
+
+  const resolveLogoutRedirect = (backendRedirect?: string | null): string => {
+    const cleaned = (backendRedirect || "").trim();
+
+    if (cleaned) {
+      if (cleaned === "/signin" || cleaned.startsWith("/signin?")) {
+        return "/auth/login";
+      }
+      if (cleaned === "/login" || cleaned.startsWith("/login?")) {
+        return "/auth/login";
+      }
+      if (cleaned === "/auth/login" || cleaned.startsWith("/auth/login?")) {
+        return cleaned;
+      }
+      if (cleaned === "/auth/logout" || cleaned.startsWith("/auth/logout?")) {
+        return cleaned;
+      }
+      const dashMatch = cleaned.match(/^\/dashboards\/([^/]+)\/auth\/(login|logout)/);
+      if (dashMatch && VALID_DASHBOARDS.has(dashMatch[1].toLowerCase())) {
+        return cleaned;
+      }
+    }
+
+    if (VALID_DASHBOARDS.has(targetDashboard)) {
+      return `/dashboards/${targetDashboard}/auth/login`;
+    }
+
+    return "/auth/login";
+  };
+
   const handleLogout = async (fetchType: "distinct" | "relative") => {
     // 1. Immediately clear auth cookies, username, and local caches so UI responds instantly
     clearAuthSessionCookies();
@@ -141,12 +175,7 @@ export default function UserAccountDropdown({
 
     try {
       const response = await dynamicLogoutService(targetDashboard, fetchType);
-      const backendRedirect =
-        typeof response?.redirect_to === "string" ? response.redirect_to.trim() : "";
-      const redirectTo =
-        backendRedirect && !/\/logout(\?|$)/i.test(backendRedirect)
-          ? backendRedirect
-          : logoutRedirect;
+      const redirectTo = resolveLogoutRedirect(response?.redirect_to);
 
       const msg = encodeURIComponent(
         typeof response?.message === "string" && response.message.trim() !== ""
@@ -154,10 +183,13 @@ export default function UserAccountDropdown({
           : "You’ve Been Signed Out Successfully ⚓"
       );
 
-      window.location.href = `${redirectTo}?msg=${msg}`;
+      const separator = redirectTo.includes("?") ? "&" : "?";
+      window.location.href = `${redirectTo}${separator}msg=${msg}`;
     } catch {
+      const fallbackUrl = resolveLogoutRedirect(null);
       const msg = encodeURIComponent("You’ve Been Signed Out Successfully ⚓");
-      window.location.href = `${logoutRedirect}?msg=${msg}`;
+      const separator = fallbackUrl.includes("?") ? "&" : "?";
+      window.location.href = `${fallbackUrl}${separator}msg=${msg}`;
     }
   };
 
