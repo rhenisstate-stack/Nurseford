@@ -1,55 +1,231 @@
 "use client";
 
 import Link from "next/link";
-import { Home, LayoutDashboard, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  X,
+  ChevronDown,
+  ChevronRight,
+  ClipboardCheck,
+  Sparkles,
+  BarChart3,
+  ClipboardList,
+  Receipt,
+  CreditCard,
+  LifeBuoy,
+  HelpCircle,
+  type LucideIcon,
+} from "lucide-react";
 import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext";
 import { useThemeContext } from "@/lib/contexts/panel/layout/theme/PanelThemeContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSidebarAutoScroll } from "@/lib/hooks/nexus/includes/sidebars/useSidebarAutoScroll";
-
-// import LeftSidebarDashboardDropdown from "../partials/left/dashboards/DashboardDropdown";
-
-// import LeftSidebarContentDropdown from "../partials/left/content/ContentDropdown";
-// import LeftSidebarDocumentDropdown from "../partials/left/content/DocumentDropdown";
-// import LeftSidebarMachineLearningDropdown from "../partials/left/cognition/MachineLearningDropdown";
-
-// import LeftSidebarProgramHierarchyDropdown from "../partials/left/vista/learning/VistaHierarchyProgramDropdown";
-// import LeftSidebarCourseHierarchyDropdown from "../partials/left/vista/learning/VistaHierarchyCourseDropdown";
-// import LeftSidebarSubjectHierarchyDropdown from "../partials/left/vista/learning/VistaHierarchySubjectDropdown";
-// import LeftSidebarUnitHierarchyDropdown from "../partials/left/vista/learning/VistaHierarchyUnitDropdown";
-// import LeftSidebarLessonHierarchyDropdown from "../partials/left/vista/learning/VistaHierarchyLessonDropdown";
-// import LeftSidebarTopicHierarchyDropdown from "../partials/left/vista/learning/VistaHierarchyTopicDropdown";
-// import LeftSidebarConceptHierarchyDropdown from "../partials/left/vista/learning/VistaHierarchyConceptDropdown";
-// import LeftSidebarFactHierarchyDropdown from "../partials/left/vista/learning/VistaHierarchyFactDropdown";
-
-// import LeftSidebarAssessmentHierarchyDropdown from "../partials/left/vista/assessment/VistaHierarchyAssessmentDropdown";
-// import LeftSidebarExamHierarchyDropdown from "../partials/left/vista/assessment/VistaHierarchyExamDropdown";
-
-import LeftSidebarProgramHierarchyOutline from "../partials/left/vista/outline/VistaHierarchyProgramOutline";
-
-import LeftSidebarProgress from "../partials/left/elements/Progress";
-// import LeftSidebarAbsoluteReports from "../partials/left/elements/reports/Absolute";
-import LeftSidebarRelativeReports from "../partials/left/elements/reports/Relative";
-import LeftSidebarSubscriptionPackages from "../partials/left/elements/SubscriptionPackages";
-import LeftSidebarSubscriptionItems from "../partials/left/elements/SubscriptionItems";
-// import LeftSidebarContact from "../partials/left/elements/Contact";
-// import LeftSidebarSupport from "../partials/left/elements/Support";
-// import LeftSidebarTerms from "../partials/left/elements/Terms";
-// import LeftSidebarAbout from "../partials/left/elements/About";
 
 import { Tooltip } from "@/components/dashboards/includes/sidebar/tooltips/SidebarTooltip";
 import { APP_TITLE, APP_ACRONYM } from "@/lib/config/config";
 
+const PANEL = "nclex-pn";
+const VISTA = `/dashboards/${PANEL}/vista`;
+
+function AccordionGroup({
+  id,
+  icon: Icon,
+  label,
+  isOpened,
+  isActive,
+  onToggle,
+  hoveredItem,
+  handleItemHover,
+  handleMouseLeave,
+  tooltipPosition,
+  isMobile,
+  children,
+}: {
+  id: string;
+  icon: LucideIcon;
+  label: string;
+  isOpened: boolean;
+  isActive: boolean;
+  onToggle: (id: string) => void;
+  hoveredItem: string | null;
+  handleItemHover: (item: string, e: React.MouseEvent) => void;
+  handleMouseLeave: () => void;
+  tooltipPosition: { x: number; y: number };
+  isMobile: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <div
+        target-scroll-item-accordion-key={id}
+        onClick={() => onToggle(id)}
+        onMouseEnter={(e) => handleItemHover(id, e)}
+        onMouseLeave={handleMouseLeave}
+        className={`relative flex items-center py-2 px-1 rounded-lg transition cursor-pointer
+          border border-transparent hover:border-[var(--text-color)]/40 select-none
+          ${isOpened ? "justify-between" : "justify-center"}`}
+      >
+        <div className="flex items-center min-w-0">
+          <Icon className="w-5 h-5 shrink-0" />
+          {isOpened && (
+            <span className={`ml-3 font-medium truncate ${isMobile ? "text-xs" : "text-sm"}`}>{label}</span>
+          )}
+        </div>
+
+        {isOpened &&
+          (isActive ? (
+            <ChevronDown className="w-4 h-4 shrink-0" />
+          ) : (
+            <ChevronRight className="w-4 h-4 shrink-0" />
+          ))}
+
+        {!isOpened && hoveredItem === id && (
+          <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
+            {label}
+          </Tooltip>
+        )}
+      </div>
+
+      {isOpened && isActive && (
+        <div className="ml-3 pl-3 mt-1 space-y-1 border-l border-[var(--text-color)]/15">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SubAccordionGroup({
+  id,
+  label,
+  isOpen,
+  onToggle,
+  isOpened,
+  isMobile,
+  children,
+}: {
+  id: string;
+  label: string;
+  isOpen: boolean;
+  onToggle: (id: string) => void;
+  isOpened: boolean;
+  isMobile: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <div
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggle(id);
+        }}
+        className={`relative flex items-center py-1.5 px-1 rounded-lg transition cursor-pointer
+          border border-transparent hover:border-[var(--text-color)]/40 select-none
+          ${isOpen ? "bg-[var(--text-color)]/5" : ""}
+          ${isOpened ? "justify-between" : "justify-center"}`}
+      >
+        <div className="flex items-center min-w-0">
+          <span
+            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+              isOpen ? "bg-indigo-400" : "bg-[var(--text-color)]/40"
+            }`}
+          />
+          {isOpened && (
+            <span className={`ml-2.5 font-medium truncate ${isMobile ? "text-xs" : "text-sm"}`}>
+              {label}
+            </span>
+          )}
+        </div>
+
+        {isOpened &&
+          (isOpen ? (
+            <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-70" />
+          ) : (
+            <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-70" />
+          ))}
+      </div>
+
+      {isOpened && isOpen && (
+        <div className="ml-3 pl-2.5 mt-1 space-y-1 border-l border-[var(--text-color)]/15">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function NavItem({
+  href,
+  label,
+  isOpened,
+  isCollapsed,
+  hoveredItem,
+  handleItemHover,
+  handleMouseLeave,
+  tooltipPosition,
+  handleItemClick,
+  isMobile,
+  exact,
+}: {
+  href: string;
+  label: string;
+  isOpened: boolean;
+  isCollapsed: boolean;
+  hoveredItem: string | null;
+  handleItemHover: (item: string, e: React.MouseEvent) => void;
+  handleMouseLeave: () => void;
+  tooltipPosition: { x: number; y: number };
+  handleItemClick: () => void;
+  isMobile: boolean;
+  exact?: boolean;
+}) {
+  const pathname = usePathname();
+  const isDashboardRoot = href === "/" || /^\/dashboards\/[^/]+$/.test(href);
+  const isActive = exact || isDashboardRoot
+    ? pathname === href
+    : pathname === href || (pathname ? pathname.startsWith(href) : false);
+
+  return (
+    <Link href={href} onClick={handleItemClick}>
+      <div
+        onClick={handleItemClick}
+        onMouseEnter={(e) => handleItemHover(label, e)}
+        onMouseLeave={handleMouseLeave}
+        className={`relative flex items-center py-1.5 px-1 rounded-lg transition
+          border border-transparent select-none
+          ${isActive
+            ? "bg-[var(--text-color)]/10 border-[var(--text-color)]/40 font-medium"
+            : "hover:border-[var(--text-color)]/40"
+          }
+          ${isOpened ? "justify-start" : "justify-center"}`}
+      >
+        <span
+          className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+            isActive ? "bg-indigo-400" : "bg-[var(--text-color)]/40"
+          }`}
+        />
+        {isOpened && <span className={`ml-2.5 truncate ${isMobile ? "text-xs" : "text-sm"}`}>{label}</span>}
+
+        {isCollapsed && hoveredItem === label && (
+          <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
+            {label}
+          </Tooltip>
+        )}
+      </div>
+    </Link>
+  );
+}
+
 export default function LeftSidebar() {
+  const DASHBOARD_NAME = "nclex-pn";
 
-  const DASHBOARD_NAME = "Nclex-Pn";
+  const { state, open, close } = useLeftSidebar();
 
-  const { state, open, close, isMobile } = useLeftSidebar();
-
-  const isOpened = state === "opened" || isMobile; // phone: content always laid out as "opened"
-  const isCollapsed = state === "collapsed" && !isMobile;
-  const isClosed = state === "closed" || (isMobile && state === "collapsed");
-  const mobileHidden = isMobile && state !== "opened"; // off-screen on phone
+  const isOpened = state === "opened";
+  const isCollapsed = false;
+  const isClosed = !isOpened;
 
   const { theme } = useThemeContext();
 
@@ -57,56 +233,90 @@ export default function LeftSidebar() {
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const [activeDropdown, setActiveDropdown] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("leftSidebarActiveDropdown") || null;
+      const saved = localStorage.getItem("leftSidebarActiveDropdown_nclex_pn");
+      if (saved) return saved;
     }
-    return null;
+    return "NCLEX-PN Exams";
   });
+
+  const [openSubDropdowns, setOpenSubDropdowns] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {
+      "explore-rn-nursing": true,
+      "explore-rn-exit": false,
+      "explore-lpn-nursing": false,
+      "explore-lpn-exit": false,
+    };
+    return initial;
+  });
+
+  const toggleSubDropdown = (key: string) => {
+    setOpenSubDropdowns((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
 
   const [isMounted, setIsMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  //───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  // On Reaload Auto Scroll to Active Dropdown (if any)
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
   useSidebarAutoScroll({
-    sidebarScrollContainerSelector: ".left-sidebar-scroll", // or ".right-sidebar-scroll" for right sidebar
+    sidebarScrollContainerSelector: ".left-sidebar-scroll",
     sidebarActiveDropdownKey: activeDropdown,
-    sidebarScrollMaxAttempts: 30, // Try for up to 3 seconds (30 * 100ms)
-    sidebarScrollRetryDelay: 100, // Check every 100ms
+    sidebarScrollMaxAttempts: 30,
+    sidebarScrollRetryDelay: 100,
   });
 
-  //───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  // 🚨 EARLY RETURN MUST COME AFTER ALL HOOKS
-  useEffect(() => setIsMounted(true), []);
-  if (!isMounted || (isClosed && !isMobile)) return null;
+  const pathname = usePathname();
+  const prevPathnameRef = useRef(pathname);
 
-  //───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  //  THEME + LAYOUT
+  useEffect(() => {
+    if (prevPathnameRef.current !== pathname) {
+      prevPathnameRef.current = pathname;
+      if (isMobile) {
+        close();
+      }
+    }
+  }, [pathname, isMobile, close]);
+
+  useEffect(() => setIsMounted(true), []);
+  if (!isMounted || isClosed) return null;
+
   const isLightSidebar =
     (theme.leftSidebar === "system" ? theme.global : theme.leftSidebar) === "light";
 
-  const sidebarWidth = isOpened || isMobile ? "w-64" : "w-20";
+  const sidebarWidth = "w-64";
 
-  //───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  //  HANDLERS
   const toggleDropdown = (key: string) => {
     let newActive: string | null;
     if (!isOpened) {
-      open(); // 👈 FORCE OPEN (NOT toggle)
+      open();
       setTimeout(() => {
         newActive = activeDropdown === key ? null : key;
         setActiveDropdown(newActive);
-        if (typeof window !== "undefined") localStorage.setItem("leftSidebarActiveDropdown", newActive || "");
+        if (typeof window !== "undefined") localStorage.setItem("leftSidebarActiveDropdown_nclex_pn", newActive || "");
       }, 250);
     } else {
       newActive = activeDropdown === key ? null : key;
       setActiveDropdown(newActive);
-      if (typeof window !== "undefined") localStorage.setItem("leftSidebarActiveDropdown", newActive || "");
+      if (typeof window !== "undefined") localStorage.setItem("leftSidebarActiveDropdown_nclex_pn", newActive || "");
     }
   };
 
   const handleItemClick = () => {
-    if (isMobile) { close(); return; }
+    if (isMobile) {
+      close();
+      return;
+    }
     if (isCollapsed) {
-      open();      // 👈 FORCE OPEN
+      open();
     }
   };
 
@@ -123,38 +333,47 @@ export default function LeftSidebar() {
 
   const handleMouseLeave = () => setHoveredItem(null);
 
-  //───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-  //  RENDER
+  const sharedNavProps = {
+    isOpened,
+    isCollapsed,
+    hoveredItem,
+    handleItemHover,
+    handleMouseLeave,
+    tooltipPosition,
+    handleItemClick,
+    isMobile,
+  };
+
   return (
     <>
-      {/* Phone backdrop: tap to close */}
-      <div
-        onClick={close}
-        className={`fixed inset-x-0 top-16 bottom-0 z-30 bg-black/40 md:hidden transition-opacity duration-500 ease-in-out ${mobileHidden ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
-      />
+      {isMobile && isOpened && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-xs transition-opacity"
+          onClick={close}
+        />
+      )}
 
       <aside
-        className={`fixed top-16 leftSidebar-0 z-40 flex flex-col h-[calc(100vh-64px)]
-    ${sidebarWidth}
-    transition-all duration-500 md:duration-300 ease-in-out
-    ${mobileHidden ? "-translate-x-full pointer-events-none" : "translate-x-0"}
-    shadow-md border-r`}
+        className={`fixed top-14 left-0 z-40 flex flex-col h-[calc(100vh-56px)]
+          ${isMobile
+            ? (isOpened ? "w-64 shadow-2xl" : "w-0 overflow-hidden border-r-0 pointer-events-none")
+            : sidebarWidth}
+          transition-all duration-300 ease-in-out
+          shadow-md border-r border-[var(--text-color)]/10`}
         style={{
-          backgroundColor: "var(--leftSidebar-bg)",
+          backgroundColor: "var(--leftSidebar-bg, #000f25)",
           color: "var(--text-color)",
         }}
       >
-
-        {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
         <div
-          className={`flex items-center justify-between px-4 py-3 border-b
-        ${isLightSidebar ? "border-gray-200" : "border-gray-700"}`}
+          className={`flex items-center justify-between px-4 py-3 border-b border-[var(--text-color)]/10
+            ${isLightSidebar ? "border-gray-200" : ""}`}
         >
           <div className={`flex-1 ${!isOpened && "justify-center flex"}`}>
             <Link
-              href="/dashboards"
-              className={`text-lg font-bold ${isLightSidebar
+              href={`/dashboards/${DASHBOARD_NAME}`}
+              onClick={isMobile ? close : undefined}
+              className={`${isMobile ? "text-base" : "text-lg"} font-semibold ${isLightSidebar
                 ? "text-gray-800 hover:text-gray-600"
                 : "text-[var(--text-color)]"
                 }`}
@@ -167,398 +386,282 @@ export default function LeftSidebar() {
             <button
               onClick={close}
               aria-label="Close sidebar"
-              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="p-1 rounded hover:bg-[var(--text-color)]/10"
             >
               <X className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-        <nav className="flex-1 overflow-y-auto space-y-1 p-2 left-sidebar-scroll">
-          {/* Dashboard */}
-          <Link href={`/dashboards/${DASHBOARD_NAME.toLowerCase()}`}>
+        <nav className={`flex-1 overflow-y-auto space-y-1 p-2 left-sidebar-scroll ${isMobile ? "text-xs" : ""}`}>
+          <Link href={`/dashboards/${DASHBOARD_NAME}`} onClick={handleItemClick}>
             <div
               onClick={handleItemClick}
-              onMouseEnter={(e) => handleItemHover("Dashboard", e)}
+              onMouseEnter={(e) => handleItemHover("My Dashboard", e)}
               onMouseLeave={handleMouseLeave}
               className={`relative flex items-center py-2 px-1 rounded-lg transition
-            border-1 border-transparent hover:border-gray-900 select-none
-            ${isLightSidebar ? "text-[var(--text-color)]" : "text-[var(--text-color)]"}
-            ${!isOpened && "justify-center"}`}
+                border border-transparent hover:border-[var(--text-color)]/40 select-none
+                ${!isOpened && "justify-center"}`}
             >
-              <LayoutDashboard className="w-5 h-5" />
-              {isOpened && <span className="ml-3">My Dashboard</span>}
+              <LayoutDashboard className="w-5 h-5 shrink-0" />
+              {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Dashboard</span>}
 
-              {isCollapsed && hoveredItem === "Dashboard" && (
+              {isCollapsed && hoveredItem === "My Dashboard" && (
                 <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
-                  Dashboard
+                  My Dashboard
                 </Tooltip>
               )}
             </div>
           </Link>
 
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* Home */}
-          <Link href="/">
+          <Link href="/" onClick={handleItemClick}>
             <div
               onClick={handleItemClick}
-              onMouseEnter={(e) => handleItemHover("Home", e)}
+              onMouseEnter={(e) => handleItemHover("Return Home", e)}
               onMouseLeave={handleMouseLeave}
               className={`relative flex items-center py-2 px-1 rounded-lg transition
-            border-1 border-transparent hover:border-gray-900 select-none
-            ${isLightSidebar ? "text-[var(--text-color)]" : "text-[var(--text-color)]"}
-            ${!isOpened && "justify-center"}`}
+                border border-transparent hover:border-[var(--text-color)]/40 select-none
+                ${!isOpened && "justify-center"}`}
             >
-              <Home className="w-5 h-5" />
-              {isOpened && <span className="ml-3">Return Home</span>}
+              <LayoutDashboard className="w-5 h-5 shrink-0" />
+              {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Return Home</span>}
 
-              {isCollapsed && hoveredItem === "Home" && (
+              {isCollapsed && hoveredItem === "Return Home" && (
                 <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
-                  Home
+                  Return Home
                 </Tooltip>
               )}
             </div>
           </Link>
 
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
+          {/* ─── NCLEX-PN Exams ─── */}
+          <AccordionGroup
+            id="NCLEX-PN Exams"
+            icon={ClipboardCheck}
+            label="NCLEX-PN Exams"
+            isActive={activeDropdown === "NCLEX-PN Exams"}
+            onToggle={toggleDropdown}
+            {...sharedNavProps}
+          >
+            <NavItem
+              href="/dashboards/nclex-pn/exams/nclex-pn-practice-exams/1cb41630-1203-42ae-8844-92afa60eea9b"
+              label="NCLEX-PN Practice Exams"
+              {...sharedNavProps}
+            />
+            <NavItem
+              href="/dashboards/nclex-pn/exams/nclex-pn-readiness-assessment-tests/176de88a-d9de-48d3-a76f-24f1e71f016c"
+              label="NCLEX-PN Readiness Assessment"
+              {...sharedNavProps}
+            />
+            <NavItem
+              href="/dashboards/nclex-pn/exams/nclex-pn-standalone-exams/3f25e1cf-dc97-4c77-a8be-1c2472dae993"
+              label="NCLEX-PN Standalone Exams"
+              {...sharedNavProps}
+            />
+          </AccordionGroup>
 
+          {/* ─── Explore More Products ─── */}
+          <AccordionGroup
+            id="Explore More Products"
+            icon={Sparkles}
+            label="Explore More Products"
+            isActive={activeDropdown === "Explore More Products"}
+            onToggle={toggleDropdown}
+            {...sharedNavProps}
+          >
+            <NavItem href="/dashboards/ati-teas" label="TEAS 7 Prep" {...sharedNavProps} />
+            <NavItem href="/dashboards/hesi-a2" label="HESI A2" {...sharedNavProps} />
 
+            {/* RN Nursing Exams Sub-Accordion */}
+            <SubAccordionGroup
+              id="explore-rn-nursing"
+              label="RN Nursing Exams"
+              isOpen={!!openSubDropdowns["explore-rn-nursing"]}
+              onToggle={toggleSubDropdown}
+              isOpened={isOpened}
+              isMobile={isMobile}
+            >
+              <NavItem href="/dashboards/rn-nursing" label="All RN Nursing Exams" exact {...sharedNavProps} />
+              <NavItem href="/dashboards/rn-nursing/exams/ati-exams-rn/34" label="ATI Exam (RN)" {...sharedNavProps} />
+              <NavItem href="/dashboards/rn-nursing/exams/examplify-practice-rn/35" label="EXAMPLIFY Practice" {...sharedNavProps} />
+              <NavItem href="/dashboards/rn-nursing/exams/general-exams/38" label="GENERAL Exams" {...sharedNavProps} />
+              <NavItem href="/dashboards/rn-nursing/exams/hesi-exams-rn/39" label="HESI EXAM (RN)" {...sharedNavProps} />
+            </SubAccordionGroup>
 
+            {/* RN Exit Exams Sub-Accordion */}
+            <SubAccordionGroup
+              id="explore-rn-exit"
+              label="RN Exit Exams"
+              isOpen={!!openSubDropdowns["explore-rn-exit"]}
+              onToggle={toggleSubDropdown}
+              isOpened={isOpened}
+              isMobile={isMobile}
+            >
+              <NavItem href="/dashboards/rn-nursing/exams/exit-ati-exams-rn/36" label="EXIT ATI Exams-RN" {...sharedNavProps} />
+              <NavItem href="/dashboards/rn-nursing/exams/exit-hesi-exams-rn/37" label="EXIT HESI Exams-RN" {...sharedNavProps} />
+            </SubAccordionGroup>
 
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
+            {/* LPN Nursing Exams Sub-Accordion */}
+            <SubAccordionGroup
+              id="explore-lpn-nursing"
+              label="LPN Nursing Exams"
+              isOpen={!!openSubDropdowns["explore-lpn-nursing"]}
+              onToggle={toggleSubDropdown}
+              isOpened={isOpened}
+              isMobile={isMobile}
+            >
+              <NavItem href="/dashboards/lpn-nursing" label="All LPN Nursing Exams" exact {...sharedNavProps} />
+              <NavItem href="/dashboards/lpn-nursing/exams/ati-exams-lpn/21" label="ATI Exams (LPN)" {...sharedNavProps} />
+              <NavItem href="/dashboards/lpn-nursing/exams/examplify-practice-pn/22" label="EXAMPLIFY Practice (PN)" {...sharedNavProps} />
+              <NavItem href="/dashboards/lpn-nursing/exams/hesi-exams-lpn/25" label="HESI Exams (LPN)" {...sharedNavProps} />
+              <NavItem href="/dashboards/lpn-nursing/exams/kaplan-exams/26" label="KAPLAN EXAMS" {...sharedNavProps} />
+            </SubAccordionGroup>
 
-          <div className="space-y-1">
-            <hr className="dark:border-[var(--text-color)]" />
-          </div>
+            {/* LPN Exit Exams Sub-Accordion */}
+            <SubAccordionGroup
+              id="explore-lpn-exit"
+              label="LPN Exit Exams"
+              isOpen={!!openSubDropdowns["explore-lpn-exit"]}
+              onToggle={toggleSubDropdown}
+              isOpened={isOpened}
+              isMobile={isMobile}
+            >
+              <NavItem href="/dashboards/lpn-nursing/exams/exit-ati-exams-lpn/23" label="EXIT ATI Exams-LPN" {...sharedNavProps} />
+              <NavItem href="/dashboards/lpn-nursing/exams/exit-hesi-exams-lpn/24" label="EXIT HESI Exams-LPN" {...sharedNavProps} />
+            </SubAccordionGroup>
 
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
+            <NavItem href="/dashboards/nclex-rn" label="NCLEX-RN" {...sharedNavProps} />
+          </AccordionGroup>
 
-
-          <LeftSidebarProgramHierarchyOutline
-            {...{
-              isOpened,
-              activeDropdown,
-              toggleDropdown,
-              hoveredItem,
-              handleItemHover,
-              handleMouseLeave,
-              tooltipPosition,
-              handleItemClick,
-            }}
-          />
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* <LeftSidebarCourseHierarchyDropdown
-          {...{
-            isOpened,
-            activeDropdown,
-            toggleDropdown,
-            hoveredItem,
-            handleItemHover,
-            handleMouseLeave,
-            tooltipPosition,
-            handleItemClick,
-          }}
-        /> */}
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* <LeftSidebarSubjectHierarchyDropdown
-          {...{
-            isOpened,
-            activeDropdown,
-            toggleDropdown,
-            hoveredItem,
-            handleItemHover,
-            handleMouseLeave,
-            tooltipPosition,
-            handleItemClick,
-          }}
-        /> */}
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* <LeftSidebarUnitHierarchyDropdown
-          {...{
-            isOpened,
-            activeDropdown,
-            toggleDropdown,
-            hoveredItem,
-            handleItemHover,
-            handleMouseLeave,
-            tooltipPosition,
-            handleItemClick,
-          }}
-        /> */}
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* <LeftSidebarLessonHierarchyDropdown
-          {...{
-            isOpened,
-            activeDropdown,
-            toggleDropdown,
-            hoveredItem,
-            handleItemHover,
-            handleMouseLeave,
-            tooltipPosition,
-            handleItemClick,
-          }}
-        /> */}
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* <LeftSidebarTopicHierarchyDropdown
-          {...{
-            isOpened,
-            activeDropdown,
-            toggleDropdown,
-            hoveredItem,
-            handleItemHover,
-            handleMouseLeave,
-            tooltipPosition,
-            handleItemClick,
-          }}
-        /> */}
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* <LeftSidebarConceptHierarchyDropdown
-          {...{
-            isOpened,
-            activeDropdown,
-            toggleDropdown,
-            hoveredItem,
-            handleItemHover,
-            handleMouseLeave,
-            tooltipPosition,
-            handleItemClick,
-          }}
-        /> */}
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* <LeftSidebarFactHierarchyDropdown
-          {...{
-            isOpened,
-            activeDropdown,
-            toggleDropdown,
-            hoveredItem,
-            handleItemHover,
-            handleMouseLeave,
-            tooltipPosition,
-            handleItemClick,
-          }}
-        /> */}
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          <div className="space-y-1">
-            <hr className="dark:border-[var(--text-color)]" />
-          </div>
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
+          <div className="my-2 border-t border-[var(--text-color)]/10" />
 
           {isOpened && (
             <div className="flex justify-center p-0">
-              <span className="text-[10px] tracking-wide uppercase opacity-50 select-none">
+              <span className="text-[10px] font-semibold tracking-widest uppercase opacity-50 select-none">
                 My Account Data Management
               </span>
             </div>
           )}
 
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* Study Resources */}
-          {/* <Link href="#">
+          <Link href={`${VISTA}/stats/progress`} onClick={handleItemClick}>
             <div
               onClick={handleItemClick}
-              onMouseEnter={(e) => handleItemHover("Study Resources", e)}
+              onMouseEnter={(e) => handleItemHover("My Progress", e)}
               onMouseLeave={handleMouseLeave}
-              className={`relative flex items-center p-2 rounded-lg transition
-          border border-transparent hover:border-gray-900 select-none
-          ${isLightSidebar ? "text-[var(--text-color)]" : "text-[var(--text-color)]"}
-          ${!isOpened && "justify-center"}`}
+              className={`relative flex items-center py-2 px-1 rounded-lg transition
+                border border-transparent hover:border-[var(--text-color)]/40 select-none
+                ${!isOpened && "justify-center"}`}
             >
-              <BookOpen className="w-5 h-5" />
-              {isOpened && <span className="ml-3">Study Resources</span>}
+              <BarChart3 className="w-5 h-5 shrink-0" />
+              {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Progress</span>}
 
-              {isCollapsed && hoveredItem === "Study Resources" && (
+              {isCollapsed && hoveredItem === "My Progress" && (
                 <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
-                  Study Resources
+                  My Progress
                 </Tooltip>
               )}
             </div>
-          </Link> */}
+          </Link>
 
-          {/* Forums */}
-          {/* <Link href="#">
+          <Link href={`${VISTA}/stats/reports`} onClick={handleItemClick}>
             <div
               onClick={handleItemClick}
-              onMouseEnter={(e) => handleItemHover("Forums", e)}
+              onMouseEnter={(e) => handleItemHover("My Reports", e)}
               onMouseLeave={handleMouseLeave}
-              className={`relative flex items-center p-2 rounded-lg transition
-          border border-transparent hover:border-gray-900 select-none
-          ${isLightSidebar ? "text-[var(--text-color)]" : "text-[var(--text-color)]"}
-          ${!isOpened && "justify-center"}`}
+              className={`relative flex items-center py-2 px-1 rounded-lg transition
+                border border-transparent hover:border-[var(--text-color)]/40 select-none
+                ${!isOpened && "justify-center"}`}
             >
-              <MessageSquare className="w-5 h-5" />
-              {isOpened && <span className="ml-3">Forums</span>}
+              <ClipboardList className="w-5 h-5 shrink-0" />
+              {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Reports</span>}
 
-              {isCollapsed && hoveredItem === "Forums" && (
+              {isCollapsed && hoveredItem === "My Reports" && (
                 <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
-                  Forums
+                  My Reports
                 </Tooltip>
               )}
             </div>
-          </Link> */}
+          </Link>
 
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
+          <Link href={`${VISTA}/subscriptions/packages`} onClick={handleItemClick}>
+            <div
+              onClick={handleItemClick}
+              onMouseEnter={(e) => handleItemHover("My Subscriptions", e)}
+              onMouseLeave={handleMouseLeave}
+              className={`relative flex items-center py-2 px-1 rounded-lg transition
+                border border-transparent hover:border-[var(--text-color)]/40 select-none
+                ${!isOpened && "justify-center"}`}
+            >
+              <Receipt className="w-5 h-5 shrink-0" />
+              {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Subscriptions</span>}
 
+              {isCollapsed && hoveredItem === "My Subscriptions" && (
+                <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
+                  My Subscriptions
+                </Tooltip>
+              )}
+            </div>
+          </Link>
 
+          <Link href={`${VISTA}/subscriptions/items`} onClick={handleItemClick}>
+            <div
+              onClick={handleItemClick}
+              onMouseEnter={(e) => handleItemHover("Subscription Packages", e)}
+              onMouseLeave={handleMouseLeave}
+              className={`relative flex items-center py-2 px-1 rounded-lg transition
+                border border-transparent hover:border-[var(--text-color)]/40 select-none
+                ${!isOpened && "justify-center"}`}
+            >
+              <CreditCard className="w-5 h-5 shrink-0" />
+              {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Subscription Packages</span>}
 
+              {isCollapsed && hoveredItem === "Subscription Packages" && (
+                <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
+                  Subscription Packages
+                </Tooltip>
+              )}
+            </div>
+          </Link>
 
+          <Link href="/contact" onClick={handleItemClick}>
+            <div
+              onClick={handleItemClick}
+              onMouseEnter={(e) => handleItemHover("Contact Us", e)}
+              onMouseLeave={handleMouseLeave}
+              className={`relative flex items-center py-2 px-1 rounded-lg transition
+                border border-transparent hover:border-[var(--text-color)]/40 select-none
+                ${!isOpened && "justify-center"}`}
+            >
+              <LifeBuoy className="w-5 h-5 shrink-0" />
+              {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Contact Us</span>}
 
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
+              {isCollapsed && hoveredItem === "Contact Us" && (
+                <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
+                  Contact Us
+                </Tooltip>
+              )}
+            </div>
+          </Link>
 
-          {/* LeftSidebarProgress */}
-          <LeftSidebarProgress
-            {...{
-              isOpened,
-              hoveredItem,
-              handleItemHover,
-              handleMouseLeave,
-              tooltipPosition,
-              handleItemClick,
-            }}
-          />
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
+          <Link href="/support" onClick={handleItemClick}>
+            <div
+              onClick={handleItemClick}
+              onMouseEnter={(e) => handleItemHover("Need Help / Assistance", e)}
+              onMouseLeave={handleMouseLeave}
+              className={`relative flex items-center py-2 px-1 rounded-lg transition
+                border border-transparent hover:border-[var(--text-color)]/40 select-none
+                ${!isOpened && "justify-center"}`}
+            >
+              <HelpCircle className="w-5 h-5 shrink-0" />
+              {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Need Help / Assistance</span>}
 
-          {/* LeftSidebarRelativeReports */}
-          <LeftSidebarRelativeReports
-            {...{
-              isOpened,
-              hoveredItem,
-              handleItemHover,
-              handleMouseLeave,
-              tooltipPosition,
-              handleItemClick,
-            }}
-          />        {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* LeftSidebarAbsoluteReports */}
-          {/* <LeftSidebarAbsoluteReports
-            {...{
-              isOpened,
-              hoveredItem,
-              handleItemHover,
-              handleMouseLeave,
-              tooltipPosition,
-              handleItemClick,
-            }}
-          /> */}
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* LeftSidebarSubscriptionPackages */}
-          <LeftSidebarSubscriptionPackages
-            {...{
-              isOpened,
-              hoveredItem,
-              handleItemHover,
-              handleMouseLeave,
-              tooltipPosition,
-              handleItemClick,
-            }}
-          />
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* LeftSidebarSubscriptionItems */}
-          <LeftSidebarSubscriptionItems
-            {...{
-              isOpened,
-              hoveredItem,
-              handleItemHover,
-              handleMouseLeave,
-              tooltipPosition,
-              handleItemClick,
-            }}
-          />
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* LeftSidebarContact */}
-          {/* <LeftSidebarContact
-            {...{
-              isOpened,
-              hoveredItem,
-              handleItemHover,
-              handleMouseLeave,
-              tooltipPosition,
-              handleItemClick,
-            }}
-          /> */}
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* LeftSidebarSupport */}
-          {/* <LeftSidebarSupport
-            {...{
-              isOpened,
-              hoveredItem,
-              handleItemHover,
-              handleMouseLeave,
-              tooltipPosition,
-              handleItemClick,
-            }}
-          /> */}
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* LeftSidebarTerms*/}
-          {/* <LeftSidebarTerms
-            {...{
-              isOpened,
-              hoveredItem,
-              handleItemHover,
-              handleMouseLeave,
-              tooltipPosition,
-              handleItemClick,
-            }}
-          /> */}
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          {/* LeftSidebarAbout */}
-          {/* <LeftSidebarAbout
-            {...{
-              isOpened,
-              hoveredItem,
-              handleItemHover,
-              handleMouseLeave,
-              tooltipPosition,
-              handleItemClick,
-            }}
-          /> */}
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-
-
-
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-          <div className="space-y-18">
-            <hr className="dark:border-[var(--text-color)]" />
-            <hr className="dark:border-[var(--text-color)]" />
-          </div>
-
-          {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
+              {isCollapsed && hoveredItem === "Need Help / Assistance" && (
+                <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
+                  Need Help / Assistance
+                </Tooltip>
+              )}
+            </div>
+          </Link>
         </nav>
       </aside>
     </>
