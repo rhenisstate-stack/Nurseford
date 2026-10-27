@@ -256,7 +256,7 @@ export default function HeedMessageBellDropdown({
         title={
           unreadIds.length > 0
             ? `${unreadIds.length} new message${unreadIds.length === 1 ? "" : "s"}`
-            : "Your Inbox & Support"
+            : "Message Support"
         }
         aria-expanded={isOpen}
         aria-haspopup="true"
@@ -277,7 +277,7 @@ export default function HeedMessageBellDropdown({
       {isOpen && (
         <div
           role="dialog"
-          aria-label="Your Inbox & Support Notifications"
+          aria-label="Message Support"
           className={`absolute mt-2 w-[420px] sm:w-[460px] max-w-[calc(100vw-1.5rem)] max-h-[min(650px,calc(100vh-5rem))] rounded-2xl border border-blue-200 dark:border-white/15 bg-white dark:bg-[#111C2E] shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 overflow-hidden flex flex-col ${alignmentClass}`}
         >
           {/* Header (Matching Rhenis Support & Heed Page) */}
@@ -288,7 +288,7 @@ export default function HeedMessageBellDropdown({
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-base leading-tight">Your Inbox</h3>
+                  <h3 className="font-bold text-base leading-tight">Message Support</h3>
                   {unreadIds.length > 0 ? (
                     <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-red-500 text-white px-2 py-0.5 rounded-full shadow-xs">
                       <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
