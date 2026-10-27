@@ -241,21 +241,9 @@ export default function LeftSidebar() {
 
   const [openSubDropdowns, setOpenSubDropdowns] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {
-      "explore-rn-exit": true,
-      "explore-lpn-exit": true,
+      "explore-rn-nursing": true,
+      "explore-rn-exit": false,
     };
-    if (typeof window !== "undefined") {
-      const p = window.location.pathname;
-      if (p.includes("/exit-") && (p.includes("-rn") || p.includes("rn-nursing"))) {
-        initial["explore-rn-exit"] = true;
-      } else if (p.includes("/exit-") && (p.includes("-lpn") || p.includes("lpn-nursing"))) {
-        initial["explore-lpn-exit"] = true;
-      } else if (p.includes("rn-nursing")) {
-        initial["explore-rn-nursing"] = true;
-      } else if (p.includes("lpn-nursing")) {
-        initial["explore-lpn-nursing"] = true;
-      }
-    }
     return initial;
   });
 
@@ -506,37 +494,8 @@ export default function LeftSidebar() {
             <NavItem href="/dashboards/rn-nursing/exams/exit-hesi-exams-rn/37" label="EXIT HESI Exams-RN" {...sharedNavProps} />
           </SubAccordionGroup>
 
-          {/* LPN Nursing Exams Sub-Accordion */}
-          <SubAccordionGroup
-            id="explore-lpn-nursing"
-            label="LPN Nursing Exams"
-            isOpen={!!openSubDropdowns["explore-lpn-nursing"]}
-            onToggle={toggleSubDropdown}
-            isOpened={isOpened}
-            isMobile={isMobile}
-          >
-            <NavItem href="/dashboards/lpn-nursing" label="All LPN Nursing Exams" exact {...sharedNavProps} />
-            <NavItem href="/dashboards/lpn-nursing/exams/ati-exams-lpn/21" label="ATI Exams (LPN)" {...sharedNavProps} />
-            <NavItem href="/dashboards/lpn-nursing/exams/examplify-practice-pn/22" label="EXAMPLIFY Practice (PN)" {...sharedNavProps} />
-            <NavItem href="/dashboards/lpn-nursing/exams/hesi-exams-lpn/25" label="HESI Exams (LPN)" {...sharedNavProps} />
-            <NavItem href="/dashboards/lpn-nursing/exams/kaplan-exams/26" label="KAPLAN EXAMS" {...sharedNavProps} />
-          </SubAccordionGroup>
-
-          {/* LPN Exit Exams Sub-Accordion */}
-          <SubAccordionGroup
-            id="explore-lpn-exit"
-            label="LPN Exit Exams"
-            isOpen={!!openSubDropdowns["explore-lpn-exit"]}
-            onToggle={toggleSubDropdown}
-            isOpened={isOpened}
-            isMobile={isMobile}
-          >
-            <NavItem href="/dashboards/lpn-nursing/exams/exit-ati-exams-lpn/23" label="EXIT ATI Exams-LPN" {...sharedNavProps} />
-            <NavItem href="/dashboards/lpn-nursing/exams/exit-hesi-exams-lpn/24" label="EXIT HESI Exams-LPN" {...sharedNavProps} />
-          </SubAccordionGroup>
-
-          <NavItem href="/pages/exams/nclex-rn" label="NCLEX-RN" {...sharedNavProps} />
-          <NavItem href="/pages/exams/nclex-pn" label="NCLEX-PN" {...sharedNavProps} />
+          <NavItem href="/dashboards/nclex-rn" label="NCLEX-RN" {...sharedNavProps} />
+          <NavItem href="/dashboards/nclex-pn" label="NCLEX-PN" {...sharedNavProps} />
         </AccordionGroup>
 
         <div className="my-2 border-t border-[var(--text-color)]/10" />

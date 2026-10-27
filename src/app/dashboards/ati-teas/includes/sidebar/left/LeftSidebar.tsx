@@ -463,7 +463,6 @@ export default function LeftSidebar() {
         </AccordionGroup>
 
         {/* ─── Explore More Products ─── */}
-        {/* ─── Explore More Products ─── */}
         <AccordionGroup
           id="Explore More Products"
           icon={Sparkles}
@@ -472,7 +471,6 @@ export default function LeftSidebar() {
           onToggle={toggleDropdown}
           {...sharedNavProps}
         >
-          <NavItem href="/dashboards/ati-teas" label="TEAS 7 Prep" {...sharedNavProps} />
           <NavItem href="/dashboards/hesi-a2" label="HESI A2" {...sharedNavProps} />
 
           {/* RN Nursing Exams Sub-Accordion */}
@@ -533,8 +531,8 @@ export default function LeftSidebar() {
             <NavItem href="/dashboards/lpn-nursing/exams/exit-hesi-exams-lpn/24" label="EXIT HESI Exams-LPN" {...sharedNavProps} />
           </SubAccordionGroup>
 
-          <NavItem href="/pages/exams/nclex-rn" label="NCLEX-RN" {...sharedNavProps} />
-          <NavItem href="/pages/exams/nclex-pn" label="NCLEX-PN" {...sharedNavProps} />
+          <NavItem href="/dashboards/nclex-rn" label="NCLEX-RN" {...sharedNavProps} />
+          <NavItem href="/dashboards/nclex-pn" label="NCLEX-PN" {...sharedNavProps} />
         </AccordionGroup>
 
         {/* ─── Divider ─── */}

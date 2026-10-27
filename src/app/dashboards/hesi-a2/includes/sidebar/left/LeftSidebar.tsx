@@ -459,7 +459,6 @@ export default function LeftSidebar() {
           {...sharedNavProps}
         >
           <NavItem href="/dashboards/ati-teas" label="TEAS 7 Prep" {...sharedNavProps} />
-          <NavItem href="/dashboards/hesi-a2" label="HESI A2" {...sharedNavProps} />
 
           {/* RN Nursing Exams Sub-Accordion */}
           <SubAccordionGroup
@@ -519,8 +518,8 @@ export default function LeftSidebar() {
             <NavItem href="/dashboards/lpn-nursing/exams/exit-hesi-exams-lpn/24" label="EXIT HESI Exams-LPN" {...sharedNavProps} />
           </SubAccordionGroup>
 
-          <NavItem href="/pages/exams/nclex-rn" label="NCLEX-RN" {...sharedNavProps} />
-          <NavItem href="/pages/exams/nclex-pn" label="NCLEX-PN" {...sharedNavProps} />
+          <NavItem href="/dashboards/nclex-rn" label="NCLEX-RN" {...sharedNavProps} />
+          <NavItem href="/dashboards/nclex-pn" label="NCLEX-PN" {...sharedNavProps} />
         </AccordionGroup>
 
         <div className="my-2 border-t border-[var(--text-color)]/10" />
