@@ -1,4 +1,3 @@
-// src\app\web\(nursing)\atiteas\vista\exam\(layout)\layout.tsx
 "use client";
 
 import { useSearchParams } from "next/navigation";
@@ -13,13 +12,30 @@ function LiveExamLayoutInner({ children }: { children: React.ReactNode }) {
   const selectedMode   = searchParams.get("mode")       ?? "Exam";
   const selectedLayout = searchParams.get("layout")     ?? "Generic";
 
+  const attemptParam = searchParams.get("attempt");
+  const targetAttemptNumber = attemptParam !== null ? parseInt(attemptParam, 10) : null;
+
+  const builderMode = (searchParams.get("builderMode") as "questions" | "exams" | null) ?? null;
+  const questionCountParam = searchParams.get("questionCount");
+  const questionCount = questionCountParam ? parseInt(questionCountParam, 10) : null;
+  const examCountParam = searchParams.get("examCount");
+  const examCount = examCountParam ? parseInt(examCountParam, 10) : null;
+  const subCategories = searchParams.get("subCategories") ?? "";
+  const customTitle = searchParams.get("customTitle") ?? null;
+
   return (
     <LiveStrataExamProvider
       examIdentifier={examIdentifier}
       selectedMode={selectedMode}
       selectedLayout={selectedLayout}
+      targetAttemptNumber={Number.isNaN(targetAttemptNumber) ? null : targetAttemptNumber}
+      builderMode={builderMode}
+      questionCount={questionCount}
+      examCount={examCount}
+      subCategories={subCategories}
+      customTitle={customTitle}
     >
-      <LiveExamActionProvider key={examIdentifier}>
+      <LiveExamActionProvider key={examIdentifier || subCategories}>
         {children}
       </LiveExamActionProvider>
     </LiveStrataExamProvider>

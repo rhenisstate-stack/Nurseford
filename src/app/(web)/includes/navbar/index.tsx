@@ -136,7 +136,7 @@ export default function Navbar() {
             </Link>
           ))}
 
-          {/* Nursing School dropdown */}
+          {/* Nursing Q-Bank dropdown */}
           <div className="relative" ref={nursingRef}>
             <button
               type="button"
@@ -147,7 +147,7 @@ export default function Navbar() {
               aria-expanded={openDropdown === 'nursing'}
               aria-haspopup="true"
             >
-              Nursing School
+              Nursing Q-Bank
               <ChevronDown
                 className={`w-4 h-4 transition-transform ${openDropdown === 'nursing' ? 'rotate-180' : ''}`}
               />

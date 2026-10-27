@@ -37,12 +37,22 @@ export function LiveStrataExamProvider({
   selectedMode,
   selectedLayout,
   targetAttemptNumber,
+  builderMode,
+  questionCount,
+  examCount,
+  subCategories,
+  customTitle,
   children,
 }: {
   examIdentifier: string;
   selectedMode?: string;
   selectedLayout?: string;
   targetAttemptNumber?: number | null;
+  builderMode?: "questions" | "exams" | null;
+  questionCount?: number | null;
+  examCount?: number | null;
+  subCategories?: string | null;
+  customTitle?: string | null;
   children: React.ReactNode;
 }) {
   const {
@@ -54,6 +64,11 @@ export function LiveStrataExamProvider({
     selectedMode,
     selectedLayout,
     targetAttemptNumber,
+    builderMode,
+    questionCount,
+    examCount,
+    subCategories,
+    customTitle,
   });
 
   // Synchronize exam title and in-progress metadata across storage so all dashboards and progress pages know the exam name

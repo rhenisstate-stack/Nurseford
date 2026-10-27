@@ -295,6 +295,7 @@ export function CourseSubjectsPage({
           panelSlug={panelSlug}
           livePanelSlug={livePanelSlug}
           title={`${courseName.toUpperCase()} EXAM BUILDER`}
+          builderMode="exams"
           customCourses={customCoursesForBuilder}
           examType={
             panelSlug === "hesi-a2"

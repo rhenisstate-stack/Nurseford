@@ -49,6 +49,7 @@ interface NclexCustomTestPopupProps {
   examType: BuilderExamType;
   customCourses?: DashboardCourse[];
   title?: string;
+  builderMode?: "questions" | "exams";
 }
 
 type DifficultyFilter = "All" | "Easy" | "Medium" | "Hard";
@@ -62,27 +63,30 @@ function DomainRow({
   onToggleSub,
   onToggleDomain,
   defaultExpanded = false,
+  isExamMode = false,
 }: {
   course: DashboardCourse;
   selectedSubs: Set<string>;
   onToggleSub: (subId: string) => void;
   onToggleDomain: (subs: DashboardSubCategory[], courseId?: string) => void;
   defaultExpanded?: boolean;
+  isExamMode?: boolean;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
-  const subCategories = course.subCategories;
+  const subCategories = course.subCategories || [];
   const hasSubs = subCategories.length > 0;
 
   const selectedCount = subCategories.filter((sc) => selectedSubs.has(sc.id)).length;
   const allSelected = hasSubs
     ? selectedCount === subCategories.length
-    : selectedSubs.has(String(course.id));
+    : selectedSubs.has(String(course.id)) || (course.guidId ? selectedSubs.has(course.guidId) : false);
   const someSelected = hasSubs ? selectedCount > 0 && !allSelected : false;
 
   const domainQs = hasSubs
     ? subCategories.reduce((s, sc) => s + sc.questionCount, 0)
     : course.questionCount;
+  const domainExams = course.examCount ?? (hasSubs ? subCategories.length : 1);
 
   return (
     <div className="border border-[#CBDCF8] dark:border-white/10 rounded-xl overflow-hidden bg-white/70 dark:bg-black/20">
@@ -97,7 +101,7 @@ function DomainRow({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onToggleDomain(subCategories, String(course.id));
+            onToggleDomain(subCategories, String(course.guidId || course.id));
           }}
           className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-all ${
             allSelected
@@ -126,9 +130,9 @@ function DomainRow({
           {course.title}
         </span>
 
-        {/* Question Count */}
+        {/* Question / Exam Count */}
         <span className="text-[10px] md:text-xs font-bold text-[#0891b2] dark:text-[#2FD9C4] shrink-0">
-          {domainQs} Qs
+          {isExamMode ? `${domainExams} ${domainExams === 1 ? "Exam" : "Exams"}` : `${domainQs} Qs`}
         </span>
       </div>
 
@@ -187,6 +191,7 @@ export function NclexCustomTestPopup({
   examType,
   customCourses,
   title,
+  builderMode,
 }: NclexCustomTestPopupProps) {
   const router = useRouter();
   const { courses: rawCourses } = useExamCourses(examType);
@@ -200,8 +205,14 @@ export function NclexCustomTestPopup({
   }, [customCourses, rawCourses]);
   const { user } = useCurrentSystemUser();
 
+  const isExamMode =
+    builderMode === "exams" ||
+    (builderMode !== "questions" && courses.length > 0 && courses.every((c) => !c.subCategories || c.subCategories.length === 0));
+
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
   const [questionCount, setQuestionCount] = useState(25);
+  const [examCount, setExamCount] = useState(3);
+  const [hasUserAdjustedCount, setHasUserAdjustedCount] = useState(false);
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("All");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
   const [selectedMode, setSelectedMode] = useState<string>("Practice");
@@ -257,7 +268,9 @@ export function NclexCustomTestPopup({
 
   const clearAll = () => {
     setSelectedSubs(new Set());
+    setHasUserAdjustedCount(false);
     setQuestionCount(25);
+    setExamCount(3);
     setDifficultyFilter("All");
     setStatusFilter("All");
   };
@@ -270,13 +283,37 @@ export function NclexCustomTestPopup({
           if (selectedSubs.has(sc.id)) total += sc.questionCount;
         }
       } else {
-        if (selectedSubs.has(String(c.id))) {
+        if (selectedSubs.has(String(c.id)) || (c.guidId && selectedSubs.has(c.guidId))) {
           total += c.questionCount || 45;
         }
       }
     }
     return total;
   }, [courses, selectedSubs]);
+
+  const totalSelectedExams = useMemo(() => {
+    let total = 0;
+    for (const c of courses) {
+      const match = selectedSubs.has(String(c.id)) || (c.guidId && selectedSubs.has(c.guidId));
+      if (match) {
+        total += c.examCount || (c.subCategories.length > 0 ? c.subCategories.length : 1);
+      }
+    }
+    return total;
+  }, [courses, selectedSubs]);
+
+  // Keep questionCount and examCount aligned with selections
+  useEffect(() => {
+    if (isExamMode) {
+      if (totalSelectedExams > 0) {
+        setExamCount((prev) => (hasUserAdjustedCount ? Math.min(Math.max(1, prev), totalSelectedExams) : Math.min(3, totalSelectedExams)));
+      }
+    } else {
+      if (selectedQs > 0) {
+        setQuestionCount((prev) => (hasUserAdjustedCount ? Math.min(Math.max(1, prev), selectedQs) : selectedQs));
+      }
+    }
+  }, [isExamMode, totalSelectedExams, selectedQs, hasUserAdjustedCount]);
 
   const hasSelection = selectedSubs.size > 0;
 
@@ -285,17 +322,59 @@ export function NclexCustomTestPopup({
     if (!hasSelection) return;
     const subIds = Array.from(selectedSubs).join(",");
     const firstId = Array.from(selectedSubs)[0];
+
+    // Compute friendly title
+    let resolvedTitle = "";
+    if (isExamMode) {
+      const chosenTitles: string[] = [];
+      for (const c of courses) {
+        if (selectedSubs.has(String(c.id)) || (c.guidId && selectedSubs.has(c.guidId))) {
+          chosenTitles.push(c.title);
+        }
+      }
+      if (chosenTitles.length > 0 && chosenTitles.length <= 3) {
+        resolvedTitle = `Custom Exam: ${chosenTitles.join(" & ")}`;
+      } else {
+        const cleanTitle = (title || "").replace(/\s+EXAM\s+BUILDER$/i, "").trim();
+        resolvedTitle = cleanTitle ? `${cleanTitle} - Custom Exam` : "Custom Exam";
+      }
+    } else {
+      const chosenTitles: string[] = [];
+      for (const c of courses) {
+        for (const sc of c.subCategories) {
+          if (selectedSubs.has(sc.id)) {
+            chosenTitles.push(sc.title);
+          }
+        }
+      }
+      if (chosenTitles.length > 0 && chosenTitles.length <= 3) {
+        resolvedTitle = `Custom Exam: ${chosenTitles.join(" & ")}`;
+      } else {
+        const cleanTitle = (title || "").replace(/\s+EXAM\s+BUILDER$/i, "").trim();
+        resolvedTitle = cleanTitle ? `${cleanTitle} - Custom Exam` : "Custom Exam";
+      }
+    }
+
     const params = new URLSearchParams({
       mode: selectedMode,
       layout,
-      questionCount: String(questionCount),
       difficulty: difficultyFilter,
       subCategories: subIds,
       examType,
+      customTitle: resolvedTitle,
     });
-    if (firstId) {
-      params.set("identifier", firstId);
+
+    if (isExamMode) {
+      params.set("builderMode", "exams");
+      params.set("examCount", String(Math.min(Math.max(1, examCount), Math.max(1, totalSelectedExams))));
+    } else {
+      params.set("builderMode", "questions");
+      params.set("questionCount", String(Math.min(Math.max(1, questionCount), Math.max(1, selectedQs || 100))));
+      if (firstId) {
+        params.set("identifier", firstId);
+      }
     }
+
     router.push(`/web/${livePanelSlug ?? panelSlug}/vista/exam/generic?${params.toString()}`);
     onClose();
   };
@@ -405,6 +484,7 @@ export function NclexCustomTestPopup({
                 onToggleSub={toggleSub}
                 onToggleDomain={toggleDomain}
                 defaultExpanded={courses.length <= 2}
+                isExamMode={isExamMode}
               />
             ))
           )}
@@ -412,37 +492,81 @@ export function NclexCustomTestPopup({
 
         {/* ─── Footer ─── */}
         <div className="px-4 py-3 border-t border-slate-200 dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)]">
-          {/* Question Count */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className="flex-1">
-              <label className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-700 dark:text-white/60 tracking-wide mb-1">
-                <span>Set Total Questions</span>
-                <span className="text-sm font-bold text-[#0891b2] dark:text-[#2FD9C4] normal-case">{questionCount}</span>
-              </label>
-              <input
-                type="range"
-                min={2}
-                max={100}
-                step={1}
-                value={questionCount}
-                onChange={(e) => setQuestionCount(Number(e.target.value))}
-                className="w-full h-1.5 rounded-full bg-slate-300 dark:bg-white/10 appearance-none cursor-pointer accent-[#2FD9C4]"
-              />
-              <div className="flex justify-between text-[10px] text-slate-600 dark:text-white/40 mt-0.5 font-medium">
-                <span>Min 2</span>
-                <span>Max 100</span>
+          {/* Question / Exam Count Slider */}
+          {isExamMode ? (
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-1">
+                <label className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-700 dark:text-white/60 tracking-wide mb-1">
+                  <span>Set Total Exams</span>
+                  <span className="text-sm font-bold text-[#0891b2] dark:text-[#2FD9C4] normal-case">
+                    {examCount} {examCount === 1 ? "Exam" : "Exams"}
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min={1}
+                  max={Math.max(1, totalSelectedExams)}
+                  step={1}
+                  value={Math.min(Math.max(1, examCount), Math.max(1, totalSelectedExams))}
+                  onChange={(e) => {
+                    setHasUserAdjustedCount(true);
+                    setExamCount(Number(e.target.value));
+                  }}
+                  disabled={!hasSelection || totalSelectedExams <= 1}
+                  className="w-full h-1.5 rounded-full bg-slate-300 dark:bg-white/10 appearance-none cursor-pointer accent-[#2FD9C4]"
+                />
+                <div className="flex justify-between text-[10px] text-slate-600 dark:text-white/40 mt-0.5 font-medium">
+                  <span>Min 1</span>
+                  <span>Max {Math.max(1, totalSelectedExams)}</span>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-1">
+                <label className="flex items-center justify-between text-[10px] uppercase font-bold text-slate-700 dark:text-white/60 tracking-wide mb-1">
+                  <span>Set Total Questions</span>
+                  <span className="text-sm font-bold text-[#0891b2] dark:text-[#2FD9C4] normal-case">
+                    {questionCount} {questionCount === 1 ? "Question" : "Questions"}
+                  </span>
+                </label>
+                <input
+                  type="range"
+                  min={1}
+                  max={Math.max(1, selectedQs || 100)}
+                  step={1}
+                  value={Math.min(Math.max(1, questionCount), Math.max(1, selectedQs || 100))}
+                  onChange={(e) => {
+                    setHasUserAdjustedCount(true);
+                    setQuestionCount(Number(e.target.value));
+                  }}
+                  disabled={!hasSelection || selectedQs <= 1}
+                  className="w-full h-1.5 rounded-full bg-slate-300 dark:bg-white/10 appearance-none cursor-pointer accent-[#2FD9C4]"
+                />
+                <div className="flex justify-between text-[10px] text-slate-600 dark:text-white/40 mt-0.5 font-medium">
+                  <span>Min 1</span>
+                  <span>Max {Math.max(1, selectedQs || 100)}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Selected Summary + Mode & Layout Toggle */}
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               {hasSelection && (
                 <span className="text-[10px] text-slate-600 dark:text-white/50">
-                  <span className="text-[#0891b2] dark:text-[#2FD9C4] font-bold">{selectedSubs.size}</span> sub-categories selected
+                  <span className="text-[#0891b2] dark:text-[#2FD9C4] font-bold">{selectedSubs.size}</span>{" "}
+                  {isExamMode
+                    ? (selectedSubs.size === 1 ? "subject" : "subjects")
+                    : (selectedSubs.size === 1 ? "item" : "items")}{" "}
+                  selected
                   {" · "}
-                  <span className="text-slate-800 dark:text-white/80 font-semibold">{selectedQs.toLocaleString()} Qs available</span>
+                  <span className="text-slate-800 dark:text-white/80 font-semibold">
+                    {isExamMode
+                      ? `${totalSelectedExams} ${totalSelectedExams === 1 ? "Exam" : "Exams"} available`
+                      : `${selectedQs.toLocaleString()} Qs available`}
+                  </span>
                 </span>
               )}
             </div>

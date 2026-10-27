@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { strataService } from "@/lib/services/nexus/strata/strataService";
+import type { StrataItem } from "@/lib/hooks/nexus/strata/assessment/learning/exams/nominal/useNominalStrataExams";
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -393,6 +394,101 @@ export interface StrataSessionExam {
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// PROPORTIONAL ALLOCATION & SAMPLING HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Proportionally distributes a target total among N items with given pool sizes,
+ * ensuring each item gets at least 1 (if targetTotal >= pools.length) and never exceeds its pool size.
+ * Uses the Largest Remainder Method (Hamilton method) to guarantee the sum equals targetTotal.
+ */
+function allocateProportionally(
+  pools: { id: string; size: number }[],
+  targetTotal: number
+): Record<string, number> {
+  const result: Record<string, number> = {};
+  if (pools.length === 0 || targetTotal <= 0) return result;
+
+  const totalSize = pools.reduce((sum, p) => sum + p.size, 0);
+  if (targetTotal >= totalSize) {
+    for (const p of pools) {
+      result[p.id] = p.size;
+    }
+    return result;
+  }
+
+  // Calculate float quotas
+  const quotas = pools.map((p) => {
+    const raw = (targetTotal * p.size) / totalSize;
+    const base = targetTotal >= pools.length ? Math.min(p.size, Math.max(1, Math.floor(raw))) : Math.min(p.size, Math.floor(raw));
+    const remainder = raw - Math.floor(raw);
+    return {
+      id: p.id,
+      size: p.size,
+      allocated: base,
+      remainder,
+    };
+  });
+
+  let currentSum = quotas.reduce((sum, q) => sum + q.allocated, 0);
+
+  // If base allocations sum is greater than targetTotal:
+  if (currentSum > targetTotal) {
+    quotas.sort((a, b) => b.allocated - a.allocated);
+    for (const q of quotas) {
+      while (q.allocated > 1 && currentSum > targetTotal) {
+        q.allocated -= 1;
+        currentSum -= 1;
+      }
+      if (currentSum === targetTotal) break;
+    }
+    if (currentSum > targetTotal) {
+      for (const q of quotas) {
+        while (q.allocated > 0 && currentSum > targetTotal) {
+          q.allocated -= 1;
+          currentSum -= 1;
+        }
+        if (currentSum === targetTotal) break;
+      }
+    }
+  } else if (currentSum < targetTotal) {
+    // Distribute remaining based on largest remainder
+    quotas.sort((a, b) => b.remainder - a.remainder);
+    let needed = targetTotal - currentSum;
+    let progress = true;
+    while (needed > 0 && progress) {
+      progress = false;
+      for (const q of quotas) {
+        if (needed <= 0) break;
+        if (q.allocated < q.size) {
+          q.allocated += 1;
+          needed -= 1;
+          progress = true;
+        }
+      }
+    }
+  }
+
+  for (const q of quotas) {
+    result[q.id] = q.allocated;
+  }
+  return result;
+}
+
+function sampleRandomItems<T>(items: T[], count: number): T[] {
+  if (count <= 0) return [];
+  if (count >= items.length) return [...items];
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = copy[i];
+    copy[i] = copy[j];
+    copy[j] = temp;
+  }
+  return copy.slice(0, count);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // HOOK
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -405,6 +501,11 @@ export const useLiveStrataExam = ({
   selectedLayout = null,
   selectedMode = null,
   targetAttemptNumber = null,
+  builderMode = null,
+  questionCount = null,
+  examCount = null,
+  subCategories = null,
+  customTitle = null,
 }: {
   examIdentifier: string;
 
@@ -420,6 +521,11 @@ export const useLiveStrataExam = ({
   selectedMode?: string | null;
 
   targetAttemptNumber?: number | null;
+  builderMode?: "questions" | "exams" | null;
+  questionCount?: number | null;
+  examCount?: number | null;
+  subCategories?: string | null;
+  customTitle?: string | null;
 }) => {
 
   // ─────────────────────────────────────────────────────────────
@@ -451,41 +557,269 @@ export const useLiveStrataExam = ({
   // ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
-
-    if (!examIdentifier) return;
+    if (!examIdentifier && !subCategories) return;
 
     const fetchExam = async () => {
-
       try {
-
         setLoading(true);
         setError(null);
         setExamSession(null);
 
-        // console.log(
-        //   "🚀 [useLiveStrataExam] Fetching Live Exam . . . ⚓"
-        // );
+        // ─────────────────────────────────────────────────────────────
+        // 1. BUILDER MODE: EXAMS (Subject-Level Custom Exam Builder)
+        // ─────────────────────────────────────────────────────────────
+        if (builderMode === "exams") {
+          const subjectIds = (subCategories || "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
 
-        // console.log("🧪 Params:", {
-        //   examIdentifier,
-        //   page,
-        //   perPage,
-        //   sortColumn,
-        //   sortDirection,
-        //   selectedLayout,
-        //   selectedMode,
-        // });
+          if (subjectIds.length === 0) {
+            throw new Error("No subjects selected for custom exam");
+          }
 
-        // IMPORTANT:
-        // BACKEND EXPECTS:
-        // dynamicExamLayout
-        // dynamicExamMode
+          // Fetch nominal exams for each selected subject in parallel
+          const subjectExamsList = await Promise.all(
+            subjectIds.map(async (subjId) => {
+              try {
+                const res = await strataService<{ items?: StrataItem[] }>(
+                  "Exam",
+                  "NominalFetch",
+                  {
+                    identifier: subjId,
+                    dynamicLearningStrataName: "subject",
+                    dynamicPage: 1,
+                    dynamicPerPage: 100,
+                    dynamicSortColumn: "id",
+                    dynamicSortDirection: "desc",
+                  }
+                );
+                const items = res?.data?.items ?? [];
+                return {
+                  subjectId: subjId,
+                  exams: items.map((e) => ({
+                    id: String(e.guidId || e.id),
+                    title: e.title || "Exam",
+                    questionsCount: e.questionsCount || 45,
+                  })),
+                };
+              } catch (err) {
+                console.warn(`[useLiveStrataExam] Failed to fetch exams for subject ${subjId}:`, err);
+                return { subjectId: subjId, exams: [] };
+              }
+            })
+          );
 
+          const totalAvailableExams = subjectExamsList.reduce((sum, s) => sum + s.exams.length, 0);
+          if (totalAvailableExams === 0) {
+            throw new Error("No exams available in the selected subjects");
+          }
+
+          const targetExamCount = examCount && examCount > 0
+            ? Math.min(examCount, totalAvailableExams)
+            : Math.min(3, totalAvailableExams);
+
+          // Proportionally allocate targetExamCount across subjects
+          const poolInputs = subjectExamsList.map((s) => ({
+            id: s.subjectId,
+            size: s.exams.length,
+          }));
+          const allocations = allocateProportionally(poolInputs, targetExamCount);
+
+          // Pick allocated exams randomly from each subject
+          const chosenExamIds: { id: string; subjectId: string }[] = [];
+          for (const s of subjectExamsList) {
+            const countForSubject = allocations[s.subjectId] || 0;
+            if (countForSubject > 0) {
+              const sampled = sampleRandomItems(s.exams, countForSubject);
+              for (const e of sampled) {
+                chosenExamIds.push({ id: e.id, subjectId: s.subjectId });
+              }
+            }
+          }
+
+          if (chosenExamIds.length === 0) {
+            throw new Error("No exams could be selected from chosen subjects");
+          }
+
+          // Fetch live session for each chosen exam in parallel
+          const liveSessions = await Promise.all(
+            chosenExamIds.map(async ({ id }) => {
+              try {
+                const res = await strataService<StrataExamSessionResponse>(
+                  "Exam",
+                  FETCH_TYPE,
+                  {
+                    identifier: id,
+                    dynamicExamLayout: selectedLayout,
+                    dynamicExamMode: selectedMode,
+                    dynamicPage: 1,
+                    dynamicPerPage: 500,
+                  }
+                );
+                return res?.data ?? null;
+              } catch (e) {
+                console.warn(`[useLiveStrataExam] Failed to fetch live exam ${id}:`, e);
+                return null;
+              }
+            })
+          );
+
+          const validSessions = liveSessions.filter(
+            (s): s is StrataExamSessionResponse => s !== null && s.exam !== undefined
+          );
+
+          if (validSessions.length === 0) {
+            throw new Error("Failed to load custom exams");
+          }
+
+          const firstSession = validSessions[0];
+
+          // Build sections: each exam is a section with its FULL questions
+          const sections: StrataSessionSection[] = validSessions.map((session, idx) => {
+            const allQ = (session.sections ?? []).flatMap((sec) => sec.questions ?? []);
+            return {
+              id: session.exam.id || idx + 1,
+              guidId: session.exam.guidId || String(idx + 1),
+              name: session.exam.title || `Exam Section ${idx + 1}`,
+              description: session.exam.description,
+              questions: allQ,
+            };
+          });
+
+          const totalQuestions = sections.reduce((sum, sec) => sum + sec.questions.length, 0);
+
+          const combinedSession: StrataExamSessionResponse = {
+            ...firstSession,
+            exam: {
+              ...firstSession.exam,
+              title: customTitle || (validSessions.length <= 3 ? `Custom Exam: ${validSessions.map((s) => s.exam.title).join(" & ")}` : "Custom Exam"),
+              questionsCount: totalQuestions,
+              sectionsCount: sections.length,
+              selectedLayout: selectedLayout || firstSession.exam.selectedLayout || "Generic",
+              selectedMode: selectedMode || firstSession.exam.selectedMode || "Practice",
+            },
+            sections,
+          };
+
+          setExamSession(combinedSession);
+          setSkewTotal(totalQuestions);
+          setSkewTotalPages(1);
+          return;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // 2. BUILDER MODE: QUESTIONS (Exam-Level Custom Exam Builder)
+        // ─────────────────────────────────────────────────────────────
+        const examIds = (subCategories || examIdentifier || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        if (builderMode === "questions" || (examIds.length > 1 && !builderMode)) {
+          // Fetch all exams in parallel
+          const liveSessions = await Promise.all(
+            examIds.map(async (id) => {
+              try {
+                const res = await strataService<StrataExamSessionResponse>(
+                  "Exam",
+                  FETCH_TYPE,
+                  {
+                    identifier: id,
+                    dynamicExamLayout: selectedLayout,
+                    dynamicExamMode: selectedMode,
+                    dynamicPage: 1,
+                    dynamicPerPage: 500,
+                  }
+                );
+                return res?.data ?? null;
+              } catch (e) {
+                console.warn(`[useLiveStrataExam] Failed to fetch live exam ${id}:`, e);
+                return null;
+              }
+            })
+          );
+
+          const validSessions = liveSessions.filter(
+            (s): s is StrataExamSessionResponse => s !== null && s.exam !== undefined
+          );
+
+          if (validSessions.length === 0) {
+            throw new Error("Failed to load selected exams");
+          }
+
+          const firstSession = validSessions[0];
+
+          // Collect question pools for each exam
+          const examPools = validSessions.map((session, idx) => {
+            const allQ = (session.sections ?? []).flatMap((sec) => sec.questions ?? []);
+            return {
+              id: session.exam.guidId || String(session.exam.id || idx + 1),
+              title: session.exam.title || `Section ${idx + 1}`,
+              session,
+              questions: allQ,
+              size: allQ.length,
+            };
+          });
+
+          const totalAvailableQuestions = examPools.reduce((sum, p) => sum + p.size, 0);
+          const targetQuestions = questionCount && questionCount > 0
+            ? Math.min(questionCount, totalAvailableQuestions)
+            : totalAvailableQuestions;
+
+          // Proportionally allocate targetQuestions across the exams
+          const poolInputs = examPools.map((p) => ({ id: p.id, size: p.size }));
+          const allocations = allocateProportionally(poolInputs, targetQuestions);
+
+          // Build sections: each exam's sampled questions remain grouped in its section
+          const sections: StrataSessionSection[] = examPools.map((p, idx) => {
+            const alloc = allocations[p.id] || 0;
+            const sampled = sampleRandomItems(p.questions, alloc);
+            return {
+              id: p.session.exam.id || idx + 1,
+              guidId: p.session.exam.guidId || String(idx + 1),
+              name: p.title,
+              description: p.session.exam.description,
+              questions: sampled,
+            };
+          });
+
+          const totalSampled = sections.reduce((sum, sec) => sum + sec.questions.length, 0);
+
+          const resolvedExamTitle = customTitle || (
+            examPools.length <= 3
+              ? `Custom Exam: ${examPools.map((p) => p.title).join(" & ")}`
+              : `${firstSession.exam.subjectName || "Subject"} - Custom Exam`
+          );
+
+          const combinedSession: StrataExamSessionResponse = {
+            ...firstSession,
+            exam: {
+              ...firstSession.exam,
+              title: resolvedExamTitle,
+              questionsCount: totalSampled,
+              sectionsCount: sections.length,
+              selectedLayout: selectedLayout || firstSession.exam.selectedLayout || "Generic",
+              selectedMode: selectedMode || firstSession.exam.selectedMode || "Practice",
+            },
+            sections,
+          };
+
+          setExamSession(combinedSession);
+          setSkewTotal(totalSampled);
+          setSkewTotalPages(1);
+          return;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // 3. STANDARD SINGLE EXAM FETCH
+        // ─────────────────────────────────────────────────────────────
+        const singleIdentifier = examIdentifier || examIds[0] || "";
         const result = await strataService<StrataExamSessionResponse>(
           "Exam",
           FETCH_TYPE,
           {
-            identifier: examIdentifier,
+            identifier: singleIdentifier,
             dynamicPage: page,
             dynamicPerPage: perPage,
             dynamicSearch: examSearch || "",
@@ -499,46 +833,28 @@ export const useLiveStrataExam = ({
           }
         );
 
-        console.log("📥 RAW RESULT 📌:", result);
-
         if (result?.error) {
           throw new Error(result.error);
         }
 
-        // Depending on your API wrapper:
-        // result.data OR result.data.data
-
         const session = result?.data ?? null;
-        console.log("🧠 FINAL SESSION ⚓:", session);
         setExamSession(session);
-
-        // Fallback counts
         setSkewTotal(session?.exam?.questionsCount ?? 0);
         setSkewTotalPages(1);
 
       } catch (err: unknown) {
-
-        console.error(
-          "❌ Failed to fetch live exam:",
-          err
-        );
-
+        console.error("❌ Failed to fetch live exam:", err);
         if (err instanceof Error) {
           setError(err.message);
         } else {
           setError("Unknown Error");
         }
-
       } finally {
-
         setLoading(false);
-
       }
-
     };
 
     fetchExam();
-
   }, [
     examIdentifier,
     examSearch,
@@ -548,7 +864,12 @@ export const useLiveStrataExam = ({
     sortDirection,
     selectedLayout,
     selectedMode,
-    targetAttemptNumber
+    targetAttemptNumber,
+    builderMode,
+    questionCount,
+    examCount,
+    subCategories,
+    customTitle,
   ]);
 
   // ─────────────────────────────────────────────────────────────

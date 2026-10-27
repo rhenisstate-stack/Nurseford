@@ -662,6 +662,7 @@ export function SubjectExamsHierarchyPage({
         panelSlug={panelSlug}
         livePanelSlug={livePanelSlug}
         title={`${currentSubjectTitle.toUpperCase()} EXAM BUILDER`}
+        builderMode="questions"
         customCourses={customCoursesForBuilder}
         examType={
           panelSlug === "hesi-a2"
