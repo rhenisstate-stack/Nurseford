@@ -1,0 +1,25 @@
+.dynamic-vista-sort-scroll::-webkit-scrollbar {
+  height: 0px;
+}
+
+.dynamic-vista-sort-scroll:hover::-webkit-scrollbar {
+  height: 4px;
+}
+
+.dynamic-vista-sort-scroll::-webkit-scrollbar-thumb {
+  background: rgba(120, 120, 120, 0.5);
+  border-radius: 9999px;
+}
+
+.dynamic-vista-sort-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dynamic-vista-sort-scroll {
+  scrollbar-width: none;
+}
+
+.dynamic-vista-sort-scroll:hover {
+  scrollbar-width: thin;
+}
+

@@ -1,0 +1,62 @@
+Core Structure for all Hierarchies
+Category → SubCategory → Domain 
+
+Example
+Category: Education
+SubCategory: Secondary, College, University, Primary
+Domain: Content or Exams or Students or Lectures or etc 
+
+Each Hiarachy contains the Core Structure [ Category → SubCategory → Domain ] 
+Exam Hierarchy
+Program → Course → Subject → Unit → Chapter → Lesson → Topic → Concept
+
+Example
+Program: Bachelor of Science in Electrical Engineering (BSc EE)
+Course: Power Systems Engineering
+Subject: Electrical Machines
+Unit: AC Machines
+Chapter: Synchronous Generators
+Lesson: Operation and Construction of Synchronous Generators
+Topic: Voltage Regulation of Synchronous Generators
+Concept: Effect of Load on Terminal Voltage
+
+
+Institutional Hierarchy
+Institution → School → Department → DepartmentSection → Program → Cohort → Class → AcademicYear → Term
+
+Example (University)
+Institution: University of Nairobi
+School: School of Engineering
+Department: Department of Electrical and Electronics Engineering
+DepartmentSection: Power Systems Unit
+Program: BSc Electrical Engineering
+Cohort: 2024 Intake
+Class: Level 300 – Group A
+AcademicYear: 2025/2026 Academic Year
+Term: Semester 2
+
+
+Assessments Hierarchy
+Assessment → Exam → Section → Question
+
+Example
+Assessment: End-of-Semester Examination
+Exam: Electrical Machines II – Semester 2 Exam
+Section: Section B – AC Machines
+Question: “Explain the impact of synchronous generator excitation on voltage regulation under varying load conditions.”
+
+
+Content/Notes Hierarchy
+Program → Course → Subject → Unit → Chapter → Lesson → Topic → Concept
+
+Example
+Program: BSc Electrical Engineering
+Course: Power Systems Engineering
+Subject: Electrical Machines
+Unit: AC Machines
+Chapter: Synchronous Generators
+Lesson: Voltage Regulation
+Topic: Excitation Methods
+Concept: Automatic Voltage Regulators (AVR)
+
+

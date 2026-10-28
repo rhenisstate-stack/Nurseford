@@ -1,0 +1,142 @@
+@tailwind utilities;
+
+:root {
+  /* Base colors */
+  --background: #ffffff;
+  --foreground: #000000;
+  
+  /* Light theme defaults */
+  --navbar-bg: #ffffff;
+  --sidebar-bg: #f8fafc;
+  --content-bg: #ffffff;
+  --footer-bg: #f1f5f9;
+  
+  /* Text colors */
+  --navbar-text: #000000;
+  --sidebar-text: #000000;
+  --content-text: #000000;
+  --footer-text: #000000;
+  
+  /* Custom colors - initially empty to be set by ThemeContext */
+  --custom-navbar-bg: initial;
+  --custom-sidebar-bg: initial;
+  --custom-content-bg: initial;
+  --custom-footer-bg: initial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+.dark {
+  /* Dark theme defaults */
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  
+  --navbar-bg: #1e293b;
+  --sidebar-bg: #0f172a;
+  --content-bg: #1e293b;
+  --footer-bg: #0f172a;
+  
+  /* Dark text colors */
+  --navbar-text: #f8fafc;
+  --sidebar-text: #f8fafc;
+  --content-text: #f8fafc;
+  --footer-text: #f8fafc;
+}
+
+/* Apply theme variables */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+  transition: background-color 0.3s, color 0.3s;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Component styles with theme support */
+.navbar {
+  background-color: var(--custom-navbar-bg, var(--navbar-bg));
+  color: var(--navbar-text);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.sidebar {
+  background-color: var(--custom-sidebar-bg, var(--sidebar-bg));
+  color: var(--sidebar-text);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.content-area {
+  background-color: var(--custom-content-bg, var(--content-bg));
+  color: var(--content-text);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.footer {
+  background-color: var(--custom-footer-bg, var(--footer-bg));
+  color: var(--footer-text);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Custom scrollbar that respects theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--sidebar-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Utility classes for theme support */
+.bg-navbar {
+  background-color: var(--custom-navbar-bg, var(--navbar-bg));
+}
+
+.bg-sidebar {
+  background-color: var(--custom-sidebar-bg, var(--sidebar-bg));
+}
+
+.bg-content {
+  background-color: var(--custom-content-bg, var(--content-bg));
+}
+
+.bg-footer {
+  background-color: var(--custom-footer-bg, var(--footer-bg));
+}
+
+.text-navbar {
+  color: var(--navbar-text);
+}
+
+.text-sidebar {
+  color: var(--sidebar-text);
+}
+
+.text-content {
+  color: var(--content-text);
+}
+
+.text-footer {
+  color: var(--footer-text);
+}
+
+.react-phone-number-input__input {
+  @apply !text-green-600;
+}
