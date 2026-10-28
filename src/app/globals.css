@@ -20,29 +20,29 @@ html:not(.light) .show-on-dark {
 }
 
 :root {
-  --background: #000f25;
-  --foreground: #ffffff;
-  --content-bg: #000f25;
-  --text-color: #ffffff;
-  --navbar-bg: #000f25;
-  --leftSidebar-bg: #000f25;
-  --rightSidebar-bg: #000f25;
-  --footer-bg: #000f25;
-  --card-bg: #15273e;
+  --background: #faf9f6;
+  --foreground: #000000;
+  --content-bg: #faf9f6;
+  --text-color: #000000;
+  --navbar-bg: #faf9f6;
+  --leftSidebar-bg: #faf9f6;
+  --rightSidebar-bg: #faf9f6;
+  --footer-bg: #faf9f6;
+  --card-bg: #EEF3FE;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
 html.light {
-  --background: #f8fafc;
+  --background: #faf9f6;
   --foreground: #000000;
-  --content-bg: #f8fafc;
+  --content-bg: #faf9f6;
   --text-color: #000000;
-  --navbar-bg: #ffffff;
-  --leftSidebar-bg: #f8fafc;
-  --rightSidebar-bg: #f1f5f9;
-  --footer-bg: #f1f5f9;
+  --navbar-bg: #faf9f6;
+  --leftSidebar-bg: #faf9f6;
+  --rightSidebar-bg: #faf9f6;
+  --footer-bg: #faf9f6;
   --card-bg: #EEF3FE;
   --card-border: rgba(0, 0, 0, 0.5);
 }

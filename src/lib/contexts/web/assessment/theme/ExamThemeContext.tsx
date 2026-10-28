@@ -40,13 +40,13 @@ export type ExamCustomColors = {
 };
 
 export const DEFAULT_EXAM_COLORS: ExamCustomColors = {
-    upperNavbar:       "#ffffff",
-    lowerNavbar:       "#f8fafc",
-    nonStickyNavbar:   "#f8fafc",
-    content:           "#ffffff",
-    footer:            "#f1f5f9",
-    leftSidebar:       "#f8fafc",
-    rightSidebar:      "#f8fafc",
+    upperNavbar:       "#faf9f6",
+    lowerNavbar:       "#faf9f6",
+    nonStickyNavbar:   "#faf9f6",
+    content:           "#faf9f6",
+    footer:            "#faf9f6",
+    leftSidebar:       "#faf9f6",
+    rightSidebar:      "#faf9f6",
     upperNavText:      "#000000",
     lowerNavText:      "#000000",
     nonStickyNavText:  "#000000",
@@ -57,13 +57,13 @@ export const DEFAULT_EXAM_COLORS: ExamCustomColors = {
 };
 
 const LIGHT_EXAM_COLORS: ExamCustomColors = {
-    upperNavbar:       "#ffffff",
-    lowerNavbar:       "#f8fafc",
-    nonStickyNavbar:   "#f8fafc",
-    content:           "#ffffff",
-    footer:            "#f1f5f9",
-    leftSidebar:       "#f8fafc",
-    rightSidebar:      "#f8fafc",
+    upperNavbar:       "#faf9f6",
+    lowerNavbar:       "#faf9f6",
+    nonStickyNavbar:   "#faf9f6",
+    content:           "#faf9f6",
+    footer:            "#faf9f6",
+    leftSidebar:       "#faf9f6",
+    rightSidebar:      "#faf9f6",
     upperNavText:      "#000000",
     lowerNavText:      "#000000",
     nonStickyNavText:  "#000000",
@@ -142,7 +142,8 @@ function applyCSS(
         if (typeof document !== "undefined" && document.body) {
             document.body.dataset.theme = "light";
         }
-        root.style.setProperty("--content-bg", "#ffffff");
+        root.style.setProperty("--background", "#faf9f6");
+        root.style.setProperty("--content-bg", "#faf9f6");
         root.style.setProperty("--text-color", "#0f172a");
     }
 
@@ -289,8 +290,9 @@ export const ExamThemeProvider = ({ children }: { children: ReactNode }) => {
                 } else {
                     root.style.setProperty("--card-bg", "#EEF3FE");
                     root.style.setProperty("--card-border", "rgba(0, 0, 0, 0.5)");
-                    root.style.setProperty("--content-bg", "#f8fafc");
-                    root.style.setProperty("--navbar-bg", "#ffffff");
+                    root.style.setProperty("--background", "#faf9f6");
+                    root.style.setProperty("--content-bg", "#faf9f6");
+                    root.style.setProperty("--navbar-bg", "#faf9f6");
                     root.style.setProperty("--text-color", "#0f172a");
                 }
                 window.dispatchEvent(new Event("themechange"));

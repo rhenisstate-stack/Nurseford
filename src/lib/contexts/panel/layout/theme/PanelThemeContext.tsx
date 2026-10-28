@@ -46,12 +46,12 @@ interface ThemeContextType {
 }
 
 const defaultTheme: Record<ThemeTarget, ThemeValue> = {
-  global: "dark",
-  navbar: "dark",
-  leftSidebar: "dark",
-  rightSidebar: "dark",
-  content: "dark",
-  footer: "dark",
+  global: "light",
+  navbar: "light",
+  leftSidebar: "light",
+  rightSidebar: "light",
+  content: "light",
+  footer: "light",
 };
 
 function getSystemTheme(): ThemeValue {
@@ -87,11 +87,11 @@ export function applyThemeToDocument(
   }
 
   const lightColors: Record<keyof CustomColors, string> = {
-    navbar: "#ffffff",
-    leftSidebar: "#f8fafc",
-    rightSidebar: "#f1f5f9",
-    content: "#f8fafc",
-    footer: "#f1f5f9",
+    navbar: "#faf9f6",
+    leftSidebar: "#faf9f6",
+    rightSidebar: "#faf9f6",
+    content: "#faf9f6",
+    footer: "#faf9f6",
     text: "#0f172a",
   };
 
@@ -125,6 +125,7 @@ export function applyThemeToDocument(
   }
 
   // Set distinct elevated card background and border
+  root.style.setProperty("--background", effectiveTheme === "light" ? "#faf9f6" : "#000f25");
   root.style.setProperty("--card-bg", effectiveTheme === "light" ? "#EEF3FE" : "#15273e");
   root.style.setProperty("--card-border", effectiveTheme === "light" ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.1)");
 

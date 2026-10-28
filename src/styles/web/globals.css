@@ -2,14 +2,14 @@
 
 :root {
   /* Base colors */
-  --background: #ffffff;
+  --background: #faf9f6;
   --foreground: #000000;
   
   /* Light theme defaults */
-  --navbar-bg: #ffffff;
-  --sidebar-bg: #f8fafc;
-  --content-bg: #ffffff;
-  --footer-bg: #f1f5f9;
+  --navbar-bg: #faf9f6;
+  --sidebar-bg: #faf9f6;
+  --content-bg: #faf9f6;
+  --footer-bg: #faf9f6;
   
   /* Text colors */
   --navbar-text: #000000;

@@ -3,31 +3,31 @@
   --font-serif: var(--font-fraunces);
   --font-mono: var(--font-ibm-plex-mono);
 
-  /* Concentrated midnight navy blue theme matching background images */
-  --background: #000f25;
-  --navbar-bg: #000f25;
-  --content-bg: #000f25;
-  --footer-bg: #000f25;
-  --card-bg: #15273e;
-  --text-color: #ffffff;
-  --navbar-text: #ffffff;
-  --sidebar-text: #ffffff;
-  --content-text: #ffffff;
-  --footer-text: #ffffff;
+  /* Clean off-white porcelain background #faf9f6 */
+  --background: #faf9f6;
+  --navbar-bg: #faf9f6;
+  --content-bg: #faf9f6;
+  --footer-bg: #faf9f6;
+  --card-bg: #EEF3FE;
+  --text-color: #000000;
+  --navbar-text: #000000;
+  --sidebar-text: #000000;
+  --content-text: #000000;
+  --footer-text: #000000;
 
-  background: #000f25;
+  background: #faf9f6;
   min-height: 100vh;
-  color: var(--text-color, #ffffff);
+  color: var(--text-color, #000000);
   font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
 }
 
-/* Light mode: clean off-white background, dark typography, light tinted card surfaces */
+/* Light mode: clean off-white background #faf9f6, dark typography, light tinted card surfaces */
 html.light .rhenis-web,
 .rhenis-web.light {
-  --background: #f8fafc;
-  --navbar-bg: #ffffff;
-  --content-bg: #f8fafc;
-  --footer-bg: #f1f5f9;
+  --background: #faf9f6;
+  --navbar-bg: #faf9f6;
+  --content-bg: #faf9f6;
+  --footer-bg: #faf9f6;
   --card-bg: #EEF3FE;
   --card-border: rgba(0, 0, 0, 0.5);
   --text-color: #000000;
@@ -36,7 +36,7 @@ html.light .rhenis-web,
   --content-text: #000000;
   --footer-text: #000000;
 
-  background: #f8fafc;
+  background: #faf9f6;
   color: #000000;
 }
 
