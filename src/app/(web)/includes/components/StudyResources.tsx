@@ -9,7 +9,7 @@ const features = [
     title: "Fundamentals of Nursing",
     description:
       "Master core nursing concepts, skills, and patient care basics with comprehensive study guides and practice materials.",
-    href: "/pages/exams/rn-nursing",
+    href: "/dashboards/rn-nursing",
     accent: "coral" as const,
   },
   {
@@ -19,7 +19,7 @@ const features = [
     title: "Pharmacology & Med-Surg Mastery",
     description:
       "Master the complexities of Pharmacology and Medical-Surgical Nursing with detailed study materials and expert notes.",
-    href: "/pages/exams/rn-nursing",
+    href: "/dashboards/rn-nursing",
     accent: "teal" as const,
   },
   {

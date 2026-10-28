@@ -14,12 +14,12 @@ const nursingLinks = [
   {
     label: 'RN Nursing Exam',
     description: 'Registered Nurse core competency & test bank',
-    href: '/pages/exams/rn-nursing',
+    href: '/dashboards/rn-nursing',
   },
   {
     label: 'LPN Nursing Exam',
     description: 'Practical Nurse core competency & test bank',
-    href: '/pages/exams/lpn-nursing',
+    href: '/dashboards/lpn-nursing',
   },
 ];
 

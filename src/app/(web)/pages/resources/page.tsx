@@ -41,13 +41,13 @@ const rawCards: DashboardCard[] = [
         label: 'RN Nursing EXAMS',
         description: 'Registered Nurse core competency review and practice test bank.',
         icon: <FaStethoscope className="text-blue-400 text-3xl" />,
-        route: '/pages/exams/rn-nursing',
+        route: '/dashboards/rn-nursing',
     },
     {
         label: 'LPN Nursing EXAMS',
         description: 'Licensed Practical Nurse exam simulations and practice questions.',
         icon: <FaStethoscope className="text-purple-400 text-3xl" />,
-        route: '/pages/exams/lpn-nursing',
+        route: '/dashboards/lpn-nursing',
     },
     {
         label: 'RN Exit EXAMS',

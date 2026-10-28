@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Search, X } from 'lucide-react';
 
 const searchIndex = [
-  { label: 'RN Nursing Exam', href: '/pages/exams/rn-nursing', keywords: 'registered nurse rn nursing practice questions bank test prep med-surg pediatrics' },
-  { label: 'LPN Nursing Exam', href: '/pages/exams/lpn-nursing', keywords: 'licensed practical nurse lpn nursing practice questions bank test prep pn' },
+  { label: 'RN Nursing Exam', href: '/dashboards/rn-nursing', keywords: 'registered nurse rn nursing practice questions bank test prep med-surg pediatrics' },
+  { label: 'LPN Nursing Exam', href: '/dashboards/lpn-nursing', keywords: 'licensed practical nurse lpn nursing practice questions bank test prep pn' },
   { label: 'RN Exit Exams', href: '/dashboards/rn-nursing/exams/exit-ati-exams-rn/36', keywords: 'rn exit exams ati hesi comprehensive exit predictor' },
   { label: 'LPN Exit Exams', href: '/dashboards/lpn-nursing/exams/exit-ati-exams-lpn/23', keywords: 'lpn exit exams ati hesi comprehensive exit predictor' },
   { label: 'Home', href: '/', keywords: 'home' },

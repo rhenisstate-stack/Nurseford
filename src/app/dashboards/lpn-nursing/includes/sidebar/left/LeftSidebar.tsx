@@ -434,8 +434,6 @@ export default function LeftSidebar() {
         >
           <NavItem href="/dashboards/lpn-nursing/exams/ati-exams-lpn/21" label="ATI Exams (LPN)" {...sharedNavProps} />
           <NavItem href="/dashboards/lpn-nursing/exams/examplify-practice-pn/22" label="EXAMPLIFY Practice (PN)" {...sharedNavProps} />
-          <NavItem href="/dashboards/lpn-nursing/exams/exit-ati-exams-lpn/23" label="EXIT ATI Exams-LPN" {...sharedNavProps} />
-          <NavItem href="/dashboards/lpn-nursing/exams/exit-hesi-exams-lpn/24" label="EXIT HESI Exams-LPN" {...sharedNavProps} />
           <NavItem href="/dashboards/lpn-nursing/exams/hesi-exams-lpn/25" label="HESI Exams (LPN)" {...sharedNavProps} />
           <NavItem href="/dashboards/lpn-nursing/exams/kaplan-exams/26" label="KAPLAN EXAMS" {...sharedNavProps} />
         </AccordionGroup>
@@ -453,43 +451,33 @@ export default function LeftSidebar() {
           <NavItem href="/dashboards/lpn-nursing/exams/exit-hesi-exams-lpn/24" label="EXIT HESI Exams-LPN" {...sharedNavProps} />
         </AccordionGroup>
 
-        {/* ─── RN Nursing & Exit Exams ─── */}
+        {/* ─── RN Nursing Exams ─── */}
         <AccordionGroup
-          id="Explore More Products"
-          icon={Sparkles}
-          label="RN Nursing &amp; Exit Exams"
-          isActive={activeDropdown === "Explore More Products"}
+          id="RN Nursing Exams"
+          icon={ClipboardCheck}
+          label="RN Nursing Exams"
+          isActive={activeDropdown === "RN Nursing Exams"}
           onToggle={toggleDropdown}
           {...sharedNavProps}
         >
-          {/* RN Nursing Exams Sub-Accordion */}
-          <SubAccordionGroup
-            id="explore-rn-nursing"
-            label="RN Nursing Exams"
-            isOpen={!!openSubDropdowns["explore-rn-nursing"]}
-            onToggle={toggleSubDropdown}
-            isOpened={isOpened}
-            isMobile={isMobile}
-          >
-            <NavItem href="/dashboards/rn-nursing" label="All RN Nursing Exams" exact {...sharedNavProps} />
-            <NavItem href="/dashboards/rn-nursing/exams/ati-exams-rn/34" label="ATI Exam (RN)" {...sharedNavProps} />
-            <NavItem href="/dashboards/rn-nursing/exams/examplify-practice-rn/35" label="EXAMPLIFY Practice" {...sharedNavProps} />
-            <NavItem href="/dashboards/rn-nursing/exams/general-exams/38" label="GENERAL Exams" {...sharedNavProps} />
-            <NavItem href="/dashboards/rn-nursing/exams/hesi-exams-rn/39" label="HESI EXAM (RN)" {...sharedNavProps} />
-          </SubAccordionGroup>
+          <NavItem href="/dashboards/rn-nursing" label="All RN Nursing Exams" exact {...sharedNavProps} />
+          <NavItem href="/dashboards/rn-nursing/exams/ati-exams-rn/34" label="ATI Exam (RN)" {...sharedNavProps} />
+          <NavItem href="/dashboards/rn-nursing/exams/examplify-practice-rn/35" label="EXAMPLIFY Practice" {...sharedNavProps} />
+          <NavItem href="/dashboards/rn-nursing/exams/general-exams/38" label="GENERAL Exams" {...sharedNavProps} />
+          <NavItem href="/dashboards/rn-nursing/exams/hesi-exams-rn/39" label="HESI EXAM (RN)" {...sharedNavProps} />
+        </AccordionGroup>
 
-          {/* RN Exit Exams Sub-Accordion */}
-          <SubAccordionGroup
-            id="explore-rn-exit"
-            label="RN Exit Exams"
-            isOpen={!!openSubDropdowns["explore-rn-exit"]}
-            onToggle={toggleSubDropdown}
-            isOpened={isOpened}
-            isMobile={isMobile}
-          >
-            <NavItem href="/dashboards/rn-nursing/exams/exit-ati-exams-rn/36" label="EXIT ATI Exams-RN" {...sharedNavProps} />
-            <NavItem href="/dashboards/rn-nursing/exams/exit-hesi-exams-rn/37" label="EXIT HESI Exams-RN" {...sharedNavProps} />
-          </SubAccordionGroup>
+        {/* ─── RN Exit Exams ─── */}
+        <AccordionGroup
+          id="RN Exit Exams"
+          icon={ClipboardCheck}
+          label="RN Exit Exams"
+          isActive={activeDropdown === "RN Exit Exams"}
+          onToggle={toggleDropdown}
+          {...sharedNavProps}
+        >
+          <NavItem href="/dashboards/rn-nursing/exams/exit-ati-exams-rn/36" label="EXIT ATI Exams-RN" {...sharedNavProps} />
+          <NavItem href="/dashboards/rn-nursing/exams/exit-hesi-exams-rn/37" label="EXIT HESI Exams-RN" {...sharedNavProps} />
         </AccordionGroup>
 
         <div className="my-2 border-t border-[var(--text-color)]/10" />

@@ -61,28 +61,17 @@ const practiceExams = [
 
 const quickLinks = [
   {
-    category: "RN / LPN Nursing Exam",
-    description: "Comprehensive question banks for RN & LPN nursing students.",
+    category: "RN / LPN Nursing & Exit Exams",
+    description: "Comprehensive question banks and exit exam assessments for RN & LPN nursing students.",
     icon: BookOpen,
     iconBg: "bg-sage/15",
     iconColor: "text-sage-light",
     accentColor: "text-sage-light",
     accentBg: "bg-sage-light",
     links: [
-      { label: "RN Nursing Exams", href: "/pages/exams/rn-nursing", linkIcon: BookOpenCheck },
-      { label: "LPN Nursing Exams", href: "/pages/exams/lpn-nursing", linkIcon: BookOpenCheck },
-    ],
-  },
-  {
-    category: "RN / LPN Exit Exams",
-    description: "Excel in your program exit exams with ATI & HESI comprehensive banks.",
-    icon: TrendingUp,
-    iconBg: "bg-coral/15",
-    iconColor: "text-coral",
-    accentColor: "text-coral",
-    accentBg: "bg-coral",
-    links: [
-      { label: "RN Exit Exams", href: "/dashboards/rn-nursing/exams/exit-ati-exams-rn/36", linkIcon: BarChart3 },
+      { label: "RN Nursing Exams", href: "/dashboards/rn-nursing", linkIcon: BookOpenCheck },
+      { label: "LPN Nursing Exams", href: "/dashboards/lpn-nursing", linkIcon: BookOpenCheck },
+      { label: "RN Exit Exams", href: "/dashboards/rn-nursing/exams/exit-ati-exams-rn/36", linkIcon: TrendingUp },
       { label: "LPN Exit Exams", href: "/dashboards/lpn-nursing/exams/exit-ati-exams-lpn/23", linkIcon: BarChart3 },
     ],
   },
@@ -163,8 +152,8 @@ export default function Hero() {
             <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[var(--content-bg)] to-transparent" />
           </div>
 
-          <div className="relative z-10 text-center max-w-3xl xl:max-w-4xl pt-2 pb-4 md:py-4">
-            <div className="flex justify-center mb-2 sm:mb-3">
+          <div className="relative z-10 text-left max-w-2xl lg:max-w-3xl pt-2 pb-4 md:py-4">
+            <div className="flex justify-start mb-2 sm:mb-3">
               <span className="inline-flex items-center gap-2 font-mono text-xs sm:text-sm tracking-widest uppercase text-coral">
                 <span className="inline-flex items-center justify-center w-7 h-7 rounded-full border-2 border-green bg-transparent">
                   <GraduationCap className="w-4 h-4 text-green" strokeWidth={2} />
@@ -179,12 +168,12 @@ export default function Hero() {
               Start Your Career
               <span className="text-coral">.</span>
             </h1>
-            <p className="text-[14px] sm:text-[16px] md:text-[18px] text-black dark:text-white font-medium leading-relaxed max-w-2xl mb-4 sm:mb-5 mx-auto">
+            <p className="text-[14px] sm:text-[16px] md:text-[18px] text-black dark:text-white font-medium leading-relaxed max-w-2xl mb-4 sm:mb-5">
               Question banks, study notes, and timed practice tests for RN &amp; LPN nursing exams and exit exams — all in one place.
             </p>
 
             {/* Last Updated */}
-            <p className="flex items-center justify-center gap-1.5 text-xs md:text-sm text-black/80 dark:text-white/80 font-medium tracking-wide mb-4 sm:mb-5">
+            <p className="flex items-center justify-start gap-1.5 text-xs md:text-sm text-black/80 dark:text-white/80 font-medium tracking-wide mb-4 sm:mb-5">
               <Calendar className="w-3.5 h-3.5" />
               Exams last updated on{" "}
               <span suppressHydrationWarning className="text-green font-semibold">
@@ -192,7 +181,7 @@ export default function Hero() {
               </span>
             </p>
 
-            <div className="flex flex-row items-center justify-center gap-2.5 sm:gap-4 md:gap-6">
+            <div className="flex flex-row items-center justify-start gap-2.5 sm:gap-4 md:gap-6">
               <div className="relative inline-block text-left z-40" ref={dropdownRef}>
                 <button
                   type="button"
@@ -212,7 +201,7 @@ export default function Hero() {
                 </button>
 
                 {openPracticeDropdown && (
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-border dark:border-white/15 bg-white dark:bg-[#001326] p-2 sm:p-2.5 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-border dark:border-white/15 bg-white dark:bg-[#001326] p-2 sm:p-2.5 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 z-50 animate-in fade-in zoom-in-95 duration-150">
                     <div className="space-y-1">
                       {practiceExams.map((item) => {
                         const ItemIcon = item.icon;
@@ -275,7 +264,7 @@ export default function Hero() {
                 )}
 
                 {signedIn && openProgressDropdown && (
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] rounded-2xl border border-border dark:border-white/15 bg-white dark:bg-[#001326] p-4 sm:p-5 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] rounded-2xl border border-border dark:border-white/15 bg-white dark:bg-[#001326] p-4 sm:p-5 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 z-50 animate-in fade-in zoom-in-95 duration-150">
                     {/* Header */}
                     <div className="flex items-center justify-between pb-3 border-b border-border dark:border-white/10">
                       <div className="flex items-center gap-2">
@@ -418,59 +407,62 @@ export default function Hero() {
           </div>
         </div>
 
-          {/* Quick-access exam navigation — single row of 4 on desktop */}
-          <div className="mt-[18px] grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6 relative z-10">
-            {quickLinks.map((group) => {
-              const Icon = group.icon;
-              return (
-                <div
-                  key={group.category}
-                  className="rounded-xl md:rounded-2xl border border-black/50 dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] p-2 sm:p-4 lg:p-5 xl:p-6 flex flex-col h-full shadow-xs hover:shadow-md transition-all duration-200"
-                >
-                  <div className="flex gap-1.5 sm:gap-3">
-                    <span
-                      className={`inline-flex items-center justify-center w-6 h-6 sm:w-9 sm:h-9 lg:w-10 lg:h-10 shrink-0 rounded-full ${group.iconBg} ${group.iconColor}`}
-                    >
-                      <Icon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" strokeWidth={1.75} />
-                    </span>
-                    <div className="flex flex-col min-w-0">
-                      <span className={`text-[9px] sm:text-[13px] xl:text-sm font-black dark:font-bold uppercase leading-tight ${group.accentColor}`}>
-                        {group.category}
+          {/* Quick-access exam navigation — compact card centered in the middle of the page */}
+          <div className="mt-6 flex justify-center w-full relative z-10">
+            <div className="w-full max-w-[270px] sm:max-w-[285px]">
+              {quickLinks.map((group) => {
+                const Icon = group.icon;
+                return (
+                  <div
+                    key={group.category}
+                    className="rounded-xl md:rounded-2xl border border-black/50 dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] p-2.5 sm:p-3 shadow-xs hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-2 sm:gap-2.5 mb-2 sm:mb-2.5">
+                      <span
+                        className={`inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 shrink-0 rounded-full ${group.iconBg} ${group.iconColor}`}
+                      >
+                        <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" strokeWidth={1.75} />
                       </span>
-                      <span className={`block w-6 h-0.5 sm:w-8 ${group.accentBg} rounded-full mt-1 sm:mt-1.5 mb-1 sm:mb-2`} />
-                      <p className="text-[9px] sm:text-xs md:text-[11px] xl:text-xs leading-snug font-semibold text-slate-800 dark:font-normal dark:text-slate-400">
-                        {group.description}
-                      </p>
+                      <div className="flex flex-col min-w-0">
+                        <span className={`text-[9px] sm:text-[11px] font-black dark:font-bold uppercase leading-tight ${group.accentColor}`}>
+                          {group.category}
+                        </span>
+                        <span className={`block w-6 h-0.5 sm:w-7 ${group.accentBg} rounded-full mt-0.5 mb-0.5`} />
+                        <p className="text-[9px] sm:text-[10px] leading-snug font-semibold text-slate-800 dark:font-normal dark:text-slate-400">
+                          {group.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5 w-full">
+                      {group.links.map((link) => {
+                        const LinkIcon = link.linkIcon;
+                        return (
+                          <Link
+                            key={link.href + link.label}
+                            href={link.href}
+                            className="flex items-center justify-between w-full px-2.5 py-1.5 sm:py-2 rounded-lg bg-[#2FD9C4] hover:bg-[#28c4b0] border border-[#2FD9C4]/40 shadow-sm transition-all group active:scale-[0.99]"
+                          >
+                            <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                              <span className="inline-flex items-center justify-center w-4.5 h-4.5 rounded-md bg-[#08111F]/15 text-[#08111F] shrink-0">
+                                <LinkIcon className="w-2.5 h-2.5 text-[#08111F]" strokeWidth={2} />
+                              </span>
+                              <span className="text-xs font-semibold text-[#08111F] leading-none tracking-tight truncate">
+                                {link.label}
+                              </span>
+                            </div>
+                            <ChevronRight
+                              className="w-3 h-3 text-[#08111F]/75 group-hover:text-[#08111F] group-hover:translate-x-0.5 transition-all shrink-0 ml-1"
+                              strokeWidth={2}
+                            />
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1 sm:gap-2 w-full mt-auto">
-                    {group.links.map((link) => {
-                      const LinkIcon = link.linkIcon;
-                      return (
-                        <Link
-                          key={link.href + link.label}
-                          href={link.href}
-                          className="flex items-center justify-between w-full px-2.5 sm:px-3 xl:px-3.5 py-1 sm:py-1.5 rounded-lg bg-[#2FD9C4] hover:bg-[#28c4b0] border border-[#2FD9C4]/40 shadow-sm transition-all group active:scale-[0.99]"
-                        >
-                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                            <span className="inline-flex items-center justify-center w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-md bg-[#08111F]/15 text-[#08111F] shrink-0">
-                              <LinkIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#08111F]" strokeWidth={2} />
-                            </span>
-                            <span className="text-xs sm:text-[12px] font-semibold text-[#08111F] leading-none tracking-tight truncate">
-                              {link.label}
-                            </span>
-                          </div>
-                          <ChevronRight
-                            className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#08111F]/75 group-hover:text-[#08111F] group-hover:translate-x-0.5 transition-all shrink-0 ml-1"
-                            strokeWidth={2}
-                          />
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
           {/* Feature strip */}

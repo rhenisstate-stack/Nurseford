@@ -13,8 +13,8 @@ const tracks = [
     tags: ["Med-Surg", "Peds", "OB", "Mental Health", "Fundamentals"],
     accent: "teal" as const,
     links: [
-      { label: "RN Nursing", href: "/pages/exams/rn-nursing" },
-      { label: "LPN Nursing", href: "/pages/exams/lpn-nursing" },
+      { label: "RN Nursing", href: "/dashboards/rn-nursing" },
+      { label: "LPN Nursing", href: "/dashboards/lpn-nursing" },
     ],
   },
   {
