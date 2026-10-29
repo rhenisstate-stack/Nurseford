@@ -32,6 +32,8 @@ export interface ExamBuilderStats {
   totalDomains: number;
   totalExams: number;
   totalQuestions: number;
+  subject?: { totalDomains: number; totalExams: number; totalQuestions: number };
+  clientNeed?: { totalDomains: number; totalExams: number; totalQuestions: number };
 }
 
 export type CourseFetchStatus = "loading" | "ready" | "error";

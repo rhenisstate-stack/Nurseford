@@ -52,6 +52,7 @@ interface NclexCustomTestPopupProps {
   customCourses?: DashboardCourse[];
   title?: string;
   builderMode?: "questions" | "exams";
+  initialCategory?: NclexCourseView;
 }
 
 type DifficultyFilter = "All" | "Easy" | "Medium" | "Hard";
@@ -273,9 +274,23 @@ export function NclexCustomTestPopup({
   customCourses,
   title,
   builderMode,
+  initialCategory = "subject",
 }: NclexCustomTestPopupProps) {
   const router = useRouter();
   const { courses: rawCourses, examBuilderStats } = useExamCourses(examType);
+
+  const [activeCategory, setActiveCategory] = useState<NclexCourseView>(initialCategory);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (customCourses && customCourses.length > 0) {
+        setActiveCategory(customCourses[0].category || "subject");
+      } else {
+        setActiveCategory(initialCategory || "subject");
+      }
+    }
+  }, [isOpen, customCourses, initialCategory]);
+
   const courses = useMemo(() => {
     if (customCourses && customCourses.length > 0) {
       return customCourses;
@@ -283,9 +298,9 @@ export function NclexCustomTestPopup({
     const filtered = rawCourses.filter(
       (c) => !/^(?:ATI|HESI)\s*Exit\s*Exams/i.test(c.title.trim())
     );
-    const subjects = filtered.filter((c) => c.category === "subject");
-    return subjects.length > 0 ? subjects : filtered;
-  }, [customCourses, rawCourses]);
+    const categoryCourses = filtered.filter((c) => c.category === activeCategory);
+    return categoryCourses.length > 0 ? categoryCourses : filtered;
+  }, [customCourses, rawCourses, activeCategory]);
   const { user } = useCurrentSystemUser();
 
   const isExamMode =
@@ -304,23 +319,40 @@ export function NclexCustomTestPopup({
 
   // ─── Stats ────────────────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    if (examBuilderStats) return examBuilderStats;
-    let totalDomains = 0;
+    if (customCourses && customCourses.length > 0) {
+      let totalExams = 0;
+      let totalQuestions = 0;
+      for (const sc of customCourses) {
+        totalExams += sc.examCount || (sc.subCategories && sc.subCategories.length > 0 ? sc.subCategories.length : 1);
+        if (sc.subCategories && sc.subCategories.length > 0) {
+          totalQuestions += sc.subCategories.reduce((s, sub) => s + sub.questionCount, 0);
+        } else {
+          totalQuestions += sc.questionCount || 45;
+        }
+      }
+      return { totalDomains: customCourses.length, totalExams, totalQuestions };
+    }
+
+    if (activeCategory === "clientNeed" && examBuilderStats?.clientNeed) {
+      return examBuilderStats.clientNeed;
+    }
+    if (activeCategory === "subject" && examBuilderStats?.subject) {
+      return examBuilderStats.subject;
+    }
+
+    let totalDomains = courses.length;
     let totalExams = 0;
     let totalQuestions = 0;
-    const subjectCourses = rawCourses.filter((c) => c.category === "subject");
-    const target = subjectCourses.length > 0 ? subjectCourses : rawCourses;
-    for (const sc of target) {
-      totalDomains += 1;
-      totalExams += sc.examCount || (sc.subCategories.length > 0 ? sc.subCategories.length : 1);
-      if (sc.subCategories.length > 0) {
+    for (const sc of courses) {
+      totalExams += sc.examCount || (sc.subCategories && sc.subCategories.length > 0 ? sc.subCategories.length : 1);
+      if (sc.subCategories && sc.subCategories.length > 0) {
         totalQuestions += sc.subCategories.reduce((s, sub) => s + sub.questionCount, 0);
       } else {
         totalQuestions += sc.questionCount || 45;
       }
     }
     return { totalDomains, totalExams, totalQuestions };
-  }, [examBuilderStats, rawCourses]);
+  }, [customCourses, activeCategory, examBuilderStats, courses]);
 
   // ─── Selection Logic ──────────────────────────────────────────────────────────────────
   const toggleSub = useCallback((subId: string) => {
@@ -454,8 +486,8 @@ export function NclexCustomTestPopup({
         if (availableSubs.length > 0) {
           const selectedSubsInDomain = availableSubs.filter((sc) => selectedSubs.has(sc.id));
           examCount += selectedSubsInDomain.length;
-          // Domain is counted as selected if all available exams in it are selected
-          if (selectedSubsInDomain.length === availableSubs.length) {
+          // Domain is counted as selected if at least one available exam in it is selected
+          if (selectedSubsInDomain.length > 0) {
             domainCount += 1;
           }
         }
@@ -635,6 +667,45 @@ export function NclexCustomTestPopup({
             </span>
           </div>
         </div>
+
+        {/* ─── Category Scope Switcher (only when not locked to a specific custom course) ─── */}
+        {(!customCourses || customCourses.length === 0) && (
+          <div className="px-4 py-2 border-b border-slate-200 dark:border-white/10 bg-slate-100/60 dark:bg-white/5 flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold text-slate-600 dark:text-white/60">
+              Exam Scope
+            </span>
+            <div className="inline-flex items-center rounded-lg bg-[#0e1726] border border-white/10 p-0.5 shadow-2xs">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveCategory("subject");
+                  clearAll();
+                }}
+                className={`px-3 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  activeCategory === "subject"
+                    ? "bg-[#3B82F6] text-white shadow-xs"
+                    : "text-slate-300 hover:text-white"
+                }`}
+              >
+                <span>📖</span> Study Course / Subject
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveCategory("clientNeed");
+                  clearAll();
+                }}
+                className={`px-3 py-1 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  activeCategory === "clientNeed"
+                    ? "bg-[#3B82F6] text-white shadow-xs"
+                    : "text-slate-300 hover:text-white"
+                }`}
+              >
+                <span>👥</span> Client Need
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ─── Filter Tabs ─── */}
         <div className="px-4 py-2.5 border-b border-slate-200 dark:border-white/10 flex flex-wrap items-center gap-3 sm:gap-4 bg-slate-50/60 dark:bg-black/10">
@@ -1033,13 +1104,22 @@ export function NclexStudyByCourseBanner({
   view: NclexCourseView;
   onViewChange: (view: NclexCourseView) => void;
 }) {
+  const displayTitle =
+    view === "clientNeed"
+      ? title.replace(/Study By Course/i, "Client Needs")
+      : title;
+  const displaySubtitle =
+    view === "clientNeed"
+      ? "Select a client need domain to create a focused custom test, or switch views."
+      : "Select a domain to create a focused custom test, or switch views.";
+
   return (
     <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-[#CBDCF8] dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] p-2 sm:p-2.5 md:p-3.5 shadow-xs hover:shadow-md transition-all duration-200">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div className="hidden sm:block">
-          <h2 className="text-xs sm:text-sm md:text-base font-bold text-slate-900 dark:text-[var(--text-color)]">{title}</h2>
+          <h2 className="text-xs sm:text-sm md:text-base font-bold text-slate-900 dark:text-[var(--text-color)]">{displayTitle}</h2>
           <p className="text-[10px] sm:text-xs text-slate-600 dark:text-[var(--text-color)]/50 mt-0.5">
-            Select a domain to create a focused custom test, or switch views.
+            {displaySubtitle}
           </p>
         </div>
 
@@ -1276,12 +1356,18 @@ export function NclexStudyByCourseSection({
   examType,
   title,
   onCreateCustomTest,
+  activeView,
+  onActiveViewChange,
 }: {
   examType: string;
   title: string;
   onCreateCustomTest: (course?: DashboardCourse) => void;
+  activeView?: NclexCourseView;
+  onActiveViewChange?: (view: NclexCourseView) => void;
 }) {
-  const [view, setView] = useState<NclexCourseView>("subject");
+  const [internalView, setInternalView] = useState<NclexCourseView>("subject");
+  const view = activeView ?? internalView;
+  const setView = onActiveViewChange ?? setInternalView;
 
   return (
     <div className="space-y-3 lg:space-y-4">

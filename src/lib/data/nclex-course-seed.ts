@@ -139,25 +139,33 @@ const NCLEX_RN_COURSES: Omit<CourseRecord, "examType">[] = [
     id: 8, title: "Health Promotion & Maintenance", category: "clientNeed",
     questionCount: 357, examCount: 1, doneCount: 0,
     easyPct: 39, mediumPct: 39, hardPct: 22, order: 8,
-    subCategories: [],
+    subCategories: [
+      { id: "b7ea7c21-ea87-4836-a70f-8c5d95776b02", title: "Health Promotion & Maintenance", questionCount: 357, usedCount: 0, order: 1 },
+    ],
   },
   {
     id: 9, title: "Physiological Integrity", category: "clientNeed",
     questionCount: 116, examCount: 1, doneCount: 0,
     easyPct: 3, mediumPct: 21, hardPct: 77, order: 9,
-    subCategories: [],
+    subCategories: [
+      { id: "a91a0a2b-386f-4b80-a93a-badb2883daa3", title: "Physiological Integrity", questionCount: 116, usedCount: 0, order: 1 },
+    ],
   },
   {
     id: 10, title: "Psychosocial Integrity", category: "clientNeed",
     questionCount: 344, examCount: 1, doneCount: 0,
     easyPct: 43, mediumPct: 35, hardPct: 21, order: 10,
-    subCategories: [],
+    subCategories: [
+      { id: "f1fad7ae-558f-4cec-bbdd-60e39a71c985", title: "Psychosocial Integrity", questionCount: 344, usedCount: 0, order: 1 },
+    ],
   },
   {
     id: 11, title: "Safe & Effective Care Environment", category: "clientNeed",
     questionCount: 65, examCount: 1, doneCount: 0,
     easyPct: 18, mediumPct: 40, hardPct: 42, order: 11,
-    subCategories: [],
+    subCategories: [
+      { id: "65776bbd-b428-48e0-b801-028725b4a5a5", title: "Safe & Effective Care Environment", questionCount: 65, usedCount: 0, order: 1 },
+    ],
   },
   {
     id: 12, title: "CASE STUDIES (NGN)", category: "subject",
@@ -279,25 +287,33 @@ const NCLEX_PN_COURSES: Omit<CourseRecord, "examType">[] = [
     id: 9, title: "Health Promotion & Maintenance", category: "clientNeed",
     questionCount: 153, examCount: 1, doneCount: 0,
     easyPct: 39, mediumPct: 39, hardPct: 22, order: 9,
-    subCategories: [],
+    subCategories: [
+      { id: "pn-client-hpm", title: "Health Promotion & Maintenance", questionCount: 153, usedCount: 0, order: 1 },
+    ],
   },
   {
     id: 10, title: "Physiological Integrity", category: "clientNeed",
     questionCount: 280, examCount: 1, doneCount: 0,
     easyPct: 25, mediumPct: 45, hardPct: 30, order: 10,
-    subCategories: [],
+    subCategories: [
+      { id: "pn-client-pi", title: "Physiological Integrity", questionCount: 280, usedCount: 0, order: 1 },
+    ],
   },
   {
     id: 11, title: "Psychosocial Integrity", category: "clientNeed",
     questionCount: 92, examCount: 1, doneCount: 0,
     easyPct: 43, mediumPct: 35, hardPct: 21, order: 11,
-    subCategories: [],
+    subCategories: [
+      { id: "pn-client-psi", title: "Psychosocial Integrity", questionCount: 92, usedCount: 0, order: 1 },
+    ],
   },
   {
     id: 12, title: "Safe & Effective Care Environment", category: "clientNeed",
     questionCount: 195, examCount: 1, doneCount: 0,
     easyPct: 30, mediumPct: 40, hardPct: 30, order: 12,
-    subCategories: [],
+    subCategories: [
+      { id: "pn-client-sece", title: "Safe & Effective Care Environment", questionCount: 195, usedCount: 0, order: 1 },
+    ],
   },
 ];
 

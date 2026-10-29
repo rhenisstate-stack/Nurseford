@@ -16,6 +16,7 @@ import {
   NclexCustomTestPopup,
   type NclexAction,
   type DashboardCourse,
+  type NclexCourseView,
 } from "@/components/common/dashboards/nclex/NclexDashboardSections";
 
 const PANEL_SLUG = "nclex-pn";
@@ -80,6 +81,7 @@ export default function NclexPnHomePage() {
   }, [now]);
 
   // ─── Popup State ───
+  const [activeCourseView, setActiveCourseView] = useState<NclexCourseView>("subject");
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupDefaultMode, setPopupDefaultMode] = useState<NclexAction>("custom");
   const [selectedCourse, setSelectedCourse] = useState<DashboardCourse | null>(null);
@@ -200,6 +202,8 @@ export default function NclexPnHomePage() {
             title="NCLEX-PN — Study By Course"
             examType="nclex-pn"
             onCreateCustomTest={handleCourseCustomTest}
+            activeView={activeCourseView}
+            onActiveViewChange={setActiveCourseView}
           />
         </div>
 
@@ -254,6 +258,7 @@ export default function NclexPnHomePage() {
         livePanelSlug={PANEL_SLUG}
         examType="nclex-pn"
         customCourses={selectedCourse ? [selectedCourse] : undefined}
+        initialCategory={selectedCourse?.category || activeCourseView}
       />
       {/* Performance Index and Nursing Study Notes/Guides — phone mode only (bottom above footer) */}
       <div className="lg:hidden pt-6 lg:pt-8 pb-4 lg:pb-8 w-full max-w-7xl mx-auto">

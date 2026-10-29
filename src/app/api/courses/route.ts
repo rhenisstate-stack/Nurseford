@@ -392,23 +392,84 @@ async function fetchBackendStandaloneSubjectsAsCourses(
     })
   );
 
-  // Include clientNeed categories from reference catalogue so the Client Need tab renders
-  const clientNeedCards: DashboardCourse[] = placeholders
-    .filter((p) => p.category === "clientNeed")
-    .map((p) => ({
-      id: p.id,
-      examType,
-      title: p.title,
-      category: "clientNeed" as const,
-      questionCount: p.questionCount,
-      examCount: p.examCount,
-      doneCount: 0,
-      easyPct: p.easyPct,
-      mediumPct: p.mediumPct,
-      hardPct: p.hardPct,
-      order: p.order,
-      subCategories: (p.subCategories || []).map((sc) => ({ ...sc })),
-    }));
+  // Fetch real clientNeed categories from backend course if present (e.g. Course 30 "Client Needs" for NCLEX-RN)
+  let clientNeedCards: DashboardCourse[] = [];
+  const clientNeedCourse = courses.find((c) => /client\s*need/i.test(c.name ?? ""));
+  if (clientNeedCourse) {
+    const clientNeedSubjects = await fetchBackendSubjects(
+      clientNeedCourse.id ?? clientNeedCourse.guidId ?? "",
+      sessionHeaders
+    );
+    if (clientNeedSubjects.length > 0) {
+      clientNeedCards = await Promise.all(
+        clientNeedSubjects.map(async (s, i) => {
+          const title = s.name?.trim() || `Client Need ${i + 1}`;
+          const tNorm = clean(title);
+
+          const matchedPlaceholder = placeholders.find((p) => {
+            const pNorm = clean(p.title);
+            return pNorm === tNorm || pNorm.includes(tNorm) || tNorm.includes(pNorm);
+          });
+
+          const rawExams = await fetchBackendSubjectExams(s.guidId ?? s.id ?? "", sessionHeaders);
+          let subCategories: DashboardSubCategory[] = rawExams.map((e, index) => ({
+            ...e,
+            order: index + 1,
+          }));
+
+          if (
+            subCategories.length === 0 &&
+            matchedPlaceholder?.subCategories &&
+            matchedPlaceholder.subCategories.length > 0
+          ) {
+            subCategories = matchedPlaceholder.subCategories.map((sc) => ({ ...sc }));
+          }
+
+          const calculatedQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
+          const questionCount =
+            calculatedQuestions > 0 ? calculatedQuestions : (matchedPlaceholder?.questionCount ?? 0);
+          const examCount = subCategories.length > 0 ? subCategories.length : (matchedPlaceholder?.examCount ?? 1);
+
+          return {
+            id: toNumber(s.id, matchedPlaceholder?.id ?? 100 + i),
+            guidId: s.guidId,
+            backendSubjectGuid: s.guidId,
+            examType,
+            title,
+            category: "clientNeed" as const,
+            questionCount,
+            examCount,
+            doneCount: 0,
+            easyPct: matchedPlaceholder?.easyPct ?? 30,
+            mediumPct: matchedPlaceholder?.mediumPct ?? 40,
+            hardPct: matchedPlaceholder?.hardPct ?? 30,
+            order: matchedPlaceholder?.order ?? 8 + i,
+            subCategories,
+          };
+        })
+      );
+    }
+  }
+
+  // Include clientNeed categories from reference catalogue if backend returned none
+  if (clientNeedCards.length === 0) {
+    clientNeedCards = placeholders
+      .filter((p) => p.category === "clientNeed")
+      .map((p) => ({
+        id: p.id,
+        examType,
+        title: p.title,
+        category: "clientNeed" as const,
+        questionCount: p.questionCount,
+        examCount: p.examCount,
+        doneCount: 0,
+        easyPct: p.easyPct,
+        mediumPct: p.mediumPct,
+        hardPct: p.hardPct,
+        order: p.order,
+        subCategories: (p.subCategories || []).map((sc) => ({ ...sc })),
+      }));
+  }
 
   return [...subjectCards, ...clientNeedCards].sort((a, b) => a.order - b.order);
 }
@@ -560,25 +621,36 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  const calcStats = (target: DashboardCourse[]) => {
+    const totalQuestions = target.reduce((sum, c) => {
+      if (c.subCategories && c.subCategories.length > 0) {
+        return sum + c.subCategories.reduce((s, sc) => s + sc.questionCount, 0);
+      }
+      return sum + c.questionCount;
+    }, 0);
+    const totalExams = target.reduce(
+      (sum, c) => sum + (c.examCount || (c.subCategories && c.subCategories.length > 0 ? c.subCategories.length : 1)),
+      0
+    );
+    const totalDomains = target.length;
+    return { totalDomains, totalExams, totalQuestions };
+  };
+
   const subjectCourses = courses.filter((c) => c.category === "subject");
-  const targetForStats = subjectCourses.length > 0 ? subjectCourses : courses;
-  const totalQuestions = targetForStats.reduce((sum, c) => {
-    if (c.subCategories.length > 0) {
-      return sum + c.subCategories.reduce((s, sc) => s + sc.questionCount, 0);
-    }
-    return sum + c.questionCount;
-  }, 0);
-  const totalExams = targetForStats.reduce(
-    (sum, c) => sum + (c.examCount || (c.subCategories.length > 0 ? c.subCategories.length : 1)),
-    0
-  );
-  const totalDomains = targetForStats.length;
+  const clientNeedCourses = courses.filter((c) => c.category === "clientNeed");
+
+  const subjectStats = calcStats(subjectCourses.length > 0 ? subjectCourses : courses);
+  const clientNeedStats = calcStats(clientNeedCourses);
 
   const resultPayload = {
     examType,
     count: courses.length,
     courses,
-    examBuilder: { totalDomains, totalExams, totalQuestions },
+    examBuilder: {
+      ...subjectStats,
+      subject: subjectStats,
+      clientNeed: clientNeedStats,
+    },
   };
 
   coursesResponseCache.set(examType, { data: resultPayload, timestamp: now });
