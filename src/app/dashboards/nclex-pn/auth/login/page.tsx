@@ -11,7 +11,6 @@ import { FiCheckCircle } from 'react-icons/fi'
 import { APP_NAME } from '@/lib/config/config'
 import { login, LoginCredentials } from '@/lib/services/auth/loginService' //  use your authService.ts which calls apiFetch to login - avoid direct axios calls to backend
 import { useEffect } from 'react'
-import Image from 'next/image'
 import { session } from '@/lib/services/auth/sessionService'
 import { useSearchParams } from 'next/navigation'
 import { redirectToSocialProvider } from '@/lib/services/auth/socialService'
@@ -237,77 +236,28 @@ export default function WebLoginPage() {
       </div>
 
       {/* Login Card Container */}
-      <div className="max-w-5xl w-full bg-white rounded-2xl shadow-2xl grid grid-cols-1 md:grid-cols-2 overflow-hidden">
+      <div className="max-w-md w-full bg-white dark:bg-[var(--card-bg,#15273e)] rounded-2xl shadow-xl p-5 sm:p-7 space-y-4 border border-slate-200 dark:border-white/10">
 
-
-        {/* LEFT SIDE: Full Image Background + Text at Bottom */}
-        <div className="hidden md:flex relative w-full h-full items-end justify-center overflow-hidden">
-          {/* Background Image */}
-          <Image
-            src="/web/auth/login/loginFoto.jpg"
-            alt="Welcome"
-            layout="fill"
-            objectFit="cover"
-            priority
-            className="z-0"
-          />
-
-          {/* Top Social Login Buttons Overlay DESKTOP */}
-          <div className="absolute top-0 left-0 z-10 w-full p-4">
-            <div className="bg-black/30 backdrop-blur-md rounded-2xl p-4 shadow-lg">
-              <p className="text-center text-white text-xs font-semibold tracking-wide uppercase mb-3 drop-shadow-md">
-                Sign in with
-              </p>
-              <button
-                type="button"
-                className="w-full flex items-center justify-center gap-2 bg-white/90 border border-gray-300 px-4 py-2.5 rounded-lg hover:bg-white transition text-gray-700 font-semibold text-sm"
-                onClick={() => handleSocialClick('google')}
-              >
-                <FcGoogle className="text-xl" />
-                Continue with Google (Gmail)
-              </button>
-            </div>
-          </div>
-
-          {/* Bottom Text Overlay */}
-          <div className="z-10 w-full p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent text-white text-center">
-            {isAuthenticated ? (
-              <>
-                <h2 className="text-3xl font-extrabold drop-shadow-lg">Welcome Back !</h2>
-                <p className="text-sm mt-2 drop-shadow-md">
-                  You&apos;re already signed in. Ready to dive into {APP_NAME}?
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 className="text-3xl font-extrabold drop-shadow-lg">Hello, there !</h2>
-                <p className="text-sm mt-2 drop-shadow-md">
-                  Sign in to continue exploring {APP_NAME}. Secure. Fast. Reliable.
-                </p>
-              </>
-            )}
-          </div>
+        {/* Social Login Button */}
+        <div>
+          <p className="text-center text-gray-500 dark:text-white/60 text-xs font-semibold tracking-wide uppercase mb-2">
+            Sign in with
+          </p>
+          <button
+            type="button"
+            className="w-full flex items-center justify-center gap-2 bg-white dark:bg-white/10 border border-gray-300 dark:border-white/20 px-4 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/15 transition text-gray-700 dark:text-white font-semibold text-sm shadow-xs"
+            onClick={() => handleSocialClick('google')}
+          >
+            <FcGoogle className="text-xl" />
+            Continue with Google (Gmail)
+          </button>
         </div>
 
-        <div className="w-full px-3 md:px-4 pb-3 space-y-2 border-l border-gray-200">
-
-          {/* Mobile-only Social Login Buttons (hidden on md+, shown inside photo panel instead) */}
-          <div className="md:hidden">
-            <button
-              type="button"
-              className="w-full flex items-center justify-center gap-2 bg-white/90 border border-gray-300 px-4 py-2.5 rounded-lg hover:bg-white transition text-gray-700 font-semibold text-sm"
-              onClick={() => handleSocialClick('google')}
-            >
-              <FcGoogle className="text-xl" />
-              Continue with Google (Gmail)
-            </button>
-          </div>
-
-          <div className="text-center text-md">
-            <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-yellow-800 via-gray-300 to-green-600 bg-[length:200%_100%] [animation:shimmer_3s_linear_infinite]">
-              or continue with email
-            </span>
-          </div>
+        <div className="text-center text-md">
+          <span className="font-medium text-transparent bg-clip-text bg-gradient-to-r from-yellow-800 via-gray-300 to-green-600 bg-[length:200%_100%] [animation:shimmer_3s_linear_infinite]">
+            or continue with email
+          </span>
+        </div>
 
           <style>{`
             @keyframes shimmer {
@@ -455,7 +405,6 @@ export default function WebLoginPage() {
 
             </form>
           )}
-        </div>
       </div>
 
     </main>

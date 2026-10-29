@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { FiHome, FiLogIn, FiHeart } from "react-icons/fi";
 import { APP_NAME } from "@/lib/config/config";
@@ -46,17 +45,8 @@ export default function WebLogoutPage() {
 
       <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden text-center border border-slate-200 dark:border-white/10">
         {/* Top image / brand strip */}
-        <div className="relative w-full h-40 bg-gradient-to-br from-indigo-100 via-purple-100 to-cyan-100 flex items-center justify-center">
-          <Image
-            src="/web/auth/login/loginFoto.jpg"
-            alt="See you soon"
-            fill
-            style={{ objectFit: "cover" }}
-            className="opacity-80"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-          <FiHeart className="absolute text-white text-4xl drop-shadow-lg animate-pulse" />
+        <div className="relative w-full h-32 bg-gradient-to-br from-indigo-500 via-purple-600 to-teal-500 flex items-center justify-center">
+          <FiHeart className="text-white text-4xl drop-shadow-lg animate-pulse" />
         </div>
 
         <div className="p-8 space-y-4">

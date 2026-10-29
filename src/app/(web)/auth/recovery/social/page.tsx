@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { FaEye, FaEyeSlash } from 'react-icons/fa'
 import { FiCheckCircle, FiMail, FiArrowLeft } from 'react-icons/fi'
 import { APP_NAME } from '@/lib/config/config'
@@ -281,29 +280,7 @@ export default function RecoverySocialPage() {
       </div>
 
       {/* Card Container */}
-      <div className="max-w-5xl w-full bg-paper border border-black/50 dark:border-border rounded-2xl grid grid-cols-1 md:grid-cols-2 overflow-hidden">
-
-        {/* LEFT SIDE: Photo */}
-        <div className="hidden md:flex relative w-full h-full items-end justify-center overflow-hidden">
-          <Image
-            src="/web/auth/recovery/social/socialFoto.jpg"
-            alt="Account Recovery"
-            layout="fill"
-            objectFit="cover"
-            priority
-            className="z-0"
-          />
-
-          <div className="z-10 w-full p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent text-white text-center">
-            <h2 className="text-3xl font-extrabold drop-shadow-lg">New Device ?</h2>
-            <p className="text-sm mt-2 drop-shadow-md">
-              Verify the email you used with your social account to set up a direct login.
-            </p>
-          </div>
-        </div>
-
-        {/* RIGHT SIDE: Form */}
-        <div className="w-full p-8 space-y-6 border-l border-border">
+      <div className="max-w-xl w-full bg-paper border border-black/50 dark:border-border rounded-2xl shadow-sm p-6 sm:p-8 space-y-6">
 
           {/* Step indicator */}
           <div className="flex items-center justify-center gap-2 text-xs font-medium text-navy/50">
@@ -630,7 +607,7 @@ export default function RecoverySocialPage() {
               Having Issues ?
             </Link>
           </div>
-        </div>
+        
       </div>
     </div>
   )

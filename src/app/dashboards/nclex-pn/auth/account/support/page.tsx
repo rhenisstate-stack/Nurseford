@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClasp";
 import { FiCheckCircle, FiMail } from 'react-icons/fi'
 import { APP_NAME } from '@/lib/config/config'
@@ -131,29 +130,7 @@ export default function SupportPage() {
       </div>
 
       {/* Card Container */}
-      <div className="max-w-5xl w-full bg-white rounded-2xl shadow-2xl grid grid-cols-1 md:grid-cols-2 overflow-hidden">
-
-        {/* LEFT SIDE: Photo */}
-        <div className="hidden md:flex relative w-full h-full items-end justify-center overflow-hidden">
-          <Image
-            src="/web/auth/support/supportFoto.jpg"
-            alt="Support"
-            layout="fill"
-            objectFit="cover"
-            priority
-            className="z-0"
-          />
-
-          <div className="z-10 w-full p-8 bg-gradient-to-t from-black/70 via-black/40 to-transparent text-white text-center">
-            <h2 className="text-3xl font-extrabold drop-shadow-lg">We&apos;ve Got You ⚓</h2>
-            <p className="text-sm mt-2 drop-shadow-md">
-              Let us know what&apos;s going on and our team will follow up directly.
-            </p>
-          </div>
-        </div>
-
-        {/* RIGHT SIDE: Form */}
-        <div className="w-full p-8 space-y-6 border-l border-gray-200">
+      <div className="max-w-xl w-full bg-white dark:bg-[var(--card-bg,#15273e)] rounded-2xl shadow-xl p-6 sm:p-8 space-y-6 border border-slate-200 dark:border-white/10">
 
           {/* Alert Message */}
           {(error || success) && (
@@ -315,7 +292,7 @@ export default function SupportPage() {
             </Link>
           </div>
 
-        </div>
+        
       </div>
     </main>
   )
