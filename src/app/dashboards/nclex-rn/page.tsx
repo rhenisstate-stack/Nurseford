@@ -15,6 +15,7 @@ import {
   NclexStudyByCourseSection,
   NclexCustomTestPopup,
   type NclexAction,
+  type DashboardCourse,
 } from "@/components/common/dashboards/nclex/NclexDashboardSections";
 
 const PANEL_SLUG = "nclex-rn";
@@ -81,6 +82,7 @@ export default function NclexRnHomePage() {
   // ─── Popup State ───
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupDefaultMode, setPopupDefaultMode] = useState<NclexAction>("custom");
+  const [selectedCourse, setSelectedCourse] = useState<DashboardCourse | null>(null);
 
   useEffect(() => {
     const checkParams = () => {
@@ -114,11 +116,13 @@ export default function NclexRnHomePage() {
       router.push(`/dashboards/${PANEL_SLUG}/exams/nclex-rn-readiness-assessment-tests/243a4f96-c974-4150-9cb5-c46c14723850`);
       return;
     }
+    setSelectedCourse(null);
     setPopupDefaultMode(action);
     setPopupOpen(true);
   };
 
-  const handleCourseCustomTest = () => {
+  const handleCourseCustomTest = (course?: DashboardCourse) => {
+    setSelectedCourse(course || null);
     setPopupDefaultMode("custom");
     setPopupOpen(true);
   };
@@ -238,6 +242,7 @@ export default function NclexRnHomePage() {
         isOpen={popupOpen}
         onClose={() => {
           setPopupOpen(false);
+          setSelectedCourse(null);
           if (typeof window !== "undefined" && window.location.search.includes("action=custom")) {
             const url = new URL(window.location.href);
             url.searchParams.delete("action");
@@ -248,6 +253,7 @@ export default function NclexRnHomePage() {
         panelSlug={PANEL_SLUG}
         livePanelSlug={PANEL_SLUG}
         examType="nclex-rn"
+        customCourses={selectedCourse ? [selectedCourse] : undefined}
       />
       {/* Performance Index and Nursing Study Notes/Guides — phone mode only (bottom above footer) */}
       <div className="lg:hidden pt-6 lg:pt-8 pb-4 lg:pb-8 w-full max-w-7xl mx-auto">

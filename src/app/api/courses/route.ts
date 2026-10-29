@@ -309,10 +309,21 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         const units = await fetchBackendSubjectUnits(s.id ?? s.guidId ?? "", sessionHeaders);
         subCategories = units.map((u, ui) => {
           const unitTitle = u.name?.trim() || `Unit ${ui + 1}`;
+          const rawCount = toNumber(u.questionsCount ?? u.examsCount, 0);
+
+          const matchedSub = matchedPlaceholder?.subCategories?.find((sc) => {
+            const scNorm = clean(sc.title);
+            const uNorm = clean(unitTitle);
+            return scNorm === uNorm || scNorm.includes(uNorm) || uNorm.includes(scNorm);
+          });
+
+          // Follow the old site percentage: practice custom tests give ~33.33% (1/3) of the pool
+          const questionCount = matchedSub?.questionCount ?? Math.max(1, Math.floor(rawCount / 3));
+
           return {
             id: String(u.id ?? u.guidId ?? unitTitle),
             title: unitTitle,
-            questionCount: toNumber(u.questionsCount ?? u.examsCount, 0),
+            questionCount,
             usedCount: 0,
             order: ui + 1,
           };
@@ -323,7 +334,22 @@ async function fetchBackendStandaloneSubjectsAsCourses(
       if (subCategories.length === 0) {
         const subjectIdentifier = s.guidId ?? s.id ?? "";
         if (subjectIdentifier) {
-          subCategories = await fetchBackendSubjectExams(subjectIdentifier, sessionHeaders);
+          const rawExams = await fetchBackendSubjectExams(subjectIdentifier, sessionHeaders);
+          subCategories = rawExams.map((e, index) => {
+            const rawCount = e.questionCount;
+            const matchedSub = matchedPlaceholder?.subCategories?.find((sc) => {
+              const scNorm = clean(sc.title);
+              const eNorm = clean(e.title);
+              return scNorm === eNorm || scNorm.includes(eNorm) || eNorm.includes(scNorm);
+            });
+            // Follow the old site percentage: practice custom tests give ~33.33% (1/3) of the pool
+            const questionCount = matchedSub?.questionCount ?? Math.max(1, Math.floor(rawCount / 3));
+            return {
+              ...e,
+              questionCount,
+              order: index + 1,
+            };
+          });
         }
       }
 
@@ -534,14 +560,19 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const totalQuestions = courses.reduce((sum, c) => {
+  const subjectCourses = courses.filter((c) => c.category === "subject");
+  const targetForStats = subjectCourses.length > 0 ? subjectCourses : courses;
+  const totalQuestions = targetForStats.reduce((sum, c) => {
     if (c.subCategories.length > 0) {
       return sum + c.subCategories.reduce((s, sc) => s + sc.questionCount, 0);
     }
     return sum + c.questionCount;
   }, 0);
-  const totalExams = courses.reduce((sum, c) => sum + c.examCount, 0);
-  const totalDomains = courses.length;
+  const totalExams = targetForStats.reduce(
+    (sum, c) => sum + (c.examCount || (c.subCategories.length > 0 ? c.subCategories.length : 1)),
+    0
+  );
+  const totalDomains = targetForStats.length;
 
   const resultPayload = {
     examType,

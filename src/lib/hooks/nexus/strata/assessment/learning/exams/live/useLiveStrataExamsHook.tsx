@@ -506,6 +506,8 @@ export const useLiveStrataExam = ({
   examCount = null,
   subCategories = null,
   customTitle = null,
+  difficulty = null,
+  status = null,
 }: {
   examIdentifier: string;
 
@@ -526,6 +528,8 @@ export const useLiveStrataExam = ({
   examCount?: number | null;
   subCategories?: string | null;
   customTitle?: string | null;
+  difficulty?: string | null;
+  status?: string | null;
 }) => {
 
   // ─────────────────────────────────────────────────────────────
@@ -680,12 +684,21 @@ export const useLiveStrataExam = ({
           // Build sections: each exam is a section with its FULL questions
           const sections: StrataSessionSection[] = validSessions.map((session, idx) => {
             const allQ = (session.sections ?? []).flatMap((sec) => sec.questions ?? []);
+            let candidateQ = allQ;
+            if (difficulty && difficulty.toLowerCase() !== 'all') {
+              const diffFiltered = allQ.filter(
+                (q) => q.difficulty && q.difficulty.toLowerCase() === difficulty.toLowerCase()
+              );
+              if (diffFiltered.length > 0) {
+                candidateQ = diffFiltered;
+              }
+            }
             return {
               id: session.exam.id || idx + 1,
               guidId: session.exam.guidId || String(idx + 1),
               name: session.exam.title || `Exam Section ${idx + 1}`,
               description: session.exam.description,
-              questions: allQ,
+              questions: candidateQ,
             };
           });
 
@@ -797,12 +810,24 @@ export const useLiveStrataExam = ({
           // Collect question pools for each exam
           const examPools = validSessions.map((session, idx) => {
             const allQ = (session.sections ?? []).flatMap((sec) => sec.questions ?? []);
+            let candidateQ = allQ;
+            if (difficulty && difficulty.toLowerCase() !== "all") {
+              const diffFiltered = allQ.filter(
+                (q: any) => {
+                  const val = q.difficulty || q.difficultyLevel || q.level;
+                  return val && String(val).toLowerCase() === difficulty.toLowerCase();
+                }
+              );
+              if (diffFiltered.length > 0) {
+                candidateQ = diffFiltered;
+              }
+            }
             return {
               id: session.exam.guidId || String(session.exam.id || idx + 1),
               title: session.exam.title || `Section ${idx + 1}`,
               session,
-              questions: allQ,
-              size: allQ.length,
+              questions: candidateQ,
+              size: candidateQ.length,
             };
           });
 
@@ -833,7 +858,7 @@ export const useLiveStrataExam = ({
           const resolvedExamTitle = customTitle || (
             examPools.length <= 3
               ? `Custom Exam: ${examPools.map((p) => p.title).join(" & ")}`
-              : `${firstSession.exam.subjectName || "Subject"} - Custom Exam`
+              : `${firstSession.exam.courseName || firstSession.exam.subjectName || "Custom Exam"}`
           );
 
           const combinedSession: StrataExamSessionResponse = {

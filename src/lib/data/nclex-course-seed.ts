@@ -33,7 +33,7 @@ export interface CourseRecord {
 const NCLEX_RN_COURSES: Omit<CourseRecord, "examType">[] = [
   {
     id: 1, title: "Pediatrics/ Child health NCLEX-RN", category: "subject",
-    questionCount: 640, examCount: 13, doneCount: 0,
+    questionCount: 209, examCount: 13, doneCount: 0,
     easyPct: 30, mediumPct: 39, hardPct: 30, order: 1,
     subCategories: [
       { id: "peds-cardio", title: "Cardiovascular", questionCount: 14, usedCount: 0, order: 1 },
@@ -53,7 +53,7 @@ const NCLEX_RN_COURSES: Omit<CourseRecord, "examType">[] = [
   },
   {
     id: 2, title: "Adult Health NCLEX-RN", category: "subject",
-    questionCount: 2173, examCount: 13, doneCount: 0,
+    questionCount: 722, examCount: 13, doneCount: 0,
     easyPct: 35, mediumPct: 40, hardPct: 25, order: 2,
     subCategories: [
       { id: "adult-cardio", title: "Cardiovascular", questionCount: 143, usedCount: 0, order: 1 },
@@ -73,7 +73,7 @@ const NCLEX_RN_COURSES: Omit<CourseRecord, "examType">[] = [
   },
   {
     id: 3, title: "Fundamentals NCLEX-RN", category: "subject",
-    questionCount: 249, examCount: 4, doneCount: 0,
+    questionCount: 81, examCount: 4, doneCount: 0,
     easyPct: 37, mediumPct: 49, hardPct: 15, order: 3,
     subCategories: [
       { id: "fund-fluid", title: "Fluid, Electrolytes, and Acid-Base Balance", questionCount: 6, usedCount: 0, order: 1 },
@@ -84,7 +84,7 @@ const NCLEX_RN_COURSES: Omit<CourseRecord, "examType">[] = [
   },
   {
     id: 4, title: "Pharmacology NCLEX-RN", category: "subject",
-    questionCount: 500, examCount: 14, doneCount: 0,
+    questionCount: 162, examCount: 14, doneCount: 0,
     easyPct: 29, mediumPct: 45, hardPct: 27, order: 4,
     subCategories: [
       { id: "pharm-cardio", title: "Cardiovascular", questionCount: 39, usedCount: 0, order: 1 },
@@ -105,7 +105,7 @@ const NCLEX_RN_COURSES: Omit<CourseRecord, "examType">[] = [
   },
   {
     id: 5, title: "Maternal & Newborn NCLEX-RN", category: "subject",
-    questionCount: 253, examCount: 4, doneCount: 0,
+    questionCount: 83, examCount: 4, doneCount: 0,
     easyPct: 27, mediumPct: 46, hardPct: 26, order: 5,
     subCategories: [
       { id: "mat-ante", title: "Antepartum", questionCount: 29, usedCount: 0, order: 1 },
@@ -116,7 +116,7 @@ const NCLEX_RN_COURSES: Omit<CourseRecord, "examType">[] = [
   },
   {
     id: 6, title: "Mental Health NCLEX-RN", category: "subject",
-    questionCount: 408, examCount: 4, doneCount: 0,
+    questionCount: 135, examCount: 4, doneCount: 0,
     easyPct: 43, mediumPct: 36, hardPct: 22, order: 6,
     subCategories: [
       { id: "mh-cognitive", title: "Cognitive and Developmental Disorders", questionCount: 23, usedCount: 0, order: 1 },
@@ -127,7 +127,7 @@ const NCLEX_RN_COURSES: Omit<CourseRecord, "examType">[] = [
   },
   {
     id: 7, title: "Leadership & Management NCLEX-RN", category: "subject",
-    questionCount: 502, examCount: 3, doneCount: 0,
+    questionCount: 166, examCount: 3, doneCount: 0,
     easyPct: 41, mediumPct: 40, hardPct: 19, order: 7,
     subCategories: [
       { id: "lead-deleg", title: "Delegation and Assignment", questionCount: 53, usedCount: 0, order: 1 },
@@ -161,7 +161,7 @@ const NCLEX_RN_COURSES: Omit<CourseRecord, "examType">[] = [
   },
   {
     id: 12, title: "CASE STUDIES (NGN)", category: "subject",
-    questionCount: 375, examCount: 7, doneCount: 0,
+    questionCount: 124, examCount: 7, doneCount: 0,
     easyPct: 0, mediumPct: 2, hardPct: 98, order: 12,
     subCategories: [
       { id: "ngn-adult", title: "Adult Health/Med-Surg", questionCount: 88, usedCount: 0, order: 1 },
@@ -178,7 +178,7 @@ const NCLEX_RN_COURSES: Omit<CourseRecord, "examType">[] = [
 const NCLEX_PN_COURSES: Omit<CourseRecord, "examType">[] = [
   {
     id: 1, title: "Adult Health NCLEX-PN", category: "subject",
-    questionCount: 492, examCount: 13, doneCount: 0,
+    questionCount: 228, examCount: 13, doneCount: 0,
     easyPct: 38, mediumPct: 39, hardPct: 23, order: 1,
     subCategories: [
       { id: "pn-adult-cardio", title: "Cardiovascular", questionCount: 27, usedCount: 0, order: 1 },
@@ -198,7 +198,7 @@ const NCLEX_PN_COURSES: Omit<CourseRecord, "examType">[] = [
   },
   {
     id: 2, title: "Pediatrics/Child Health NCLEX-PN", category: "subject",
-    questionCount: 153, examCount: 13, doneCount: 0,
+    questionCount: 69, examCount: 13, doneCount: 0,
     easyPct: 46, mediumPct: 35, hardPct: 19, order: 2,
     subCategories: [
       { id: "pn-peds-cardio", title: "Cardiovascular", questionCount: 9, usedCount: 0, order: 1 },

@@ -22,6 +22,8 @@ function LiveExamLayoutInner({ children }: { children: React.ReactNode }) {
   const examCount = examCountParam ? parseInt(examCountParam, 10) : null;
   const subCategories = searchParams.get("subCategories") ?? "";
   const customTitle = searchParams.get("customTitle") ?? null;
+  const difficulty = searchParams.get("difficulty") ?? null;
+  const status = searchParams.get("status") ?? null;
 
   return (
     <LiveStrataExamProvider
@@ -34,6 +36,8 @@ function LiveExamLayoutInner({ children }: { children: React.ReactNode }) {
       examCount={examCount}
       subCategories={subCategories}
       customTitle={customTitle}
+      difficulty={difficulty}
+      status={status}
     >
       <LiveExamActionProvider key={examIdentifier || subCategories}>
         {children}

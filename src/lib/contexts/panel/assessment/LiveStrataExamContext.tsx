@@ -42,6 +42,8 @@ export function LiveStrataExamProvider({
   examCount,
   subCategories,
   customTitle,
+  difficulty,
+  status,
   children,
 }: {
   examIdentifier: string;
@@ -53,6 +55,8 @@ export function LiveStrataExamProvider({
   examCount?: number | null;
   subCategories?: string | null;
   customTitle?: string | null;
+  difficulty?: string | null;
+  status?: string | null;
   children: React.ReactNode;
 }) {
   const {
@@ -69,6 +73,8 @@ export function LiveStrataExamProvider({
     examCount,
     subCategories,
     customTitle,
+    difficulty,
+    status,
   });
 
   // Synchronize exam title and in-progress metadata across storage so all dashboards and progress pages know the exam name
