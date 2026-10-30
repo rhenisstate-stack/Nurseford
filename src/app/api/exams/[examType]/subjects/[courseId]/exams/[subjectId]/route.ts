@@ -161,7 +161,7 @@ export async function GET(
 
     let items: (BackendExam & { subjectName?: string })[] = [];
     for (const targetSubId of candidateSubjectIds) {
-      const nominalUrl = `${baseUrl}/api/castoline/strata/assessment/exams/list/nominal?fetchtype=nominal&identifier=${targetSubId}&dynamicLearningStrataName=subject&dynamicPage=1&dynamicPerPage=500&dynamicSortColumn=id&dynamicSortDirection=desc`;
+      const nominalUrl = `${baseUrl}/api/castoline/strata/assessment/exams/list/nominal?fetchtype=nominal&identifier=${targetSubId}&dynamicLearningStrataName=subject&dynamicPage=1&dynamicPerPage=500&dynamicSortColumn=updatedAt&dynamicSortDirection=desc`;
       const nominalRes = await fetch(nominalUrl, { headers, next: { revalidate: 300 } });
       if (nominalRes.ok) {
         const nominalData = await nominalRes.json();
@@ -258,14 +258,14 @@ export async function GET(
       updatedAt: e.updatedAt || e.updated_at || e.createdAt || e.created_at || null,
     }));
 
-    // Sort latest exams by id first so newest exam comes first
+    // Sort exams by last updated date first, then fallback to id
     exams.sort((a, b) => {
+      const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+      const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+      if (timeB !== timeA) return timeB - timeA;
       const idB = Number(b.id) || 0;
       const idA = Number(a.id) || 0;
-      if (idB !== idA) return idB - idA;
-      const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-      const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-      return timeB - timeA;
+      return idB - idA;
     });
 
     const resultPayload = {

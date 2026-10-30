@@ -112,8 +112,6 @@ async function fetchBackendSubjects(examType: string, req: NextRequest): Promise
     dynamicPage: "1",
     dynamicPerPage: "200",
     dynamicSearch: "",
-    dynamicSortColumn: "name",
-    dynamicSortDirection: "asc",
   });
 
   // Forward the caller's session headers so the backend accepts the request.
@@ -186,7 +184,7 @@ async function fetchBackendSubjects(examType: string, req: NextRequest): Promise
         examCount: toNumber(c.subjectsCount, 0),
       };
     })
-    .sort((a, b) => a.name.localeCompare(b.name));
+;
 }
 
 const examSubjectsCache = new Map<string, { subjects: BackendSubject[]; timestamp: number }>();

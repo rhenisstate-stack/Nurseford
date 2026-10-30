@@ -1,5 +1,5 @@
 "use client";
-import { cleanOptionText, isValidExamText, cleanExamText, filterExhibitTabs } from "@/lib/utils/exams/cleanExamText";
+import { cleanOptionText, isValidExamText, cleanExamText, filterExhibitTabs, formatExhibitHtml } from "@/lib/utils/exams/cleanExamText";
 import { resolveQuestionMatrix } from "@/lib/utils/exams/matrixResolver";
 
 import { useMemo } from "react";
@@ -465,8 +465,8 @@ export function ExamCorrectAnswerView({
             {rationales.map((rationale, idx) => (
               <div
                 key={idx}
-                className="space-y-1.5 whitespace-pre-line leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: rationale }}
+                className="space-y-1.5 leading-relaxed [&_p]:my-1.5 [&_p]:leading-relaxed [&_p:first-child]:mt-0 [&_p:last-child]:mb-0"
+                dangerouslySetInnerHTML={{ __html: formatExhibitHtml(rationale) }}
               />
             ))}
           </div>

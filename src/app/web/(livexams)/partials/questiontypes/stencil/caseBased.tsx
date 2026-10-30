@@ -1,10 +1,10 @@
 // src\app\web\(livexams)\rn-nursing\vista\exam\(layout)\partials\questiontypes\stencil\caseBased.tsx
 'use client';
 
-import { useState, useEffect, type ComponentType } from "react";
+import { useState, useEffect, useMemo, type ComponentType } from "react";
 import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
-import { filterExhibitTabs, cleanTabTitle } from "@/lib/utils/exams/cleanExamText";
+import { filterExhibitTabs, cleanTabTitle, formatExhibitHtml } from "@/lib/utils/exams/cleanExamText";
 
 export interface InnerQuestionProps {
   q: StrataSessionQuestionFull;
@@ -60,9 +60,10 @@ export const CaseBasedStencil = ({
   }, [caseContents, activeTab]);
 
   const activeContent = caseContents.find((c) => c.id === activeTab) || caseContents[0];
-  const activeDesc = activeContent?.description && !/^(null|undefined)$/i.test(activeContent.description.trim())
+  const rawDesc = activeContent?.description && !/^(null|undefined)$/i.test(activeContent.description.trim())
     ? activeContent.description
     : "";
+  const activeDesc = useMemo(() => formatExhibitHtml(rawDesc), [rawDesc]);
 
   return (
     <div className="p-0 space-y-3">
@@ -97,7 +98,7 @@ export const CaseBasedStencil = ({
           </div>
           {activeContent && (
             <div
-              className="exhibit-content-body py-3 px-0.5 sm:px-1 text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar-button]:hidden"
+              className="exhibit-content-body py-2 px-0.5 sm:px-1 text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar-button]:hidden [&_p]:my-1.5 [&_p]:leading-relaxed [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:my-1.5 [&_ol]:my-1.5 [&_li]:leading-relaxed [&_p:empty]:my-2 [&_p:empty]:min-h-[0.75rem]"
               dangerouslySetInnerHTML={{ __html: activeDesc }}
             />
           )}

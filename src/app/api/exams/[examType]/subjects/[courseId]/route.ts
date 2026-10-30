@@ -128,8 +128,6 @@ export async function GET(
     dynamicPage: "1",
     dynamicPerPage: "100",
     dynamicSearch: "",
-    dynamicSortColumn: "name",
-    dynamicSortDirection: "asc",
   });
 
   try {
@@ -175,12 +173,12 @@ export async function GET(
       return true;
     });
 
-    // Sort chronologically if subjects contain years (2023, 2024, 2025, 2026)
+    // Sort chronologically if subjects contain years (2023, 2024, 2025, 2026); otherwise preserve backend arrangement
     items.sort((a, b) => {
       const ya = Number(a.name?.match(/\b(202\d)\b/)?.[1] ?? 0);
       const yb = Number(b.name?.match(/\b(202\d)\b/)?.[1] ?? 0);
       if (ya && yb && ya !== yb) return ya - yb;
-      return (a.name ?? "").localeCompare(b.name ?? "");
+      return 0;
     });
 
     // Look up courseName dynamically from backend first, cache, then fallback

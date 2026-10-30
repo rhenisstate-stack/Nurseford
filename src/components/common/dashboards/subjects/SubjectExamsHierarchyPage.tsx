@@ -148,7 +148,7 @@ export function SubjectExamsHierarchyPage({
           dynamicPage: page,
           dynamicPerPage: PER_PAGE,
           dynamicSearch: "",
-          dynamicSortColumn: "id",
+          dynamicSortColumn: "updatedAt",
           dynamicSortDirection: "desc",
           dynamicLearningStrataName: "subject",
         });
@@ -161,12 +161,12 @@ export function SubjectExamsHierarchyPage({
 
         const rawItems = result?.data?.items ?? [];
         const sortedExams = [...rawItems].sort((a, b) => {
+          const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+          const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+          if (timeB !== timeA) return timeB - timeA;
           const idB = Number(b.id) || 0;
           const idA = Number(a.id) || 0;
-          if (idB !== idA) return idB - idA;
-          const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-          const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-          return timeB - timeA;
+          return idB - idA;
         });
 
         const currentCached = subjectExamsHierarchyClientCache.get(cacheKey);

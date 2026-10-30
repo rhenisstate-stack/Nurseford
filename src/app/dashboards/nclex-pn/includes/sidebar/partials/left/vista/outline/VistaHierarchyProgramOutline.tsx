@@ -53,19 +53,9 @@ function ProgramCoursesList({
     sortDirection: "asc",
   });
 
-  // Order ascending (1 at the top). Non-numeric or missing order goes to the bottom,
-  // ties fall back to the name so the list is always stable.
+  // Preserve the exact course arrangement from the backend
   const sortedCourses = useMemo(() => {
-    const orderOf = (value: unknown) => {
-      const n = parseInt(String(value ?? "").trim(), 10);
-      return Number.isNaN(n) ? Number.MAX_SAFE_INTEGER : n;
-    };
-
-    return [...(filteredCourses ?? [])].sort(
-      (a, b) =>
-        orderOf(a.order) - orderOf(b.order) ||
-        String(a.name ?? "").localeCompare(String(b.name ?? ""))
-    );
+    return filteredCourses ?? [];
   }, [filteredCourses]);
 
   const baseChildRoute = `/dashboards/${dashboardSlug}/vista/${VISTA_STRATA_GROUP}/${VISTA_CHILD_STRATA}`;

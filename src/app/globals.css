@@ -154,3 +154,43 @@ html.light article.border:not([data-exam-page] *):not([data-exam-page]),
 html:not(.dark) article.border:not([data-exam-page] *):not([data-exam-page]) {
   border-color: rgba(0, 0, 0, 0.5) !important;
 }
+
+
+/* ── Dynamic Exhibit & Case Study Passage Spacing ── */
+.exhibit-content-body {
+  white-space: normal !important;
+  word-break: break-word;
+}
+
+.exhibit-content-body p {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.375rem !important;
+  line-height: 1.5 !important;
+}
+
+.exhibit-content-body p:first-child {
+  margin-top: 0 !important;
+}
+
+.exhibit-content-body p:last-child {
+  margin-bottom: 0 !important;
+}
+
+.exhibit-content-body p:empty,
+.exhibit-content-body p:has(> br:only-child) {
+  margin-top: 0.375rem !important;
+  margin-bottom: 0.375rem !important;
+  min-height: 0.75rem;
+}
+
+.exhibit-content-body ul,
+.exhibit-content-body ol {
+  margin-top: 0.25rem !important;
+  margin-bottom: 0.375rem !important;
+  padding-left: 1.25rem !important;
+}
+
+.exhibit-content-body li {
+  margin-top: 0.125rem !important;
+  margin-bottom: 0.125rem !important;
+}

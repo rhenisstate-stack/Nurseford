@@ -44,7 +44,7 @@ export function SubjectExamsPopup({
           dynamicPage: 1,
           dynamicPerPage: 50,
           dynamicSearch: "",
-          dynamicSortColumn: "id",
+          dynamicSortColumn: "updatedAt",
           dynamicSortDirection: "desc",
         });
 
@@ -54,9 +54,12 @@ export function SubjectExamsPopup({
           throw new Error(result.error);
         }
 
-        const items = [...(result?.data?.items ?? [])].sort(
-          (a, b) => (Number(b.id) || 0) - (Number(a.id) || 0)
-        );
+        const items = [...(result?.data?.items ?? [])].sort((a, b) => {
+          const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+          const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+          if (timeB !== timeA) return timeB - timeA;
+          return (Number(b.id) || 0) - (Number(a.id) || 0);
+        });
         try {
           items.forEach((e) => {
             if (e.guidId && e.title) {

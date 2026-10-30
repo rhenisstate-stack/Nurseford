@@ -1810,11 +1810,23 @@ export default function LiveExamPage() {
             font-size: 0.8125rem !important;
           }
 
-          /* Exhibit content: runs naturally without scroll box */
+          /* Exhibit content: runs naturally without scroll box and supports dynamic paragraph spacing */
           #exam-question-viewport .exhibit-content-body {
             max-height: none !important;
             overflow-y: visible !important;
             width: 100% !important;
+            white-space: normal !important;
+          }
+          #exam-question-viewport .exhibit-content-body p {
+            margin-top: 0.25rem !important;
+            margin-bottom: 0.375rem !important;
+            line-height: 1.5 !important;
+          }
+          #exam-question-viewport .exhibit-content-body p:first-child {
+            margin-top: 0 !important;
+          }
+          #exam-question-viewport .exhibit-content-body p:last-child {
+            margin-bottom: 0 !important;
           }
 
           /* Tables inside exhibits - seen as a whole without altering font size */

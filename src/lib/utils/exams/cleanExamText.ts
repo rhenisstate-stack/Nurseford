@@ -46,6 +46,55 @@ export function cleanExamText(val?: string | null): string {
   return val!.trim();
 }
 
+/**
+ * Sanitizes and dynamically formats exhibit description content:
+ * 1. If HTML:
+ *    - Strips artificial serializer newlines & whitespace between closing and opening HTML tags
+ *      (e.g. `</p>\r\n\r\n<p>`) so browsers don't create phantom vertical empty boxes.
+ *    - Normalizes soft line-breaks inside inline text (`\r\n` within sentences) into single spaces.
+ *    - Collapses excessive runs of 2+ empty paragraphs (`<p><br></p>`, `<p>&nbsp;</p>`) down to a single spacer,
+ *      preserving intentional spacing while pruning redundant ghost paragraphs.
+ *    - Strips leading and trailing empty paragraphs.
+ * 2. If Plain Text:
+ *    - Normalizes newlines and converts double-newlines into `<p>` blocks and single newlines into `<br/>`,
+ *      allowing clean dynamic spacing without needing `whitespace-pre-line`.
+ */
+export function formatExhibitHtml(val?: string | null): string {
+  if (!val || typeof val !== "string") return "";
+  const trimmed = val.trim();
+  if (!trimmed || /^(null|undefined)$/i.test(trimmed)) return "";
+
+  const hasHtml = /<[a-z][\s\S]*>/i.test(trimmed);
+
+  if (!hasHtml) {
+    // Plain text: normalize excessive blank lines (collapse 3+ newlines -> 2)
+    const normalized = trimmed
+      .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+    return normalized
+      .split(/\n\n+/)
+      .map((para) => `<p>${para.replace(/\n/g, "<br/>")}</p>`)
+      .join("");
+  }
+
+  // HTML content:
+  let cleaned = trimmed
+    // 1. Strip synthetic serializer newlines & whitespace between closing and opening HTML tags
+    .replace(/>\s*[\r\n]+\s*</g, "><")
+    // 2. Collapse excessive runs of 2+ empty paragraphs down to a single spacer
+    .replace(/(?:<p[^>]*>\s*(?:<br\s*\/?>|&nbsp;|\s)*<\/p>\s*){2,}/gi, "<p><br/></p>")
+    // 3. Remove leading and trailing empty paragraphs
+    .replace(/^(?:<p[^>]*>\s*(?:<br\s*\/?>|&nbsp;|\s)*<\/p>\s*)+/gi, "")
+    .replace(/(?:<p[^>]*>\s*(?:<br\s*\/?>|&nbsp;|\s)*<\/p>\s*)+$/gi, "")
+    // 4. Normalize multiline soft line breaks inside inline text to single space
+    .replace(/\s*[\r\n]+\s*/g, " ");
+
+  return cleaned.trim();
+}
+
 export function cleanTabTitle(title?: string | null): string {
   if (!title) return "";
   const plain = stripHtmlTags(title);

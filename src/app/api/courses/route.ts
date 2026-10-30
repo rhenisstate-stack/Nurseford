@@ -80,8 +80,6 @@ async function fetchBackendSubjects(courseId: number | string, sessionHeaders: S
     dynamicPage: "1",
     dynamicPerPage: "100",
     dynamicSearch: "",
-    dynamicSortColumn: "name",
-    dynamicSortDirection: "asc",
   });
 
   try {
@@ -132,8 +130,8 @@ async function fetchBackendSubjectExams(subjectId: number | string, sessionHeade
     dynamicLearningStrataName: "subject",
     dynamicPage: "1",
     dynamicPerPage: "100",
-    dynamicSortColumn: "id",
-    dynamicSortDirection: "asc",
+    dynamicSortColumn: "updatedAt",
+    dynamicSortDirection: "desc",
   });
 
   try {
@@ -150,11 +148,19 @@ async function fetchBackendSubjectExams(subjectId: number | string, sessionHeade
           guidId?: string;
           title?: string;
           questionsCount?: number;
+          updatedAt?: string;
+          createdAt?: string;
         }>;
       };
     };
     const items = converted.data?.items ?? [];
-    return items.map((e, index) => ({
+    const sortedItems = [...items].sort((a, b) => {
+      const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+      const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+      if (timeB !== timeA) return timeB - timeA;
+      return (Number(b.id) || 0) - (Number(a.id) || 0);
+    });
+    return sortedItems.map((e, index) => ({
       id: String(e.guidId || e.id),
       title: e.title || `Exam ${index + 1}`,
       questionCount: e.questionsCount && e.questionsCount > 0 ? e.questionsCount : 45,
@@ -205,8 +211,6 @@ async function fetchBackendProgramCourses(programId: string, sessionHeaders: Ses
     dynamicPage: "1",
     dynamicPerPage: "200",
     dynamicSearch: "",
-    dynamicSortColumn: "name",
-    dynamicSortDirection: "asc",
   });
 
   try {
@@ -243,26 +247,7 @@ const PROGRAM_NAMES: Record<CourseExamType, RegExp> = {
   "lpn-nursing": /^LPN\s*Nursing\s*Exams$/i,
 };
 
-// Desired display position for the NCLEX-RN "Study By Course" subject cards.
-// The backend returns subjects sorted alphabetically by name, so we override the
-// card order by title here. Any subject not in this map keeps its backend order.
-const RN_SUBJECT_ORDER: Record<string, number> = {
-  "Pediatrics/ Child health NCLEX-RN": 1,
-  "Adult Health NCLEX-RN": 2,
-  "Fundamentals NCLEX-RN": 3,
-  "Pharmacology NCLEX-RN": 4,
-  "Maternal & Newborn NCLEX-RN": 5,
-  "Mental Health NCLEX-RN": 6,
-  "Leadership & Management NCLEX-RN": 7,
-  "CASE STUDIES (NGN)": 8,
-};
-
-function desiredSubjectOrder(examType: CourseExamType, title: string, backendOrder: number): number {
-  if (examType === "nclex-rn" && RN_SUBJECT_ORDER[title] != null) {
-    return RN_SUBJECT_ORDER[title];
-  }
-  return backendOrder;
-}
+// Subjects follow the exact natural arrangement from the backend.
 
 // The live "Study By Course" grid is backed by the program's "Standalone
 // Questions-…" course: each of its SUBJECTS is a course card (e.g. "Adult Health
@@ -384,7 +369,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         easyPct,
         mediumPct,
         hardPct,
-        order: desiredSubjectOrder(examType, title, matchedPlaceholder?.order ?? i + 1),
+        order: i + 1,
         subCategories,
       };
 
@@ -443,7 +428,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
             easyPct: matchedPlaceholder?.easyPct ?? 30,
             mediumPct: matchedPlaceholder?.mediumPct ?? 40,
             hardPct: matchedPlaceholder?.hardPct ?? 30,
-            order: matchedPlaceholder?.order ?? 8 + i,
+            order: subjectCards.length + i + 1,
             subCategories,
           };
         })
@@ -471,7 +456,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
       }));
   }
 
-  return [...subjectCards, ...clientNeedCards].sort((a, b) => a.order - b.order);
+  return [...subjectCards, ...clientNeedCards];
 }
 
 // Non-NCLEX dashboards (HESI A2, ATI TEAS, RN/LPN Nursing): the program's
