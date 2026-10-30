@@ -4,9 +4,9 @@
 // -----------------------------------------------------------------------------
 // APP INFO
 // -----------------------------------------------------------------------------
-export const APP_NAME = process.env.SKEW_LINE_APP_NAME || "Rhenis Nursing";
-export const APP_TITLE = process.env.SKEW_LINE_APP_TITLE || "Rhenis Nursing";
-export const APP_ACRONYM = process.env.SKEW_LINE_APP_ACRONNYM || "RN";
+export const APP_NAME = process.env.SKEW_LINE_APP_NAME || "NurseFord";
+export const APP_TITLE = process.env.SKEW_LINE_APP_TITLE || "NurseFord";
+export const APP_ACRONYM = process.env.SKEW_LINE_APP_ACRONNYM || "NF";
 export const APP_DESCRIPTION = process.env.SKEW_LINE_APP_DESCRIPTION || "Nursing Exam Preparation and Practice Platform";
 export const APP_VERSION = process.env.SKEW_LINE_APP_VERSION || "1.0.0";
 export const APP_ENV = process.env.SKEW_LINE_APP_ENV || "live";
@@ -54,9 +54,9 @@ export const CONTACT = {
 // EMAILS CONFIGURATION
 // -----------------------------------------------------------------------------
 export const EMAILS = {
-  SUPPORT: process.env.SKEW_LINE_SUPPORT_EMAIL || "support@rhenisnursing.com",
-  SYSTEM: process.env.SKEW_LINE_SYSTEM_EMAIL || "support@rhenisnursing.com",
-  HELP: process.env.SKEW_LINE_HELP_EMAIL || "support@rhenisnursing.com",
+  SUPPORT: process.env.SKEW_LINE_SUPPORT_EMAIL || "support@nurseford.com",
+  SYSTEM: process.env.SKEW_LINE_SYSTEM_EMAIL || "support@nurseford.com",
+  HELP: process.env.SKEW_LINE_HELP_EMAIL || "support@nurseford.com",
 };
 
 // -----------------------------------------------------------------------------
@@ -93,8 +93,8 @@ export const DEVELOPER = {
 // SEO CONFIG
 // -----------------------------------------------------------------------------
 export const SEO = {
-  author: DEVELOPER.NAME || "Rhenis Nursing",
+  author: DEVELOPER.NAME || "NurseFord",
   keywords: "Nursing, Nursing Exams, TEAS 7 Prep, HESI A2, NCLEX, RN, LPN, CNA, GED, Exam Prep, Study Resources",
-  ogImage: `${CONTACT.CANONICALLINK || "https://rhenisnursing.com"}/images/og-banner.jpg`,
-  siteUrl: CONTACT.CANONICALLINK || "https://rhenisnursing.com",
+  ogImage: `${CONTACT.CANONICALLINK || "https://nurseford.com"}/images/og-banner.jpg`,
+  siteUrl: CONTACT.CANONICALLINK || "https://nurseford.com",
 };

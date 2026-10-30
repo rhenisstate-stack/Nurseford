@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, ShieldCheck } from 'lucide-react';
 import SearchBar from './search';
 import ThemeModeToggle from '@/components/common/theme/ThemeModeToggle';
 import { useCurrentSystemUser } from '@/lib/hooks/users/account/current/useCurrentSystemUser';
@@ -37,6 +37,7 @@ const exitExamLinks = [
 ];
 
 const moreLinks = [
+  { label: 'Admin Hub', href: '/admin' },
   { label: 'About Us', href: '/pages/about' },
   { label: 'Entrance', href: '/pages/entrance' },
   { label: 'Resources', href: '/pages/resources' },
@@ -122,14 +123,14 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2 group" onClick={() => setOpenDropdown(null)}>
           <Image
             src="/logo/logo.webp"
-            alt="Rhenis Nursing"
+            alt="NurseFord"
             width={28}
             height={28}
             priority
             className="w-7 h-7 object-contain"
           />
           <span className="font-serif text-lg font-semibold text-sage group-hover:text-coral transition-colors">
-            Rhenis Nursing
+            NurseFord
           </span>
         </Link>
 
@@ -260,6 +261,14 @@ export default function Navbar() {
               <UserAccountDropdown currentDashboard="rn-nursing" />
 
               <Link
+                href="/admin"
+                className="px-4 py-2 rounded-full text-xs font-bold text-navy dark:text-white border border-border-light hover:bg-paper-dim transition-colors flex items-center gap-1.5"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-coral" />
+                Admin
+              </Link>
+
+              <Link
                 href="/dashboards/rn-nursing"
                 className="px-5 py-2 rounded-full text-sm font-semibold text-[#0c1929] bg-coral hover:bg-coral-hover transition-colors"
               >
@@ -268,6 +277,14 @@ export default function Navbar() {
             </>
           ) : (
             <>
+              <Link
+                href="/admin"
+                className="px-3.5 py-1.5 rounded-full text-xs font-bold text-navy dark:text-white border border-border-light hover:bg-paper-dim transition-colors flex items-center gap-1.5"
+                title="NurseFord Administrative Portal"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-coral" />
+                Admin
+              </Link>
               <Link
                 href="/auth/login"
                 className="px-5 py-2 rounded-full text-sm font-medium text-navy border border-border-light hover:bg-paper-dim transition-colors"

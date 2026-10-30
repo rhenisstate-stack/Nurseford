@@ -13,7 +13,7 @@ export default function ShopTeaser() {
       <div className="mx-auto w-full max-w-[1600px] px-4 md:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="inline-block font-mono text-xs tracking-widest uppercase text-sage mb-3">
-            Rhenis Shop
+            NurseFord Shop
           </span>
           <h2 className="font-serif text-3xl md:text-4xl font-semibold text-navy tracking-tight">
             Study Materials You Can Own

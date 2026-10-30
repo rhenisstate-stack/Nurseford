@@ -1,7 +1,7 @@
 import ExamLandingPage from "@/app/(web)/includes/components/exams/ExamLandingPage";
 import { RN_NURSING_CATEGORIES } from "@/lib/data/subject-breakdown";
 import { RN_NURSING_SAMPLES } from "@/lib/data/sample-questions";
-import { RHENIS_SHOP_DOCS } from "@/lib/data/study-materials";
+import { NURSEFORD_SHOP_DOCS } from "@/lib/data/study-materials";
 
 const DASHBOARD_NAME = "nclex-rn";   // Lowercase hyphened as per dashboard path expectation 
 const PROGRAM_NAME = "NCLEX RN";   // UPPER CASE With Space
@@ -19,15 +19,15 @@ export default function NclexRnPage() {
         tagline: "NCLEX-RN",
         heroImage: "/images/home-bg/nclex-rn.jpg",
         heroImageLight: "/images/home-bg/nclex-rn-light.jpg",
-        title: "🩺 NCLEX-RN Prep with Rhenis Nursing",
+        title: "🩺 NCLEX-RN Prep with NurseFord",
         titleHighlight: "NCLEX-RN",
         titleHighlightClass: "text-sage",
         intro:
-          "Launch your nursing career with confidence using Rhenis Nursing's NCLEX-RN Prep.",
+          "Launch your nursing career with confidence using NurseFord's NCLEX-RN Prep.",
         introPoints: [
           {
             icon: "rocket",
-            label: "Launch your nursing career with confidence using Rhenis Nursing's NCLEX-RN Prep.",
+            label: "Launch your nursing career with confidence using NurseFord's NCLEX-RN Prep.",
           },
           {
             icon: "brain",
@@ -37,12 +37,12 @@ export default function NclexRnPage() {
           {
             icon: "target",
             label:
-              "Whether you're doing targeted drills or full-length simulations, Rhenis Nursing gives you the tools to succeed.",
+              "Whether you're doing targeted drills or full-length simulations, NurseFord gives you the tools to succeed.",
           },
         ],
         subjects: RN_NURSING_CATEGORIES,
         samples: RN_NURSING_SAMPLES,
-        shopDocs: RHENIS_SHOP_DOCS,
+        shopDocs: NURSEFORD_SHOP_DOCS,
         stats: [
           { value: "25,000+", label: "NCLEX-Style Questions" },
           { value: "9+", label: "Specialties Covered" },
@@ -92,3 +92,4 @@ export default function NclexRnPage() {
     />
   );
 }
+

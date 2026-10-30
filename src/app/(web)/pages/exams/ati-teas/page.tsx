@@ -17,18 +17,18 @@ export default function AtiTeasPage() {
         parentTableName: PARENT_TABLE_NAME,
         parentName: PARENT_NAME,
         tagline: "TEAS 7 Prep",
-        title: "TEAS 7 Prep with Rhenis Nursing",
+        title: "TEAS 7 Prep with NurseFord",
         heroImage: "/images/home-bg/ati-teas.jpg",
         heroImageLight: "/images/home-bg/ati-teas-light.jpg",
         taglineColor: "text-green",
         barColor: "bg-green",
         intro:
-          "Dreaming of a career in nursing? The TEAS 7 Exam is your critical first step—and Rhenis Nursing has everything you need to pass.",
+          "Dreaming of a career in nursing? The TEAS 7 Exam is your critical first step—and NurseFord has everything you need to pass.",
         introPoints: [
           {
             icon: "sparkles",
             label:
-              "Dreaming of a career in nursing? The TEAS 7 Exam is your critical first step—and Rhenis Nursing has everything you need to pass.",
+              "Dreaming of a career in nursing? The TEAS 7 Exam is your critical first step—and NurseFord has everything you need to pass.",
           },
           {
             icon: "trendingUp",
@@ -54,3 +54,4 @@ export default function AtiTeasPage() {
     />
   );
 }
+

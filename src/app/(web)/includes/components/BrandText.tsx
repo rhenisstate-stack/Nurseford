@@ -1,6 +1,6 @@
 import { Fragment } from "react";
 
-const BRAND = "Rhenis Nursing";
+const BRAND = "NurseFord";
 
 export default function BrandText({ text }: { text: string }) {
   const parts = text.split(BRAND);

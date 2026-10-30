@@ -1,4 +1,4 @@
-export const SELECTED_EXAM_STORAGE_KEY = "rhenis_dashboard_selection";
+export const SELECTED_EXAM_STORAGE_KEY = "nurseford_dashboard_selection";
 
 export const getStoredSelectedExam = (): string => {
   if (typeof window === "undefined") return "";

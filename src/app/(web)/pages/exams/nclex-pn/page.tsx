@@ -1,7 +1,7 @@
 import ExamLandingPage from "@/app/(web)/includes/components/exams/ExamLandingPage";
 import { LPN_NURSING_CATEGORIES } from "@/lib/data/subject-breakdown";
 import { LPN_NURSING_SAMPLES } from "@/lib/data/sample-questions";
-import { RHENIS_SHOP_DOCS } from "@/lib/data/study-materials";
+import { NURSEFORD_SHOP_DOCS } from "@/lib/data/study-materials";
 
 const DASHBOARD_NAME = "nclex-pn";   // Lowercase hyphened as per dashboard path expectation 
 const PROGRAM_NAME = "NCLEX PN";   // UPPER CASE With Space
@@ -19,16 +19,16 @@ export default function NclexPnPage() {
         tagline: "NCLEX-PN",
         heroImage: "/images/home-bg/nclex-pn.jpg",
         heroImageLight: "/images/home-bg/nclex-pn-light.jpg",
-        title: "🩺 NCLEX-PN Prep with Rhenis Nursing",
+        title: "🩺 NCLEX-PN Prep with NurseFord",
         titleHighlight: "NCLEX-PN",
         titleHighlightClass: "text-green",
         intro:
-          "Step confidently into your practical nursing career with Rhenis Nursing's NCLEX-PN Prep.",
+          "Step confidently into your practical nursing career with NurseFord's NCLEX-PN Prep.",
         introPoints: [
           {
             icon: "graduationCap",
             label:
-              "Step confidently into your practical nursing career with Rhenis Nursing's NCLEX-PN Prep.",
+              "Step confidently into your practical nursing career with NurseFord's NCLEX-PN Prep.",
           },
           {
             icon: "clipboardCheck",
@@ -42,12 +42,12 @@ export default function NclexPnPage() {
           },
           {
             icon: "sparkles",
-            label: "Rhenis Nursing gives you the tools to study smarter and succeed.",
+            label: "NurseFord gives you the tools to study smarter and succeed.",
           },
         ],
         subjects: LPN_NURSING_CATEGORIES,
         samples: LPN_NURSING_SAMPLES,
-        shopDocs: RHENIS_SHOP_DOCS,
+        shopDocs: NURSEFORD_SHOP_DOCS,
         stats: [
           { value: "25,000+", label: "NCLEX-Style Questions" },
           { value: "9+", label: "Specialties Covered" },
@@ -97,3 +97,4 @@ export default function NclexPnPage() {
     />
   );
 }
+

@@ -13,7 +13,7 @@ const contactMethods = [
     icon: "✉️",
     title: "Email Us",
     details: [
-      { type: "mailto" as const, value: "support@rhenisnursing.com", href: "mailto:support@rhenisnursing.com" },
+      { type: "mailto" as const, value: "support@nurseford.com", href: "mailto:support@nurseford.com" },
     ],
   },
 ];
@@ -31,7 +31,7 @@ export default function ContactUs() {
             Contact Us
           </h2>
           <p className="mt-4 text-navy/60 leading-relaxed">
-            <BrandText text="Unlock Your Potential in Healthcare Education with Rhenis Nursing! Rhenis Nursing helps support you in comprehending the complexities of healthcare education and giving personalized guidance to help you excel academically." />
+            <BrandText text="Unlock Your Potential in Healthcare Education with NurseFord! NurseFord helps support you in comprehending the complexities of healthcare education and giving personalized guidance to help you excel academically." />
           </p>
         </div>
 

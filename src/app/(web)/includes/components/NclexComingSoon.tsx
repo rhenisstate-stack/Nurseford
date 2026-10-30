@@ -35,7 +35,7 @@ export default function NclexComingSoon() {
             NCLEX RN &amp; PN
           </h2>
           <p className="mt-4 text-navy/60 leading-relaxed">
-            With Rhenis, you&apos;ll access tailored NCLEX questions and illustrative
+            With NurseFord, you&apos;ll access tailored NCLEX questions and illustrative
             videos designed by a team of experts to ensure you study smarter and
             achieve success with confidence and become a licensed nurse.
           </p>

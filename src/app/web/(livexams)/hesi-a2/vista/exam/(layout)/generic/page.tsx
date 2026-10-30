@@ -1507,13 +1507,13 @@ export default function LiveExamPage() {
               <div className="relative w-6 h-6 sm:w-7 sm:h-7 shrink-0 group-hover:scale-105 transition-transform">
                 <Image
                   src="/logo/logo.png"
-                  alt="Rhenis Nursing"
+                  alt="NurseFord"
                   fill
                   className="object-contain"
                 />
               </div>
               <span className="font-bold text-sm sm:text-base text-[#1E3A8A] dark:text-[#60A5FA] tracking-tight group-hover:underline">
-                Rhenis Nursing
+                NurseFord
               </span>
             </Link>
 

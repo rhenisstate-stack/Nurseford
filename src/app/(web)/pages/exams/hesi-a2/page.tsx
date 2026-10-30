@@ -20,12 +20,12 @@ export default function HesiA2Page() {
         heroImage: "/images/home-bg/hesi-a2.jpg",
         heroImageLight: "/images/home-bg/hesi-a2-light.jpg",
         intro:
-          "Ace your HESI A2 with expertly crafted study materials from Rhenis Nursing—your trusted partner in nursing exam success.",
+          "Ace your HESI A2 with expertly crafted study materials from NurseFord—your trusted partner in nursing exam success.",
         introPoints: [
           {
             icon: "stethoscope",
             label:
-              "Ace your HESI A2 with expertly crafted study materials from Rhenis Nursing—your trusted partner in nursing exam success.",
+              "Ace your HESI A2 with expertly crafted study materials from NurseFord—your trusted partner in nursing exam success.",
           },
           {
             icon: "fileText",
@@ -52,3 +52,4 @@ export default function HesiA2Page() {
     />
   );
 }
+

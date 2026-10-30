@@ -22,18 +22,18 @@ const ACTIVE_BACKEND = process.env.SKEW_LINE_ACTIVE_BACKEND || "dotnet";
 export function getBackendBaseUrl(): string {
   switch (ACTIVE_BACKEND) {
     case "laravel": {
-      const url = process.env.SKEW_LINE_LARAVEL_BASE_URL?.split(",")[0] || "http://108.61.9.189:8008";
+      const url = process.env.SKEW_LINE_LARAVEL_BASE_URL?.split(",")[0] || "http://localhost:5000";
       return url;
     }
 
     case "dotnet": {
-      const url = process.env.SKEW_LINE_DOTNET_BASE_URL || "http://108.61.9.189:8008";
+      const url = process.env.SKEW_LINE_DOTNET_BASE_URL || "http://localhost:5000";
       return url;
     }
 
     case "fastapi":
     default: {
-      const url = process.env.SKEW_LINE_FASTAPI_BASE_URL?.split(",")[1] || "http://108.61.9.189:8008";
+      const url = process.env.SKEW_LINE_FASTAPI_BASE_URL?.split(",")[1] || "http://localhost:5000";
       return url;
     }
   }

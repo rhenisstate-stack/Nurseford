@@ -24,27 +24,27 @@ const faqData: FaqCategory[] = [
     headerText: "text-coral",
     items: [
       {
-        question: "What is Rhenis Nursing?",
+        question: "What is NurseFord?",
         answer:
-          "Rhenis Nursing is a premier online platform providing comprehensive nursing exam preparation, including NCLEX-RN/PN, TEAS 7 Prep, HESI A2, and specialized RN and LPN Q-Banks. Our resources cover Med-Surg, Fundamentals, Maternal-Newborn, Mental Health, Pediatrics, and more.",
+          "NurseFord is a premier online platform providing comprehensive nursing exam preparation, including NCLEX-RN/PN, TEAS 7 Prep, HESI A2, and specialized RN and LPN Q-Banks. Our resources cover Med-Surg, Fundamentals, Maternal-Newborn, Mental Health, Pediatrics, and more.",
       },
       {
-        question: "Who can benefit from Rhenis Nursing?",
+        question: "Who can benefit from NurseFord?",
         answer:
           "Nursing students, graduates preparing for licensure exams, practicing nurses refreshing their knowledge, and educators seeking reliable question banks can all benefit.",
       },
       {
-        question: "What makes Rhenis Nursing different from other prep sites?",
+        question: "What makes NurseFord different from other prep sites?",
         answer:
           "We offer exam-blueprint-aligned content, rationales for every answer, adaptive practice modes, performance tracking, and coverage across multiple nursing specialties—all designed by experienced nurse educators.",
       },
       {
-        question: "Is Rhenis Nursing suitable for international nursing exams?",
+        question: "Is NurseFord suitable for international nursing exams?",
         answer:
-          "Yes! While our primary focus is on NCLEX, TEAS 7 Prep, and HESI exams, many international nursing students use Rhenis Nursing to strengthen their knowledge of core nursing concepts and clinical reasoning.",
+          "Yes! While our primary focus is on NCLEX, TEAS 7 Prep, and HESI exams, many international nursing students use NurseFord to strengthen their knowledge of core nursing concepts and clinical reasoning.",
       },
       {
-        question: "Does Rhenis Nursing offer guidance on study strategies?",
+        question: "Does NurseFord offer guidance on study strategies?",
         answer:
           "Absolutely. Alongside our practice questions, we provide expert tips, time-management strategies, and exam-day techniques to help you study smarter and boost your confidence.",
       },
@@ -123,7 +123,7 @@ const faqData: FaqCategory[] = [
     headerText: "text-navy-light",
     items: [
       {
-        question: "Can I access Rhenis Nursing on mobile devices?",
+        question: "Can I access NurseFord on mobile devices?",
         answer:
           "Absolutely. The platform is mobile-responsive, so you can study on your phone or tablet anywhere.",
       },
@@ -138,14 +138,14 @@ const faqData: FaqCategory[] = [
           "Reach our team through the Contact Us form on the website or by email. We aim to respond within 24–48 hours.",
       },
       {
-        question: "Does Rhenis Nursing work on tablets or mobile browsers?",
+        question: "Does NurseFord work on tablets or mobile browsers?",
         answer:
           "Yes. Our platform is fully responsive and optimized for desktops, tablets, and mobile devices so you can study on the go.",
       },
       {
         question: "Are my test scores and personal information secure?",
         answer:
-          "Absolutely. Rhenis Nursing uses industry-standard encryption and strict privacy practices to protect your data and exam results.",
+          "Absolutely. NurseFord uses industry-standard encryption and strict privacy practices to protect your data and exam results.",
       },
     ],
   },
@@ -166,7 +166,7 @@ export default function FAQ() {
             FAQ
           </span>
           <h2 className="font-serif text-3xl md:text-4xl font-semibold text-navy tracking-tight">
-            📋 <BrandText text="Rhenis Nursing – Frequently Asked Questions (F.A.Qs)" />
+            📋 <BrandText text="NurseFord – Frequently Asked Questions (F.A.Qs)" />
           </h2>
         </div>
 
@@ -238,3 +238,4 @@ export default function FAQ() {
     </section>
   );
 }
+

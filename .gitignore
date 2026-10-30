@@ -45,3 +45,11 @@ nul
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# dotnet & backend
+.dotnet_home/
+**/bin/
+**/obj/
+*.db
+*.db-shm
+*.db-wal

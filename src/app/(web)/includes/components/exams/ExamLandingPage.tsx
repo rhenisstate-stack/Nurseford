@@ -105,7 +105,7 @@ export default function ExamLandingPage({ config }: { config: ExamLandingConfig 
   const samplesList = Object.values(samples);
 
   const renderTitle = () => {
-    const fallback = title ?? `${programName} Exam Prep with Rhenis Nursing`;
+    const fallback = title ?? `${programName} Exam Prep with NurseFord`;
     if (titleHighlight) {
       const idx = fallback.indexOf(titleHighlight);
       if (idx >= 0) {
@@ -123,8 +123,8 @@ export default function ExamLandingPage({ config }: { config: ExamLandingConfig 
 
   const faqs = [
     {
-      q: `What is Rhenis Nursing ${programName}?`,
-      a: `Rhenis Nursing offers expert-crafted study materials and Q-Banks to help you prepare for the ${programName} exam and boost your nursing school admission chances.`,
+      q: `What is NurseFord ${programName}?`,
+      a: `NurseFord offers expert-crafted study materials and Q-Banks to help you prepare for the ${programName} exam and boost your nursing school admission chances.`,
     },
     {
       q: `What subjects are covered in your ${programName} materials?`,
@@ -375,7 +375,7 @@ export default function ExamLandingPage({ config }: { config: ExamLandingConfig 
           </h2>
           <p className="text-black dark:text-white leading-relaxed max-w-xl mx-auto mb-8">
             Join thousands of nursing students preparing for their exams with
-            Rhenis. Start with a free account — no credit card required.
+            NurseFord. Start with a free account — no credit card required.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link

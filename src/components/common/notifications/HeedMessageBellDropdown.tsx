@@ -193,7 +193,7 @@ export default function HeedMessageBellDropdown({
 
     const email =
       user?.email ||
-      (user?.userName ? `${user.userName}@rhenisnursing.com` : "support@rhenisnursing.com");
+      (user?.userName ? `${user.userName}@nurseford.com` : "support@nurseford.com");
 
     try {
       setIsSending(true);
@@ -210,7 +210,7 @@ export default function HeedMessageBellDropdown({
       }
 
       setComposerText("");
-      setSendSuccess("Message sent to Rhenis Support ✅");
+      setSendSuccess("Message sent to NurseFord Support ✅");
       setIsComposerOpen(false);
       window.dispatchEvent(new CustomEvent(HEED_STATUS_EVENT));
       refetch();
@@ -280,7 +280,7 @@ export default function HeedMessageBellDropdown({
           aria-label="Message Support"
           className={`absolute mt-2 w-[420px] sm:w-[460px] max-w-[calc(100vw-1.5rem)] max-h-[min(650px,calc(100vh-5rem))] rounded-2xl border border-blue-200 dark:border-white/15 bg-white dark:bg-[#111C2E] shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 overflow-hidden flex flex-col ${alignmentClass}`}
         >
-          {/* Header (Matching Rhenis Support & Heed Page) */}
+          {/* Header (Matching NurseFord Support & Heed Page) */}
           <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 px-4 py-3 text-white flex items-center justify-between shadow-md shrink-0 select-none">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center font-bold text-white shadow-inner">

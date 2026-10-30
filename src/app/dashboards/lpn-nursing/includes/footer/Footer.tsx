@@ -40,13 +40,13 @@ export default function Footer() {
               <Link href="/" className="flex items-center gap-2 mb-4 group">
                 <Image
                   src="/logo/logo.webp"
-                  alt="Rhenis Nursing"
+                  alt="NurseFord"
                   width={28}
                   height={28}
                   className="w-7 h-7 shrink-0 object-contain"
                 />
                 <span className="font-serif text-lg font-semibold text-[var(--text-color)]">
-                  Rhenis Nursing
+                  NurseFord
                 </span>
               </Link>
               <p className="text-sm leading-relaxed max-w-xs text-[var(--text-color)]/60">
@@ -121,10 +121,10 @@ export default function Footer() {
                 </li>
                 <li>
                   <a
-                    href="mailto:support@rhenisnursing.com"
+                    href="mailto:support@nurseford.com"
                     className="hover:text-[var(--text-color)] transition-colors break-words"
                   >
-                    support@rhenisnursing.com
+                    support@nurseford.com
                   </a>
                 </li>
               </ul>
