@@ -28,7 +28,7 @@ const EXAM_SEGMENTS: Record<string, string> = {
 };
 
 const courseNameCache = new Map<string, string>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes TTL
+const CACHE_TTL_MS = 0;
 
 interface BackendSubjectItem {
   id?: number | string;
@@ -74,7 +74,7 @@ export async function GET(
   if (cachedCourse && now - cachedCourse.timestamp < CACHE_TTL_MS) {
     return NextResponse.json(cachedCourse.data, {
       headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
   }
@@ -98,7 +98,7 @@ export async function GET(
   if (!courseGuid) {
     try {
       const coursesUrl = `${getBackendBaseUrl()}/api/castoline/strata/learning/courses/list/absolute?fetchtype=absolute&dynamicPage=1&dynamicPerPage=200`;
-      const cRes = await fetch(coursesUrl, { headers, next: { revalidate: 300 } });
+      const cRes = await fetch(coursesUrl, { headers, cache: "no-store" });
       if (cRes.ok) {
         const cData = await cRes.json();
         const courses = cData.data?.items || [];
@@ -135,7 +135,7 @@ export async function GET(
     const res = await fetch(url, {
       method: "GET",
       headers,
-      next: { revalidate: 300 },
+      cache: "no-store",
     });
 
     if (!res.ok) {
@@ -186,7 +186,7 @@ export async function GET(
     if (!courseName) {
       try {
         const coursesUrl = `${getBackendBaseUrl()}/api/castoline/strata/learning/courses/list/absolute?fetchtype=absolute&dynamicPage=1&dynamicPerPage=200`;
-        const cRes = await fetch(coursesUrl, { headers, next: { revalidate: 300 } });
+        const cRes = await fetch(coursesUrl, { headers, cache: "no-store" });
         if (cRes.ok) {
           const cData = await cRes.json();
           const courses = cData.data?.items || [];
@@ -214,7 +214,7 @@ export async function GET(
         if (!subId) return 0;
         try {
           const nominalCountUrl = `${getBackendBaseUrl()}/api/castoline/strata/assessment/exams/list/nominal?fetchtype=nominal&identifier=${subId}&dynamicLearningStrataName=subject&dynamicPage=1&dynamicPerPage=1`;
-          const res = await fetch(nominalCountUrl, { headers, next: { revalidate: 300 } });
+          const res = await fetch(nominalCountUrl, { headers, cache: "no-store" });
           if (res.ok) {
             const data = await res.json();
             const count = data.data?.skewTotal ?? data.data?.totalItems ?? (data.data?.items || []).length;
@@ -263,7 +263,7 @@ export async function GET(
 
     return NextResponse.json(responseData, {
       headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
   } catch (err) {

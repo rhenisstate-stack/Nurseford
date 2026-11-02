@@ -152,12 +152,6 @@ export default function NclexRnHomePage() {
               <p className="text-sm sm:text-base lg:text-xl font-bold text-[var(--text-color)] truncate">
                 {greeting}{firstName ? `, ${firstName}` : isUserLoading ? "" : ", Guest"} ✌️
               </p>
-              <div className="shrink-0 flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-purple-500/60 bg-purple-500/10 text-center leading-none">
-                <div>
-                  <div className="text-[9px] sm:text-[10px] font-extrabold text-purple-600 dark:text-purple-300">72%</div>
-                  <div className="text-[6px] sm:text-[6.5px] font-bold tracking-wider text-purple-600 dark:text-purple-200 uppercase">READY</div>
-                </div>
-              </div>
             </div>
 
             <p className="text-[10px] sm:text-xs lg:text-sm text-[var(--text-color)]/60 italic leading-snug line-clamp-2">
@@ -167,14 +161,14 @@ export default function NclexRnHomePage() {
             <div className="mt-2.5 flex items-center gap-2 flex-wrap">
               <Link
                 href="/dashboards/nclex-rn/vista/subscriptions/items"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium text-xs bg-[#2FD9C4] text-[#08111F] hover:brightness-110 active:scale-[0.98] transition-all shadow-xs w-fit"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium text-xs border border-teal-500/80 text-teal-700 dark:text-teal-300 bg-teal-50/50 dark:bg-teal-950/30 hover:bg-teal-100/60 dark:hover:bg-teal-900/40 active:scale-[0.98] transition-all shadow-2xs w-fit"
               >
                 <CreditCard className="w-3.5 h-3.5 shrink-0" />
                 <span>Subscription Packages</span>
               </Link>
               <Link
                 href="/dashboards/nclex-rn/vista/subscriptions/packages"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium text-xs bg-[#2FD9C4] text-[#08111F] hover:brightness-110 active:scale-[0.98] transition-all shadow-xs w-fit"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium text-xs border border-teal-500/80 text-teal-700 dark:text-teal-300 bg-teal-50/50 dark:bg-teal-950/30 hover:bg-teal-100/60 dark:hover:bg-teal-900/40 active:scale-[0.98] transition-all shadow-2xs w-fit"
               >
                 <Receipt className="w-3.5 h-3.5 shrink-0" />
                 <span>My Subscriptions</span>

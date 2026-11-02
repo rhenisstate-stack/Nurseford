@@ -1367,6 +1367,39 @@ export default function LiveExamPage() {
     };
   }, [handlePrev, handleNext, flatTotal, allowedMaxIndex, isGuest, isSubscribed]);
 
+  // Broadcast exam state to toolbars and footers
+  useEffect(() => {
+    if (flatTotal > 0) {
+      window.dispatchEvent(
+        new CustomEvent("exam:state", {
+          detail: {
+            currentIndex,
+            total: flatTotal,
+            isLast: currentIndex >= flatTotal - 1,
+          },
+        })
+      );
+    }
+  }, [currentIndex, flatTotal]);
+
+  useEffect(() => {
+    const onStateReq = () => {
+      if (flatTotal > 0) {
+        window.dispatchEvent(
+          new CustomEvent("exam:state", {
+            detail: {
+              currentIndex,
+              total: flatTotal,
+              isLast: currentIndex >= flatTotal - 1,
+            },
+          })
+        );
+      }
+    };
+    window.addEventListener("exam:state:request", onStateReq);
+    return () => window.removeEventListener("exam:state:request", onStateReq);
+  }, [currentIndex, flatTotal]);
+
   // Session storage position restore
   useEffect(() => {
     if (flatTotal === 0 || !storageKey) return;
@@ -1827,6 +1860,13 @@ export default function LiveExamPage() {
           }
           #exam-question-viewport .exhibit-content-body p:last-child {
             margin-bottom: 0 !important;
+          }
+          #exam-question-viewport .exhibit-content-body .exhibit-spacer,
+          #exam-question-viewport .exhibit-content-body p:empty,
+          #exam-question-viewport .exhibit-content-body p:has(> br:only-child) {
+            margin-top: 0.375rem !important;
+            margin-bottom: 0.375rem !important;
+            min-height: 0.75rem;
           }
 
           /* Tables inside exhibits - seen as a whole without altering font size */

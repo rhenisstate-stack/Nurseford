@@ -49,12 +49,14 @@ export function cleanExamText(val?: string | null): string {
 /**
  * Sanitizes and dynamically formats exhibit description content:
  * 1. If HTML:
- *    - Strips artificial serializer newlines & whitespace between closing and opening HTML tags
+ *    - Strips Word/editor HTML comments (e.g. `<!--[if !supportEmptyParas]-->`).
+ *    - Strips synthetic serializer newlines & whitespace between closing and opening HTML tags
  *      (e.g. `</p>\r\n\r\n<p>`) so browsers don't create phantom vertical empty boxes.
  *    - Normalizes soft line-breaks inside inline text (`\r\n` within sentences) into single spaces.
- *    - Collapses excessive runs of 2+ empty paragraphs (`<p><br></p>`, `<p>&nbsp;</p>`) down to a single spacer,
- *      preserving intentional spacing while pruning redundant ghost paragraphs.
- *    - Strips leading and trailing empty paragraphs.
+ *    - Strips intrusive Word inline margins (`margin: 0in 0in 11px;`, etc.) from `<p>` style attributes
+ *      so dynamic line spacing responds cleanly to user/admin controls.
+ *    - Recognizes any ghost empty paragraphs (including those with `<span>&nbsp;</span>`, `<br>`, etc.),
+ *      stripping leading/trailing ghost paragraphs and collapsing consecutive empty paragraphs into a clean single spacer.
  * 2. If Plain Text:
  *    - Normalizes newlines and converts double-newlines into `<p>` blocks and single newlines into `<br/>`,
  *      allowing clean dynamic spacing without needing `whitespace-pre-line`.
@@ -81,18 +83,91 @@ export function formatExhibitHtml(val?: string | null): string {
   }
 
   // HTML content:
-  let cleaned = trimmed
-    // 1. Strip synthetic serializer newlines & whitespace between closing and opening HTML tags
-    .replace(/>\s*[\r\n]+\s*</g, "><")
-    // 2. Collapse excessive runs of 2+ empty paragraphs down to a single spacer
-    .replace(/(?:<p[^>]*>\s*(?:<br\s*\/?>|&nbsp;|\s)*<\/p>\s*){2,}/gi, "<p><br/></p>")
-    // 3. Remove leading and trailing empty paragraphs
-    .replace(/^(?:<p[^>]*>\s*(?:<br\s*\/?>|&nbsp;|\s)*<\/p>\s*)+/gi, "")
-    .replace(/(?:<p[^>]*>\s*(?:<br\s*\/?>|&nbsp;|\s)*<\/p>\s*)+$/gi, "")
-    // 4. Normalize multiline soft line breaks inside inline text to single space
-    .replace(/\s*[\r\n]+\s*/g, " ");
+  // 1. Remove HTML comments (e.g. Word/editor comments like <!--[if !supportEmptyParas]-->)
+  let cleaned = trimmed.replace(/<!--[\s\S]*?-->/g, "");
 
-  return cleaned.trim();
+  // 2. Strip synthetic serializer newlines & whitespace between closing and opening HTML tags
+  cleaned = cleaned.replace(/>\s*[\r\n]+\s*</g, "><");
+
+  // Helper to test if a paragraph has any visible text
+  const isParagraphEmpty = (inner: string): boolean => {
+    const textOnly = inner
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/gi, "")
+      .replace(/&#160;/gi, "")
+      .replace(/\u00A0/g, "")
+      .trim();
+    return textOnly.length === 0;
+  };
+
+  // 3. Parse <p> tags, strip intrusive Word inline margins, collapse consecutive empty paragraphs,
+  // and eliminate leading/trailing empty ghost paragraphs
+  const pRegex = /<p\b([^>]*)>([\s\S]*?)<\/p>/gi;
+  interface Part {
+    type: "p" | "other";
+    attrs?: string;
+    inner?: string;
+    empty?: boolean;
+    content?: string;
+  }
+  const parts: Part[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pRegex.exec(cleaned)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: "other", content: cleaned.slice(lastIndex, match.index) });
+    }
+    const attrs = match[1];
+    const inner = match[2];
+    const empty = isParagraphEmpty(inner);
+    parts.push({ type: "p", attrs, inner, empty });
+    lastIndex = pRegex.lastIndex;
+  }
+  if (lastIndex < cleaned.length) {
+    parts.push({ type: "other", content: cleaned.slice(lastIndex) });
+  }
+
+  // Strip leading empty paragraphs
+  while (parts.length > 0 && parts[0].type === "p" && parts[0].empty) {
+    parts.shift();
+  }
+  // Strip trailing empty paragraphs
+  while (parts.length > 0 && parts[parts.length - 1].type === "p" && parts[parts.length - 1].empty) {
+    parts.pop();
+  }
+
+  // Build sanitized markup: single empty paragraph becomes intentional spacer, consecutive empty paragraphs collapse
+  const result: string[] = [];
+  let prevWasEmpty = false;
+  for (const part of parts) {
+    if (part.type === "p") {
+      if (part.empty) {
+        if (!prevWasEmpty) {
+          result.push('<p class="exhibit-spacer"><br/></p>');
+          prevWasEmpty = true;
+        }
+      } else {
+        // Strip intrusive Word/editor inline margins & fixed line-height from attrs
+        const cleanAttrs = (part.attrs || "").replace(/style=(["'])(.*?)\1/gi, (_, quote, styleStr) => {
+          const cleanedStyle = styleStr
+            .replace(/\bmargin(-top|-bottom|-left|-right)?\s*:\s*[^;]+;?/gi, "")
+            .replace(/\bline-height\s*:\s*[^;]+;?/gi, "")
+            .trim();
+          return cleanedStyle ? `style=${quote}${cleanedStyle}${quote}` : "";
+        });
+        // Normalize soft breaks inside paragraph text
+        const normalizedInner = (part.inner || "").replace(/\s*[\r\n]+\s*/g, " ");
+        result.push(`<p${cleanAttrs}>${normalizedInner}</p>`);
+        prevWasEmpty = false;
+      }
+    } else {
+      result.push(part.content || "");
+      prevWasEmpty = false;
+    }
+  }
+
+  return result.join("").trim();
 }
 
 export function cleanTabTitle(title?: string | null): string {

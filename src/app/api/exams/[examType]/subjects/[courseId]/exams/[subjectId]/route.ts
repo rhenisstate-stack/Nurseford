@@ -32,7 +32,7 @@ interface BackendExam {
 const subjectExamsResponseCache = new Map<string, { data: unknown; timestamp: number }>();
 const courseNameCache = new Map<string, string>();
 const subjectNameCache = new Map<string, string>();
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 0;
 
 const LEGACY_HESI_SUBJECT_MAP: Record<
   string,
@@ -86,7 +86,7 @@ export async function GET(
     if (cachedResponse && now - cachedResponse.timestamp < CACHE_TTL_MS) {
       return NextResponse.json(cachedResponse.data, {
         headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       });
     }
@@ -108,7 +108,7 @@ export async function GET(
   if (!resolvedCourseGuid) {
     try {
       const coursesUrl = `${baseUrl}/api/castoline/strata/learning/courses/list/absolute?fetchtype=absolute&dynamicPage=1&dynamicPerPage=200`;
-      const cRes = await fetch(coursesUrl, { headers, next: { revalidate: 300 } });
+      const cRes = await fetch(coursesUrl, { headers, cache: "no-store" });
       if (cRes.ok) {
         const cData = await cRes.json();
         const courses = cData.data?.items || cData.Data?.Items || [];
@@ -137,7 +137,7 @@ export async function GET(
       try {
         const queryCourseId = resolvedCourseGuid || effectiveCourseId;
         const subsUrl = `${baseUrl}/api/castoline/strata/learning/subjects/list/distinct?fetchtype=distinct&identifier=${queryCourseId}&dynamicPage=1&dynamicPerPage=100`;
-        const sRes = await fetch(subsUrl, { headers, next: { revalidate: 300 } });
+        const sRes = await fetch(subsUrl, { headers, cache: "no-store" });
         if (sRes.ok) {
           const sData = await sRes.json();
           const subs = sData.data?.items || sData.Data?.Items || [];
@@ -162,7 +162,7 @@ export async function GET(
     let items: (BackendExam & { subjectName?: string })[] = [];
     for (const targetSubId of candidateSubjectIds) {
       const nominalUrl = `${baseUrl}/api/castoline/strata/assessment/exams/list/nominal?fetchtype=nominal&identifier=${targetSubId}&dynamicLearningStrataName=subject&dynamicPage=1&dynamicPerPage=500&dynamicSortColumn=updatedAt&dynamicSortDirection=desc`;
-      const nominalRes = await fetch(nominalUrl, { headers, next: { revalidate: 300 } });
+      const nominalRes = await fetch(nominalUrl, { headers, cache: "no-store" });
       if (nominalRes.ok) {
         const nominalData = await nominalRes.json();
         const rawItems = nominalData.data?.items || nominalData.Data?.Items || [];
@@ -182,7 +182,7 @@ export async function GET(
     if (!courseName) {
       try {
         const coursesUrl = `${baseUrl}/api/castoline/strata/learning/courses/list/absolute?fetchtype=absolute&dynamicPage=1&dynamicPerPage=200`;
-        const cRes = await fetch(coursesUrl, { headers, next: { revalidate: 300 } });
+        const cRes = await fetch(coursesUrl, { headers, cache: "no-store" });
         if (cRes.ok) {
           const cData = await cRes.json();
           const courses = cData.data?.items || cData.Data?.Items || [];
@@ -222,7 +222,7 @@ export async function GET(
       subjectExamsResponseCache.set(cacheKey, { data: emptyPayload, timestamp: now });
       return NextResponse.json(emptyPayload, {
         headers: {
-          "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       });
     }
@@ -287,9 +287,7 @@ export async function GET(
 
     return NextResponse.json(resultPayload, {
       headers: {
-        "Cache-Control": isAuthRequest
-          ? "no-store, no-cache, must-revalidate"
-          : "public, s-maxage=300, stale-while-revalidate=600",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
   } catch (err) {

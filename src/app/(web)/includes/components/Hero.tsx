@@ -241,14 +241,14 @@ export default function Hero() {
                 <button
                   type="button"
                   onClick={() => setOpenPracticeDropdown((prev) => !prev)}
-                  className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3 rounded-full text-xs sm:text-sm md:text-base font-semibold text-[#0c1929] bg-coral hover:bg-coral-hover transition-colors whitespace-nowrap cursor-pointer shadow-sm select-none"
+                  className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3 rounded-full text-xs sm:text-sm md:text-base font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] transition-all duration-200 whitespace-nowrap cursor-pointer shadow-2xs select-none active:scale-[0.98]"
                   aria-expanded={openPracticeDropdown}
                   aria-haspopup="true"
                 >
-                  <BookOpen className="w-3.5 h-3.5 md:w-5 md:h-5" strokeWidth={2} />
+                  <BookOpen className="w-3.5 h-3.5 md:w-5 md:h-5 text-[#ea580c] dark:text-[#ff8a65]" strokeWidth={2} />
                   <span>Start Free Practice</span>
                   <ChevronDown
-                    className={`w-3.5 h-3.5 md:w-4 md:h-4 transition-transform duration-200 ${
+                    className={`w-3.5 h-3.5 md:w-4 md:h-4 text-[#ea580c] dark:text-[#ff8a65] transition-transform duration-200 ${
                       openPracticeDropdown ? "rotate-180" : ""
                     }`}
                     strokeWidth={2.5}
@@ -295,14 +295,14 @@ export default function Hero() {
                   <button
                     type="button"
                     onClick={() => setOpenProgressDropdown((prev) => !prev)}
-                    className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3 rounded-full text-xs sm:text-sm md:text-base font-semibold text-[#0c1929] bg-sage hover:bg-sage-light transition-colors whitespace-nowrap cursor-pointer shadow-sm select-none"
+                    className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3 rounded-full text-xs sm:text-sm md:text-base font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 transition-all duration-200 whitespace-nowrap cursor-pointer shadow-2xs select-none active:scale-[0.98]"
                     aria-expanded={openProgressDropdown}
                     aria-haspopup="true"
                   >
-                    <BarChart3 className="w-3.5 h-3.5 md:w-5 md:h-5 text-emerald-800 dark:text-emerald-950" strokeWidth={2.2} />
+                    <BarChart3 className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-700 dark:text-blue-300" strokeWidth={2.2} />
                     <span>Track My Progress</span>
                     <ChevronDown
-                      className={`w-3.5 h-3.5 md:w-4 md:h-4 transition-transform duration-200 ${
+                      className={`w-3.5 h-3.5 md:w-4 md:h-4 text-blue-700 dark:text-blue-300 transition-transform duration-200 ${
                         openProgressDropdown ? "rotate-180" : ""
                       }`}
                       strokeWidth={2.5}
@@ -311,9 +311,9 @@ export default function Hero() {
                 ) : (
                   <Link
                     href="/auth/login?redirect=/dashboards/rn-nursing/vista/stats/progress"
-                    className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3 rounded-full text-xs sm:text-sm md:text-base font-semibold text-[#0c1929] bg-sage hover:bg-sage-light transition-colors whitespace-nowrap shadow-sm select-none"
+                    className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 sm:px-6 sm:py-3 md:px-8 md:py-3 rounded-full text-xs sm:text-sm md:text-base font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 transition-all duration-200 whitespace-nowrap shadow-2xs select-none active:scale-[0.98]"
                   >
-                    <BarChart3 className="w-3.5 h-3.5 md:w-5 md:h-5 text-emerald-800 dark:text-emerald-950" strokeWidth={2.2} />
+                    <BarChart3 className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-700 dark:text-blue-300" strokeWidth={2.2} />
                     <span>Track My Progress</span>
                   </Link>
                 )}
@@ -494,18 +494,18 @@ export default function Hero() {
                         <Link
                           key={link.href + link.label}
                           href={link.href}
-                          className="flex items-center justify-between w-full px-2.5 sm:px-3 xl:px-3.5 py-1 sm:py-1.5 rounded-lg bg-[#2FD9C4] hover:bg-[#28c4b0] border border-[#2FD9C4]/40 shadow-sm transition-all group active:scale-[0.99]"
+                          className="flex items-center justify-between w-full px-2.5 sm:px-3 xl:px-3.5 py-1.5 sm:py-2 rounded-lg border border-[#2FD9C4]/80 dark:border-[#2FD9C4]/60 bg-[#2FD9C4]/15 dark:bg-[#2FD9C4]/20 hover:bg-[#2FD9C4]/25 dark:hover:bg-[#2FD9C4]/30 text-teal-950 dark:text-teal-100 shadow-2xs transition-all duration-200 group active:scale-[0.99] cursor-pointer"
                         >
                           <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                            <span className="inline-flex items-center justify-center w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-md bg-[#08111F]/15 text-[#08111F] shrink-0">
-                              <LinkIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#08111F]" strokeWidth={2} />
+                            <span className="inline-flex items-center justify-center w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-md bg-[#2FD9C4]/25 dark:bg-[#2FD9C4]/30 text-teal-900 dark:text-[#2FD9C4] shrink-0">
+                              <LinkIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-teal-900 dark:text-[#2FD9C4]" strokeWidth={2} />
                             </span>
-                            <span className="text-xs sm:text-[12px] font-semibold text-[#08111F] leading-none tracking-tight truncate">
+                            <span className="text-xs sm:text-[12px] font-semibold text-teal-950 dark:text-teal-100 group-hover:text-teal-800 dark:group-hover:text-white leading-none tracking-tight truncate transition-colors">
                               {link.label}
                             </span>
                           </div>
                           <ChevronRight
-                            className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#08111F]/75 group-hover:text-[#08111F] group-hover:translate-x-0.5 transition-all shrink-0 ml-1"
+                            className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-teal-700/80 dark:text-[#2FD9C4]/80 group-hover:text-teal-950 dark:group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0 ml-1"
                             strokeWidth={2}
                           />
                         </Link>

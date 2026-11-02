@@ -59,7 +59,8 @@ interface CoursesCacheEntry {
   timestamp: number;
 }
 const coursesResponseCache = new Map<string, CoursesCacheEntry>();
-const CACHE_TTL_MS = 5 * 60 * 1000;
+// Zero-latency: avoid stale 5-minute cache so admin dashboard changes (add/delete/edit) reflect immediately
+const CACHE_TTL_MS = 0;
 
 function toNumber(value: unknown, fallback = 0): number {
   if (typeof value === "number") return value;
@@ -85,7 +86,7 @@ async function fetchBackendSubjects(courseId: number | string, sessionHeaders: S
   try {
     const res = await fetch(
       `${getBackendBaseUrl()}/api/castoline/strata/learning/subjects/list/distinct?${query.toString()}`,
-      { method: "GET", headers: { "Content-Type": "application/json", ...sessionHeaders }, next: { revalidate: 300 } }
+      { method: "GET", headers: { "Content-Type": "application/json", ...sessionHeaders }, cache: "no-store" }
     );
     if (!res.ok) return [];
     const raw = (await res.json()) as Record<string, unknown>;
@@ -111,7 +112,7 @@ async function fetchBackendSubjectUnits(subjectId: number | string, sessionHeade
   try {
     const res = await fetch(
       `${getBackendBaseUrl()}/api/castoline/strata/learning/units/list/distinct?${query.toString()}`,
-      { method: "GET", headers: { "Content-Type": "application/json", ...sessionHeaders }, next: { revalidate: 300 } }
+      { method: "GET", headers: { "Content-Type": "application/json", ...sessionHeaders }, cache: "no-store" }
     );
     if (!res.ok) return [];
     const raw = (await res.json()) as Record<string, unknown>;
@@ -137,7 +138,7 @@ async function fetchBackendSubjectExams(subjectId: number | string, sessionHeade
   try {
     const res = await fetch(
       `${getBackendBaseUrl()}/api/castoline/strata/assessment/exams/list/nominal?${query.toString()}`,
-      { method: "GET", headers: { "Content-Type": "application/json", ...sessionHeaders }, next: { revalidate: 300 } }
+      { method: "GET", headers: { "Content-Type": "application/json", ...sessionHeaders }, cache: "no-store" }
     );
     if (!res.ok) return [];
     const raw = (await res.json()) as Record<string, unknown>;
@@ -189,7 +190,7 @@ async function fetchBackendPrograms(sessionHeaders: SessionHeaders = {}): Promis
   try {
     const res = await fetch(
       `${getBackendBaseUrl()}/api/castoline/strata/learning/programs/list/absolute?${query.toString()}`,
-      { method: "GET", headers: { "Content-Type": "application/json", ...sessionHeaders }, next: { revalidate: 300 } }
+      { method: "GET", headers: { "Content-Type": "application/json", ...sessionHeaders }, cache: "no-store" }
     );
     if (!res.ok) {
       console.error(`❌ [/api/courses] programs fetch failed: HTTP ${res.status}`);
@@ -216,7 +217,7 @@ async function fetchBackendProgramCourses(programId: string, sessionHeaders: Ses
   try {
     const res = await fetch(
       `${getBackendBaseUrl()}/api/castoline/strata/learning/courses/list/distinct?${query.toString()}`,
-      { method: "GET", headers: { "Content-Type": "application/json", ...sessionHeaders }, next: { revalidate: 300 } }
+      { method: "GET", headers: { "Content-Type": "application/json", ...sessionHeaders }, cache: "no-store" }
     );
     if (!res.ok) {
       console.error(`❌ [/api/courses] distinct courses fetch failed: HTTP ${res.status}`);
@@ -260,12 +261,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
   programId: string,
   sessionHeaders: SessionHeaders = {}
 ): Promise<DashboardCourse[]> {
-  const placeholders = COURSE_PLACEHOLDERS.filter((c) => c.examType === examType);
-  const fallbackAll = (): DashboardCourse[] =>
-    placeholders.map((p) => ({
-      ...p,
-      subCategories: p.subCategories ? p.subCategories.map((sc) => ({ ...sc })) : [],
-    }));
+  const fallbackAll = (): DashboardCourse[] => [];
 
   const courses = await fetchBackendProgramCourses(programId, sessionHeaders);
   const standalone = courses.find((c) => /standalone/i.test(c.name ?? ""));
@@ -282,12 +278,6 @@ async function fetchBackendStandaloneSubjectsAsCourses(
   const subjectCards: DashboardCourse[] = await Promise.all(
     subjects.map(async (s, i) => {
       const title = s.name?.trim() || `Course ${i + 1}`;
-      const tNorm = clean(title);
-
-      const matchedPlaceholder = placeholders.find((p) => {
-        const pNorm = clean(p.title);
-        return pNorm === tNorm || pNorm.includes(tNorm) || tNorm.includes(pNorm);
-      });
 
       let subCategories: DashboardSubCategory[] = [];
       if (toNumber(s.unitsCount, 0) > 0) {
@@ -295,15 +285,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         subCategories = units.map((u, ui) => {
           const unitTitle = u.name?.trim() || `Unit ${ui + 1}`;
           const rawCount = toNumber(u.questionsCount ?? u.examsCount, 0);
-
-          const matchedSub = matchedPlaceholder?.subCategories?.find((sc) => {
-            const scNorm = clean(sc.title);
-            const uNorm = clean(unitTitle);
-            return scNorm === uNorm || scNorm.includes(uNorm) || uNorm.includes(scNorm);
-          });
-
-          // Follow the old site percentage: practice custom tests give ~33.33% (1/3) of the pool
-          const questionCount = matchedSub?.questionCount ?? Math.max(1, Math.floor(rawCount / 3));
+          const questionCount = Math.max(1, Math.floor(rawCount / 3));
 
           return {
             id: String(u.id ?? u.guidId ?? unitTitle),
@@ -322,13 +304,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
           const rawExams = await fetchBackendSubjectExams(subjectIdentifier, sessionHeaders);
           subCategories = rawExams.map((e, index) => {
             const rawCount = e.questionCount;
-            const matchedSub = matchedPlaceholder?.subCategories?.find((sc) => {
-              const scNorm = clean(sc.title);
-              const eNorm = clean(e.title);
-              return scNorm === eNorm || scNorm.includes(eNorm) || eNorm.includes(scNorm);
-            });
-            // Follow the old site percentage: practice custom tests give ~33.33% (1/3) of the pool
-            const questionCount = matchedSub?.questionCount ?? Math.max(1, Math.floor(rawCount / 3));
+            const questionCount = Math.max(1, Math.floor(rawCount / 3));
             return {
               ...e,
               questionCount,
@@ -338,26 +314,12 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         }
       }
 
-      // Enrich empty/0-count subcategories from reference catalogue only as last resort
-      if (
-        subCategories.length === 0 &&
-        matchedPlaceholder &&
-        matchedPlaceholder.subCategories &&
-        matchedPlaceholder.subCategories.length > 0
-      ) {
-        subCategories = matchedPlaceholder.subCategories.map((sc) => ({ ...sc }));
-      }
-
       const calculatedQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
-      const questionCount =
-        calculatedQuestions > 0 ? calculatedQuestions : (matchedPlaceholder?.questionCount ?? 0);
-      const examCount = subCategories.length > 0 ? subCategories.length : (matchedPlaceholder?.examCount ?? 0);
-      const easyPct = matchedPlaceholder?.easyPct ?? 0;
-      const mediumPct = matchedPlaceholder?.mediumPct ?? 0;
-      const hardPct = matchedPlaceholder?.hardPct ?? 0;
+      const questionCount = calculatedQuestions;
+      const examCount = subCategories.length;
 
       const card: DashboardCourse = {
-        id: toNumber(s.id, matchedPlaceholder?.id ?? i + 1),
+        id: toNumber(s.id, i + 1),
         guidId: s.guidId,
         backendSubjectGuid: s.guidId,
         examType,
@@ -366,9 +328,9 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         questionCount,
         examCount,
         doneCount: 0,
-        easyPct,
-        mediumPct,
-        hardPct,
+        easyPct: 0,
+        mediumPct: 0,
+        hardPct: 0,
         order: i + 1,
         subCategories,
       };
@@ -389,34 +351,18 @@ async function fetchBackendStandaloneSubjectsAsCourses(
       clientNeedCards = await Promise.all(
         clientNeedSubjects.map(async (s, i) => {
           const title = s.name?.trim() || `Client Need ${i + 1}`;
-          const tNorm = clean(title);
-
-          const matchedPlaceholder = placeholders.find((p) => {
-            const pNorm = clean(p.title);
-            return pNorm === tNorm || pNorm.includes(tNorm) || tNorm.includes(pNorm);
-          });
-
           const rawExams = await fetchBackendSubjectExams(s.guidId ?? s.id ?? "", sessionHeaders);
-          let subCategories: DashboardSubCategory[] = rawExams.map((e, index) => ({
+          const subCategories: DashboardSubCategory[] = rawExams.map((e, index) => ({
             ...e,
             order: index + 1,
           }));
 
-          if (
-            subCategories.length === 0 &&
-            matchedPlaceholder?.subCategories &&
-            matchedPlaceholder.subCategories.length > 0
-          ) {
-            subCategories = matchedPlaceholder.subCategories.map((sc) => ({ ...sc }));
-          }
-
           const calculatedQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
-          const questionCount =
-            calculatedQuestions > 0 ? calculatedQuestions : (matchedPlaceholder?.questionCount ?? 0);
-          const examCount = subCategories.length > 0 ? subCategories.length : (matchedPlaceholder?.examCount ?? 1);
+          const questionCount = calculatedQuestions;
+          const examCount = subCategories.length;
 
           return {
-            id: toNumber(s.id, matchedPlaceholder?.id ?? 100 + i),
+            id: toNumber(s.id, 100 + i),
             guidId: s.guidId,
             backendSubjectGuid: s.guidId,
             examType,
@@ -425,9 +371,9 @@ async function fetchBackendStandaloneSubjectsAsCourses(
             questionCount,
             examCount,
             doneCount: 0,
-            easyPct: matchedPlaceholder?.easyPct ?? 30,
-            mediumPct: matchedPlaceholder?.mediumPct ?? 40,
-            hardPct: matchedPlaceholder?.hardPct ?? 30,
+            easyPct: 0,
+            mediumPct: 0,
+            hardPct: 0,
             order: subjectCards.length + i + 1,
             subCategories,
           };
@@ -436,26 +382,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
     }
   }
 
-  // Include clientNeed categories from reference catalogue if backend returned none
-  if (clientNeedCards.length === 0) {
-    clientNeedCards = placeholders
-      .filter((p) => p.category === "clientNeed")
-      .map((p) => ({
-        id: p.id,
-        examType,
-        title: p.title,
-        category: "clientNeed" as const,
-        questionCount: p.questionCount,
-        examCount: p.examCount,
-        doneCount: 0,
-        easyPct: p.easyPct,
-        mediumPct: p.mediumPct,
-        hardPct: p.hardPct,
-        order: p.order,
-        subCategories: (p.subCategories || []).map((sc) => ({ ...sc })),
-      }));
-  }
-
+  // Pure dynamic data: if no clientNeed categories exist in backend, return empty list (no hardcoded fallbacks)
   return [...subjectCards, ...clientNeedCards];
 }
 
@@ -535,12 +462,14 @@ async function fetchBackendCourses(examType: CourseExamType, sessionHeaders: Ses
     .filter(Boolean);
 
   if (programIds.length === 0) {
-    const placeholders = COURSE_PLACEHOLDERS.filter((c) => c.examType === examType);
-    if (placeholders.length > 0) {
-      return placeholders.map((p) => ({
-        ...p,
-        subCategories: p.subCategories ? p.subCategories.map((sc) => ({ ...sc })) : [],
-      }));
+    if (examType !== "nclex-rn" && examType !== "nclex-pn") {
+      const placeholders = COURSE_PLACEHOLDERS.filter((c) => c.examType === examType);
+      if (placeholders.length > 0) {
+        return placeholders.map((p) => ({
+          ...p,
+          subCategories: p.subCategories ? p.subCategories.map((sc) => ({ ...sc })) : [],
+        }));
+      }
     }
     return [];
   }
@@ -571,7 +500,7 @@ export async function GET(req: NextRequest) {
   if (cachedResponse && now - cachedResponse.timestamp < CACHE_TTL_MS) {
     return NextResponse.json(cachedResponse.data, {
       headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
   }
@@ -596,13 +525,15 @@ export async function GET(req: NextRequest) {
   }
 
   if (courses.length === 0) {
-    const placeholders = COURSE_PLACEHOLDERS.filter((c) => c.examType === examType);
-    if (placeholders.length > 0) {
-      console.log(`⚠️ [/api/courses] Falling back to COURSE_PLACEHOLDERS for ${examType}`);
-      courses = placeholders.map((p) => ({
-        ...p,
-        subCategories: p.subCategories ? p.subCategories.map((sc) => ({ ...sc })) : [],
-      }));
+    if (examType !== "nclex-rn" && examType !== "nclex-pn") {
+      const placeholders = COURSE_PLACEHOLDERS.filter((c) => c.examType === examType);
+      if (placeholders.length > 0) {
+        console.log(`⚠️ [/api/courses] Falling back to COURSE_PLACEHOLDERS for ${examType}`);
+        courses = placeholders.map((p) => ({
+          ...p,
+          subCategories: p.subCategories ? p.subCategories.map((sc) => ({ ...sc })) : [],
+        }));
+      }
     }
   }
 
@@ -642,7 +573,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json(resultPayload, {
     headers: {
-      "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      "Cache-Control": "no-store, no-cache, must-revalidate",
     },
   });
 }

@@ -128,7 +128,7 @@ async function fetchBackendSubjects(examType: string, req: NextRequest): Promise
   const res = await fetch(`${subjectsEndpoint()}?${query.toString()}`, {
     method: "GET",
     headers,
-    next: { revalidate: 300 },
+    cache: "no-store",
   });
 
   if (!res.ok) {
@@ -188,7 +188,7 @@ async function fetchBackendSubjects(examType: string, req: NextRequest): Promise
 }
 
 const examSubjectsCache = new Map<string, { subjects: BackendSubject[]; timestamp: number }>();
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 0;
 
 export async function GET(
   _req: NextRequest,
@@ -226,7 +226,7 @@ export async function GET(
       { examType, segment, subjects: cached.subjects },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       }
     );
@@ -240,7 +240,7 @@ export async function GET(
       { examType, segment, subjects },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       }
     );

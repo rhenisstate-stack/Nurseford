@@ -7,7 +7,7 @@ import type {
     StrataSessionQuestionFull,
     StrataSessionCorrectAnswer,
 } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
-import { Star, Pin, Bookmark, Flag, X, MessageSquare, Lightbulb }
+import { Star, Pin, Bookmark, Flag, X, MessageSquare, Lightbulb, CheckCircle2 }
     from "lucide-react";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
 import { ExamCorrectAnswerView } from "./ExamCorrectAnswerView";
@@ -639,6 +639,26 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
         };
     }, [handleStar, handlePin, handleBookmark]);
 
+    // Track whether this is the final question / exam limit
+    const [isLastQuestion, setIsLastQuestion] = useState(false);
+
+    useEffect(() => {
+        const onState = (e: Event) => {
+            const detail = (e as CustomEvent<{ currentIndex?: number; total?: number; isLast?: boolean }>).detail;
+            if (detail) {
+                if (detail.isLast !== undefined) {
+                    setIsLastQuestion(Boolean(detail.isLast));
+                } else if (typeof detail.currentIndex === "number" && typeof detail.total === "number" && detail.total > 0) {
+                    setIsLastQuestion(detail.currentIndex >= detail.total - 1);
+                }
+            }
+        };
+
+        window.addEventListener("exam:state", onState as EventListener);
+        window.dispatchEvent(new CustomEvent("exam:state:request"));
+        return () => window.removeEventListener("exam:state", onState as EventListener);
+    }, []);
+
     return (
 
         // BORDER LINE
@@ -745,14 +765,25 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
                     )}
                 </div>
 
-                {/* 3. Right: Next */}
-                <button
-                    type="button"
-                    onClick={() => window.dispatchEvent(new CustomEvent("exam:next"))}
-                    className="order-3 px-2.5 sm:px-4 py-1.5 rounded-md border border-blue-500/80 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 font-semibold text-xs sm:text-sm transition flex items-center gap-1 cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
-                >
-                    Next →
-                </button>
+                {/* 3. Right: Next / Submit Exam */}
+                {isLastQuestion ? (
+                    <button
+                        type="button"
+                        onClick={() => window.dispatchEvent(new CustomEvent("exam:submit"))}
+                        className="order-3 px-3 sm:px-5 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
+                    >
+                        <span>Submit Exam</span>
+                        <CheckCircle2 size={16} />
+                    </button>
+                ) : (
+                    <button
+                        type="button"
+                        onClick={() => window.dispatchEvent(new CustomEvent("exam:next"))}
+                        className="order-3 px-2.5 sm:px-4 py-1.5 rounded-md border border-blue-500/80 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 font-semibold text-xs sm:text-sm transition flex items-center gap-1 cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
+                    >
+                        Next →
+                    </button>
+                )}
             </div>
 
             {/* ── HINT BOX (Clue 💡 banner matching reference) ── */}

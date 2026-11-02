@@ -1002,7 +1002,7 @@ export function NclexActionRow({
 
         <button
           onClick={() => onAction("custom")}
-          className="mt-auto w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs bg-[#2FD9C4] text-[#08111F] hover:brightness-105 active:scale-[0.98] transition-all shadow-xs"
+          className="mt-auto w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs border border-teal-500/80 text-teal-700 dark:text-teal-300 bg-teal-50/50 dark:bg-teal-950/30 hover:bg-teal-100/60 dark:hover:bg-teal-900/40 active:scale-[0.98] transition-all shadow-2xs"
         >
           + Create Custom Test
         </button>
@@ -1030,7 +1030,7 @@ export function NclexActionRow({
 
         <button
           onClick={() => onAction("practice")}
-          className="mt-auto w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs bg-[#8B5CF6] text-white hover:brightness-105 active:scale-[0.98] transition-all shadow-xs"
+          className="mt-auto w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs border border-purple-500/80 text-purple-700 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100/60 dark:hover:bg-purple-900/40 active:scale-[0.98] transition-all shadow-2xs"
         >
           Start Practice
           <ChevronRight className="w-3.5 h-3.5" />
@@ -1051,7 +1051,7 @@ export function NclexActionRow({
           </div>
           <button
             onClick={() => onAction("readiness")}
-            className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-white text-purple-700 dark:bg-white dark:text-purple-800 border border-purple-200 hover:brightness-105 active:scale-[0.98] transition-all shadow-xs"
+            className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold border border-purple-500/80 text-purple-700 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100/60 dark:hover:bg-purple-900/40 active:scale-[0.98] transition-all shadow-2xs"
           >
             Start Now
             <ChevronRight className="w-3.5 h-3.5" />
@@ -1080,7 +1080,7 @@ export function NclexActionRow({
 
           <button
             onClick={() => onAction("readiness")}
-            className="mt-auto w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs bg-[#F5B843] text-[#08111F] hover:brightness-105 active:scale-[0.98] transition-all shadow-xs"
+            className="mt-auto w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs border border-amber-500/80 text-amber-700 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/60 dark:hover:bg-amber-900/40 active:scale-[0.98] transition-all shadow-2xs"
           >
             Start Now
             <ChevronRight className="w-3.5 h-3.5" />
@@ -1128,8 +1128,8 @@ export function NclexStudyByCourseBanner({
             onClick={() => onViewChange("subject")}
             className={`flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 ${
               view === "subject"
-                ? "bg-[#3B82F6] text-white shadow-xs"
-                : "text-slate-300 hover:text-white"
+                ? "border border-blue-500/80 text-blue-300 bg-blue-500/20 shadow-2xs"
+                : "border border-transparent text-slate-300 hover:text-white hover:bg-white/5"
             }`}
           >
             <span>📖</span> Study Course / Subject
@@ -1138,8 +1138,8 @@ export function NclexStudyByCourseBanner({
             onClick={() => onViewChange("clientNeed")}
             className={`flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 ${
               view === "clientNeed"
-                ? "bg-[#3B82F6] text-white shadow-xs"
-                : "text-slate-300 hover:text-white"
+                ? "border border-blue-500/80 text-blue-300 bg-blue-500/20 shadow-2xs"
+                : "border border-transparent text-slate-300 hover:text-white hover:bg-white/5"
             }`}
           >
             <span>👥</span> Client Need
@@ -1257,7 +1257,7 @@ const CourseCard = ({
         <button
           type="button"
           onClick={() => onCreateCustomTest(course)}
-          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-2.5 rounded-lg font-bold text-xs sm:text-[13px] bg-[#1877F2] hover:bg-[#166fe5] text-white hover:brightness-110 active:scale-[0.98] transition-all duration-200 shadow-xs cursor-pointer"
+          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-2.5 rounded-lg font-bold text-xs sm:text-[13px] border border-blue-500/80 text-blue-700 dark:text-blue-300 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 active:scale-[0.98] transition-all duration-200 shadow-2xs cursor-pointer"
         >
           <Play className="w-3.5 h-3.5 fill-current" />
           <span>Create Custom Test</span>
