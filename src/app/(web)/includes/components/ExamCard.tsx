@@ -15,31 +15,31 @@ const accent = {
     bar: "bg-coral",
     badge: "border-coral/20 bg-coral/10 text-coral",
     text: "text-coral",
-    btn: "bg-gradient-to-r from-coral to-coral-hover",
+    btn: "border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] shadow-2xs active:scale-[0.98]",
   },
   purple: {
     bar: "bg-purple",
     badge: "border-purple/20 bg-purple/10 text-purple",
     text: "text-purple",
-    btn: "bg-gradient-to-r from-purple to-purple-light",
+    btn: "border border-purple-500/80 dark:border-purple-400/60 bg-purple-500/15 dark:bg-purple-500/20 hover:bg-purple-500/25 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-300 shadow-2xs active:scale-[0.98]",
   },
   green: {
     bar: "bg-green",
     badge: "border-green/20 bg-green/10 text-green",
     text: "text-green",
-    btn: "bg-gradient-to-r from-green to-green-light",
+    btn: "border border-emerald-500/80 dark:border-emerald-400/60 bg-emerald-500/15 dark:bg-emerald-500/20 hover:bg-emerald-500/25 dark:hover:bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 shadow-2xs active:scale-[0.98]",
   },
   blue: {
     bar: "bg-sage",
     badge: "border-sage/20 bg-sage/10 text-sage",
     text: "text-sage",
-    btn: "bg-gradient-to-r from-sage to-sage-light",
+    btn: "border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 shadow-2xs active:scale-[0.98]",
   },
   teal: {
     bar: "bg-teal",
     badge: "border-teal/20 bg-teal/10 text-teal",
     text: "text-teal",
-    btn: "bg-gradient-to-r from-teal to-teal-light",
+    btn: "border border-[#2FD9C4]/80 dark:border-[#2FD9C4]/60 bg-[#2FD9C4]/15 dark:bg-[#2FD9C4]/20 hover:bg-[#2FD9C4]/25 dark:hover:bg-[#2FD9C4]/30 text-teal-800 dark:text-[#2FD9C4] shadow-2xs active:scale-[0.98]",
   },
 };
 
@@ -104,7 +104,7 @@ export default function ExamCard({
       </ul>
       <Link
         href={href}
-        className={`inline-flex items-center justify-center px-7 py-3 rounded-full text-sm font-semibold text-[#0c1929] ${s.btn} transition-colors self-start`}
+        className={`inline-flex items-center justify-center px-7 py-3 rounded-full text-sm font-semibold ${s.btn} transition-all duration-200 self-start`}
       >
         {ctaLabel}
       </Link>

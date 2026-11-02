@@ -69,7 +69,7 @@ export default function ContactForm() {
             setSubmitted(false);
             setFormData(initialFormData);
           }}
-          className="mt-6 inline-flex items-center justify-center px-7 py-3 rounded-full text-sm font-semibold text-[#0c1929] bg-coral hover:bg-coral-hover transition-colors"
+          className="mt-6 inline-flex items-center justify-center px-7 py-3 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] shadow-2xs transition-all duration-200 active:scale-[0.98]"
         >
           Send Another Message
         </button>
@@ -242,7 +242,7 @@ export default function ContactForm() {
 
       <button
         type="submit"
-        className="w-full inline-flex items-center justify-center px-7 py-3 rounded-full text-sm font-semibold text-[#0c1929] bg-coral hover:bg-coral-hover transition-colors"
+        className="w-full inline-flex items-center justify-center px-7 py-3 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] shadow-2xs transition-all duration-200 active:scale-[0.98]"
       >
         Send Message
       </button>

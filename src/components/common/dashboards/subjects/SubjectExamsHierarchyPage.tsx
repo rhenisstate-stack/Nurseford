@@ -496,7 +496,7 @@ export function SubjectExamsHierarchyPage({
               <button
                 type="button"
                 onClick={() => setIsBuilderOpen(true)}
-                className="sm:hidden shrink-0 py-2 px-2.5 rounded-lg text-xs font-semibold bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                className="sm:hidden shrink-0 py-2 px-2.5 rounded-lg text-xs font-semibold border border-purple-500/80 dark:border-purple-400/60 bg-purple-500/15 dark:bg-purple-500/20 hover:bg-purple-500/25 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-300 transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-[0.98]"
               >
                 <Play className="w-3.5 h-3.5 fill-current shrink-0" />
                 <span>Build Custom Exam</span>
@@ -518,7 +518,7 @@ export function SubjectExamsHierarchyPage({
             <button
               type="button"
               onClick={() => setIsBuilderOpen(true)}
-              className="hidden sm:flex w-full py-2 px-3 rounded-lg text-xs font-semibold bg-[#8B5CF6] hover:bg-[#7C3AED] text-white transition-all shadow-xs items-center justify-center gap-1.5 cursor-pointer mt-0.5"
+              className="hidden sm:flex w-full py-2 px-3 rounded-lg text-xs font-semibold border border-purple-500/80 dark:border-purple-400/60 bg-purple-500/15 dark:bg-purple-500/20 hover:bg-purple-500/25 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-300 transition-all shadow-2xs items-center justify-center gap-1.5 cursor-pointer mt-0.5 active:scale-[0.98]"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               Build Custom Exam
@@ -625,7 +625,7 @@ export function SubjectExamsHierarchyPage({
                       <button
                         type="button"
                         onClick={() => startExam(exam, "Practice")}
-                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-slate-950 dark:text-slate-950 bg-[#00D0FF] hover:bg-[#00BCE6] transition-colors shadow-xs text-center border border-white/70 dark:border-white/30 truncate"
+                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-semibold border border-cyan-500/80 dark:border-cyan-400/60 bg-cyan-500/15 dark:bg-cyan-500/20 hover:bg-cyan-500/25 dark:hover:bg-cyan-500/30 text-cyan-800 dark:text-cyan-300 transition-all shadow-2xs text-center truncate active:scale-[0.98]"
                       >
                         Practice Mode
                       </button>
@@ -634,7 +634,7 @@ export function SubjectExamsHierarchyPage({
                       <button
                         type="button"
                         onClick={() => startExam(exam, "Review")}
-                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-white bg-[#212529] hover:bg-[#15181B] transition-colors shadow-xs text-center border border-white/50 dark:border-white/30 truncate"
+                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-semibold border border-slate-500/80 dark:border-slate-400/60 bg-slate-500/15 dark:bg-slate-500/20 hover:bg-slate-500/25 dark:hover:bg-slate-500/30 text-slate-800 dark:text-slate-200 transition-all shadow-2xs text-center truncate active:scale-[0.98]"
                       >
                         Review Mode
                       </button>
@@ -643,7 +643,7 @@ export function SubjectExamsHierarchyPage({
                       <button
                         type="button"
                         onClick={() => startExam(exam, "Exam")}
-                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-white bg-[#782828] hover:bg-[#682020] transition-colors shadow-xs text-center border border-white/50 dark:border-white/30 truncate"
+                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-semibold border border-rose-500/80 dark:border-rose-400/60 bg-rose-500/15 dark:bg-rose-500/20 hover:bg-rose-500/25 dark:hover:bg-rose-500/30 text-rose-800 dark:text-rose-300 transition-all shadow-2xs text-center truncate active:scale-[0.98]"
                       >
                         Exam Mode
                       </button>

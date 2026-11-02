@@ -186,7 +186,7 @@ export function SubjectExamsPopup({
                     </span>
                   </div>
                 </div>
-                <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg bg-[#2FD9C4] text-[#08111F] group-hover:brightness-110 transition-all">
+                <span className="shrink-0 inline-flex items-center justify-center w-8 h-8 rounded-lg border border-[#2FD9C4]/80 dark:border-[#2FD9C4]/60 bg-[#2FD9C4]/15 dark:bg-[#2FD9C4]/20 text-teal-800 dark:text-[#2FD9C4] shadow-2xs group-hover:scale-105 transition-all">
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </span>
               </button>

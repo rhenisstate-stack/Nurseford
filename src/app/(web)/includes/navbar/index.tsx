@@ -227,7 +227,7 @@ export default function Navbar() {
 
               <Link
                 href="/dashboards/rn-nursing"
-                className="px-5 py-2 rounded-full text-sm font-semibold text-[#0c1929] bg-coral hover:bg-coral-hover transition-colors"
+                className="px-5 py-2 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] transition-all duration-200 shadow-2xs active:scale-[0.98]"
               >
                 Dive In
               </Link>
@@ -236,13 +236,13 @@ export default function Navbar() {
             <>
               <Link
                 href="/auth/login"
-                className="px-5 py-2 rounded-full text-sm font-medium text-navy border border-border-light hover:bg-paper-dim transition-colors"
+                className="px-5 py-2 rounded-full text-sm font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 transition-all duration-200 shadow-2xs active:scale-[0.98]"
               >
                 Sign In
               </Link>
               <Link
                 href="/auth/register"
-                className="px-5 py-2 rounded-full text-sm font-semibold text-[#0c1929] bg-coral hover:bg-coral-hover transition-colors"
+                className="px-5 py-2 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] transition-all duration-200 shadow-2xs active:scale-[0.98]"
               >
                 Register
               </Link>
@@ -317,7 +317,7 @@ export default function Navbar() {
                   <Link
                     href="/dashboards/rn-nursing"
                     onClick={() => setMobileOpen(false)}
-                    className="px-5 py-2.5 rounded-full text-sm font-semibold text-[#0c1929] bg-coral text-center hover:bg-coral-hover transition-colors"
+                    className="px-5 py-2.5 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] text-center shadow-2xs transition-all duration-200 active:scale-[0.98]"
                   >
                     Dive In
                   </Link>
@@ -327,14 +327,14 @@ export default function Navbar() {
                   <Link
                     href="/auth/login"
                     onClick={() => setMobileOpen(false)}
-                    className="px-5 py-2.5 rounded-full text-sm font-medium text-navy border border-border-light text-center"
+                    className="px-5 py-2.5 rounded-full text-sm font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 text-center shadow-2xs transition-all duration-200 active:scale-[0.98]"
                   >
                     Sign In
                   </Link>
                   <Link
                     href="/auth/register"
                     onClick={() => setMobileOpen(false)}
-                    className="px-5 py-2.5 rounded-full text-sm font-semibold text-[#0c1929] bg-coral text-center"
+                    className="px-5 py-2.5 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] text-center shadow-2xs transition-all duration-200 active:scale-[0.98]"
                   >
                     Register
                   </Link>

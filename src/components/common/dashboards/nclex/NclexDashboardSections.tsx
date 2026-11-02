@@ -950,7 +950,7 @@ export function NclexCustomTestPopup({
             <button
               onClick={handleStart}
               disabled={selectedExamsCount === 0 || selectedQs === 0}
-              className="flex-1 py-2.5 rounded-xl font-bold text-xs bg-gradient-to-r from-[#1877F2] to-[#2FD9C4] text-white hover:brightness-110 active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shadow-md cursor-pointer flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-xl font-bold text-xs border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>Submit & Start Exam</span>

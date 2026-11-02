@@ -72,7 +72,7 @@ export default function TermsPage() {
             </div>
             <Link
               href="/pages/contact-us"
-              className="inline-flex items-center justify-center px-6 py-2.5 rounded-full text-sm font-semibold text-[#0c1929] bg-coral hover:bg-coral-hover transition-colors shrink-0"
+              className="inline-flex items-center justify-center px-6 py-2.5 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] shadow-2xs transition-all duration-200 active:scale-[0.98] shrink-0"
             >
               Contact Us
             </Link>

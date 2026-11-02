@@ -450,7 +450,7 @@ export default function Hero() {
                     <Link
                       href="/dashboards/rn-nursing/vista/stats/progress"
                       onClick={() => setOpenProgressDropdown(false)}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-coral hover:bg-coral-hover text-[#0c1929] text-xs font-bold transition-colors cursor-pointer"
+                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] text-xs font-bold transition-all duration-200 cursor-pointer shadow-2xs active:scale-[0.98]"
                     >
                       <span>View Full Progress Dashboard</span>
                       <ChevronRight className="w-3.5 h-3.5" />

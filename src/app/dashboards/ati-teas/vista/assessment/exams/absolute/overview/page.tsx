@@ -344,7 +344,7 @@ export default function SubCategoriesPage() {
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs uppercase font-bold tracking-wide">Sorted By</span>
               {sortColumn ? (
-                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-coral text-white text-xs font-semibold shadow-md">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full border border-[#ff6b35]/80 bg-[#ff6b35]/20 text-[#ea580c] dark:text-[#ff8a65] text-xs font-semibold shadow-2xs">
                   {String(sortColumn).toUpperCase()}
                   <span className="text-[10px]">{sortDirection === "asc" ? "▲" : "▼"}</span>
                 </div>
@@ -585,7 +585,7 @@ export default function SubCategoriesPage() {
                   key={p}
                   onClick={() => setCurrentPage(p)}
                   className={`px-3 py-2 rounded-md border text-sm ${p === currentPage
-                    ? "bg-coral border-coral text-white"
+                    ? "border border-[#ff6b35]/80 bg-[#ff6b35]/20 text-[#ea580c] dark:text-[#ff8a65] font-bold shadow-2xs"
                     : "bg-[var(--content-bg)] border-[var(--text-color)]/20 text-[var(--text-color)] hover:bg-[var(--text-color)]/10"
                     }`}
                 >

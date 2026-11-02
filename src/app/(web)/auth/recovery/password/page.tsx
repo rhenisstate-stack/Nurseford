@@ -350,7 +350,7 @@ export default function RecoveryPasswordPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-coral text-[#0c1929] py-2 rounded-lg hover:bg-coral-hover font-semibold transition disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] py-2 rounded-lg font-semibold shadow-2xs transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Sending . . . ⚓' : 'Send Recovery Code'}
               </button>
@@ -382,7 +382,7 @@ export default function RecoveryPasswordPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-coral text-[#0c1929] py-2 rounded-lg hover:bg-coral-hover font-semibold transition disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] py-2 rounded-lg font-semibold shadow-2xs transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Verifying . . . ⚓' : 'Verify Code'}
               </button>
@@ -578,7 +578,7 @@ export default function RecoveryPasswordPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-coral text-[#0c1929] py-2 rounded-lg hover:bg-coral-hover font-semibold transition disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] py-2 rounded-lg font-semibold shadow-2xs transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Saving . . . ⚓' : 'Save New Credentials'}
               </button>

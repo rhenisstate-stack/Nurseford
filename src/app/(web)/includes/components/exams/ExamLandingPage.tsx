@@ -165,7 +165,7 @@ export default function ExamLandingPage({ config }: { config: ExamLandingConfig 
             <div className="flex w-full flex-row flex-wrap items-center justify-center gap-6 sm:gap-[112px] mt-3 sm:mt-4">
               <a
                 href="#plans"
-                className={`group inline-flex flex-col items-center justify-center gap-0.5 rounded-full px-5 py-2 text-xs font-semibold text-[#0c1929] ${barColor ?? s.bar} shadow-md shadow-black/20 ring-1 ring-white/10 transition-transform duration-300 hover:-translate-y-0.5 sm:px-6`}
+                className="group inline-flex flex-col items-center justify-center gap-0.5 rounded-full px-5 py-2 text-xs font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 shadow-2xs transition-all duration-200 active:scale-[0.98] sm:px-6 cursor-pointer"
               >
                 <span className="inline-flex items-center justify-center gap-1.5">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15 transition-transform duration-300 group-hover:scale-110">
@@ -177,7 +177,7 @@ export default function ExamLandingPage({ config }: { config: ExamLandingConfig 
               </a>
               <Link
                 href={`/dashboards/${dashboardName}`}
-                className="group inline-flex flex-col items-center justify-center gap-0.5 rounded-full bg-coral px-5 py-2 text-xs font-semibold text-[#0c1929] shadow-md shadow-black/20 ring-1 ring-white/10 transition-transform duration-300 hover:-translate-y-0.5 hover:bg-coral-hover sm:px-6"
+                className="group inline-flex flex-col items-center justify-center gap-0.5 rounded-full border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] px-5 py-2 text-xs font-semibold shadow-2xs transition-all duration-200 active:scale-[0.98] sm:px-6 cursor-pointer"
               >
                 <span className="inline-flex items-center justify-center gap-1.5">
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/15 transition-transform duration-300 group-hover:scale-110">
@@ -380,13 +380,13 @@ export default function ExamLandingPage({ config }: { config: ExamLandingConfig 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/auth/register"
-              className="inline-flex items-center justify-center px-7 py-3 rounded-full text-sm font-semibold text-[#0c1929] bg-coral hover:bg-coral-hover transition-colors"
+              className="inline-flex items-center justify-center px-7 py-3 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] shadow-2xs transition-all duration-200 active:scale-[0.98]"
             >
               Create Free Account
             </Link>
             <Link
               href={`/dashboards/${dashboardName}`}
-              className="inline-flex items-center justify-center px-7 py-3 rounded-full text-sm font-medium text-black dark:text-white border border-border-light hover:bg-paper-dim transition-colors"
+              className="inline-flex items-center justify-center px-7 py-3 rounded-full text-sm font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 shadow-2xs transition-all duration-200 active:scale-[0.98]"
             >
               Access Exams Now
             </Link>
