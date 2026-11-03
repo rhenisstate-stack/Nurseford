@@ -104,14 +104,14 @@ export default function RnNursingHomePage() {
             <div className="mt-2.5 flex items-center gap-2 flex-wrap">
               <Link
                 href="/dashboards/rn-nursing/vista/subscriptions/items"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium text-xs bg-[#2FD9C4] text-[#08111F] hover:brightness-110 active:scale-[0.98] transition-all shadow-xs w-fit"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/15 dark:bg-teal-500/20 hover:bg-teal-500/25 dark:hover:bg-teal-500/30 text-teal-800 dark:text-teal-300 active:scale-[0.98] transition-all duration-200 shadow-2xs w-fit"
               >
                 <CreditCard className="w-3.5 h-3.5 shrink-0" />
                 <span>Subscription Packages</span>
               </Link>
               <Link
                 href="/dashboards/rn-nursing/vista/subscriptions/packages"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-medium text-xs bg-[#2FD9C4] text-[#08111F] hover:brightness-110 active:scale-[0.98] transition-all shadow-xs w-fit"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/15 dark:bg-teal-500/20 hover:bg-teal-500/25 dark:hover:bg-teal-500/30 text-teal-800 dark:text-teal-300 active:scale-[0.98] transition-all duration-200 shadow-2xs w-fit"
               >
                 <Receipt className="w-3.5 h-3.5 shrink-0" />
                 <span>My Subscriptions</span>

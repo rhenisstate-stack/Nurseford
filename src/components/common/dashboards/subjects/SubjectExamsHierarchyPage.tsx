@@ -462,7 +462,7 @@ export function SubjectExamsHierarchyPage({
           {/* Desktop Back button */}
           <Link
             href={backHref}
-            className="hidden sm:inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-sm sm:text-base font-semibold border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-slate-700 dark:text-white/90 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all shadow-xs shrink-0 self-center"
+            className="hidden sm:inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-sm sm:text-base font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 transition-all duration-200 active:scale-[0.98] shadow-2xs shrink-0 self-center"
           >
             <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             Back to {courseName}
@@ -472,7 +472,7 @@ export function SubjectExamsHierarchyPage({
           <div className="flex sm:hidden items-center justify-between w-full pt-0.5 gap-2">
             <Link
               href={backHref}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-slate-700 dark:text-white/90 hover:text-slate-950 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-all shadow-xs shrink-0"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 transition-all duration-200 active:scale-[0.98] shadow-2xs shrink-0"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to {courseName}
@@ -737,7 +737,7 @@ export function SubjectExamsHierarchyPage({
                       <button
                         type="button"
                         onClick={() => startExam(exam, "Practice")}
-                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-semibold border border-cyan-500/80 dark:border-cyan-400/60 bg-cyan-500/15 dark:bg-cyan-500/20 hover:bg-cyan-500/25 dark:hover:bg-cyan-500/30 text-cyan-800 dark:text-cyan-300 transition-all shadow-2xs text-center truncate active:scale-[0.98]"
+                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-slate-950 dark:text-slate-950 bg-[#00D0FF] hover:bg-[#00BCE6] transition-colors shadow-xs text-center border border-white/70 dark:border-white/30 truncate"
                       >
                         Practice Mode
                       </button>
@@ -746,7 +746,7 @@ export function SubjectExamsHierarchyPage({
                       <button
                         type="button"
                         onClick={() => startExam(exam, "Review")}
-                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-semibold border border-slate-500/80 dark:border-slate-400/60 bg-slate-500/15 dark:bg-slate-500/20 hover:bg-slate-500/25 dark:hover:bg-slate-500/30 text-slate-800 dark:text-slate-200 transition-all shadow-2xs text-center truncate active:scale-[0.98]"
+                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-white bg-[#212529] hover:bg-[#15181B] transition-colors shadow-xs text-center border border-white/50 dark:border-white/30 truncate"
                       >
                         Review Mode
                       </button>
@@ -755,7 +755,7 @@ export function SubjectExamsHierarchyPage({
                       <button
                         type="button"
                         onClick={() => startExam(exam, "Exam")}
-                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-semibold border border-rose-500/80 dark:border-rose-400/60 bg-rose-500/15 dark:bg-rose-500/20 hover:bg-rose-500/25 dark:hover:bg-rose-500/30 text-rose-800 dark:text-rose-300 transition-all shadow-2xs text-center truncate active:scale-[0.98]"
+                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-white bg-[#782828] hover:bg-[#682020] transition-colors shadow-xs text-center border border-white/50 dark:border-white/30 truncate"
                       >
                         Exam Mode
                       </button>
@@ -795,10 +795,10 @@ export function SubjectExamsHierarchyPage({
                           key={p}
                           type="button"
                           onClick={() => handlePageChange(p)}
-                          className={`min-w-8 h-8 px-2 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer ${
+                          className={`min-w-8 h-8 px-2 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-[0.96] ${
                             p === currentPage
-                              ? "bg-[#2FD9C4] text-[#08111F] shadow-sm"
-                              : "border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10"
+                              ? "border border-cyan-500/80 dark:border-cyan-400/60 bg-cyan-500/20 dark:bg-cyan-500/25 text-cyan-800 dark:text-cyan-300 shadow-2xs"
+                              : "border border-slate-300/80 dark:border-white/15 bg-white/60 dark:bg-white/5 text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10"
                           }`}
                         >
                           {p}

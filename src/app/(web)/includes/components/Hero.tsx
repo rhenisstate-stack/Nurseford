@@ -478,7 +478,7 @@ export default function Hero() {
                       <Icon className="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" strokeWidth={1.75} />
                     </span>
                     <div className="flex flex-col min-w-0">
-                      <span className={`text-[9px] sm:text-[13px] xl:text-sm font-black dark:font-bold uppercase leading-tight ${group.accentColor}`}>
+                      <span className="text-[9px] sm:text-[13px] xl:text-sm font-black dark:font-bold uppercase leading-tight text-black dark:text-white">
                         {group.category}
                       </span>
                       <span className={`block w-6 h-0.5 sm:w-8 ${group.accentBg} rounded-full mt-1 sm:mt-1.5 mb-1 sm:mb-2`} />
