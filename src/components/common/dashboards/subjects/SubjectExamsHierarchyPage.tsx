@@ -67,7 +67,7 @@ export function SubjectExamsHierarchyPage({
   const [hideSeason, setHideSeason] = useState(() => cached?.hideSeason ?? false);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [status, setStatus] = useState<LoadStatus>(() => (cached?.exams?.length ? "ready" : "idle"));
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Client-side search and filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -133,7 +133,7 @@ export function SubjectExamsHierarchyPage({
   }, [allResults, nominalExams]);
 
   useEffect(() => {
-    setPage(1);
+    setCurrentPage(1);
   }, [subjectId]);
 
   useEffect(() => {
@@ -157,7 +157,7 @@ export function SubjectExamsHierarchyPage({
           skewTotalPages?: number;
         }>("Exam", "NominalFetch", {
           identifier: subjectId,
-          dynamicPage: page,
+          dynamicPage: 1,
           dynamicPerPage: PER_PAGE,
           dynamicSearch: "",
           dynamicSortColumn: "updatedAt",
@@ -255,7 +255,7 @@ export function SubjectExamsHierarchyPage({
     return () => {
       cancelled = true;
     };
-  }, [panelSlug, courseId, subjectId, subjectName, page, cacheKey]);
+  }, [panelSlug, courseId, subjectId, subjectName, cacheKey]);
 
   const startExam = (examTarget: (StrataItem & { modes?: string[] }) | string, mode: string) => {
     let idToUse = "";
@@ -387,18 +387,18 @@ export function SubjectExamsHierarchyPage({
 
   // Reset pagination to page 1 on filter or search change
   useEffect(() => {
-    setPage(1);
+    setCurrentPage(1);
   }, [searchQuery, selectedYear, selectedSeason, perPage]);
 
   const totalPages = Math.max(1, Math.ceil(filteredExams.length / perPage));
-  const currentPage = Math.min(page, totalPages);
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
 
   const paginatedExams = useMemo(() => {
-    const start = (currentPage - 1) * perPage;
+    const start = (safePage - 1) * perPage;
     return filteredExams.slice(start, start + perPage);
-  }, [filteredExams, currentPage, perPage]);
+  }, [filteredExams, safePage, perPage]);
 
-  const startIndex = (currentPage - 1) * perPage;
+  const startIndex = (safePage - 1) * perPage;
   const endIndex = Math.min(filteredExams.length, startIndex + perPage);
 
   const getVisiblePages = (current: number, total: number, windowSize = 2) => {
@@ -416,7 +416,7 @@ export function SubjectExamsHierarchyPage({
   };
 
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
+    setCurrentPage(newPage);
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -646,7 +646,7 @@ export function SubjectExamsHierarchyPage({
                   value={perPage}
                   onChange={(e) => {
                     setPerPage(Number(e.target.value));
-                    setPage(1);
+                    setCurrentPage(1);
                   }}
                   className="px-2 py-1 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-slate-900 dark:text-white font-medium text-xs outline-none focus:border-blue-500 cursor-pointer"
                 >
