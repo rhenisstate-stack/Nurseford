@@ -383,7 +383,7 @@ export function SubjectExamsHierarchyPage({
     }).sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
   }, [exams, searchQuery, selectedYear, selectedSeason, currentSubjectTitle]);
 
-  const [perPage, setPerPage] = useState<number>(50);
+  const [perPage, setPerPage] = useState<number>(100);
 
   // Reset pagination to page 1 on filter or search change
   useEffect(() => {
@@ -650,9 +650,9 @@ export function SubjectExamsHierarchyPage({
                   }}
                   className="px-2 py-1 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-slate-900 dark:text-white font-medium text-xs outline-none focus:border-blue-500 cursor-pointer"
                 >
-                  <option value={25} className="dark:bg-[#15273e]">25</option>
                   <option value={50} className="dark:bg-[#15273e]">50</option>
                   <option value={100} className="dark:bg-[#15273e]">100</option>
+                  <option value={200} className="dark:bg-[#15273e]">200</option>
                   <option value={500} className="dark:bg-[#15273e]">All</option>
                 </select>
               </div>
