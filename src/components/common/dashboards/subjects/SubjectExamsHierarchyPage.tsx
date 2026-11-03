@@ -14,6 +14,7 @@ import type { DashboardCourse, DashboardSubCategory } from "@/lib/hooks/home/use
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
+import { registerSearchExams } from "@/lib/services/search/searchRegistry";
 
 const PER_PAGE = 50;
 
@@ -72,6 +73,17 @@ export function SubjectExamsHierarchyPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedSeason, setSelectedSeason] = useState<string>("all");
+
+  useEffect(() => {
+    if (exams.length > 0) {
+      registerSearchExams(
+        panelSlug,
+        subjectId,
+        dynamicSubjectName || cached?.subjectName || subjectName,
+        exams
+      );
+    }
+  }, [panelSlug, subjectId, dynamicSubjectName, cached?.subjectName, subjectName, exams]);
 
   const formattedUpdateDate = useMemo(() => {
     return getPreviousDayFormatted();
@@ -183,6 +195,7 @@ export function SubjectExamsHierarchyPage({
         if (resolvedSubName) setDynamicSubjectName(resolvedSubName);
         if (resolvedCourseName) setDynamicCourseName(resolvedCourseName);
         setExams(sortedExams);
+        registerSearchExams(panelSlug, subjectId, resolvedSubName, sortedExams);
         try {
           sortedExams.forEach((e) => {
             if (e.guidId && e.title) {

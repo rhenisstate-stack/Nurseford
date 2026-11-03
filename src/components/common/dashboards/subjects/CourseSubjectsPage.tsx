@@ -11,6 +11,7 @@ import type { DashboardCourse } from "@/lib/hooks/home/useExamCourses";
 import { renderSystemSessionHeaders } from "@/lib/services/partial/helper/systemSessionHeaders";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
 import { ArrowLeft, Calendar, Command, Play } from "lucide-react";
+import { registerSearchSubjects } from "@/lib/services/search/searchRegistry";
 
 /**
  * Full-page subject listing for a course (e.g. "EXIT ATI Exams-RN").
@@ -87,6 +88,18 @@ export function CourseSubjectsPage({
   }, [subjects, panelSlug]);
 
   useEffect(() => {
+    if (subjects.length > 0) {
+      registerSearchSubjects(
+        panelSlug,
+        courseSlug,
+        courseId,
+        dynamicCourseName || cached?.courseName || "",
+        subjects
+      );
+    }
+  }, [panelSlug, courseSlug, courseId, dynamicCourseName, cached?.courseName, subjects]);
+
+  useEffect(() => {
     if (!courseId) return;
 
     let cancelled = false;
@@ -113,6 +126,7 @@ export function CourseSubjectsPage({
             courseName: resolvedCourseName || cached?.courseName || "",
           });
 
+          registerSearchSubjects(panelSlug, courseSlug, courseId, resolvedCourseName || cached?.courseName || "", mapped);
           setSubjects(mapped);
           setIsLoading(false);
         }

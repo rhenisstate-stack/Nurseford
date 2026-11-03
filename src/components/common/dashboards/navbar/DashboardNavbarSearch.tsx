@@ -1,15 +1,33 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { Search, X, BookOpen, GraduationCap, Sparkles, Layers, ChevronRight } from "lucide-react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  Search,
+  X,
+  BookOpen,
+  GraduationCap,
+  Sparkles,
+  Layers,
+  ChevronRight,
+  Loader2,
+  FileQuestion,
+} from "lucide-react";
+import {
+  searchClientRegistry,
+  type DynamicSearchResult,
+} from "@/lib/services/search/searchRegistry";
+import { renderSystemSessionHeaders } from "@/lib/services/partial/helper/systemSessionHeaders";
 
 export interface SearchEntry {
+  id?: string;
   title: string;
   subtitle: string;
-  category: "Exam Bank" | "Subject / Course" | "Dashboard Tool" | "Navigation";
+  category: "Exam" | "Exam Bank" | "Subject / Course" | "Dashboard Tool" | "Navigation";
   href: string;
-  keywords: string;
+  keywords?: string;
+  badge?: string;
+  panelSlug?: string;
 }
 
 const SEARCH_CATALOG: SearchEntry[] = [
@@ -85,7 +103,14 @@ const SEARCH_CATALOG: SearchEntry[] = [
     keywords: "hesi exams rn specialty exams",
   },
 
-  // ─── Subjects & Courses ───
+  // ─── Subjects & Courses (Including Missing Nursing Subjects) ───
+  {
+    title: "Pathophysiology Exams",
+    subtitle: "Alterations in body systems, cellular injury, fluid balance, disease processes",
+    category: "Subject / Course",
+    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
+    keywords: "pathophysiology patho disease cellular genetics cellular adaptation organ systems exam",
+  },
   {
     title: "Medical-Surgical (MED-SURG) Exams",
     subtitle: "Cardiovascular, respiratory, neurological, endocrine, GI & renal",
@@ -104,7 +129,7 @@ const SEARCH_CATALOG: SearchEntry[] = [
     title: "Pediatrics & Child Health",
     subtitle: "Growth & development, pediatric disorders, pediatric dosages",
     category: "Subject / Course",
-    href: "/dashboards/nclex-rn",
+    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
     keywords: "pediatrics child health infants children peds developmental",
   },
   {
@@ -118,22 +143,50 @@ const SEARCH_CATALOG: SearchEntry[] = [
     title: "Maternal & Newborn Nursing (OB/GYN)",
     subtitle: "Antepartum, intrapartum, postpartum & neonatal care",
     category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/ati-exams-rn/34",
+    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
     keywords: "maternal newborn ob obstetrics labor delivery postpartum gyn",
   },
   {
     title: "Mental Health & Psychiatric Nursing",
     subtitle: "Psychiatric disorders, psychopharmacology, therapeutic communication",
     category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/ati-exams-rn/34",
+    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
     keywords: "mental health psych psychiatric depression anxiety schizophrenia",
   },
   {
     title: "Fundamentals of Nursing",
     subtitle: "Basic nursing principles, vital signs, safety, infection control",
     category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/ati-exams-rn/34",
+    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
     keywords: "fundamentals nursing skills asepsis vital signs ethics legal",
+  },
+  {
+    title: "Gastrointestinal System Exams",
+    subtitle: "GI tract disorders, liver, gallbladder, pancreas, nutrition",
+    category: "Subject / Course",
+    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
+    keywords: "gastrointestinal gi system digestive liver pancreatitis bowel",
+  },
+  {
+    title: "Endocrinology Exams",
+    subtitle: "Diabetes, thyroid disorders, adrenal gland, hormonal imbalances",
+    category: "Subject / Course",
+    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
+    keywords: "endocrinology endocrine diabetes thyroid cushing addison insulin",
+  },
+  {
+    title: "Community Health Nursing",
+    subtitle: "Public health, epidemiology, vulnerable populations, prevention",
+    category: "Subject / Course",
+    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
+    keywords: "community health public health epidemiology outbreak prevention",
+  },
+  {
+    title: "Multidimensional Care (GRN)",
+    subtitle: "Comprehensive patient-centered multidimensional health care",
+    category: "Subject / Course",
+    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
+    keywords: "multidimensional care grn complex care chronic illness",
   },
   {
     title: "Dosage Calculation",
@@ -190,12 +243,17 @@ const SEARCH_CATALOG: SearchEntry[] = [
     title: "Performance Index",
     subtitle: "Analyze your accuracy scores across all completed assessments",
     category: "Dashboard Tool",
-    href: "/dashboards/nclex-rn",
+    href: "/dashboards/rn-nursing",
     keywords: "performance index score gauge accuracy analytics statistics",
   },
 ];
 
 const CATEGORY_COLORS: Record<SearchEntry["category"], { bg: string; text: string; border: string }> = {
+  "Exam": {
+    bg: "bg-emerald-500/15 dark:bg-emerald-400/15",
+    text: "text-emerald-700 dark:text-emerald-300",
+    border: "border-emerald-500/30",
+  },
   "Exam Bank": {
     bg: "bg-teal-500/15 dark:bg-teal-400/15",
     text: "text-teal-700 dark:text-teal-300",
@@ -220,24 +278,146 @@ const CATEGORY_COLORS: Record<SearchEntry["category"], { bg: string; text: strin
 
 export default function DashboardNavbarSearch() {
   const router = useRouter();
+  const pathname = usePathname();
+
+  const currentPanel = useMemo(() => {
+    if (!pathname) return "rn-nursing";
+    const m = pathname.match(/\/dashboards\/([^\/]+)/);
+    return m ? m[1] : "rn-nursing";
+  }, [pathname]);
+
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const [dynamicResults, setDynamicResults] = useState<DynamicSearchResult[]>([]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const filteredResults = useMemo(() => {
+  // Instant client-side matches (from active page registry + static catalog)
+  const clientMatches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) {
-      // Default recommended quick shortcuts when search is focused but empty
       return SEARCH_CATALOG.slice(0, 6);
     }
+
+    // 1. Instant local page & memory registry
+    const localResults = searchClientRegistry(q, currentPanel);
+
+    // 2. Static catalog matches
     const terms = q.split(/\s+/).filter(Boolean);
-    return SEARCH_CATALOG.filter((item) => {
+    const catalogResults = SEARCH_CATALOG.filter((item) => {
       const fullText = `${item.title} ${item.subtitle} ${item.category} ${item.keywords}`.toLowerCase();
       return terms.every((t) => fullText.includes(t));
+    });
+
+    const combined: SearchEntry[] = [...localResults, ...catalogResults];
+    const seen = new Set<string>();
+
+    return combined.filter((item) => {
+      if (seen.has(item.href)) return false;
+      seen.add(item.href);
+      return true;
     }).slice(0, 8);
-  }, [query]);
+  }, [query, currentPanel]);
+
+  // Combined live results: client registry + API dynamic results
+  const displayedResults = useMemo(() => {
+    if (!query.trim()) {
+      return SEARCH_CATALOG.slice(0, 6);
+    }
+
+    const seen = new Set<string>();
+    const merged: SearchEntry[] = [];
+
+    // Prioritize dynamic API and in-memory registry matches
+    for (const item of dynamicResults) {
+      if (!seen.has(item.href)) {
+        seen.add(item.href);
+        merged.push({
+          ...item,
+          keywords: item.keywords || "",
+        });
+      }
+    }
+
+    for (const item of clientMatches) {
+      if (!seen.has(item.href)) {
+        seen.add(item.href);
+        merged.push(item);
+      }
+    }
+
+    return merged.slice(0, 10);
+  }, [query, dynamicResults, clientMatches]);
+
+  // Debounced dynamic API search
+  const performDynamicSearch = useCallback(
+    async (searchTerm: string) => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      const trimmed = searchTerm.trim();
+      if (trimmed.length < 2) {
+        setDynamicResults([]);
+        setIsSearching(false);
+        return;
+      }
+
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      setIsSearching(true);
+
+      try {
+        const res = await fetch(
+          `/api/search?q=${encodeURIComponent(trimmed)}&panel=${encodeURIComponent(currentPanel)}`,
+          {
+            headers: {
+              ...renderSystemSessionHeaders(),
+            },
+            signal: controller.signal,
+          }
+        );
+
+        if (!res.ok) {
+          setIsSearching(false);
+          return;
+        }
+
+        const data = await res.json();
+        if (Array.isArray(data?.results)) {
+          setDynamicResults(data.results);
+        }
+      } catch (err: any) {
+        if (err?.name !== "AbortError") {
+          console.warn("[DashboardNavbarSearch] Dynamic search error:", err);
+        }
+      } finally {
+        setIsSearching(false);
+      }
+    },
+    [currentPanel]
+  );
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setDynamicResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      performDynamicSearch(trimmed);
+    }, 200);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [query, performDynamicSearch]);
 
   // Click outside listener
   useEffect(() => {
@@ -253,6 +433,16 @@ export default function DashboardNavbarSearch() {
   const handleSelect = (entry: SearchEntry) => {
     setIsOpen(false);
     setQuery("");
+
+    // If selecting an exam, pre-store title in session storage for live exam player
+    if (entry.category === "Exam" && entry.id) {
+      const cleanId = entry.id.replace(/^exam-/, "");
+      try {
+        localStorage.setItem(`exam_title_${cleanId}`, entry.title);
+        sessionStorage.setItem(`exam_title_${cleanId}`, entry.title);
+      } catch {}
+    }
+
     router.push(entry.href);
   };
 
@@ -266,14 +456,14 @@ export default function DashboardNavbarSearch() {
 
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIndex((prev) => (prev + 1) % Math.max(1, filteredResults.length));
+      setActiveIndex((prev) => (prev + 1) % Math.max(1, displayedResults.length));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIndex((prev) => (prev - 1 + filteredResults.length) % Math.max(1, filteredResults.length));
+      setActiveIndex((prev) => (prev - 1 + displayedResults.length) % Math.max(1, displayedResults.length));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (filteredResults[activeIndex]) {
-        handleSelect(filteredResults[activeIndex]);
+      if (displayedResults[activeIndex]) {
+        handleSelect(displayedResults[activeIndex]);
       }
     } else if (e.key === "Escape") {
       setIsOpen(false);
@@ -284,7 +474,11 @@ export default function DashboardNavbarSearch() {
     <div ref={containerRef} className="relative w-28 sm:w-48 lg:w-80 mr-3">
       {/* Search Input Bar */}
       <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[var(--text-color)]/5 border border-[var(--text-color)]/15 focus-within:border-blue-500 dark:focus-within:border-teal-400 focus-within:bg-[var(--card-bg,#15273e)] transition-all shadow-2xs">
-        <Search className="w-3.5 h-3.5 shrink-0 opacity-50 text-[var(--text-color)]" />
+        {isSearching ? (
+          <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin text-blue-500 dark:text-teal-400" />
+        ) : (
+          <Search className="w-3.5 h-3.5 shrink-0 opacity-50 text-[var(--text-color)]" />
+        )}
         <input
           ref={inputRef}
           type="text"
@@ -296,7 +490,7 @@ export default function DashboardNavbarSearch() {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Search..."
+          placeholder="Search exams, subjects..."
           className="flex-1 min-w-0 bg-transparent text-xs sm:text-sm text-[var(--text-color)] outline-none placeholder:opacity-40"
         />
         {query && (
@@ -304,6 +498,7 @@ export default function DashboardNavbarSearch() {
             type="button"
             onClick={() => {
               setQuery("");
+              setDynamicResults([]);
               inputRef.current?.focus();
             }}
             className="p-0.5 rounded-full hover:bg-[var(--text-color)]/10 text-[var(--text-color)]/60 hover:text-[var(--text-color)] transition-colors"
@@ -316,34 +511,41 @@ export default function DashboardNavbarSearch() {
 
       {/* Floating Results Popover */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1.5 w-[280px] sm:w-[340px] md:w-[400px] z-[9999] rounded-xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0f1d30]/95 backdrop-blur-md shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="absolute top-full left-0 mt-1.5 w-[280px] sm:w-[340px] md:w-[420px] z-[9999] rounded-xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-[#0f1d30]/95 backdrop-blur-md shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
           {/* Header */}
           <div className="px-3 py-1.5 bg-slate-50 dark:bg-black/20 border-b border-slate-200 dark:border-white/5 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-            <span className="font-semibold uppercase tracking-wider text-[10px]">
-              {query.trim() ? `Search Results (${filteredResults.length})` : "Quick Navigation"}
+            <span className="font-semibold uppercase tracking-wider text-[10px] flex items-center gap-1.5">
+              {query.trim() ? (
+                <>
+                  <span>Search Results ({displayedResults.length})</span>
+                  {isSearching && <Loader2 className="w-2.5 h-2.5 animate-spin text-blue-500" />}
+                </>
+              ) : (
+                "Quick Navigation"
+              )}
             </span>
             <span className="text-[10px] opacity-70">ESC to close</span>
           </div>
 
           {/* Results List */}
-          <div className="max-h-[340px] overflow-y-auto p-1 divide-y divide-slate-100 dark:divide-white/5">
-            {filteredResults.length === 0 ? (
+          <div className="max-h-[360px] overflow-y-auto p-1 divide-y divide-slate-100 dark:divide-white/5">
+            {displayedResults.length === 0 ? (
               <div className="px-4 py-8 text-center">
                 <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   No matches found for &ldquo;{query}&rdquo;
                 </p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                  Try searching for MED-SURG, Pharmacology, NCLEX-RN, TEAS, Exit Exams, or Custom Test.
+                  Try searching for Pathophysiology, MED-SURG, Pharmacology, NCLEX-RN, TEAS, or Exam 2.
                 </p>
               </div>
             ) : (
-              filteredResults.map((item, idx) => {
+              displayedResults.map((item, idx) => {
                 const isActive = idx === activeIndex;
-                const colors = CATEGORY_COLORS[item.category];
+                const colors = CATEGORY_COLORS[item.category] || CATEGORY_COLORS["Navigation"];
 
                 return (
                   <button
-                    key={`${item.title}-${item.href}`}
+                    key={`${item.title}-${item.href}-${idx}`}
                     type="button"
                     onClick={() => handleSelect(item)}
                     onMouseEnter={() => setActiveIndex(idx)}
@@ -355,6 +557,9 @@ export default function DashboardNavbarSearch() {
                   >
                     <div className="flex items-start gap-2 min-w-0">
                       <div className="mt-0.5 shrink-0">
+                        {item.category === "Exam" && (
+                          <FileQuestion className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        )}
                         {item.category === "Exam Bank" && (
                           <GraduationCap className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
                         )}
@@ -377,7 +582,7 @@ export default function DashboardNavbarSearch() {
                           <span
                             className={`text-[9px] font-bold px-1.5 py-0.2 rounded-full border ${colors.bg} ${colors.text} ${colors.border}`}
                           >
-                            {item.category}
+                            {item.badge || item.category}
                           </span>
                         </div>
                         <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
