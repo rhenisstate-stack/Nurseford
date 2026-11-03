@@ -30,224 +30,6 @@ export interface SearchEntry {
   panelSlug?: string;
 }
 
-const SEARCH_CATALOG: SearchEntry[] = [
-  // ─── Exam Banks ───
-  {
-    title: "NCLEX-RN Practice Exams",
-    subtitle: "Complete NCLEX Registered Nurse test bank & CAT simulators",
-    category: "Exam Bank",
-    href: "/dashboards/nclex-rn",
-    keywords: "nclex rn registered nurse practice cat test bank cat simulator next gen ngn",
-  },
-  {
-    title: "NCLEX-PN Practice Exams",
-    subtitle: "Practical Nurse test bank & assessment examinations",
-    category: "Exam Bank",
-    href: "/dashboards/nclex-pn",
-    keywords: "nclex pn practical nurse lpn test bank lvn practice",
-  },
-  {
-    title: "RN Nursing Test Bank",
-    subtitle: "ATI & HESI RN course examination library",
-    category: "Exam Bank",
-    href: "/dashboards/rn-nursing",
-    keywords: "rn nursing test bank ati hesi registered nurse courses",
-  },
-  {
-    title: "LPN Nursing Test Bank",
-    subtitle: "ATI & HESI LPN examination library",
-    category: "Exam Bank",
-    href: "/dashboards/lpn-nursing",
-    keywords: "lpn nursing test bank practical nurse ati hesi",
-  },
-  {
-    title: "TEAS 7 Prep Practice & Entrance Exams",
-    subtitle: "TEAS 7 entrance examination preparation modules",
-    category: "Exam Bank",
-    href: "/dashboards/ati-teas",
-    keywords: "ati teas teas 7 entrance exam science math english reading",
-  },
-  {
-    title: "HESI A2 Admission Assessment",
-    subtitle: "HESI entrance examination practice modules",
-    category: "Exam Bank",
-    href: "/dashboards/hesi-a2",
-    keywords: "hesi a2 admission assessment entrance exam prep anatomy biology",
-  },
-  {
-    title: "ATI Exit Exams (RN)",
-    subtitle: "Comprehensive RN exit examinations with rationales",
-    category: "Exam Bank",
-    href: "/dashboards/rn-nursing/exams/exit-ati-exams-rn/36",
-    keywords: "ati exit exams rn comprehensive exit proctored predictor",
-  },
-  {
-    title: "HESI Exit Exams (RN)",
-    subtitle: "Comprehensive HESI RN exit examinations",
-    category: "Exam Bank",
-    href: "/dashboards/rn-nursing/exams/exit-hesi-exams-rn/37",
-    keywords: "hesi exit exams rn comprehensive exit proctored",
-  },
-  {
-    title: "ATI Exams (RN)",
-    subtitle: "All ATI subject-based examinations for RN students",
-    category: "Exam Bank",
-    href: "/dashboards/rn-nursing/exams/ati-exams-rn/34",
-    keywords: "ati exams rn adult medical surgical maternal pharmacology",
-  },
-  {
-    title: "HESI Exams (RN)",
-    subtitle: "All HESI subject-based examinations for RN students",
-    category: "Exam Bank",
-    href: "/dashboards/rn-nursing/exams/hesi-exams-rn/39",
-    keywords: "hesi exams rn specialty exams",
-  },
-
-  // ─── Subjects & Courses (Including Missing Nursing Subjects) ───
-  {
-    title: "Pathophysiology Exams",
-    subtitle: "Alterations in body systems, cellular injury, fluid balance, disease processes",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
-    keywords: "pathophysiology patho disease cellular genetics cellular adaptation organ systems exam",
-  },
-  {
-    title: "Medical-Surgical (MED-SURG) Exams",
-    subtitle: "Cardiovascular, respiratory, neurological, endocrine, GI & renal",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/ati-exams-rn/34/exams/130?subjectName=MED-SURG+Exams+(RN+ati)",
-    keywords: "med-surg medical surgical adult health med surg cardio respiratory",
-  },
-  {
-    title: "Pharmacology Exams",
-    subtitle: "Medication administration, calculations, anti-infectives, psych",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/ati-exams-rn/34/exams/134?subjectName=Pharmacology+Exams+(RN+ati)",
-    keywords: "pharmacology pharm drugs dosage medications side effects",
-  },
-  {
-    title: "Pediatrics & Child Health",
-    subtitle: "Growth & development, pediatric disorders, pediatric dosages",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
-    keywords: "pediatrics child health infants children peds developmental",
-  },
-  {
-    title: "Adult Health Nursing",
-    subtitle: "Acute & chronic adult patient care, pathophysiology",
-    category: "Subject / Course",
-    href: "/dashboards/nclex-rn",
-    keywords: "adult health nursing med surg internal medicine",
-  },
-  {
-    title: "Maternal & Newborn Nursing (OB/GYN)",
-    subtitle: "Antepartum, intrapartum, postpartum & neonatal care",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
-    keywords: "maternal newborn ob obstetrics labor delivery postpartum gyn",
-  },
-  {
-    title: "Mental Health & Psychiatric Nursing",
-    subtitle: "Psychiatric disorders, psychopharmacology, therapeutic communication",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
-    keywords: "mental health psych psychiatric depression anxiety schizophrenia",
-  },
-  {
-    title: "Fundamentals of Nursing",
-    subtitle: "Basic nursing principles, vital signs, safety, infection control",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
-    keywords: "fundamentals nursing skills asepsis vital signs ethics legal",
-  },
-  {
-    title: "Gastrointestinal System Exams",
-    subtitle: "GI tract disorders, liver, gallbladder, pancreas, nutrition",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
-    keywords: "gastrointestinal gi system digestive liver pancreatitis bowel",
-  },
-  {
-    title: "Endocrinology Exams",
-    subtitle: "Diabetes, thyroid disorders, adrenal gland, hormonal imbalances",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
-    keywords: "endocrinology endocrine diabetes thyroid cushing addison insulin",
-  },
-  {
-    title: "Community Health Nursing",
-    subtitle: "Public health, epidemiology, vulnerable populations, prevention",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
-    keywords: "community health public health epidemiology outbreak prevention",
-  },
-  {
-    title: "Multidimensional Care (GRN)",
-    subtitle: "Comprehensive patient-centered multidimensional health care",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/general-exams/6c28f957-a727-4fac-9950-2ad0f0197880",
-    keywords: "multidimensional care grn complex care chronic illness",
-  },
-  {
-    title: "Dosage Calculation",
-    subtitle: "IV drip rates, oral dosages, pediatric doses, reconstitution",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/ati-exams-rn/34",
-    keywords: "dosage calculation math iv drip rate formulas reconstitution",
-  },
-  {
-    title: "Leadership & Nursing Management",
-    subtitle: "Delegation, prioritization, quality improvement, ethical dilemmas",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/ati-exams-rn/34",
-    keywords: "leadership management delegation priority prioritization triage",
-  },
-  {
-    title: "Nutrition & Diet Therapy",
-    subtitle: "Clinical nutrition, enteral feeds, dietary restrictions",
-    category: "Subject / Course",
-    href: "/dashboards/rn-nursing/exams/ati-exams-rn/34",
-    keywords: "nutrition diet therapy renal diabetic vitamins electrolytes",
-  },
-
-  // ─── Dashboard Tools ───
-  {
-    title: "Create Custom Test",
-    subtitle: "Build a personalized exam selecting specific domains & topics",
-    category: "Dashboard Tool",
-    href: "/dashboards/nclex-rn",
-    keywords: "create custom test builder personalized quiz questions selector",
-  },
-  {
-    title: "Readiness Assessment Test (RAT)",
-    subtitle: "Measure exam readiness probability and identify weak areas",
-    category: "Dashboard Tool",
-    href: "/dashboards/nclex-rn/practice/domains/28",
-    keywords: "readiness assessment test rat predict passing score readiness benchmark",
-  },
-  {
-    title: "NCLEX Practice Mode",
-    subtitle: "Study mode with instant rationales and feedback",
-    category: "Dashboard Tool",
-    href: "/dashboards/nclex-rn/practice/domains/27",
-    keywords: "nclex practice mode rationales explanations study review",
-  },
-  {
-    title: "Nursing Study Notes & Guides",
-    subtitle: "High-yield summary sheets, drug cards, and cheat sheets",
-    category: "Dashboard Tool",
-    href: "/register",
-    keywords: "study notes guides cheat sheets flashcards pharmacology summaries",
-  },
-  {
-    title: "Performance Index",
-    subtitle: "Analyze your accuracy scores across all completed assessments",
-    category: "Dashboard Tool",
-    href: "/dashboards/rn-nursing",
-    keywords: "performance index score gauge accuracy analytics statistics",
-  },
-];
-
 const CATEGORY_COLORS: Record<SearchEntry["category"], { bg: string; text: string; border: string }> = {
   "Exam": {
     bg: "bg-emerald-500/15 dark:bg-emerald-400/15",
@@ -296,43 +78,23 @@ export default function DashboardNavbarSearch() {
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Instant client-side matches (from active page registry + static catalog)
+  // Runtime live page matches (0ms instant response from currently loaded page data)
   const clientMatches = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) {
-      return SEARCH_CATALOG.slice(0, 6);
-    }
-
-    // 1. Instant local page & memory registry
-    const localResults = searchClientRegistry(q, currentPanel);
-
-    // 2. Static catalog matches
-    const terms = q.split(/\s+/).filter(Boolean);
-    const catalogResults = SEARCH_CATALOG.filter((item) => {
-      const fullText = `${item.title} ${item.subtitle} ${item.category} ${item.keywords}`.toLowerCase();
-      return terms.every((t) => fullText.includes(t));
-    });
-
-    const combined: SearchEntry[] = [...localResults, ...catalogResults];
-    const seen = new Set<string>();
-
-    return combined.filter((item) => {
-      if (seen.has(item.href)) return false;
-      seen.add(item.href);
-      return true;
-    }).slice(0, 8);
+    if (!q) return [];
+    return searchClientRegistry(q, currentPanel);
   }, [query, currentPanel]);
 
-  // Combined live results: client registry + API dynamic results
+  // Combined live results: purely dynamic from backend API + active page data
   const displayedResults = useMemo(() => {
     if (!query.trim()) {
-      return SEARCH_CATALOG.slice(0, 6);
+      return [];
     }
 
     const seen = new Set<string>();
     const merged: SearchEntry[] = [];
 
-    // Prioritize dynamic API and in-memory registry matches
+    // Prioritize direct dynamic API results
     for (const item of dynamicResults) {
       if (!seen.has(item.href)) {
         seen.add(item.href);
@@ -343,6 +105,7 @@ export default function DashboardNavbarSearch() {
       }
     }
 
+    // Merge active on-page matches
     for (const item of clientMatches) {
       if (!seen.has(item.href)) {
         seen.add(item.href);
@@ -350,10 +113,10 @@ export default function DashboardNavbarSearch() {
       }
     }
 
-    return merged.slice(0, 10);
+    return merged.slice(0, 12);
   }, [query, dynamicResults, clientMatches]);
 
-  // Debounced dynamic API search
+  // Debounced dynamic API search querying the live database
   const performDynamicSearch = useCallback(
     async (searchTerm: string) => {
       if (abortControllerRef.current) {
@@ -490,7 +253,7 @@ export default function DashboardNavbarSearch() {
           }}
           onFocus={() => setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Search exams, subjects..."
+          placeholder="Search live exams, subjects..."
           className="flex-1 min-w-0 bg-transparent text-xs sm:text-sm text-[var(--text-color)] outline-none placeholder:opacity-40"
         />
         {query && (
@@ -517,11 +280,11 @@ export default function DashboardNavbarSearch() {
             <span className="font-semibold uppercase tracking-wider text-[10px] flex items-center gap-1.5">
               {query.trim() ? (
                 <>
-                  <span>Search Results ({displayedResults.length})</span>
+                  <span>Live Search Results ({displayedResults.length})</span>
                   {isSearching && <Loader2 className="w-2.5 h-2.5 animate-spin text-blue-500" />}
                 </>
               ) : (
-                "Quick Navigation"
+                "Live Search"
               )}
             </span>
             <span className="text-[10px] opacity-70">ESC to close</span>
@@ -529,14 +292,35 @@ export default function DashboardNavbarSearch() {
 
           {/* Results List */}
           <div className="max-h-[360px] overflow-y-auto p-1 divide-y divide-slate-100 dark:divide-white/5">
-            {displayedResults.length === 0 ? (
+            {!query.trim() ? (
               <div className="px-4 py-8 text-center">
+                <Search className="w-6 h-6 mx-auto mb-2 text-slate-400/50" />
                 <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  No matches found for &ldquo;{query}&rdquo;
+                  Search Live Examinations & Subjects
                 </p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                  Try searching for Pathophysiology, MED-SURG, Pharmacology, NCLEX-RN, TEAS, or Exam 2.
+                  Type any exam name, subject, or course to query live from the database.
                 </p>
+              </div>
+            ) : displayedResults.length === 0 ? (
+              <div className="px-4 py-8 text-center">
+                {isSearching ? (
+                  <>
+                    <Loader2 className="w-6 h-6 mx-auto mb-2 animate-spin text-blue-500" />
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Searching live database...
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      No live matches found for &ldquo;{query}&rdquo;
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                      Check your spelling or try searching another subject or exam name.
+                    </p>
+                  </>
+                )}
               </div>
             ) : (
               displayedResults.map((item, idx) => {
