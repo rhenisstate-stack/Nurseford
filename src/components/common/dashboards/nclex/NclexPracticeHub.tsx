@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClasp";
 import { useNominalStrataExams } from "@/lib/hooks/nexus/strata/assessment/learning/exams/nominal/useNominalStrataExams";
 import { NCLEX_PRACTICE_CONFIG, type NclexExamType } from "@/lib/config/nclex-practice";
-import { NCLEX_PRACTICE_EXAMS } from "@/lib/config/nclex-practice-exams";
 import { ArrowLeft, Play, GraduationCap, Activity } from "lucide-react";
 
 const ACCENT_TEAL = "#2FD9C4";
@@ -50,10 +49,7 @@ export function NclexPracticeHub({
     perPage: 1,
   });
 
-  // Prefer the live backend count; fall back to the NCLEX catalog (4 practice /
-  // 6 readiness) until those groups are populated on the backend.
-  const catalog = NCLEX_PRACTICE_EXAMS[examType][mode === "readiness" ? "readiness" : "practice"];
-  const examCount = (skewTotal && skewTotal > 0) ? skewTotal : catalog.length;
+  const examCount = (skewTotal && skewTotal > 0) ? skewTotal : 0;
 
   return (
     <div

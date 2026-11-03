@@ -67,7 +67,7 @@ export function CourseSubjectsPage({
         s.questionCount ||
         (subs.length > 0
           ? subs.reduce((a, b) => a + b.questionCount, 0)
-          : (s.examCount || 1) * 45);
+          : 0);
       return {
         id: typeof s.id === "number" ? s.id : (Number(s.id) || index + 1),
         guidId: s.guidId || String(s.id),
@@ -78,9 +78,9 @@ export function CourseSubjectsPage({
         questionCount: qCount,
         examCount: s.examCount ?? subs.length,
         doneCount: 0,
-        easyPct: 35,
-        mediumPct: 45,
-        hardPct: 20,
+        easyPct: 0,
+        mediumPct: 0,
+        hardPct: 0,
         order: index + 1,
         subCategories: subs,
       };

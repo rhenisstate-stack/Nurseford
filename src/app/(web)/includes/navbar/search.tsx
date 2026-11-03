@@ -2,28 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, X } from 'lucide-react';
+import { Search, X, Loader2 } from 'lucide-react';
 
-const searchIndex = [
-  { label: 'TEAS 7 PREP', href: '/pages/exams/ati-teas', keywords: 'ati teas 7 prep nursing entrance exam prep' },
-  { label: 'HESI A2 PREP', href: '/pages/exams/hesi-a2', keywords: 'hesi a2 prep exam entrance prep' },
-  { label: 'NCLEX-RN', href: '/pages/exams/nclex-rn', keywords: 'nclex rn registered nurse exam prep' },
-  { label: 'NCLEX-PN', href: '/pages/exams/nclex-pn', keywords: 'nclex pn practical nurse exam prep' },
-  { label: 'RN Nursing Test Bank', href: '/pages/exams/rn-nursing', keywords: 'registered nurse practice questions bank' },
-  { label: 'LPN Nursing Test Bank', href: '/pages/exams/lpn-nursing', keywords: 'licensed practical nurse practice questions bank' },
-  { label: 'CNA', href: '/pages/exams/cna', keywords: 'certified nursing assistant exam prep' },
-  { label: 'GED', href: '/pages/exams/ged', keywords: 'ged general education development' },
-  { label: 'Pre-Nursing', href: '/pages/exams/pre-nursing', keywords: 'pre nursing prerequisite admission' },
-  { label: 'Certification', href: '/pages/exams/certification', keywords: 'certification exam prep' },
-  { label: 'Home', href: '/', keywords: 'home' },
-  { label: 'About Us', href: '/pages/about', keywords: 'about who we are' },
-  { label: 'Entrance', href: '/pages/entrance', keywords: 'entrance exam admission' },
-  { label: 'Resources', href: '/pages/resources', keywords: 'resources study guides' },
-  { label: 'Contact Us', href: '/pages/contact-us', keywords: 'contact help support reach' },
-  { label: 'Subscription', href: '/pages/subscription/package', keywords: 'subscription plan pricing' },
-  { label: 'Terms of Service', href: '/pages/terms', keywords: 'terms service' },
-  { label: 'Privacy Policy', href: '/pages/privacy-policy', keywords: 'privacy policy data' },
-];
+interface SearchItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  category?: string;
+  href: string;
+}
 
 export default function SearchBar({
   onNavigate,
@@ -34,17 +21,40 @@ export default function SearchBar({
 }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
+  const [results, setResults] = useState<SearchItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  const results = query.trim()
-    ? searchIndex
-        .filter((item) =>
-          `${item.label} ${item.keywords}`.toLowerCase().includes(query.trim().toLowerCase())
-        )
-        .slice(0, 8)
-    : [];
+  // Dynamic live search with 250ms debounce
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      setResults([]);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setResults(data.results || []);
+        } else {
+          setResults([]);
+        }
+      } catch {
+        setResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -71,8 +81,12 @@ export default function SearchBar({
   };
 
   const input = (
-    <div className="flex items-center gap-2 rounded-full border border-border bg-[var(--navbar-bg)] px-3 py-2 focus-within:border-coral">
-      <Search size={16} className="text-navy/40 shrink-0" />
+    <div className="flex items-center gap-2 rounded-full border border-border bg-[var(--navbar-bg)] px-3 py-2 focus-within:border-[#2FD9C4]">
+      {isLoading ? (
+        <Loader2 size={16} className="text-[#2FD9C4] animate-spin shrink-0" />
+      ) : (
+        <Search size={16} className="text-navy/40 shrink-0" />
+      )}
       <input
         value={query}
         onChange={(e) => {
@@ -84,7 +98,7 @@ export default function SearchBar({
           if (e.key === 'Enter' && results[0]) go(results[0].href);
           if (e.key === 'Escape') close();
         }}
-        placeholder="Search..."
+        placeholder="Search exams, subjects, courses..."
         autoFocus={!!compact && expanded}
         className="w-full bg-transparent text-[16px] sm:text-sm text-navy placeholder:text-navy/40 outline-none"
       />
@@ -93,7 +107,8 @@ export default function SearchBar({
           type="button"
           onClick={() => {
             setQuery('');
-            setOpen(true);
+            setResults([]);
+            setOpen(false);
           }}
           aria-label="Clear search"
           className="shrink-0"
@@ -111,18 +126,34 @@ export default function SearchBar({
   );
 
   const dropdown =
-    open && results.length > 0 ? (
-      <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-border bg-paper shadow-2xl p-2 z-50">
-        {results.map((item) => (
-          <button
-            key={item.href}
-            type="button"
-            onClick={() => go(item.href)}
-            className="block w-full text-left rounded-xl px-4 py-2.5 text-sm font-medium text-navy hover:bg-paper-dim transition-colors"
-          >
-            {item.label}
-          </button>
-        ))}
+    open && query.trim() ? (
+      <div className="absolute left-0 right-0 top-full mt-2 rounded-2xl border border-border bg-white dark:bg-[#15273e] shadow-2xl p-2 z-50 max-h-80 overflow-y-auto">
+        {results.length > 0 ? (
+          results.slice(0, 10).map((item) => (
+            <button
+              key={`${item.id}-${item.href}`}
+              type="button"
+              onClick={() => go(item.href)}
+              className="w-full text-left rounded-xl px-4 py-2.5 text-sm font-medium text-navy dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center justify-between gap-2"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium">{item.title}</div>
+                {item.subtitle && (
+                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{item.subtitle}</div>
+                )}
+              </div>
+              {item.category && (
+                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 shrink-0">
+                  {item.category}
+                </span>
+              )}
+            </button>
+          ))
+        ) : !isLoading ? (
+          <div className="py-4 text-center text-xs text-slate-500">
+            No matches found for &ldquo;{query.trim()}&rdquo;
+          </div>
+        ) : null}
       </div>
     ) : null;
 

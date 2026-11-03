@@ -7,7 +7,7 @@ import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClas
 import { strataService } from "@/lib/services/nexus/strata/strataService";
 import { renderSystemSessionHeaders } from "@/lib/services/partial/helper/systemSessionHeaders";
 import { useNominalStrataExams, type StrataItem } from "@/lib/hooks/nexus/strata/assessment/learning/exams/nominal/useNominalStrataExams";
-import { ArrowLeft, Calendar, Check, FileQuestion, Loader2, Play, Search, X } from "lucide-react";
+import { ArrowLeft, Calendar, Check, ChevronLeft, ChevronRight, FileQuestion, Loader2, Play, Search, X } from "lucide-react";
 import { NclexCustomTestPopup } from "@/components/common/dashboards/nclex/NclexDashboardSections";
 import { useRelativeStrataAssessmentResults } from "@/lib/hooks/nexus/strata/assessment/results/relative/useRelativeStrataAssessmentResults";
 import type { DashboardCourse, DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
@@ -16,7 +16,7 @@ import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
 import { registerSearchExams } from "@/lib/services/search/searchRegistry";
 
-const PER_PAGE = 50;
+const PER_PAGE = 500;
 
 type LoadStatus = "idle" | "loading" | "ready" | "error";
 
@@ -171,8 +171,43 @@ export function SubjectExamsHierarchyPage({
           throw new Error(result.error);
         }
 
-        const rawItems = result?.data?.items ?? [];
-        const sortedExams = [...rawItems].sort((a, b) => {
+        const rawItems = [...(result?.data?.items ?? [])];
+        const totalPages = result?.data?.skewTotalPages ?? 1;
+
+        // If the backend paginated and more pages exist, fetch all remaining pages so the full exam list (e.g. all 210 exams) is present
+        if (totalPages > 1 && rawItems.length < (result?.data?.skewTotal ?? 0)) {
+          const remainingPagePromises = [];
+          for (let p = 2; p <= totalPages; p++) {
+            remainingPagePromises.push(
+              strataService<{ items?: StrataItem[] }>("Exam", "NominalFetch", {
+                identifier: subjectId,
+                dynamicPage: p,
+                dynamicPerPage: PER_PAGE,
+                dynamicSearch: "",
+                dynamicSortColumn: "updatedAt",
+                dynamicSortDirection: "desc",
+                dynamicLearningStrataName: "subject",
+              })
+            );
+          }
+          const additionalResults = await Promise.all(remainingPagePromises);
+          for (const res of additionalResults) {
+            if (res?.data?.items) {
+              rawItems.push(...res.data.items);
+            }
+          }
+        }
+
+        // Deduplicate in case overlapping items occur across pages
+        const seenExamIds = new Set<string>();
+        const uniqueItems = rawItems.filter((e) => {
+          const key = String(e.guidId || e.id);
+          if (seenExamIds.has(key)) return false;
+          seenExamIds.add(key);
+          return true;
+        });
+
+        const sortedExams = [...uniqueItems].sort((a, b) => {
           const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
           const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
           if (timeB !== timeA) return timeB - timeA;
@@ -273,7 +308,7 @@ export function SubjectExamsHierarchyPage({
     const subCategories: DashboardSubCategory[] = exams.map((e, index) => ({
       id: String(e.guidId || e.id),
       title: e.title,
-      questionCount: e.questionsCount && e.questionsCount > 0 ? e.questionsCount : 45,
+      questionCount: e.questionsCount && e.questionsCount > 0 ? e.questionsCount : 0,
       usedCount: 0,
       order: index + 1,
     }));
@@ -288,9 +323,9 @@ export function SubjectExamsHierarchyPage({
         questionCount: totalQuestions,
         examCount: exams.length,
         doneCount: 0,
-        easyPct: 35,
-        mediumPct: 45,
-        hardPct: 20,
+        easyPct: 0,
+        mediumPct: 0,
+        hardPct: 0,
         order: 1,
         subCategories,
       },
@@ -347,6 +382,45 @@ export function SubjectExamsHierarchyPage({
       return true;
     }).sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
   }, [exams, searchQuery, selectedYear, selectedSeason, currentSubjectTitle]);
+
+  const [perPage, setPerPage] = useState<number>(50);
+
+  // Reset pagination to page 1 on filter or search change
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedYear, selectedSeason, perPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredExams.length / perPage));
+  const currentPage = Math.min(page, totalPages);
+
+  const paginatedExams = useMemo(() => {
+    const start = (currentPage - 1) * perPage;
+    return filteredExams.slice(start, start + perPage);
+  }, [filteredExams, currentPage, perPage]);
+
+  const startIndex = (currentPage - 1) * perPage;
+  const endIndex = Math.min(filteredExams.length, startIndex + perPage);
+
+  const getVisiblePages = (current: number, total: number, windowSize = 2) => {
+    const pages: (number | "ellipsis")[] = [];
+    const start = Math.max(2, current - windowSize);
+    const end = Math.min(total - 1, current + windowSize);
+
+    pages.push(1);
+    if (start > 2) pages.push("ellipsis");
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < total - 1) pages.push("ellipsis");
+    if (total > 1) pages.push(total);
+
+    return pages;
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   return (
     <div
@@ -559,8 +633,33 @@ export function SubjectExamsHierarchyPage({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
-            {filteredExams.map((exam) => {
+          <>
+            {/* Pagination summary row & Per Page selector */}
+            <div className="flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-slate-600 dark:text-white/60">
+              <div>
+                Showing <span className="font-bold text-slate-900 dark:text-white">{startIndex + 1}</span>–<span className="font-bold text-slate-900 dark:text-white">{endIndex}</span> of <span className="font-bold text-slate-900 dark:text-white">{filteredExams.length}</span> exams
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Per page:</span>
+                <select
+                  value={perPage}
+                  onChange={(e) => {
+                    setPerPage(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="px-2 py-1 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-slate-900 dark:text-white font-medium text-xs outline-none focus:border-blue-500 cursor-pointer"
+                >
+                  <option value={25} className="dark:bg-[#15273e]">25</option>
+                  <option value={50} className="dark:bg-[#15273e]">50</option>
+                  <option value={100} className="dark:bg-[#15273e]">100</option>
+                  <option value={500} className="dark:bg-[#15273e]">All</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
+              {paginatedExams.map((exam) => {
               const examId = exam.guidId ?? String(exam.id);
               const hasFreeAccess = exam.accessType === "Free";
               const allowedModes = exam.modes || ["Practice", "Review", "Exam"];
@@ -665,7 +764,62 @@ export function SubjectExamsHierarchyPage({
                 </div>
               );
             })}
-          </div>
+            </div>
+
+            {/* Bottom Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-200 dark:border-white/10">
+                <div className="text-xs text-slate-600 dark:text-white/60">
+                  Page <span className="font-bold text-slate-900 dark:text-white">{currentPage}</span> of <span className="font-bold text-slate-900 dark:text-white">{totalPages}</span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-xs font-semibold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs cursor-pointer"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    Previous
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {getVisiblePages(currentPage, totalPages).map((p, i) =>
+                      p === "ellipsis" ? (
+                        <span key={`ell-${i}`} className="px-2 text-xs text-slate-400 select-none">
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => handlePageChange(p)}
+                          className={`min-w-8 h-8 px-2 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer ${
+                            p === currentPage
+                              ? "bg-[#2FD9C4] text-[#08111F] shadow-sm"
+                              : "border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      )
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={currentPage === totalPages}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-xs font-semibold text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs cursor-pointer"
+                  >
+                    Next
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

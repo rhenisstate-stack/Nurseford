@@ -39,10 +39,11 @@ export function SubjectExamsPopup({
         const result = await strataService<{
           items: StrataItem[];
           skewTotal: number;
+          skewTotalPages?: number;
         }>("Exam", "NominalFetch", {
           identifier: String(subject.guidId ?? subject.id),
           dynamicPage: 1,
-          dynamicPerPage: 50,
+          dynamicPerPage: 500,
           dynamicSearch: "",
           dynamicSortColumn: "updatedAt",
           dynamicSortDirection: "desc",
@@ -54,7 +55,39 @@ export function SubjectExamsPopup({
           throw new Error(result.error);
         }
 
-        const items = [...(result?.data?.items ?? [])].sort((a, b) => {
+        const rawItems = [...(result?.data?.items ?? [])];
+        const totalPages = (result?.data as any)?.skewTotalPages ?? 1;
+        if (totalPages > 1 && rawItems.length < (result?.data?.skewTotal ?? 0)) {
+          const remainingPagePromises = [];
+          for (let p = 2; p <= totalPages; p++) {
+            remainingPagePromises.push(
+              strataService<{ items?: StrataItem[] }>("Exam", "NominalFetch", {
+                identifier: String(subject.guidId ?? subject.id),
+                dynamicPage: p,
+                dynamicPerPage: 500,
+                dynamicSearch: "",
+                dynamicSortColumn: "updatedAt",
+                dynamicSortDirection: "desc",
+              })
+            );
+          }
+          const additionalResults = await Promise.all(remainingPagePromises);
+          for (const res of additionalResults) {
+            if (res?.data?.items) {
+              rawItems.push(...res.data.items);
+            }
+          }
+        }
+
+        const seenExamIds = new Set<string>();
+        const uniqueItems = rawItems.filter((e) => {
+          const key = String(e.guidId || e.id);
+          if (seenExamIds.has(key)) return false;
+          seenExamIds.add(key);
+          return true;
+        });
+
+        const items = [...uniqueItems].sort((a, b) => {
           const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
           const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
           if (timeB !== timeA) return timeB - timeA;

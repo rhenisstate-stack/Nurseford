@@ -83,12 +83,13 @@ function getSubCategoryCounts(
   statusFilter: StatusFilter
 ) {
   let diffCount = sc.questionCount;
+  const hasDifficulty = (course.easyPct || 0) > 0 || (course.mediumPct || 0) > 0 || (course.hardPct || 0) > 0;
   if (difficultyFilter === "Easy") {
-    diffCount = Math.max(1, Math.round(sc.questionCount * ((course.easyPct || 33) / 100)));
+    diffCount = hasDifficulty ? Math.round(sc.questionCount * ((course.easyPct || 0) / 100)) : 0;
   } else if (difficultyFilter === "Medium") {
-    diffCount = Math.max(1, Math.round(sc.questionCount * ((course.mediumPct || 34) / 100)));
+    diffCount = hasDifficulty ? Math.round(sc.questionCount * ((course.mediumPct || 0) / 100)) : 0;
   } else if (difficultyFilter === "Hard") {
-    diffCount = Math.max(1, Math.round(sc.questionCount * ((course.hardPct || 33) / 100)));
+    diffCount = hasDifficulty ? Math.round(sc.questionCount * ((course.hardPct || 0) / 100)) : 0;
   }
 
   const usedCount = Math.min(diffCount, sc.usedCount || 0);
@@ -1251,7 +1252,9 @@ const CourseCard = ({
         </div>
       </div>
 
-      <DifficultyBar easy={course.easyPct} medium={course.mediumPct} hard={course.hardPct} />
+      {(course.easyPct + course.mediumPct + course.hardPct > 0) && (
+        <DifficultyBar easy={course.easyPct} medium={course.mediumPct} hard={course.hardPct} />
+      )}
 
       <div className="mt-auto pt-1">
         <button

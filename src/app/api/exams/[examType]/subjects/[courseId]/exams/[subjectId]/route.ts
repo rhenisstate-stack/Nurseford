@@ -34,19 +34,6 @@ const courseNameCache = new Map<string, string>();
 const subjectNameCache = new Map<string, string>();
 const CACHE_TTL_MS = 0;
 
-const LEGACY_HESI_SUBJECT_MAP: Record<
-  string,
-  { courseId: string; subjectId: string; subjectName: string }
-> = {
-  "73": { courseId: "18", subjectId: "38", subjectName: "MATH 2023" },
-  "74": { courseId: "18", subjectId: "39", subjectName: "MATH 2024" },
-  "75": { courseId: "18", subjectId: "40", subjectName: "MATH 2025" },
-  "76": { courseId: "18", subjectId: "41", subjectName: "MATH 2026" },
-  "77": { courseId: "17", subjectId: "37", subjectName: "GRAMMAR 2025" },
-  "78": { courseId: "17", subjectId: "36", subjectName: "GRAMMAR 2024" },
-  "79": { courseId: "17", subjectId: "35", subjectName: "GRAMMAR 2023" },
-};
-
 export async function GET(
   req: NextRequest,
   {
@@ -64,13 +51,8 @@ export async function GET(
   let subjectName = searchParams.get("subjectName") || "";
   const dynamicSearch = searchParams.get("search") || "";
 
-  const mappedCourseId = COURSE_ID_ALIASES[courseId] || courseId;
-  const legacyInfo = examType === "hesi-a2" ? LEGACY_HESI_SUBJECT_MAP[subjectId] : undefined;
-  const effectiveSubjectId = legacyInfo?.subjectId || subjectId;
-  const effectiveCourseId = legacyInfo?.courseId || mappedCourseId;
-  if (!subjectName && legacyInfo?.subjectName) {
-    subjectName = legacyInfo.subjectName;
-  }
+  const effectiveCourseId = COURSE_ID_ALIASES[courseId] || courseId;
+  const effectiveSubjectId = subjectId;
 
   const castoLine = req.headers.get("x-casto-line");
   const castoBadge = req.headers.get("x-casto-badge");

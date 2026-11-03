@@ -5,7 +5,6 @@ import {
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
 import type { DashboardCourse, DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
-import { COURSE_PLACEHOLDERS } from "@/lib/data/nclex-course-seed";
 
 type CourseExamType =
   | "nclex-rn"
@@ -284,8 +283,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         const units = await fetchBackendSubjectUnits(s.id ?? s.guidId ?? "", sessionHeaders);
         subCategories = units.map((u, ui) => {
           const unitTitle = u.name?.trim() || `Unit ${ui + 1}`;
-          const rawCount = toNumber(u.questionsCount ?? u.examsCount, 0);
-          const questionCount = Math.max(1, Math.floor(rawCount / 3));
+          const questionCount = toNumber(u.questionsCount ?? u.examsCount, 0);
 
           return {
             id: String(u.id ?? u.guidId ?? unitTitle),
@@ -303,11 +301,9 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         if (subjectIdentifier) {
           const rawExams = await fetchBackendSubjectExams(subjectIdentifier, sessionHeaders);
           subCategories = rawExams.map((e, index) => {
-            const rawCount = e.questionCount;
-            const questionCount = Math.max(1, Math.floor(rawCount / 3));
             return {
               ...e,
-              questionCount,
+              questionCount: e.questionCount || 0,
               order: index + 1,
             };
           });
@@ -462,15 +458,6 @@ async function fetchBackendCourses(examType: CourseExamType, sessionHeaders: Ses
     .filter(Boolean);
 
   if (programIds.length === 0) {
-    if (examType !== "nclex-rn" && examType !== "nclex-pn") {
-      const placeholders = COURSE_PLACEHOLDERS.filter((c) => c.examType === examType);
-      if (placeholders.length > 0) {
-        return placeholders.map((p) => ({
-          ...p,
-          subCategories: p.subCategories ? p.subCategories.map((sc) => ({ ...sc })) : [],
-        }));
-      }
-    }
     return [];
   }
 
