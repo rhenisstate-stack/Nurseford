@@ -4,7 +4,6 @@ import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
 import {
   COURSE_ID_ALIASES,
-  PHP_COURSE_NAMES,
 } from "@/lib/data/php-exam-counts";
 
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
@@ -181,9 +180,7 @@ export async function GET(
         console.warn(`[exams route] Course lookup failed:`, err);
       }
     }
-    if (!courseName) {
-      courseName = PHP_COURSE_NAMES[courseId] || PHP_COURSE_NAMES[effectiveCourseId] || "";
-    }
+
 
     const resolvedSubjectName = subjectName || items[0]?.subjectName || "";
 
@@ -220,19 +217,14 @@ export async function GET(
       guidId: e.guidId,
       title: e.title,
       description: e.description,
-      duration: e.duration ?? 180,
-      season: resolveExamSeason(e.season, e.title, e.description) || (e.season ?? "Spring"),
+      duration: e.duration ?? null,
+      season: resolveExamSeason(e.season, e.title, e.description) || e.season || null,
       year: extractExamYear(
         e.title,
         resolvedSubjectName || subjectName,
         e.year ?? (e as unknown as { examYear?: number; exam_year?: number }).examYear ?? (e as unknown as { examYear?: number; exam_year?: number }).exam_year
       ),
-      questionsCount:
-        e.questionsCount !== undefined && e.questionsCount !== null
-          ? e.questionsCount
-          : e.sectionsCount && e.sectionsCount > 0
-          ? e.sectionsCount * 25
-          : 0,
+      questionsCount: Number(e.questionsCount ?? 0),
       accessType: e.accessType ?? "Restricted",
       status: e.status ?? "Active",
       modes: e.modes || ["Practice", "Review", "Exam"],
@@ -240,14 +232,17 @@ export async function GET(
       updatedAt: e.updatedAt || e.updated_at || e.createdAt || e.created_at || null,
     }));
 
-    // Sort exams by last updated date first, then fallback to id
+    // Sort exams dynamically: newest exam year first (e.g. 2026 before 2019), then by last updated timestamp
     exams.sort((a, b) => {
-      const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-      const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+      const yrB = (b.year ?? extractExamYear(b.title, resolvedSubjectName)) ?? 0;
+      const yrA = (a.year ?? extractExamYear(a.title, resolvedSubjectName)) ?? 0;
+      if (yrB !== yrA) return yrB - yrA;
+
+      const timeB = new Date(b.updatedAt || (b as any).createdAt || 0).getTime();
+      const timeA = new Date(a.updatedAt || (a as any).createdAt || 0).getTime();
       if (timeB !== timeA) return timeB - timeA;
-      const idB = Number(b.id) || 0;
-      const idA = Number(a.id) || 0;
-      return idB - idA;
+
+      return (Number(b.id) || 0) - (Number(a.id) || 0);
     });
 
     const resultPayload = {

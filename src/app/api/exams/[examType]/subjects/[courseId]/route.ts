@@ -10,7 +10,6 @@ import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
 import {
   COURSE_ID_ALIASES,
-  PHP_COURSE_NAMES,
 } from "@/lib/data/php-exam-counts";
 
 const EXAM_SEGMENTS: Record<string, string> = {
@@ -56,7 +55,7 @@ export async function GET(
 ) {
   const { examType, courseId } = await params;
 
-  if (!VALID_EXAM_TYPES.includes(examType)) {
+  if (!VALID_EXAM_TYPES.includes(examType as any)) {
     return NextResponse.json(
       {
         error: `Unknown exam type '${examType}'. Valid types: ${VALID_EXAM_TYPES.join(
@@ -203,9 +202,7 @@ export async function GET(
         console.warn(`[subjects route] Course lookup failed:`, err);
       }
     }
-    if (!courseName) {
-      courseName = PHP_COURSE_NAMES[courseId] || PHP_COURSE_NAMES[effectiveCourseId] || "";
-    }
+
 
     // Fetch true live exam count per subject directly from backend nominal endpoint
     const liveCounts = await Promise.all(

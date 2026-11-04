@@ -9,6 +9,7 @@ export interface DashboardSubCategory {
   questionCount: number;
   usedCount: number;
   order: number;
+  difficulty?: string | null;
 }
 
 export interface DashboardCourse {

@@ -291,6 +291,14 @@ export function LiveExamActionProvider({
               sessionStorage.setItem(`exam_in_progress_${entry.examId}`, payloadStr);
             }
           }
+          if (entry.questionId) {
+            try {
+              const answeredStored = new Set(JSON.parse(localStorage.getItem("rhenis_answered_questions") || "[]"));
+              answeredStored.add(entry.questionId);
+              answeredStored.add(String(entry.questionId));
+              localStorage.setItem("rhenis_answered_questions", JSON.stringify(Array.from(answeredStored)));
+            } catch {}
+          }
         } catch {}
       }
 

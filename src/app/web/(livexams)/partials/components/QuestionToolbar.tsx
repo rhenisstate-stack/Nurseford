@@ -568,6 +568,20 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
     const handleBookmark = useCallback(async () => {
         const next = !bookmarked;
         setBookmarked(next);
+        if (typeof window !== "undefined") {
+            try {
+                const stored = new Set<string | number>(JSON.parse(localStorage.getItem("rhenis_bookmarked_questions") || "[]"));
+                if (next && q.id) {
+                    stored.add(q.id);
+                    stored.add(String(q.id));
+                } else if (q.id) {
+                    stored.delete(q.id);
+                    stored.delete(String(q.id));
+                    stored.delete(Number(q.id));
+                }
+                localStorage.setItem("rhenis_bookmarked_questions", JSON.stringify(Array.from(stored)));
+            } catch {}
+        }
         await submitTool("ActionQuestionBookmark", {
             examId, examGuidId, sectionId, sectionGuidId,
             questionId: q.id, questionGuidId: q.guidId,

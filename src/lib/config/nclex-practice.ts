@@ -9,7 +9,7 @@ export interface NclexPracticeGroup {
 // NCLEX practice/readiness parents on the .NET backend.
 //
 // Real .NET backend Subject IDs:
-//   NCLEX-RN  practice  -> Subject 120 -> "NCLEX RN (Practice Exams)"
+//   NCLEX-RN  practice  -> Subject 112 -> "NCLEX RN (Practice Exams)"
 //   NCLEX-RN  readiness -> Subject 121 -> "NCLEX RN- (Readiness Assessment Test)"
 //   NCLEX-PN  practice  -> Subject 110 -> "NCLEX-PN (Practice Exams)"
 //   NCLEX-PN  readiness -> Subject 111 -> "NCLEX PN-(Readiness Assessment Test)"
@@ -19,9 +19,9 @@ export interface NclexPracticeGroup {
 export const NCLEX_PRACTICE_CONFIG: Record<NclexExamType, { practice: NclexPracticeGroup; readiness: NclexPracticeGroup }> = {
   "nclex-rn": {
     practice: {
-      domainsGroupId: "120",
+      domainsGroupId: "112",
       label: "NCLEX RN (Practice Exams)",
-      subjectGuidId: "120",
+      subjectGuidId: "112",
     },
     readiness: {
       domainsGroupId: "121",

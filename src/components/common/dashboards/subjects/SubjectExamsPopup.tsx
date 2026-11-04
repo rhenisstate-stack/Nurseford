@@ -6,6 +6,7 @@ import { strataService } from "@/lib/services/nexus/strata/strataService";
 import type { StrataItem } from "@/lib/hooks/nexus/strata/assessment/learning/exams/nominal/useNominalStrataExams";
 import type { BackendSubject } from "@/lib/data/exam-subjects";
 import { ArrowRight, FileQuestion, FolderOpen, Loader2, X } from "lucide-react";
+import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 
 interface SubjectExamsPopupProps {
   isOpen: boolean;
@@ -47,6 +48,7 @@ export function SubjectExamsPopup({
           dynamicSearch: "",
           dynamicSortColumn: "updatedAt",
           dynamicSortDirection: "desc",
+          dynamicLearningStrataName: "subject",
         });
 
         if (cancelled) return;
@@ -68,6 +70,7 @@ export function SubjectExamsPopup({
                 dynamicSearch: "",
                 dynamicSortColumn: "updatedAt",
                 dynamicSortDirection: "desc",
+                dynamicLearningStrataName: "subject",
               })
             );
           }
@@ -88,9 +91,14 @@ export function SubjectExamsPopup({
         });
 
         const items = [...uniqueItems].sort((a, b) => {
-          const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-          const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+          const yrB = extractExamYear(b.title, subject?.name, b.year) ?? 0;
+          const yrA = extractExamYear(a.title, subject?.name, a.year) ?? 0;
+          if (yrB !== yrA) return yrB - yrA;
+
+          const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+          const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
           if (timeB !== timeA) return timeB - timeA;
+
           return (Number(b.id) || 0) - (Number(a.id) || 0);
         });
         try {

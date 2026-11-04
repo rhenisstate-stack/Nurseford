@@ -144,25 +144,24 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
 
-  const [theme, setThemeState] = useState<Record<ThemeTarget, ThemeValue>>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem("theme");
-        if (stored) return JSON.parse(stored);
-      } catch { /* noop */ }
-    }
-    return defaultTheme;
-  });
+  const [theme, setThemeState] = useState<Record<ThemeTarget, ThemeValue>>(defaultTheme);
+  const [customColors, setCustomColorsState] = useState<CustomColors | null>(null);
 
-  const [customColors, setCustomColorsState] = useState<CustomColors | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const stored = localStorage.getItem(USER_CUSTOM_COLORS_KEY);
-        if (stored) return JSON.parse(stored);
-      } catch { /* noop */ }
-    }
-    return null;
-  });
+  // Initialize from localStorage on client mount to ensure SSR/hydration consistency
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("theme");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed) setThemeState(parsed);
+      }
+      const storedColors = localStorage.getItem(USER_CUSTOM_COLORS_KEY);
+      if (storedColors) {
+        const parsedColors = JSON.parse(storedColors);
+        if (parsedColors) setCustomColorsState(parsedColors);
+      }
+    } catch { /* noop */ }
+  }, []);
 
   // Apply theme immediately on mount, on state changes, and on route changes
   useEffect(() => {

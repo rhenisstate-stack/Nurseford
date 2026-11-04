@@ -196,7 +196,7 @@ export async function GET(
 ) {
   const { examType } = await params;
 
-  if (!VALID_EXAM_TYPES.includes(examType)) {
+  if (!VALID_EXAM_TYPES.includes(examType as any)) {
     return NextResponse.json(
       {
         error: `Unknown exam type '${examType}'. Valid types: ${VALID_EXAM_TYPES.join(

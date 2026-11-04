@@ -210,7 +210,7 @@ export const useRelativeStrataAssessmentResults = ({
   perPage?: number | string;
   sortColumn?: keyof StrataExamResultItem | null;
   sortDirection?: "asc" | "desc";
-}) => {
+} = {}) => {
   const [examresults, setExams] = useState<StrataExamResultItem[]>([]);
   const [filteredExamResults, setFilteredExams] = useState<StrataExamResultItem[]>([]);
   const [examResultSearch, setExamResultSearch] = useState("");

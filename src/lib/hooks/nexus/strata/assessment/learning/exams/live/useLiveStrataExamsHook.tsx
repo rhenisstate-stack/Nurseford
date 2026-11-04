@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { strataService } from "@/lib/services/nexus/strata/strataService";
+import { assessmentService } from "@/lib/services/nexus/strata/assessmentService";
 import type { StrataItem } from "@/lib/hooks/nexus/strata/assessment/learning/exams/nominal/useNominalStrataExams";
 
 
@@ -492,6 +493,93 @@ function sampleRandomItems<T>(items: T[], count: number): T[] {
 // HOOK
 // ═══════════════════════════════════════════════════════════════════════════════
 
+export function normalizeDifficulty(val?: string | number | null): "easy" | "medium" | "hard" | "other" {
+  if (val === null || val === undefined) return "other";
+  const v = String(val).toLowerCase().trim();
+  if (v === "easy" || v === "beginner" || v === "1") return "easy";
+  if (v === "medium" || v === "moderate" || v === "intermediate" || v === "2") return "medium";
+  if (v === "hard" || v === "difficult" || v === "advanced" || v === "3") return "hard";
+  return "other";
+}
+
+export function matchesDifficulty(val?: string | number | null, target?: string | null): boolean {
+  if (!target || target.toLowerCase() === "all") return true;
+  if (!val) return false;
+  const targetNorm = target.toLowerCase().trim();
+  const valNorm = normalizeDifficulty(val);
+  if (targetNorm === "easy") return valNorm === "easy";
+  if (targetNorm === "medium") return valNorm === "medium";
+  if (targetNorm === "hard") return valNorm === "hard";
+  return String(val).toLowerCase().trim() === targetNorm;
+}
+
+export function extractQuestionDifficulty(q: any): string | undefined {
+  if (!q) return undefined;
+  return (
+    q.difficulty ||
+    q.difficultyLevel ||
+    q.difficulty_level ||
+    q.level ||
+    q.grade ||
+    q.difficultyLevelName ||
+    (q.questionOptions && q.questionOptions[0]?.difficulty)
+  );
+}
+
+export function isQuestionAnswered(q: StrataSessionQuestionFull, answeredSet?: Set<string | number>): boolean {
+  if (answeredSet) {
+    if (answeredSet.has(q.id) || answeredSet.has(String(q.id))) return true;
+    if (q.guidId && (answeredSet.has(q.guidId) || answeredSet.has(String(q.guidId)))) return true;
+  }
+  if (q.savedUserAnswer != null) {
+    if (q.savedUserAnswer.userAnswerData !== undefined && q.savedUserAnswer.userAnswerData !== null) return true;
+    if (q.savedUserAnswer.id != null) return true;
+    if (q.savedUserAnswer.attemptNumber != null) return true;
+  }
+  if ((q as any).isAnswered === true) return true;
+  if ((q as any).userAnswerData != null) return true;
+  return false;
+}
+
+export function isQuestionBookmarked(q: StrataSessionQuestionFull, bookmarkedSet?: Set<string | number>): boolean {
+  if (bookmarkedSet) {
+    if (bookmarkedSet.has(q.id) || bookmarkedSet.has(String(q.id))) return true;
+    if (q.guidId && (bookmarkedSet.has(q.guidId) || bookmarkedSet.has(String(q.guidId)))) return true;
+  }
+  if ((q as any).bookmarked === true || (q as any).isBookmarked === true) return true;
+  if (!q.questionActions || q.questionActions.length === 0) return false;
+  return q.questionActions.some((a) => {
+    const actVal = (a.actionValue || "").toString().toLowerCase();
+    const subType = (a as any).submissionType || "";
+    if (subType === "ActionQuestionBookmark" && actVal !== "false") return true;
+    if (actVal === "bookmark" || actVal === "bookmarked") return true;
+    try {
+      const parsed = JSON.parse(a.actionContent || "{}");
+      if (parsed.Bookmark !== undefined) return Boolean(parsed.Bookmark);
+    } catch {
+      // ignore
+    }
+    return (a.actionContent || "").toLowerCase().includes("bookmark");
+  });
+}
+
+export function matchesStatus(
+  q: StrataSessionQuestionFull,
+  targetStatus?: string | null,
+  answeredSet?: Set<string | number>,
+  bookmarkedSet?: Set<string | number>
+): boolean {
+  if (!targetStatus || targetStatus.toLowerCase() === "all") return true;
+  const s = targetStatus.toLowerCase().trim();
+  const answered = isQuestionAnswered(q, answeredSet);
+  const bookmarked = isQuestionBookmarked(q, bookmarkedSet);
+
+  if (s === "used") return answered;
+  if (s === "unused") return !answered;
+  if (s === "bookmarked") return bookmarked;
+  return true;
+}
+
 export const useLiveStrataExam = ({
   examIdentifier,
   page = 1,
@@ -569,6 +657,64 @@ export const useLiveStrataExam = ({
         setError(null);
         setExamSession(null);
 
+        // Load answered & bookmarked question IDs
+        const answeredQuestionIds = new Set<string | number>();
+        const bookmarkedQuestionIds = new Set<string | number>();
+
+        if (typeof window !== "undefined") {
+          try {
+            const localAns = JSON.parse(localStorage.getItem("rhenis_answered_questions") || "[]");
+            for (const id of localAns) {
+              answeredQuestionIds.add(id);
+              answeredQuestionIds.add(String(id));
+              answeredQuestionIds.add(Number(id));
+            }
+          } catch {}
+          try {
+            const localBmk = JSON.parse(localStorage.getItem("rhenis_bookmarked_questions") || "[]");
+            for (const id of localBmk) {
+              bookmarkedQuestionIds.add(id);
+              bookmarkedQuestionIds.add(String(id));
+              bookmarkedQuestionIds.add(Number(id));
+            }
+          } catch {}
+        }
+
+        try {
+          const resultsRes = await assessmentService<any>("Result", "RelativeFetch", {
+            dynamicPage: 1,
+            dynamicPerPage: 100,
+          });
+          const rawResults = resultsRes?.data;
+          const items: any[] = Array.isArray(rawResults)
+            ? rawResults
+            : (rawResults?.items || rawResults?.results || []);
+          for (const r of items) {
+            for (const a of r.answers || []) {
+              if (a.questionId) {
+                answeredQuestionIds.add(a.questionId);
+                answeredQuestionIds.add(String(a.questionId));
+              }
+            }
+            for (const w of r.wrongQuestionRefs || []) {
+              if (w.questionId) {
+                answeredQuestionIds.add(w.questionId);
+                answeredQuestionIds.add(String(w.questionId));
+              }
+            }
+            for (const sec of r.sections || []) {
+              for (const q of sec.questions || []) {
+                if (isQuestionBookmarked(q)) {
+                  bookmarkedQuestionIds.add(q.id);
+                  bookmarkedQuestionIds.add(String(q.id));
+                }
+              }
+            }
+          }
+        } catch {
+          // ignore relative fetch error
+        }
+
         // ─────────────────────────────────────────────────────────────
         // 1. BUILDER MODE: EXAMS (Subject-Level Custom Exam Builder)
         // ─────────────────────────────────────────────────────────────
@@ -605,7 +751,7 @@ export const useLiveStrataExam = ({
                   exams: items.map((e) => ({
                     id: String(e.guidId || e.id),
                     title: e.title || "Exam",
-                    questionsCount: e.questionsCount || 45,
+                    questionsCount: Number(e.questionsCount || 0),
                   })),
                 };
               } catch (err) {
@@ -685,13 +831,16 @@ export const useLiveStrataExam = ({
           const sections: StrataSessionSection[] = validSessions.map((session, idx) => {
             const allQ = (session.sections ?? []).flatMap((sec) => sec.questions ?? []);
             let candidateQ = allQ;
-            if (difficulty && difficulty.toLowerCase() !== 'all') {
-              const diffFiltered = allQ.filter(
-                (q) => q.difficulty && q.difficulty.toLowerCase() === difficulty.toLowerCase()
+            if (difficulty && difficulty.toLowerCase() !== "all") {
+              candidateQ = candidateQ.filter((q) => {
+                const val = extractQuestionDifficulty(q);
+                return matchesDifficulty(val, difficulty);
+              });
+            }
+            if (status && status.toLowerCase() !== "all") {
+              candidateQ = candidateQ.filter((q) =>
+                matchesStatus(q, status, answeredQuestionIds, bookmarkedQuestionIds)
               );
-              if (diffFiltered.length > 0) {
-                candidateQ = diffFiltered;
-              }
             }
             return {
               id: session.exam.id || idx + 1,
@@ -812,15 +961,15 @@ export const useLiveStrataExam = ({
             const allQ = (session.sections ?? []).flatMap((sec) => sec.questions ?? []);
             let candidateQ = allQ;
             if (difficulty && difficulty.toLowerCase() !== "all") {
-              const diffFiltered = allQ.filter(
-                (q: any) => {
-                  const val = q.difficulty || q.difficultyLevel || q.level;
-                  return val && String(val).toLowerCase() === difficulty.toLowerCase();
-                }
+              candidateQ = candidateQ.filter((q: any) => {
+                const val = extractQuestionDifficulty(q);
+                return matchesDifficulty(val, difficulty);
+              });
+            }
+            if (status && status.toLowerCase() !== "all") {
+              candidateQ = candidateQ.filter((q: any) =>
+                matchesStatus(q, status, answeredQuestionIds, bookmarkedQuestionIds)
               );
-              if (diffFiltered.length > 0) {
-                candidateQ = diffFiltered;
-              }
             }
             return {
               id: session.exam.guidId || String(session.exam.id || idx + 1),
@@ -907,6 +1056,28 @@ export const useLiveStrataExam = ({
         }
 
         const session = result?.data ?? null;
+        if (session && ((difficulty && difficulty.toLowerCase() !== "all") || (status && status.toLowerCase() !== "all"))) {
+          const filteredSections = (session.sections ?? []).map((sec) => {
+            let qs = sec.questions ?? [];
+            if (difficulty && difficulty.toLowerCase() !== "all") {
+              qs = qs.filter((q) => {
+                const val = extractQuestionDifficulty(q);
+                return matchesDifficulty(val, difficulty);
+              });
+            }
+            if (status && status.toLowerCase() !== "all") {
+              qs = qs.filter((q) =>
+                matchesStatus(q, status, answeredQuestionIds, bookmarkedQuestionIds)
+              );
+            }
+            return { ...sec, questions: qs };
+          });
+          const totalQ = filteredSections.reduce((sum, s) => sum + (s.questions?.length ?? 0), 0);
+          session.sections = filteredSections;
+          if (session.exam) {
+            session.exam.questionsCount = totalQ;
+          }
+        }
         setExamSession(session);
         setSkewTotal(session?.exam?.questionsCount ?? 0);
         setSkewTotalPages(1);
@@ -939,6 +1110,8 @@ export const useLiveStrataExam = ({
     examCount,
     subCategories,
     customTitle,
+    difficulty,
+    status,
   ]);
 
   // ─────────────────────────────────────────────────────────────

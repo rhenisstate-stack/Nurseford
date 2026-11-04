@@ -16,7 +16,7 @@ import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
 import { registerSearchExams } from "@/lib/services/search/searchRegistry";
 
-const PER_PAGE = 500;
+const PER_PAGE = 100;
 
 type LoadStatus = "idle" | "loading" | "ready" | "error";
 
@@ -86,8 +86,25 @@ export function SubjectExamsHierarchyPage({
   }, [panelSlug, subjectId, dynamicSubjectName, cached?.subjectName, subjectName, exams]);
 
   const formattedUpdateDate = useMemo(() => {
+    let latest: Date | null = null;
+    for (const e of exams) {
+      const dt = e.updatedAt || e.createdAt;
+      if (dt) {
+        const d = new Date(dt);
+        if (!isNaN(d.getTime()) && (!latest || d > latest)) {
+          latest = d;
+        }
+      }
+    }
+    if (latest) {
+      return latest.toLocaleDateString("en-US", {
+        month: "2-digit",
+        day: "2-digit",
+        year: "2-digit",
+      });
+    }
     return getPreviousDayFormatted();
-  }, []);
+  }, [exams]);
 
   const { filteredExamResults: allResults } = useRelativeStrataAssessmentResults({
     page: 1,
@@ -190,10 +207,10 @@ export function SubjectExamsHierarchyPage({
               })
             );
           }
-          const additionalResults = await Promise.all(remainingPagePromises);
+          const additionalResults = await Promise.allSettled(remainingPagePromises);
           for (const res of additionalResults) {
-            if (res?.data?.items) {
-              rawItems.push(...res.data.items);
+            if (res.status === "fulfilled" && res.value?.data?.items) {
+              rawItems.push(...res.value.data.items);
             }
           }
         }
@@ -207,18 +224,22 @@ export function SubjectExamsHierarchyPage({
           return true;
         });
 
-        const sortedExams = [...uniqueItems].sort((a, b) => {
-          const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-          const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-          if (timeB !== timeA) return timeB - timeA;
-          const idB = Number(b.id) || 0;
-          const idA = Number(a.id) || 0;
-          return idB - idA;
-        });
-
         const currentCached = subjectExamsHierarchyClientCache.get(cacheKey);
         const resolvedSubName = (rawItems[0] as any)?.subjectName || currentCached?.subjectName || subjectName;
         const resolvedCourseName = (rawItems[0] as any)?.courseName || currentCached?.courseName || "";
+
+        const sortedExams = [...uniqueItems].sort((a, b) => {
+          const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+          const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+          if (timeB !== timeA) return timeB - timeA;
+
+          const yrB = extractExamYear(b.title, resolvedSubName, b.year) ?? 0;
+          const yrA = extractExamYear(a.title, resolvedSubName, a.year) ?? 0;
+          if (yrB !== yrA) return yrB - yrA;
+
+          return (Number(b.id) || 0) - (Number(a.id) || 0);
+        });
+
         subjectExamsHierarchyClientCache.set(cacheKey, {
           exams: sortedExams,
           courseName: resolvedCourseName,
@@ -339,7 +360,7 @@ export function SubjectExamsHierarchyPage({
       const yr = extractExamYear(e.title, currentSubjectTitle, e.year);
       if (yr) years.add(String(yr));
     });
-    return Array.from(years).sort((a, b) => Number(a) - Number(b));
+    return Array.from(years).sort((a, b) => Number(b) - Number(a));
   }, [exams, currentSubjectTitle]);
 
   // Split availableYears into vertical columns of up to 3 items each
@@ -352,24 +373,33 @@ export function SubjectExamsHierarchyPage({
   }, [availableYears]);
 
   const availableSeasons = useMemo(() => {
-    const seasons = new Set<string>(["Fall", "Spring", "Summer"]);
+    const seasons = new Set<string>();
     exams.forEach((e) => {
       const resolved = resolveExamSeason(e.season, e.title, e.description);
       if (resolved) seasons.add(resolved);
       else if (e.season) seasons.add(e.season);
     });
-    return Array.from(seasons);
+    const order = ["Fall", "Spring", "Summer", "Winter"];
+    return Array.from(seasons).sort((a, b) => {
+      const idxA = order.indexOf(a);
+      const idxB = order.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
   }, [exams]);
 
   // Filtered exams
   const filteredExams = useMemo(() => {
     return exams.filter((exam) => {
-      const examYr = String(extractExamYear(exam.title, currentSubjectTitle, exam.year));
+      const yrNum = extractExamYear(exam.title, currentSubjectTitle, exam.year);
+      const examYr = yrNum ? String(yrNum) : "";
       const examSeason = resolveExamSeason(exam.season, exam.title, exam.description) || exam.season;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchTitle = exam.title?.toLowerCase().includes(q);
-        const matchYear = examYr.includes(q);
+        const matchYear = examYr ? examYr.includes(q) : false;
         const matchSeason = examSeason ? examSeason.toLowerCase().includes(q) : false;
         if (!matchTitle && !matchYear && !matchSeason) return false;
       }
@@ -380,7 +410,17 @@ export function SubjectExamsHierarchyPage({
         if (!examSeason || examSeason.toLowerCase() !== selectedSeason.toLowerCase()) return false;
       }
       return true;
-    }).sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0));
+    }).sort((a, b) => {
+      const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+      const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+      if (timeB !== timeA) return timeB - timeA;
+
+      const yrB = extractExamYear(b.title, currentSubjectTitle, b.year) ?? 0;
+      const yrA = extractExamYear(a.title, currentSubjectTitle, a.year) ?? 0;
+      if (yrB !== yrA) return yrB - yrA;
+
+      return (Number(b.id) || 0) - (Number(a.id) || 0);
+    });
   }, [exams, searchQuery, selectedYear, selectedSeason, currentSubjectTitle]);
 
   const [perPage, setPerPage] = useState<number>(100);

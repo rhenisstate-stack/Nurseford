@@ -19,6 +19,8 @@ import {
   Settings,
 } from "lucide-react";
 import { useExamCourses, type DashboardCourse, type DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
+import { normalizeDifficulty, isQuestionBookmarked } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
+import { useRelativeStrataAssessmentResults } from "@/lib/hooks/nexus/strata/assessment/results/relative/useRelativeStrataAssessmentResults";
 
 export type { DashboardCourse };
 
@@ -80,35 +82,21 @@ function getSubCategoryCounts(
   sc: DashboardSubCategory,
   course: DashboardCourse,
   difficultyFilter: DifficultyFilter,
-  statusFilter: StatusFilter
+  statusFilter: StatusFilter,
+  answeredQuestionIds?: Set<string | number>,
+  bookmarkedQuestionIds?: Set<string | number>
 ) {
-  let diffCount = sc.questionCount;
-  const hasDifficulty = (course.easyPct || 0) > 0 || (course.mediumPct || 0) > 0 || (course.hardPct || 0) > 0;
-  if (difficultyFilter === "Easy") {
-    diffCount = hasDifficulty ? Math.round(sc.questionCount * ((course.easyPct || 0) / 100)) : 0;
-  } else if (difficultyFilter === "Medium") {
-    diffCount = hasDifficulty ? Math.round(sc.questionCount * ((course.mediumPct || 0) / 100)) : 0;
-  } else if (difficultyFilter === "Hard") {
-    diffCount = hasDifficulty ? Math.round(sc.questionCount * ((course.hardPct || 0) / 100)) : 0;
-  }
-
-  const usedCount = Math.min(diffCount, sc.usedCount || 0);
-  const unusedCount = Math.max(0, diffCount - usedCount);
-  const bookmarkedCount = 0;
-
-  let available = diffCount;
-  if (statusFilter === "Unused") {
-    available = unusedCount;
-  } else if (statusFilter === "Used") {
-    available = usedCount;
-  } else if (statusFilter === "Bookmarked") {
-    available = bookmarkedCount;
-  }
+  const totalQ = sc.questionCount || 0;
+  const answered = sc.usedCount || 0;
+  const usedCount = Math.min(totalQ, answered);
+  const unusedCount = Math.max(0, totalQ - usedCount);
 
   return {
-    totalInScope: diffCount,
+    totalInScope: totalQ,
     usedInScope: usedCount,
-    available,
+    unusedInScope: unusedCount,
+    bookmarkedInScope: 0,
+    available: totalQ,
   };
 }
 
@@ -123,6 +111,8 @@ function DomainRow({
   isExamMode = false,
   difficultyFilter = "All",
   statusFilter = "All",
+  answeredExamIds,
+  bookmarkedExamIds,
 }: {
   course: DashboardCourse;
   selectedSubs: Set<string>;
@@ -132,6 +122,8 @@ function DomainRow({
   isExamMode?: boolean;
   difficultyFilter?: DifficultyFilter;
   statusFilter?: StatusFilter;
+  answeredExamIds?: Set<string | number>;
+  bookmarkedExamIds?: Set<string | number>;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   useEffect(() => {
@@ -143,23 +135,16 @@ function DomainRow({
   const subCategories = course.subCategories || [];
   const hasSubs = subCategories.length > 0;
 
-  // Filter visible subcategories based on active difficulty & status
-  const visibleSubCategories = hasSubs
-    ? subCategories.filter(
-        (sc) => getSubCategoryCounts(sc, course, difficultyFilter, statusFilter).available > 0
-      )
-    : [];
+  // Keep subcategories available so user can select their study domain
+  const visibleSubCategories = hasSubs ? subCategories : [];
 
   const domainQs = hasSubs
-    ? visibleSubCategories.reduce(
-        (s, sc) => s + getSubCategoryCounts(sc, course, difficultyFilter, statusFilter).available,
-        0
-      )
+    ? subCategories.reduce((s, sc) => s + (sc.questionCount || 0), 0)
     : course.questionCount;
-  const domainExams = course.examCount ?? (visibleSubCategories.length > 0 ? visibleSubCategories.length : (hasSubs ? subCategories.length : 1));
+  const domainExams = course.examCount ?? (hasSubs ? subCategories.length : 0);
 
-  // If this domain has subcategories but NONE are available under the active filters, hide the domain completely
-  if (hasSubs && visibleSubCategories.length === 0) {
+  // If this domain has no exams or questions in the backend, hide it
+  if (hasSubs && subCategories.length === 0) {
     return null;
   }
 
@@ -223,7 +208,7 @@ function DomainRow({
         <div className="border-t border-[#CBDCF8]/60 dark:border-white/5">
           {visibleSubCategories.map((sc) => {
             const isSelected = selectedSubs.has(sc.id);
-            const counts = getSubCategoryCounts(sc, course, difficultyFilter, statusFilter);
+            const counts = getSubCategoryCounts(sc, course, difficultyFilter, statusFilter, answeredExamIds, bookmarkedExamIds);
             return (
               <div
                 key={sc.id}
@@ -303,10 +288,69 @@ export function NclexCustomTestPopup({
     return categoryCourses.length > 0 ? categoryCourses : filtered;
   }, [customCourses, rawCourses, activeCategory]);
   const { user } = useCurrentSystemUser();
+  const { filteredExamResults: allResults = [] } = useRelativeStrataAssessmentResults({
+    page: 1,
+    perPage: 200,
+  });
+
+  const answeredQuestionIds = useMemo(() => {
+    const set = new Set<string | number>();
+    for (const r of allResults || []) {
+      for (const a of r.answers || []) {
+        if (a.questionId) {
+          set.add(a.questionId);
+          set.add(String(a.questionId));
+        }
+      }
+      for (const w of r.wrongQuestionRefs || []) {
+        if (w.questionId) {
+          set.add(w.questionId);
+          set.add(String(w.questionId));
+        }
+      }
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const stored = JSON.parse(localStorage.getItem("rhenis_answered_questions") || "[]");
+        for (const id of stored) {
+          set.add(id);
+          set.add(String(id));
+        }
+      } catch {}
+    }
+    return set;
+  }, [allResults]);
+
+  const bookmarkedQuestionIds = useMemo(() => {
+    const set = new Set<string | number>();
+    for (const r of allResults || []) {
+      for (const sec of (r as any).sections || []) {
+        for (const q of sec.questions || []) {
+          if (isQuestionBookmarked(q)) {
+            set.add(q.id);
+            set.add(String(q.id));
+            if (q.guidId) set.add(q.guidId);
+          }
+        }
+      }
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const stored = JSON.parse(localStorage.getItem("rhenis_bookmarked_questions") || "[]");
+        for (const id of stored) {
+          set.add(id);
+          set.add(String(id));
+        }
+      } catch {}
+    }
+    return set;
+  }, [allResults]);
 
   const isExamMode =
     builderMode === "exams" ||
-    (builderMode !== "questions" && courses.length > 0 && courses.every((c) => !c.subCategories || c.subCategories.length === 0));
+    (builderMode !== "questions" &&
+      courses.length > 0 &&
+      courses.every((c) => (!c.subCategories || c.subCategories.length === 0) && (c.examCount || 0) > 0));
 
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
   const [questionCount, setQuestionCount] = useState(50);
@@ -324,11 +368,11 @@ export function NclexCustomTestPopup({
       let totalExams = 0;
       let totalQuestions = 0;
       for (const sc of customCourses) {
-        totalExams += sc.examCount || (sc.subCategories && sc.subCategories.length > 0 ? sc.subCategories.length : 1);
+        totalExams += sc.examCount || (sc.subCategories && sc.subCategories.length > 0 ? sc.subCategories.length : 0);
         if (sc.subCategories && sc.subCategories.length > 0) {
           totalQuestions += sc.subCategories.reduce((s, sub) => s + sub.questionCount, 0);
         } else {
-          totalQuestions += sc.questionCount || 45;
+          totalQuestions += sc.questionCount || 0;
         }
       }
       return { totalDomains: customCourses.length, totalExams, totalQuestions };
@@ -345,11 +389,11 @@ export function NclexCustomTestPopup({
     let totalExams = 0;
     let totalQuestions = 0;
     for (const sc of courses) {
-      totalExams += sc.examCount || (sc.subCategories && sc.subCategories.length > 0 ? sc.subCategories.length : 1);
+      totalExams += sc.examCount || (sc.subCategories && sc.subCategories.length > 0 ? sc.subCategories.length : 0);
       if (sc.subCategories && sc.subCategories.length > 0) {
         totalQuestions += sc.subCategories.reduce((s, sub) => s + sub.questionCount, 0);
       } else {
-        totalQuestions += sc.questionCount || 45;
+        totalQuestions += sc.questionCount || 0;
       }
     }
     return { totalDomains, totalExams, totalQuestions };
@@ -402,39 +446,34 @@ export function NclexCustomTestPopup({
 
   const visibleCourses = useMemo(() => {
     return courses.filter((c) => {
-      if (c.subCategories && c.subCategories.length > 0) {
-        return c.subCategories.some(
-          (sc) => getSubCategoryCounts(sc, c, difficultyFilter, statusFilter).available > 0
-        );
-      }
-      return (c.questionCount || 0) > 0;
+      return (c.questionCount || 0) > 0 || (c.examCount || 0) > 0 || (c.subCategories && c.subCategories.length > 0);
     });
-  }, [courses, difficultyFilter, statusFilter]);
+  }, [courses]);
 
   const selectedQs = useMemo(() => {
     let total = 0;
     for (const c of courses) {
-      if (c.subCategories.length > 0) {
+      if (c.subCategories && c.subCategories.length > 0) {
         for (const sc of c.subCategories) {
           if (selectedSubs.has(sc.id)) {
-            total += getSubCategoryCounts(sc, c, difficultyFilter, statusFilter).available;
+            total += sc.questionCount || 0;
           }
         }
       } else {
         if (selectedSubs.has(String(c.id)) || (c.guidId && selectedSubs.has(c.guidId))) {
-          total += c.questionCount || 45;
+          total += c.questionCount || 0;
         }
       }
     }
     return total;
-  }, [courses, selectedSubs, difficultyFilter, statusFilter]);
+  }, [courses, selectedSubs]);
 
   const totalSelectedExams = useMemo(() => {
     let total = 0;
     for (const c of courses) {
       const match = selectedSubs.has(String(c.id)) || (c.guidId && selectedSubs.has(c.guidId));
       if (match) {
-        total += c.examCount || (c.subCategories.length > 0 ? c.subCategories.length : 1);
+        total += c.examCount || (c.subCategories.length > 0 ? c.subCategories.length : 0);
       }
     }
     return total;
@@ -459,8 +498,7 @@ export function NclexCustomTestPopup({
       if (c.subCategories && c.subCategories.length > 0) {
         for (const sc of c.subCategories) {
           if (selectedSubs.has(sc.id)) {
-            const counts = getSubCategoryCounts(sc, c, difficultyFilter, statusFilter);
-            if (counts.available > 0) count++;
+            count++;
           }
         }
       } else {
@@ -470,7 +508,7 @@ export function NclexCustomTestPopup({
       }
     }
     return count;
-  }, [courses, selectedSubs, difficultyFilter, statusFilter]);
+  }, [courses, selectedSubs]);
 
   const hasSelection = activeSelectedCount > 0;
 
@@ -481,27 +519,21 @@ export function NclexCustomTestPopup({
 
     for (const c of courses) {
       if (c.subCategories && c.subCategories.length > 0) {
-        const availableSubs = c.subCategories.filter(
-          (sc) => getSubCategoryCounts(sc, c, difficultyFilter, statusFilter).available > 0
-        );
-        if (availableSubs.length > 0) {
-          const selectedSubsInDomain = availableSubs.filter((sc) => selectedSubs.has(sc.id));
-          examCount += selectedSubsInDomain.length;
-          // Domain is counted as selected if at least one available exam in it is selected
-          if (selectedSubsInDomain.length > 0) {
-            domainCount += 1;
-          }
+        const selectedSubsInDomain = c.subCategories.filter((sc) => selectedSubs.has(sc.id));
+        examCount += selectedSubsInDomain.length;
+        if (selectedSubsInDomain.length > 0) {
+          domainCount += 1;
         }
       } else {
         if (selectedSubs.has(String(c.id)) || (c.guidId && selectedSubs.has(c.guidId))) {
           domainCount += 1;
-          examCount += 1;
+          examCount += c.examCount || 0;
         }
       }
     }
 
     return { selectedDomainsCount: domainCount, selectedExamsCount: examCount };
-  }, [courses, selectedSubs, difficultyFilter, statusFilter]);
+  }, [courses, selectedSubs]);
 
 
   // ─── Start ────────────────────────────────────────────────────────────────────────────
@@ -541,7 +573,7 @@ export function NclexCustomTestPopup({
           selectedCoursesData.push({
             course: c,
             selectedExamTitles: [c.title],
-            totalAvailableExams: 1,
+            totalAvailableExams: c.examCount || (c.subCategories?.length ?? 0),
           });
         }
       }
@@ -780,6 +812,8 @@ export function NclexCustomTestPopup({
                 isExamMode={isExamMode}
                 difficultyFilter={difficultyFilter}
                 statusFilter={statusFilter}
+                answeredExamIds={answeredQuestionIds}
+                bookmarkedExamIds={bookmarkedQuestionIds}
               />
             ))
           )}

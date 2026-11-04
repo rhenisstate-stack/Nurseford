@@ -144,17 +144,17 @@ export default function NclexRnHomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5 sm:gap-3 lg:items-stretch">
           {/* Greeting Card */}
           <div className="order-1 min-w-0 relative overflow-hidden rounded-xl sm:rounded-2xl border border-[#CBDCF8] dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] p-3 sm:p-3.5 md:p-4 flex flex-col justify-center lg:h-[190px] shadow-xs hover:shadow-md transition-all duration-200">
-            <p className="text-[10px] sm:text-xs text-[var(--text-color)]/70 mb-0.5">
+            <p suppressHydrationWarning className="text-[10px] sm:text-xs text-[var(--text-color)]/70 mb-0.5">
               {formattedDate} · {formattedTime}
             </p>
 
             <div className="flex items-center justify-between gap-2 mb-1">
-              <p className="text-sm sm:text-base lg:text-xl font-bold text-[var(--text-color)] truncate">
+              <p suppressHydrationWarning className="text-sm sm:text-base lg:text-xl font-bold text-[var(--text-color)] truncate">
                 {greeting}{firstName ? `, ${firstName}` : isUserLoading ? "" : ", Guest"} ✌️
               </p>
             </div>
 
-            <p className="text-[10px] sm:text-xs lg:text-sm text-[var(--text-color)]/60 italic leading-snug line-clamp-2">
+            <p suppressHydrationWarning className="text-[10px] sm:text-xs lg:text-sm text-[var(--text-color)]/60 italic leading-snug line-clamp-2">
               &ldquo;{randomQuote.quoteDescription}&rdquo;
             </p>
 

@@ -148,6 +148,7 @@ async function fetchBackendSubjectExams(subjectId: number | string, sessionHeade
           guidId?: string;
           title?: string;
           questionsCount?: number;
+          difficulty?: string;
           updatedAt?: string;
           createdAt?: string;
         }>;
@@ -163,7 +164,8 @@ async function fetchBackendSubjectExams(subjectId: number | string, sessionHeade
     return sortedItems.map((e, index) => ({
       id: String(e.guidId || e.id),
       title: e.title || `Exam ${index + 1}`,
-      questionCount: e.questionsCount && e.questionsCount > 0 ? e.questionsCount : 45,
+      questionCount: e.questionsCount && e.questionsCount > 0 ? e.questionsCount : 0,
+      difficulty: e.difficulty || null,
       usedCount: 0,
       order: index + 1,
     }));
@@ -249,6 +251,33 @@ const PROGRAM_NAMES: Record<CourseExamType, RegExp> = {
 
 // Subjects follow the exact natural arrangement from the backend.
 
+function computeDifficultyPercentages(subCategories: Array<{ questionCount: number; difficulty?: string | null }>) {
+  let easyQs = 0;
+  let mediumQs = 0;
+  let hardQs = 0;
+
+  for (const sc of subCategories) {
+    const diff = (sc.difficulty || "").toLowerCase().trim();
+    if (diff === "easy" || diff === "beginner" || diff === "1") {
+      easyQs += sc.questionCount;
+    } else if (diff === "medium" || diff === "moderate" || diff === "intermediate" || diff === "2") {
+      mediumQs += sc.questionCount;
+    } else if (diff === "hard" || diff === "difficult" || diff === "advanced" || diff === "3") {
+      hardQs += sc.questionCount;
+    }
+  }
+
+  const categorized = easyQs + mediumQs + hardQs;
+  if (categorized > 0) {
+    return {
+      easyPct: Math.round((easyQs / categorized) * 100),
+      mediumPct: Math.round((mediumQs / categorized) * 100),
+      hardPct: Math.round((hardQs / categorized) * 100),
+    };
+  }
+  return { easyPct: 0, mediumPct: 0, hardPct: 0 };
+}
+
 // The live "Study By Course" grid is backed by the program's "Standalone
 // Questions-…" course: each of its SUBJECTS is a course card (e.g. "Adult Health
 // NCLEX-RN"). When backend subjects lack unit or question breakdowns, we
@@ -313,6 +342,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
       const calculatedQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
       const questionCount = calculatedQuestions;
       const examCount = subCategories.length;
+      const { easyPct, mediumPct, hardPct } = computeDifficultyPercentages(subCategories);
 
       const card: DashboardCourse = {
         id: toNumber(s.id, i + 1),
@@ -324,9 +354,9 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         questionCount,
         examCount,
         doneCount: 0,
-        easyPct: 0,
-        mediumPct: 0,
-        hardPct: 0,
+        easyPct,
+        mediumPct,
+        hardPct,
         order: i + 1,
         subCategories,
       };
@@ -356,6 +386,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
           const calculatedQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
           const questionCount = calculatedQuestions;
           const examCount = subCategories.length;
+          const { easyPct, mediumPct, hardPct } = computeDifficultyPercentages(subCategories);
 
           return {
             id: toNumber(s.id, 100 + i),
@@ -367,9 +398,9 @@ async function fetchBackendStandaloneSubjectsAsCourses(
             questionCount,
             examCount,
             doneCount: 0,
-            easyPct: 0,
-            mediumPct: 0,
-            hardPct: 0,
+            easyPct,
+            mediumPct,
+            hardPct,
             order: subjectCards.length + i + 1,
             subCategories,
           };
@@ -511,19 +542,6 @@ export async function GET(req: NextRequest) {
     console.error(`❌ [/api/courses] Backend fetch failed:`, err);
   }
 
-  if (courses.length === 0) {
-    if (examType !== "nclex-rn" && examType !== "nclex-pn") {
-      const placeholders = COURSE_PLACEHOLDERS.filter((c) => c.examType === examType);
-      if (placeholders.length > 0) {
-        console.log(`⚠️ [/api/courses] Falling back to COURSE_PLACEHOLDERS for ${examType}`);
-        courses = placeholders.map((p) => ({
-          ...p,
-          subCategories: p.subCategories ? p.subCategories.map((sc) => ({ ...sc })) : [],
-        }));
-      }
-    }
-  }
-
   const calcStats = (target: DashboardCourse[]) => {
     const totalQuestions = target.reduce((sum, c) => {
       if (c.subCategories && c.subCategories.length > 0) {
@@ -532,7 +550,7 @@ export async function GET(req: NextRequest) {
       return sum + c.questionCount;
     }, 0);
     const totalExams = target.reduce(
-      (sum, c) => sum + (c.examCount || (c.subCategories && c.subCategories.length > 0 ? c.subCategories.length : 1)),
+      (sum, c) => sum + (c.examCount || (c.subCategories && c.subCategories.length > 0 ? c.subCategories.length : 0)),
       0
     );
     const totalDomains = target.length;
