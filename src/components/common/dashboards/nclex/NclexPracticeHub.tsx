@@ -119,7 +119,7 @@ export function NclexPracticeHub({
 
                   <Link
                     href={`/dashboards/${panelSlug}/practice/examinations/${group.domainsGroupId}?subjectName=${encodeURIComponent(group.label)}`}
-                    className="mx-2.5 mt-auto mb-2.5 select-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] md:text-sm font-semibold border border-cyan-500/80 dark:border-cyan-400/60 bg-cyan-500/15 dark:bg-cyan-500/20 hover:bg-cyan-500/25 dark:hover:bg-cyan-500/30 text-cyan-800 dark:text-cyan-300 active:scale-[0.99] transition-all duration-200 shadow-2xs"
+                    className="mx-2.5 mt-auto mb-2.5 select-none inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] md:text-sm font-semibold border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 hover:bg-teal-500/35 dark:hover:bg-teal-500/40 text-teal-800 dark:text-teal-300 active:scale-[0.99] transition-all duration-200 shadow-2xs"
                   >
                     <Play className="w-3.5 h-3.5 fill-current" />
                     Access Now

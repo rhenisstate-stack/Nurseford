@@ -13,6 +13,9 @@ export interface ExamQuestionBreakdown {
   mediumPct: number;
   hardPct: number;
   questionIds: (number | string)[];
+  easyQuestionIds?: (number | string)[];
+  mediumQuestionIds?: (number | string)[];
+  hardQuestionIds?: (number | string)[];
 }
 
 export interface QuestionsBreakdownResponse {
@@ -71,7 +74,34 @@ export async function getGuestPreviewToken(): Promise<{ line: string; badge: str
         }),
       });
 
-      const loginData = await loginRes.json().catch(() => null);
+      let loginData = await loginRes.json().catch(() => null);
+      if (!loginData?.user?.castoLine) {
+        const regUrl = `${backendBaseUrl}/api/castoline/auth/register`;
+        const regRes = await fetch(regUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(await getSiteHeaders()),
+          },
+          body: JSON.stringify({
+            username: "preview_guest",
+            email,
+            phone: "+1234567890",
+            password,
+            passwordConfirmation: password,
+            loginMethod: "password",
+            agree: true,
+            role: "Learner",
+            dashboardName: "web",
+            provider: "email",
+            challenge: "learner.register.skew8lancasto",
+          }),
+        }).catch(() => null);
+        if (regRes && regRes.ok) {
+          loginData = await regRes.json().catch(() => null);
+        }
+      }
+
       if (loginData?.user?.castoLine) {
         const line = String(loginData.user.castoLine);
         const badge = String(loginData.user.castoBadge || cachedGuestBadge);
@@ -208,6 +238,9 @@ export async function fetchExamBreakdown(
     let hardCount = 0;
     let uncategorizedCount = 0;
     const questionIds: (number | string)[] = [];
+    const easyQuestionIds: (number | string)[] = [];
+    const mediumQuestionIds: (number | string)[] = [];
+    const hardQuestionIds: (number | string)[] = [];
 
     for (const q of questions) {
       const qId = q.id ?? q.guidId;
@@ -221,10 +254,18 @@ export async function fetchExamBreakdown(
         q.grade;
 
       const norm = normalizeDiff(rawDiff);
-      if (norm === "easy") easyCount++;
-      else if (norm === "medium") mediumCount++;
-      else if (norm === "hard") hardCount++;
-      else uncategorizedCount++;
+      if (norm === "easy") {
+        easyCount++;
+        if (qId) easyQuestionIds.push(qId);
+      } else if (norm === "medium") {
+        mediumCount++;
+        if (qId) mediumQuestionIds.push(qId);
+      } else if (norm === "hard") {
+        hardCount++;
+        if (qId) hardQuestionIds.push(qId);
+      } else {
+        uncategorizedCount++;
+      }
     }
 
     const total = questions.length;
@@ -241,6 +282,9 @@ export async function fetchExamBreakdown(
       mediumPct: categorized > 0 ? Math.round((mediumCount / categorized) * 100) : 0,
       hardPct: categorized > 0 ? Math.round((hardCount / categorized) * 100) : 0,
       questionIds,
+      easyQuestionIds,
+      mediumQuestionIds,
+      hardQuestionIds,
     };
 
     console.log(`[questions-breakdown] Exam ${examId}: total=${total}, easy=${easyCount}, med=${mediumCount}, hard=${hardCount}, uncat=${uncategorizedCount}`);

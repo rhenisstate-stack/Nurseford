@@ -71,6 +71,9 @@ export async function GET(req: NextRequest) {
 
   for (const b of breakdowns) {
     examsRecord[b.examId] = b;
+    const anyB = b as any;
+    if (anyB.guidId) examsRecord[anyB.guidId] = b;
+    if (anyB.numericId) examsRecord[String(anyB.numericId)] = b;
     totalAll += b.total;
     totalEasy += b.easy;
     totalMed += b.medium;

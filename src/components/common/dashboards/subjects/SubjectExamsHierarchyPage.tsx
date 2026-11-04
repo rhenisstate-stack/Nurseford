@@ -837,7 +837,7 @@ export function SubjectExamsHierarchyPage({
                           onClick={() => handlePageChange(p)}
                           className={`min-w-8 h-8 px-2 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-[0.96] ${
                             p === currentPage
-                              ? "border border-cyan-500/80 dark:border-cyan-400/60 bg-cyan-500/20 dark:bg-cyan-500/25 text-cyan-800 dark:text-cyan-300 shadow-2xs"
+                              ? "border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 text-teal-800 dark:text-teal-300 shadow-2xs"
                               : "border border-slate-300/80 dark:border-white/15 bg-white/60 dark:bg-white/5 text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10"
                           }`}
                         >

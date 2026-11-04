@@ -571,15 +571,40 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
         if (typeof window !== "undefined") {
             try {
                 const stored = new Set<string | number>(JSON.parse(localStorage.getItem("rhenis_bookmarked_questions") || "[]"));
-                if (next && q.id) {
-                    stored.add(q.id);
-                    stored.add(String(q.id));
-                } else if (q.id) {
-                    stored.delete(q.id);
-                    stored.delete(String(q.id));
-                    stored.delete(Number(q.id));
+                const qIds = [q.id, q.guidId].filter(Boolean);
+                if (next) {
+                    for (const qid of qIds) {
+                        stored.add(qid);
+                        stored.add(String(qid));
+                    }
+                } else {
+                    for (const qid of qIds) {
+                        stored.delete(qid);
+                        stored.delete(String(qid));
+                        if (typeof qid === "number") stored.delete(qid);
+                        else if (!isNaN(Number(qid))) stored.delete(Number(qid));
+                    }
                 }
                 localStorage.setItem("rhenis_bookmarked_questions", JSON.stringify(Array.from(stored)));
+
+                const examKeys = [examId, examGuidId].filter(Boolean);
+                for (const ek of examKeys) {
+                    const examStored = new Set<string | number>(JSON.parse(localStorage.getItem(`rhenis_exam_bookmarked_${ek}`) || "[]"));
+                    if (next) {
+                        for (const qid of qIds) {
+                            examStored.add(qid);
+                            examStored.add(String(qid));
+                        }
+                    } else {
+                        for (const qid of qIds) {
+                            examStored.delete(qid);
+                            examStored.delete(String(qid));
+                            if (typeof qid === "number") examStored.delete(qid);
+                            else if (!isNaN(Number(qid))) examStored.delete(Number(qid));
+                        }
+                    }
+                    localStorage.setItem(`rhenis_exam_bookmarked_${ek}`, JSON.stringify(Array.from(examStored)));
+                }
             } catch {}
         }
         await submitTool("ActionQuestionBookmark", {

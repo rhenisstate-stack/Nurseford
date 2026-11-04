@@ -161,14 +161,14 @@ export default function NclexRnHomePage() {
             <div className="mt-2.5 flex items-center gap-2 flex-wrap">
               <Link
                 href="/dashboards/nclex-rn/vista/subscriptions/items"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/15 dark:bg-teal-500/20 hover:bg-teal-500/25 dark:hover:bg-teal-500/30 text-teal-800 dark:text-teal-300 active:scale-[0.98] transition-all duration-200 shadow-2xs w-fit"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 hover:bg-teal-500/35 dark:hover:bg-teal-500/40 text-teal-800 dark:text-teal-300 active:scale-[0.98] transition-all duration-200 shadow-2xs w-fit"
               >
                 <CreditCard className="w-3.5 h-3.5 shrink-0" />
                 <span>Subscription Packages</span>
               </Link>
               <Link
                 href="/dashboards/nclex-rn/vista/subscriptions/packages"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/15 dark:bg-teal-500/20 hover:bg-teal-500/25 dark:hover:bg-teal-500/30 text-teal-800 dark:text-teal-300 active:scale-[0.98] transition-all duration-200 shadow-2xs w-fit"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold text-xs border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 hover:bg-teal-500/35 dark:hover:bg-teal-500/40 text-teal-800 dark:text-teal-300 active:scale-[0.98] transition-all duration-200 shadow-2xs w-fit"
               >
                 <Receipt className="w-3.5 h-3.5 shrink-0" />
                 <span>My Subscriptions</span>

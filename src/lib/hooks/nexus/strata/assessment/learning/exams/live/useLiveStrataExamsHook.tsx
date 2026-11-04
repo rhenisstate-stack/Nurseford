@@ -958,7 +958,15 @@ export const useLiveStrataExam = ({
 
           // Collect question pools for each exam
           const examPools = validSessions.map((session, idx) => {
-            const allQ = (session.sections ?? []).flatMap((sec) => sec.questions ?? []);
+            const allQ = (session.sections ?? []).flatMap((sec) =>
+              (sec.questions ?? []).map((q: any) => ({
+                ...q,
+                _realExamId: session.exam.id,
+                _realExamGuidId: session.exam.guidId,
+                _realSectionId: sec.id,
+                _realSectionGuidId: sec.guidId,
+              }))
+            );
             let candidateQ = allQ;
             if (difficulty && difficulty.toLowerCase() !== "all") {
               candidateQ = candidateQ.filter((q: any) => {
@@ -993,9 +1001,10 @@ export const useLiveStrataExam = ({
           const sections: StrataSessionSection[] = examPools.map((p, idx) => {
             const alloc = allocations[p.id] || 0;
             const sampled = sampleRandomItems(p.questions, alloc);
+            const firstRealSec = p.session.sections?.[0];
             return {
-              id: p.session.exam.id || idx + 1,
-              guidId: p.session.exam.guidId || String(idx + 1),
+              id: firstRealSec?.id || p.session.exam.id || idx + 1,
+              guidId: firstRealSec?.guidId || p.session.exam.guidId || String(idx + 1),
               name: p.title,
               description: p.session.exam.description,
               questions: sampled,

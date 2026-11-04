@@ -40,7 +40,7 @@ export default function NclexRnListCard() {
           <Link
             key={subject.label}
             href={subject.href}
-            className="group flex items-center justify-between gap-2 w-full rounded-lg border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/15 dark:bg-teal-500/20 hover:bg-teal-500/25 dark:hover:bg-teal-500/30 text-teal-800 dark:text-teal-300 px-3 py-1.5 text-xs md:text-sm font-semibold transition-all duration-200 shadow-2xs active:scale-[0.98]"
+            className="group flex items-center justify-between gap-2 w-full rounded-lg border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 hover:bg-teal-500/35 dark:hover:bg-teal-500/40 text-teal-800 dark:text-teal-300 px-3 py-1.5 text-xs md:text-sm font-semibold transition-all duration-200 shadow-2xs active:scale-[0.98]"
           >
             <span className="truncate">{subject.label} Notes</span>
             <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200" />

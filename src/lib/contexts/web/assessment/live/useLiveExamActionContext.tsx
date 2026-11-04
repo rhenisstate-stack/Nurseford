@@ -291,12 +291,26 @@ export function LiveExamActionProvider({
               sessionStorage.setItem(`exam_in_progress_${entry.examId}`, payloadStr);
             }
           }
-          if (entry.questionId) {
+          const qIds = [entry.questionId, entry.questionGuidId].filter(Boolean);
+          if (qIds.length > 0) {
             try {
               const answeredStored = new Set(JSON.parse(localStorage.getItem("rhenis_answered_questions") || "[]"));
-              answeredStored.add(entry.questionId);
-              answeredStored.add(String(entry.questionId));
+              for (const qid of qIds) {
+                answeredStored.add(qid);
+                answeredStored.add(String(qid));
+              }
               localStorage.setItem("rhenis_answered_questions", JSON.stringify(Array.from(answeredStored)));
+            } catch {}
+          }
+          const examKeys = [entry.examId, entry.examGuidId].filter(Boolean);
+          for (const ek of examKeys) {
+            try {
+              const examStored = new Set(JSON.parse(localStorage.getItem(`rhenis_exam_answered_${ek}`) || "[]"));
+              for (const qid of qIds) {
+                examStored.add(qid);
+                examStored.add(String(qid));
+              }
+              localStorage.setItem(`rhenis_exam_answered_${ek}`, JSON.stringify(Array.from(examStored)));
             } catch {}
           }
         } catch {}
@@ -326,6 +340,30 @@ export function LiveExamActionProvider({
     ) => {
       const full: Omit<AnswerEntry, "dirty" | "saving"> = { ...entry, submissionType };
       dispatch({ type: "SET_ANSWER", payload: full });
+
+      if (typeof window !== "undefined") {
+        try {
+          const qIds = [entry.questionId, entry.questionGuidId].filter(Boolean);
+          if (qIds.length > 0) {
+            const answeredStored = new Set(JSON.parse(localStorage.getItem("rhenis_answered_questions") || "[]"));
+            for (const qid of qIds) {
+              answeredStored.add(qid);
+              answeredStored.add(String(qid));
+            }
+            localStorage.setItem("rhenis_answered_questions", JSON.stringify(Array.from(answeredStored)));
+          }
+
+          const examKeys = [entry.examId, entry.examGuidId].filter(Boolean);
+          for (const ek of examKeys) {
+            const examStored = new Set(JSON.parse(localStorage.getItem(`rhenis_exam_answered_${ek}`) || "[]"));
+            for (const qid of qIds) {
+              examStored.add(qid);
+              examStored.add(String(qid));
+            }
+            localStorage.setItem(`rhenis_exam_answered_${ek}`, JSON.stringify(Array.from(examStored)));
+          }
+        } catch {}
+      }
 
       if (timers.current[entry.questionId]) clearTimeout(timers.current[entry.questionId]);
       timers.current[entry.questionId] = setTimeout(() => {

@@ -8,8 +8,6 @@ import {
   Activity,
   Bookmark,
   Check,
-  ChevronDown,
-  ChevronRight,
   Edit3,
   GraduationCap,
   Play,
@@ -86,11 +84,26 @@ function getSubCategoryCounts(
   answeredQuestionIds?: Set<string | number>,
   bookmarkedQuestionIds?: Set<string | number>,
   answeredExamMap?: Map<string, number>,
-  bookmarkedExamMap?: Map<string, number>
+  bookmarkedExamMap?: Map<string, number>,
+  breakdown?: {
+    total: number;
+    easy: number;
+    medium: number;
+    hard: number;
+    questionIds?: (number | string)[];
+    easyQuestionIds?: (number | string)[];
+    mediumQuestionIds?: (number | string)[];
+    hardQuestionIds?: (number | string)[];
+  }
 ) {
+  let diffPool: (number | string)[] | undefined = undefined;
   let targetQ = sc.questionCount || 0;
+
   if (difficultyFilter === "Easy") {
-    if (sc.easyCount !== undefined) {
+    if (breakdown?.easyQuestionIds && breakdown.easyQuestionIds.length > 0) {
+      diffPool = breakdown.easyQuestionIds;
+      targetQ = diffPool.length;
+    } else if (sc.easyCount !== undefined) {
       targetQ = sc.easyCount;
     } else if ((course.easyPct || 0) > 0) {
       targetQ = Math.round((sc.questionCount || 0) * ((course.easyPct || 0) / 100));
@@ -98,7 +111,10 @@ function getSubCategoryCounts(
       targetQ = 0;
     }
   } else if (difficultyFilter === "Medium") {
-    if (sc.mediumCount !== undefined) {
+    if (breakdown?.mediumQuestionIds && breakdown.mediumQuestionIds.length > 0) {
+      diffPool = breakdown.mediumQuestionIds;
+      targetQ = diffPool.length;
+    } else if (sc.mediumCount !== undefined) {
       targetQ = sc.mediumCount;
     } else if ((course.mediumPct || 0) > 0) {
       targetQ = Math.round((sc.questionCount || 0) * ((course.mediumPct || 0) / 100));
@@ -106,20 +122,47 @@ function getSubCategoryCounts(
       targetQ = 0;
     }
   } else if (difficultyFilter === "Hard") {
-    if (sc.hardCount !== undefined) {
+    if (breakdown?.hardQuestionIds && breakdown.hardQuestionIds.length > 0) {
+      diffPool = breakdown.hardQuestionIds;
+      targetQ = diffPool.length;
+    } else if (sc.hardCount !== undefined) {
       targetQ = sc.hardCount;
     } else if ((course.hardPct || 0) > 0) {
       targetQ = Math.round((sc.questionCount || 0) * ((course.hardPct || 0) / 100));
     } else {
       targetQ = 0;
     }
+  } else {
+    if (breakdown?.questionIds && breakdown.questionIds.length > 0) {
+      diffPool = breakdown.questionIds;
+      targetQ = diffPool.length;
+    } else {
+      targetQ = sc.questionCount || breakdown?.total || 0;
+    }
   }
 
-  const answeredExamCount = answeredExamMap?.get(sc.id) ?? sc.usedCount ?? 0;
-  const usedInScope = Math.min(targetQ, answeredExamCount);
+  let usedInScope = 0;
+  let bookmarkedInScope = 0;
+
+  if (diffPool && diffPool.length > 0) {
+    for (const qid of diffPool) {
+      if (answeredQuestionIds?.has(qid) || answeredQuestionIds?.has(String(qid))) {
+        usedInScope++;
+      }
+      if (bookmarkedQuestionIds?.has(qid) || bookmarkedQuestionIds?.has(String(qid))) {
+        bookmarkedInScope++;
+      }
+    }
+  } else {
+    const answeredExamCount = answeredExamMap?.get(sc.id) ?? answeredExamMap?.get(String(sc.id)) ?? sc.usedCount ?? 0;
+    const ratio = (sc.questionCount && sc.questionCount > 0) ? (targetQ / sc.questionCount) : 1;
+    usedInScope = Math.min(targetQ, Math.round(answeredExamCount * ratio));
+
+    const bookmarkedExamCount = bookmarkedExamMap?.get(sc.id) ?? bookmarkedExamMap?.get(String(sc.id)) ?? 0;
+    bookmarkedInScope = Math.min(targetQ, Math.round(bookmarkedExamCount * ratio));
+  }
+
   const unusedInScope = Math.max(0, targetQ - usedInScope);
-  const bookmarkedExamCount = bookmarkedExamMap?.get(sc.id) ?? 0;
-  const bookmarkedInScope = Math.min(targetQ, bookmarkedExamCount);
 
   let available = targetQ;
   if (statusFilter === "Used") {
@@ -146,7 +189,6 @@ function DomainRow({
   selectedSubs,
   onToggleSub,
   onToggleDomain,
-  defaultExpanded = false,
   isExamMode = false,
   difficultyFilter = "All",
   statusFilter = "All",
@@ -154,6 +196,7 @@ function DomainRow({
   bookmarkedExamIds,
   answeredExamMap,
   bookmarkedExamMap,
+  breakdownMap,
 }: {
   course: DashboardCourse;
   selectedSubs: Set<string>;
@@ -167,18 +210,10 @@ function DomainRow({
   bookmarkedExamIds?: Set<string | number>;
   answeredExamMap?: Map<string, number>;
   bookmarkedExamMap?: Map<string, number>;
+  breakdownMap?: Record<string, any>;
 }) {
-  const [expanded, setExpanded] = useState(defaultExpanded ?? false);
-  useEffect(() => {
-    if (defaultExpanded != null) {
-      setExpanded(defaultExpanded);
-    }
-  }, [defaultExpanded]);
-
   const subCategories = course.subCategories || [];
   const hasSubs = subCategories.length > 0;
-
-  // Keep subcategories available so user can select their study domain
   const visibleSubCategories = hasSubs ? subCategories : [];
 
   const domainQs = hasSubs
@@ -191,40 +226,47 @@ function DomainRow({
           answeredExamIds,
           bookmarkedExamIds,
           answeredExamMap,
-          bookmarkedExamMap
+          bookmarkedExamMap,
+          breakdownMap?.[sc.id]
         );
         return s + c.available;
       }, 0)
     : course.questionCount;
   const domainExams = course.examCount ?? (hasSubs ? subCategories.length : 0);
 
-  // If this domain has no exams or questions in the backend, hide it
   if (hasSubs && subCategories.length === 0) {
     return null;
   }
 
-  const selectedCount = visibleSubCategories.filter((sc) => selectedSubs.has(sc.id)).length;
-  const allSelected = visibleSubCategories.length > 0
-    ? selectedCount === visibleSubCategories.length
-    : selectedSubs.has(String(course.id)) || (course.guidId ? selectedSubs.has(course.guidId) : false);
-  const someSelected = visibleSubCategories.length > 0 ? selectedCount > 0 && !allSelected : false;
+  // Filter selectable subcategories that have available questions matching the active filter
+  const selectableSubs = visibleSubCategories.filter((sc) => {
+    const c = getSubCategoryCounts(
+      sc,
+      course,
+      difficultyFilter,
+      statusFilter,
+      answeredExamIds,
+      bookmarkedExamIds,
+      answeredExamMap,
+      bookmarkedExamMap,
+      breakdownMap?.[sc.id]
+    );
+    return c.available > 0;
+  });
+
+  const selectedCount = selectableSubs.filter((sc) => selectedSubs.has(sc.id)).length;
+  const allSelected = selectableSubs.length > 0 && selectedCount === selectableSubs.length;
+  const someSelected = selectableSubs.length > 0 ? selectedCount > 0 && !allSelected : false;
 
   return (
-    <div className="border border-[#CBDCF8] dark:border-white/10 rounded-xl overflow-hidden bg-white/70 dark:bg-black/20">
-      {/* Domain Header */}
-      <div
-        className="flex items-center gap-2 px-3 py-2.5 bg-slate-100/90 dark:bg-white/5 cursor-pointer hover:bg-slate-200/90 dark:hover:bg-white/10 transition-colors"
-        onClick={() => {
-          if (visibleSubCategories.length > 0) setExpanded(!expanded);
-        }}
-      >
-        {/* Domain Checkbox */}
+    <div className="border border-[#CBDCF8] dark:border-white/10 rounded-2xl overflow-hidden bg-white/70 dark:bg-black/20 shadow-2xs">
+      {/* Domain Header (Clean non-collapsible banner: no chevrons, all exams display cleanly) */}
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100/90 dark:bg-white/5 border-b border-[#CBDCF8]/60 dark:border-white/5">
+        {/* Domain Select-All Checkbox */}
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleDomain(visibleSubCategories, String(course.guidId || course.id));
-          }}
-          className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-all ${
+          type="button"
+          onClick={() => onToggleDomain(selectableSubs, String(course.guidId || course.id))}
+          className={`w-3.5 h-3.5 rounded border shrink-0 flex items-center justify-center transition-all cursor-pointer ${
             allSelected
               ? "bg-[#2FD9C4] border-[#2FD9C4]"
               : someSelected
@@ -233,34 +275,23 @@ function DomainRow({
           }`}
         >
           {allSelected && <Check className="w-2.5 h-2.5 text-[#08111F]" />}
-          {someSelected && !allSelected && <div className="w-2 h-0.5 bg-[#08111F]" />}
+          {someSelected && !allSelected && <div className="w-1.5 h-0.5 bg-[#08111F]" />}
         </button>
-
-        {/* Expand Arrow */}
-        {visibleSubCategories.length > 0 ? (
-          expanded ? (
-            <ChevronDown className="w-3.5 h-3.5 text-slate-500 dark:text-white/50 shrink-0" />
-          ) : (
-            <ChevronRight className="w-3.5 h-3.5 text-slate-500 dark:text-white/50 shrink-0" />
-          )
-        ) : (
-          <div className="w-3.5 h-3.5 shrink-0" />
-        )}
 
         {/* Domain Title */}
         <span className="text-xs md:text-sm font-bold text-slate-900 dark:text-[var(--text-color)] truncate flex-1 min-w-0">
           {course.title}
         </span>
 
-        {/* Question / Exam Count */}
-        <span className="text-[10px] md:text-xs font-bold text-[#0891b2] dark:text-[#2FD9C4] shrink-0">
+        {/* Question / Exam Count Badge */}
+        <span className="text-[10px] md:text-xs font-bold px-2 py-0.5 rounded-full bg-[#0891b2]/10 dark:bg-[#2FD9C4]/15 text-[#0891b2] dark:text-[#2FD9C4] shrink-0 border border-[#0891b2]/20 dark:border-[#2FD9C4]/30">
           {isExamMode ? `${domainExams} ${domainExams === 1 ? "Exam" : "Exams"}` : `${domainQs} Qs`}
         </span>
       </div>
 
-      {/* Sub-Categories */}
-      {expanded && visibleSubCategories.length > 0 && (
-        <div className="border-t border-[#CBDCF8]/60 dark:border-white/5">
+      {/* Sub-Categories / Exams Grid: Compact cards in 3 columns so all 14 exams display cleanly in window without scrollbar */}
+      {visibleSubCategories.length > 0 && (
+        <div className="p-1.5 sm:p-2 bg-slate-50/40 dark:bg-black/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-2">
           {visibleSubCategories.map((sc) => {
             const isSelected = selectedSubs.has(sc.id);
             const counts = getSubCategoryCounts(
@@ -271,37 +302,65 @@ function DomainRow({
               answeredExamIds,
               bookmarkedExamIds,
               answeredExamMap,
-              bookmarkedExamMap
+              bookmarkedExamMap,
+              breakdownMap?.[sc.id]
             );
+            const isSelectable = counts.available > 0;
+
             return (
               <div
                 key={sc.id}
-                className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100/70 dark:hover:bg-white/5 transition-colors border-b border-[#CBDCF8]/50 dark:border-white/5 last:border-b-0"
+                onClick={() => {
+                  if (isSelectable) onToggleSub(sc.id);
+                }}
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-all ${
+                  !isSelectable
+                    ? "opacity-45 cursor-not-allowed bg-slate-100/50 dark:bg-white/5 border-slate-200/50 dark:border-white/5"
+                    : isSelected
+                      ? "bg-teal-500/10 border-teal-500/50 dark:bg-teal-950/20 dark:border-teal-400/40 shadow-2xs cursor-pointer"
+                      : "bg-white dark:bg-white/5 border-slate-200/80 dark:border-white/10 hover:bg-slate-100/70 dark:hover:bg-white/10 cursor-pointer"
+                }`}
               >
                 {/* Sub Checkbox */}
                 <button
-                  onClick={() => onToggleSub(sc.id)}
+                  type="button"
+                  disabled={!isSelectable}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isSelectable) onToggleSub(sc.id);
+                  }}
                   className={`w-3.5 h-3.5 rounded border shrink-0 flex items-center justify-center transition-all ${
-                    isSelected
-                      ? "bg-[#2FD9C4] border-[#2FD9C4]"
-                      : "border-slate-400 dark:border-white/30 hover:border-slate-600 dark:hover:border-white/50"
+                    !isSelectable
+                      ? "border-slate-300 dark:border-white/10 cursor-not-allowed"
+                      : isSelected
+                        ? "bg-[#2FD9C4] border-[#2FD9C4] cursor-pointer"
+                        : "border-slate-400 dark:border-white/30 hover:border-slate-600 dark:hover:border-white/50 cursor-pointer"
                   }`}
                 >
                   {isSelected && <Check className="w-2 h-2 text-[#08111F]" />}
                 </button>
 
-                {/* Sub Title */}
-                <span className="text-[11px] md:text-xs text-slate-800 dark:text-[var(--text-color)]/80 font-medium truncate flex-1 min-w-0">
-                  {sc.title}
-                </span>
-
-                {/* Used / Total */}
-                <span className="text-[10px] text-slate-500 dark:text-[var(--text-color)]/40 shrink-0 font-medium">
-                  Used {counts.usedInScope} of {counts.totalInScope}
-                </span>
+                {/* Sub Title & Used/Total */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-slate-800 dark:text-[var(--text-color)]/90 font-semibold truncate leading-tight">
+                    {sc.title}
+                  </p>
+                  <p className="text-[9.5px] text-slate-500 dark:text-[var(--text-color)]/45 font-medium truncate leading-tight">
+                    Used {counts.usedInScope} of {counts.totalInScope}
+                    {counts.bookmarkedInScope > 0 ? ` · ${counts.bookmarkedInScope} Bmk` : ""}
+                  </p>
+                </div>
 
                 {/* Question Count Badge */}
-                <span className="text-[10px] font-bold text-slate-700 dark:text-[var(--text-color)]/70 shrink-0 min-w-6 text-right">
+                <span
+                  className={`text-[9.5px] md:text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0 min-w-6 text-center ${
+                    !isSelectable
+                      ? "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/30"
+                      : counts.available > 0
+                        ? "bg-slate-200/70 dark:bg-white/10 text-slate-700 dark:text-[var(--text-color)]/80"
+                        : "bg-slate-100 dark:bg-white/5 text-slate-400"
+                  }`}
+                >
                   {counts.available}
                 </span>
               </div>
@@ -461,31 +520,89 @@ export function NclexCustomTestPopup({
   const answeredExamMap = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of allResults || []) {
-      const key = String(r.examGuidId || r.examId);
       const count = r.totalAnswered ?? r.answers?.length ?? 0;
-      if (count > (map.get(key) || 0)) {
-        map.set(key, count);
+      if (r.examGuidId) {
+        const k = String(r.examGuidId);
+        if (count > (map.get(k) || 0)) map.set(k, count);
+      }
+      if (r.examId) {
+        const k = String(r.examId);
+        if (count > (map.get(k) || 0)) map.set(k, count);
+      }
+    }
+    if (typeof window !== "undefined") {
+      for (const c of courses) {
+        for (const sc of c.subCategories || []) {
+          const scId = String(sc.id);
+          try {
+            const stored = JSON.parse(localStorage.getItem(`rhenis_exam_answered_${scId}`) || "[]");
+            if (stored.length > (map.get(scId) || 0)) {
+              map.set(scId, stored.length);
+            }
+          } catch {}
+          const bd = breakdownMap[sc.id];
+          if (bd?.questionIds && bd.questionIds.length > 0 && answeredQuestionIds) {
+            let answeredCount = 0;
+            for (const qid of bd.questionIds) {
+              if (answeredQuestionIds.has(qid) || answeredQuestionIds.has(String(qid))) {
+                answeredCount++;
+              }
+            }
+            if (answeredCount > (map.get(scId) || 0)) {
+              map.set(scId, answeredCount);
+            }
+          }
+        }
       }
     }
     return map;
-  }, [allResults]);
+  }, [allResults, courses, breakdownMap, answeredQuestionIds]);
 
   const bookmarkedExamMap = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of allResults || []) {
-      const key = String(r.examGuidId || r.examId);
       let count = 0;
       for (const sec of (r as any).sections || []) {
         for (const q of sec.questions || []) {
           if (isQuestionBookmarked(q, bookmarkedQuestionIds)) count++;
         }
       }
-      if (count > (map.get(key) || 0)) {
-        map.set(key, count);
+      if (r.examGuidId) {
+        const k = String(r.examGuidId);
+        if (count > (map.get(k) || 0)) map.set(k, count);
+      }
+      if (r.examId) {
+        const k = String(r.examId);
+        if (count > (map.get(k) || 0)) map.set(k, count);
+      }
+    }
+    if (typeof window !== "undefined") {
+      for (const c of courses) {
+        for (const sc of c.subCategories || []) {
+          const scId = String(sc.id);
+          try {
+            const stored = JSON.parse(localStorage.getItem(`rhenis_exam_bookmarked_${scId}`) || "[]");
+            if (stored.length > (map.get(scId) || 0)) {
+              map.set(scId, stored.length);
+            }
+          } catch {}
+          const bd = breakdownMap[sc.id];
+          if (bd?.questionIds && bd.questionIds.length > 0 && bookmarkedQuestionIds) {
+            let bmkCount = 0;
+            for (const qid of bd.questionIds) {
+              if (bookmarkedQuestionIds.has(qid) || bookmarkedQuestionIds.has(String(qid))) {
+                bmkCount++;
+              }
+            }
+            if (bmkCount > (map.get(scId) || 0)) {
+              map.set(scId, bmkCount);
+            }
+          }
+        }
       }
     }
     return map;
-  }, [allResults, bookmarkedQuestionIds]);
+  }, [allResults, courses, breakdownMap, bookmarkedQuestionIds]);
 
   const isExamMode =
     builderMode === "exams" ||
@@ -521,7 +638,8 @@ export function NclexCustomTestPopup({
             answeredQuestionIds,
             bookmarkedQuestionIds,
             answeredExamMap,
-            bookmarkedExamMap
+            bookmarkedExamMap,
+            breakdownMap[sub.id]
           );
           return s + counts.available;
         }, 0);
@@ -605,7 +723,8 @@ export function NclexCustomTestPopup({
               answeredQuestionIds,
               bookmarkedQuestionIds,
               answeredExamMap,
-              bookmarkedExamMap
+              bookmarkedExamMap,
+              breakdownMap[sc.id]
             );
             total += counts.available;
           }
@@ -818,10 +937,10 @@ export function NclexCustomTestPopup({
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-2 sm:px-3">
-      <div className="w-full max-w-2xl rounded-2xl border border-[#CBDCF8] dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] text-[var(--text-color)] shadow-2xl flex flex-col max-h-[92vh]">
+      <div className="w-full max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl rounded-3xl border border-[#CBDCF8] dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] text-[var(--text-color)] shadow-2xl flex flex-col max-h-[94vh] overflow-hidden">
 
         {/* ─── Header ─── */}
-        <div className="px-4 py-3 border-b border-slate-200 dark:border-[var(--text-color)]/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)]">
+        <div className="px-4 py-2 sm:py-2.5 border-b border-slate-200 dark:border-[var(--text-color)]/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-lg bg-[#2FD9C4]/15 flex items-center justify-center shrink-0">
@@ -843,22 +962,11 @@ export function NclexCustomTestPopup({
           </div>
         </div>
 
-        {/* ─── Greeting + Stats ─── */}
-        <div className="px-4 py-3 border-b border-slate-200 dark:border-[var(--text-color)]/10">
-          <p className="text-xs text-slate-600 dark:text-[var(--text-color)]/50 mb-2">
-            Hello, <span className="text-slate-900 dark:text-[var(--text-color)] font-semibold">{user?.userName?.trim() || "Guest"}</span> — Choose Your Practice Scope Below
+        {/* ─── Greeting ─── */}
+        <div className="px-4 py-1.5 sm:py-2 border-b border-slate-200 dark:border-[var(--text-color)]/10 bg-slate-50/50 dark:bg-black/10">
+          <p className="text-xs text-slate-600 dark:text-[var(--text-color)]/60 font-medium">
+            Hello, <span className="text-slate-900 dark:text-[var(--text-color)] font-bold">{user?.userName?.trim() || "Guest"}</span> — Choose Your Practice Scope Below
           </p>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-[10px] font-bold text-slate-800 dark:text-[var(--text-color)]">
-              {stats.totalDomains} Domains
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-[10px] font-bold text-slate-800 dark:text-[var(--text-color)]">
-              {stats.totalExams} Exams
-            </span>
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-[10px] font-bold text-[#0891b2] dark:text-[#2FD9C4]">
-              {stats.totalQuestions.toLocaleString()} Questions
-            </span>
-          </div>
         </div>
 
         {/* ─── Category Scope Switcher (only when not locked to a specific custom course) ─── */}
@@ -901,7 +1009,7 @@ export function NclexCustomTestPopup({
         )}
 
         {/* ─── Filter Tabs ─── */}
-        <div className="px-4 py-2.5 border-b border-slate-200 dark:border-white/10 flex flex-wrap items-center gap-3 sm:gap-4 bg-slate-50/60 dark:bg-black/10">
+        <div className="px-4 py-1.5 sm:py-2 border-b border-slate-200 dark:border-white/10 flex flex-wrap items-center gap-2 sm:gap-3 bg-slate-50/60 dark:bg-black/10">
           {/* Difficulty */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-white/60 mr-1">
@@ -959,7 +1067,7 @@ export function NclexCustomTestPopup({
         </div>
 
         {/* ─── Scrollable Domain List ─── */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 min-h-0">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 space-y-2 min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {visibleCourses.length === 0 ? null : (
             visibleCourses.map((course) => (
               <DomainRow
@@ -968,7 +1076,6 @@ export function NclexCustomTestPopup({
                 selectedSubs={selectedSubs}
                 onToggleSub={toggleSub}
                 onToggleDomain={toggleDomain}
-                defaultExpanded={activeCourses.length <= 2}
                 isExamMode={isExamMode}
                 difficultyFilter={difficultyFilter}
                 statusFilter={statusFilter}
@@ -976,13 +1083,14 @@ export function NclexCustomTestPopup({
                 bookmarkedExamIds={bookmarkedQuestionIds}
                 answeredExamMap={answeredExamMap}
                 bookmarkedExamMap={bookmarkedExamMap}
+                breakdownMap={breakdownMap}
               />
             ))
           )}
         </div>
 
         {/* ─── Footer ─── */}
-        <div className="px-4 py-3 border-t border-slate-200 dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)]">
+        <div className="px-4 py-2 sm:py-2.5 border-t border-slate-200 dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)]">
           {/* Question / Exam Count Controls */}
           {isExamMode ? (
             <div className="flex items-center gap-3 mb-3">
@@ -1147,7 +1255,7 @@ export function NclexCustomTestPopup({
             <button
               onClick={handleStart}
               disabled={selectedExamsCount === 0 || selectedQs === 0}
-              className="flex-1 py-2.5 rounded-xl font-bold text-xs border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-xl font-bold text-xs border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/25 dark:bg-blue-500/30 hover:bg-blue-500/35 dark:hover:bg-blue-500/40 text-blue-700 dark:text-blue-300 active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs cursor-pointer flex items-center justify-center gap-1.5"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>Submit & Start Exam</span>
@@ -1199,7 +1307,7 @@ export function NclexActionRow({
 
         <button
           onClick={() => onAction("custom")}
-          className="mt-auto w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs border border-teal-500/80 text-teal-700 dark:text-teal-300 bg-teal-50/50 dark:bg-teal-950/30 hover:bg-teal-100/60 dark:hover:bg-teal-900/40 active:scale-[0.98] transition-all shadow-2xs"
+          className="mt-auto w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs border border-teal-500/80 text-teal-700 dark:text-teal-300 bg-teal-500/20 dark:bg-teal-950/40 hover:bg-teal-500/30 dark:hover:bg-teal-900/50 active:scale-[0.98] transition-all shadow-2xs"
         >
           + Create Custom Test
         </button>
@@ -1227,10 +1335,10 @@ export function NclexActionRow({
 
         <button
           onClick={() => onAction("practice")}
-          className="mt-auto w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs border border-purple-500/80 text-purple-700 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100/60 dark:hover:bg-purple-900/40 active:scale-[0.98] transition-all shadow-2xs"
+          className="mt-auto w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs border border-purple-500/80 text-purple-700 dark:text-purple-300 bg-purple-500/20 dark:bg-purple-950/40 hover:bg-purple-500/30 dark:hover:bg-purple-900/50 active:scale-[0.98] transition-all shadow-2xs cursor-pointer"
         >
-          Start Practice
-          <ChevronRight className="w-3.5 h-3.5" />
+          <Play className="w-3 h-3 fill-current" />
+          <span>Start Practice</span>
         </button>
       </div>
 
@@ -1248,10 +1356,10 @@ export function NclexActionRow({
           </div>
           <button
             onClick={() => onAction("readiness")}
-            className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold border border-purple-500/80 text-purple-700 dark:text-purple-300 bg-purple-50/50 dark:bg-purple-950/30 hover:bg-purple-100/60 dark:hover:bg-purple-900/40 active:scale-[0.98] transition-all shadow-2xs"
+            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold border border-purple-500/80 text-purple-700 dark:text-purple-300 bg-purple-500/20 dark:bg-purple-950/40 hover:bg-purple-500/30 dark:hover:bg-purple-900/50 active:scale-[0.98] transition-all shadow-2xs cursor-pointer"
           >
-            Start Now
-            <ChevronRight className="w-3.5 h-3.5" />
+            <Play className="w-3 h-3 fill-current" />
+            <span>Start Now</span>
           </button>
         </div>
 
@@ -1277,10 +1385,10 @@ export function NclexActionRow({
 
           <button
             onClick={() => onAction("readiness")}
-            className="mt-auto w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs border border-amber-500/80 text-amber-700 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/60 dark:hover:bg-amber-900/40 active:scale-[0.98] transition-all shadow-2xs"
+            className="mt-auto w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 sm:py-2 rounded-lg font-bold text-[11px] sm:text-xs border border-amber-500/80 text-amber-700 dark:text-amber-400 bg-amber-500/20 dark:bg-amber-950/40 hover:bg-amber-500/30 dark:hover:bg-amber-900/50 active:scale-[0.98] transition-all shadow-2xs cursor-pointer"
           >
-            Start Now
-            <ChevronRight className="w-3.5 h-3.5" />
+            <Play className="w-3 h-3 fill-current" />
+            <span>Start Now</span>
           </button>
         </div>
       </div>
@@ -1351,15 +1459,15 @@ export function NclexStudyByCourseBanner({
 
 const DifficultyBar = ({ easy, medium, hard }: { easy: number; medium: number; hard: number }) => (
   <div>
-    <div className="flex items-center justify-between text-[9px] sm:text-[10px] mb-1">
-      <span className="font-bold text-slate-600 dark:text-[var(--text-color)]/50">Difficulty Spread</span>
-      <div className="flex items-center gap-2 font-medium">
+    <div className="flex items-center justify-between text-[8.5px] sm:text-[9px] mb-0.5">
+      <span className="font-bold text-slate-500 dark:text-[var(--text-color)]/50">Difficulty</span>
+      <div className="flex items-center gap-1.5 font-medium">
         <span className="text-emerald-700 dark:text-emerald-400">● Easy {easy}%</span>
         <span className="text-amber-700 dark:text-amber-400">● Med {medium}%</span>
         <span className="text-red-700 dark:text-red-400">● Hard {hard}%</span>
       </div>
     </div>
-    <div className="flex h-1.5 sm:h-2 rounded-full overflow-hidden bg-slate-200 dark:bg-[var(--text-color)]/10">
+    <div className="flex h-1 rounded-full overflow-hidden bg-slate-200 dark:bg-[var(--text-color)]/10">
       <div style={{ width: `${easy}%`, backgroundColor: "#34D399" }} />
       <div style={{ width: `${medium}%`, backgroundColor: "#FBBF24" }} />
       <div style={{ width: `${hard}%`, backgroundColor: "#F87171" }} />
@@ -1397,19 +1505,19 @@ const CourseCard = ({
         )}`;
 
   return (
-    <div className="rounded-xl sm:rounded-2xl border border-[#CBDCF8] dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] p-2.5 sm:p-3 md:p-3.5 flex flex-col gap-2 sm:gap-2.5 hover:border-blue-400 dark:hover:border-white/20 shadow-xs hover:shadow-md transition-all duration-200">
-      <div className="flex items-start justify-between gap-2">
+    <div className="rounded-xl border border-[#CBDCF8] dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] p-2 sm:p-2.5 md:p-3 flex flex-col gap-1.5 hover:border-blue-400 dark:hover:border-white/20 shadow-xs hover:shadow-md transition-all duration-200">
+      <div className="flex items-start justify-between gap-1.5">
         <button
           type="button"
           onClick={() => onCreateCustomTest(course)}
-          className="text-left text-xs sm:text-sm font-bold text-slate-900 dark:text-[var(--text-color)] leading-snug truncate flex-1 min-w-0 hover:text-blue-600 dark:hover:text-[#2FD9C4] transition-colors cursor-pointer"
+          className="text-left text-xs sm:text-[13px] font-bold text-slate-900 dark:text-[var(--text-color)] leading-tight truncate flex-1 min-w-0 hover:text-blue-600 dark:hover:text-[#2FD9C4] transition-colors cursor-pointer"
         >
           {course.title}
         </button>
         <button
           onClick={() => setBookmarked((b) => !b)}
           aria-label={bookmarked ? "Remove bookmark" : "Bookmark course"}
-          className="shrink-0 p-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-[var(--text-color)]/10 transition-colors"
+          className="shrink-0 p-0.5 rounded hover:bg-slate-200/60 dark:hover:bg-[var(--text-color)]/10 transition-colors"
         >
           <Bookmark
             className={`w-3.5 h-3.5 ${bookmarked ? "fill-current" : ""}`}
@@ -1418,29 +1526,29 @@ const CourseCard = ({
         </button>
       </div>
 
-      <div className="flex flex-wrap items-center gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-semibold">
-        <span className="px-1.5 py-0.5 rounded-md bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-[#0891b2] dark:text-[#2FD9C4]">
+      <div className="flex flex-wrap items-center gap-1 text-[9px] font-semibold">
+        <span className="px-1.5 py-0.5 rounded bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-[#0891b2] dark:text-[#2FD9C4]">
           {course.questionCount.toLocaleString()} Qs
         </span>
-        <span className="px-1.5 py-0.5 rounded-md bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-[#ea580c] dark:text-[#FF9A80]">
+        <span className="px-1.5 py-0.5 rounded bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-[#ea580c] dark:text-[#FF9A80]">
           {course.examCount} Exams
         </span>
-        <span className="px-1.5 py-0.5 rounded-md bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-slate-700 dark:text-[var(--text-color)]/60">
+        <span className="px-1.5 py-0.5 rounded bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-slate-700 dark:text-[var(--text-color)]/60">
           {course.doneCount} Done
         </span>
-        <span className="px-1.5 py-0.5 rounded-md bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-amber-700 dark:text-[#F5B843]">
+        <span className="px-1.5 py-0.5 rounded bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-amber-700 dark:text-[#F5B843]">
           {left.toLocaleString()} Left
         </span>
       </div>
 
       <div>
-        <div className="flex items-center justify-between text-[10px] sm:text-[11px] mb-1">
-          <span className="font-semibold text-slate-600 dark:text-[var(--text-color)]/50">Completion</span>
-          <span className="font-bold" style={{ color: ACCENT_TEAL }}>
+        <div className="flex items-center justify-between text-[9px] sm:text-[10px] mb-0.5">
+          <span className="font-semibold text-slate-500 dark:text-[var(--text-color)]/50">Completion</span>
+          <span className="font-bold text-[10px]" style={{ color: ACCENT_TEAL }}>
             {completionPct}%
           </span>
         </div>
-        <div className="h-1 sm:h-1.5 rounded-full bg-slate-200 dark:bg-[var(--text-color)]/10 overflow-hidden">
+        <div className="h-1 rounded-full bg-slate-200 dark:bg-[var(--text-color)]/10 overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{ width: `${completionPct}%`, backgroundColor: ACCENT_TEAL }}
@@ -1452,13 +1560,13 @@ const CourseCard = ({
         <DifficultyBar easy={course.easyPct} medium={course.mediumPct} hard={course.hardPct} />
       )}
 
-      <div className="mt-auto pt-1">
+      <div className="mt-auto pt-0.5">
         <button
           type="button"
           onClick={() => onCreateCustomTest(course)}
-          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 sm:py-2.5 rounded-lg font-bold text-xs sm:text-[13px] border border-blue-500/80 text-blue-700 dark:text-blue-300 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 active:scale-[0.98] transition-all duration-200 shadow-2xs cursor-pointer"
+          className="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg font-bold text-xs border border-teal-500/80 dark:border-teal-400/60 text-teal-800 dark:text-teal-300 bg-teal-500/25 dark:bg-teal-500/30 hover:bg-teal-500/35 dark:hover:bg-teal-500/40 active:scale-[0.98] transition-all duration-200 shadow-2xs cursor-pointer"
         >
-          <Play className="w-3.5 h-3.5 fill-current" />
+          <Play className="w-3 h-3 fill-current" />
           <span>Create Custom Test</span>
         </button>
       </div>
@@ -1492,6 +1600,14 @@ export function NclexCourseGrid({
         const rKey = String(r.examGuidId || r.examId);
         if (examIds.has(rKey)) {
           totalAnswered += r.totalAnswered ?? r.answers?.length ?? 0;
+        }
+      }
+      if (typeof window !== "undefined") {
+        for (const sc of c.subCategories || []) {
+          try {
+            const stored = JSON.parse(localStorage.getItem(`rhenis_exam_answered_${sc.id}`) || "[]");
+            totalAnswered = Math.max(totalAnswered, stored.length);
+          } catch {}
         }
       }
       map.set(c.id, totalAnswered);
@@ -1564,7 +1680,7 @@ export function NclexCourseGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-2.5">
       {visibleCourses.map((course) => (
         <CourseCard
           key={`${course.examType}-${course.id}`}

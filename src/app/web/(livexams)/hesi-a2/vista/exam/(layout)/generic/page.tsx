@@ -73,8 +73,8 @@ function flattenQuestions(
       flat.push({
         question: q,
         sectionName: section.name,
-        sectionId: section.id,
-        sectionGuidId: section.guidId,
+        sectionId: (q as any)._realSectionId ?? section.id,
+        sectionGuidId: (q as any)._realSectionGuidId ?? section.guidId,
       });
     }
   }
@@ -1861,8 +1861,8 @@ export default function LiveExamPage() {
               current.globalIndex,
               examSession.exam.selectedMode,
               {
-                examId: examSession.exam.id ?? 0,
-                examGuidId: examSession.exam.guidId ?? "",
+                examId: (current.question as any)._realExamId ?? examSession.exam.id ?? 0,
+                examGuidId: (current.question as any)._realExamGuidId ?? examSession.exam.guidId ?? "",
                 sectionId: current.sectionId,
                 sectionGuidId: current.sectionGuidId,
               }
