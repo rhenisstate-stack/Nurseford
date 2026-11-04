@@ -23,7 +23,7 @@ let cachedGuestBadge: string | null = "B536816D72FA09B200042157A4140BB5ADF8F2CA9
 let cachedGuestLine: string | null = null;
 let guestTokenPromise: Promise<{ line: string; badge: string } | null> | null = null;
 
-async function getGuestPreviewToken(): Promise<{ line: string; badge: string } | null> {
+export async function getGuestPreviewToken(): Promise<{ line: string; badge: string } | null> {
   if (cachedGuestLine && cachedGuestBadge) {
     return { line: cachedGuestLine, badge: cachedGuestBadge };
   }

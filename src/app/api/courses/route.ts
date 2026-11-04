@@ -5,6 +5,7 @@ import {
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
+import { fetchExamBreakdown } from "@/app/api/exams/questions-breakdown/route";
 import type { DashboardCourse, DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
 
 type CourseExamType =
@@ -156,6 +157,10 @@ async function fetchBackendSubjectExams(subjectId: number | string, sessionHeade
       };
     };
     const items = converted.data?.items ?? [];
+    if (items.length > 0 && !globalThis.__loggedExamSample) {
+      globalThis.__loggedExamSample = true;
+      console.log("🔍 [Backend Nominal Exam Sample]:", JSON.stringify(items[0], null, 2));
+    }
     const sortedItems = [...items].sort((a, b) => {
       const yrB = extractExamYear(b.title, undefined, undefined, b.createdAt) ?? 0;
       const yrA = extractExamYear(a.title, undefined, undefined, a.createdAt) ?? 0;
@@ -256,14 +261,33 @@ const PROGRAM_NAMES: Record<CourseExamType, RegExp> = {
 
 // Subjects follow the exact natural arrangement from the backend.
 
-function computeDifficultyPercentages(subCategories: Array<{ questionCount: number; difficulty?: string | null }>) {
+function computeDifficultyPercentages(
+  subCategories: Array<{
+    questionCount: number;
+    difficulty?: string | null;
+    easyCount?: number;
+    mediumCount?: number;
+    hardCount?: number;
+  }>
+) {
   let easyQs = 0;
   let mediumQs = 0;
   let hardQs = 0;
 
   for (const sc of subCategories) {
+    if (
+      (sc.easyCount !== undefined && sc.easyCount > 0) ||
+      (sc.mediumCount !== undefined && sc.mediumCount > 0) ||
+      (sc.hardCount !== undefined && sc.hardCount > 0)
+    ) {
+      easyQs += sc.easyCount || 0;
+      mediumQs += sc.mediumCount || 0;
+      hardQs += sc.hardCount || 0;
+      continue;
+    }
+
     const diff = (sc.difficulty || "").toLowerCase().trim();
-    if (diff === "easy" || diff === "beginner" || diff === "1") {
+    if (diff === "easy" || diff === "beginner" || diff === "1" || diff === "foundation") {
       easyQs += sc.questionCount;
     } else if (diff === "medium" || diff === "moderate" || diff === "intermediate" || diff === "2") {
       mediumQs += sc.questionCount;
@@ -278,9 +302,12 @@ function computeDifficultyPercentages(subCategories: Array<{ questionCount: numb
       easyPct: Math.round((easyQs / categorized) * 100),
       mediumPct: Math.round((mediumQs / categorized) * 100),
       hardPct: Math.round((hardQs / categorized) * 100),
+      easyCount: easyQs,
+      mediumCount: mediumQs,
+      hardCount: hardQs,
     };
   }
-  return { easyPct: 0, mediumPct: 0, hardPct: 0 };
+  return { easyPct: 0, mediumPct: 0, hardPct: 0, easyCount: 0, mediumCount: 0, hardCount: 0 };
 }
 
 // The live "Study By Course" grid is backed by the program's "Standalone
@@ -344,10 +371,29 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         }
       }
 
+      if (subCategories.length > 0) {
+        const breakdowns = await Promise.allSettled(
+          subCategories.map((sc) => fetchExamBreakdown(sc.id, sessionHeaders))
+        );
+        subCategories = subCategories.map((sc, index) => {
+          const res = breakdowns[index];
+          if (res.status === "fulfilled" && res.value && res.value.total > 0) {
+            return {
+              ...sc,
+              questionCount: res.value.total,
+              easyCount: res.value.easy,
+              mediumCount: res.value.medium,
+              hardCount: res.value.hard,
+            };
+          }
+          return sc;
+        });
+      }
+
       const calculatedQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
       const questionCount = calculatedQuestions;
       const examCount = subCategories.length;
-      const { easyPct, mediumPct, hardPct } = computeDifficultyPercentages(subCategories);
+      const { easyPct, mediumPct, hardPct, easyCount, mediumCount, hardCount } = computeDifficultyPercentages(subCategories);
 
       const card: DashboardCourse = {
         id: toNumber(s.id, i + 1),
@@ -362,6 +408,9 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         easyPct,
         mediumPct,
         hardPct,
+        easyCount,
+        mediumCount,
+        hardCount,
         order: i + 1,
         subCategories,
       };
@@ -383,15 +432,34 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         clientNeedSubjects.map(async (s, i) => {
           const title = s.name?.trim() || `Client Need ${i + 1}`;
           const rawExams = await fetchBackendSubjectExams(s.guidId ?? s.id ?? "", sessionHeaders);
-          const subCategories: DashboardSubCategory[] = rawExams.map((e, index) => ({
+          let subCategories: DashboardSubCategory[] = rawExams.map((e, index) => ({
             ...e,
             order: index + 1,
           }));
 
+          if (subCategories.length > 0) {
+            const breakdowns = await Promise.allSettled(
+              subCategories.map((sc) => fetchExamBreakdown(sc.id, sessionHeaders))
+            );
+            subCategories = subCategories.map((sc, index) => {
+              const res = breakdowns[index];
+              if (res.status === "fulfilled" && res.value && res.value.total > 0) {
+                return {
+                  ...sc,
+                  questionCount: res.value.total,
+                  easyCount: res.value.easy,
+                  mediumCount: res.value.medium,
+                  hardCount: res.value.hard,
+                };
+              }
+              return sc;
+            });
+          }
+
           const calculatedQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
           const questionCount = calculatedQuestions;
           const examCount = subCategories.length;
-          const { easyPct, mediumPct, hardPct } = computeDifficultyPercentages(subCategories);
+          const { easyPct, mediumPct, hardPct, easyCount, mediumCount, hardCount } = computeDifficultyPercentages(subCategories);
 
           return {
             id: toNumber(s.id, 100 + i),
@@ -406,6 +474,9 @@ async function fetchBackendStandaloneSubjectsAsCourses(
             easyPct,
             mediumPct,
             hardPct,
+            easyCount,
+            mediumCount,
+            hardCount,
             order: subjectCards.length + i + 1,
             subCategories,
           };

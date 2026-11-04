@@ -84,19 +84,61 @@ function getSubCategoryCounts(
   difficultyFilter: DifficultyFilter,
   statusFilter: StatusFilter,
   answeredQuestionIds?: Set<string | number>,
-  bookmarkedQuestionIds?: Set<string | number>
+  bookmarkedQuestionIds?: Set<string | number>,
+  answeredExamMap?: Map<string, number>,
+  bookmarkedExamMap?: Map<string, number>
 ) {
-  const totalQ = sc.questionCount || 0;
-  const answered = sc.usedCount || 0;
-  const usedCount = Math.min(totalQ, answered);
-  const unusedCount = Math.max(0, totalQ - usedCount);
+  let targetQ = sc.questionCount || 0;
+  if (difficultyFilter === "Easy") {
+    if (sc.easyCount !== undefined) {
+      targetQ = sc.easyCount;
+    } else if ((course.easyPct || 0) > 0) {
+      targetQ = Math.round((sc.questionCount || 0) * ((course.easyPct || 0) / 100));
+    } else {
+      const d = (sc.difficulty || "").toLowerCase().trim();
+      targetQ = (d === "easy" || d === "beginner" || d === "1" || d === "foundation") ? (sc.questionCount || 0) : 0;
+    }
+  } else if (difficultyFilter === "Medium") {
+    if (sc.mediumCount !== undefined) {
+      targetQ = sc.mediumCount;
+    } else if ((course.mediumPct || 0) > 0) {
+      targetQ = Math.round((sc.questionCount || 0) * ((course.mediumPct || 0) / 100));
+    } else {
+      const d = (sc.difficulty || "").toLowerCase().trim();
+      targetQ = (d === "medium" || d === "moderate" || d === "intermediate" || d === "2") ? (sc.questionCount || 0) : 0;
+    }
+  } else if (difficultyFilter === "Hard") {
+    if (sc.hardCount !== undefined) {
+      targetQ = sc.hardCount;
+    } else if ((course.hardPct || 0) > 0) {
+      targetQ = Math.round((sc.questionCount || 0) * ((course.hardPct || 0) / 100));
+    } else {
+      const d = (sc.difficulty || "").toLowerCase().trim();
+      targetQ = (d === "hard" || d === "difficult" || d === "advanced" || d === "3") ? (sc.questionCount || 0) : 0;
+    }
+  }
+
+  const answeredExamCount = answeredExamMap?.get(sc.id) ?? sc.usedCount ?? 0;
+  const usedInScope = Math.min(targetQ, answeredExamCount);
+  const unusedInScope = Math.max(0, targetQ - usedInScope);
+  const bookmarkedExamCount = bookmarkedExamMap?.get(sc.id) ?? 0;
+  const bookmarkedInScope = Math.min(targetQ, bookmarkedExamCount);
+
+  let available = targetQ;
+  if (statusFilter === "Used") {
+    available = usedInScope;
+  } else if (statusFilter === "Unused") {
+    available = unusedInScope;
+  } else if (statusFilter === "Bookmarked") {
+    available = bookmarkedInScope;
+  }
 
   return {
-    totalInScope: totalQ,
-    usedInScope: usedCount,
-    unusedInScope: unusedCount,
-    bookmarkedInScope: 0,
-    available: totalQ,
+    totalInScope: targetQ,
+    usedInScope,
+    unusedInScope,
+    bookmarkedInScope,
+    available,
   };
 }
 
@@ -113,6 +155,8 @@ function DomainRow({
   statusFilter = "All",
   answeredExamIds,
   bookmarkedExamIds,
+  answeredExamMap,
+  bookmarkedExamMap,
 }: {
   course: DashboardCourse;
   selectedSubs: Set<string>;
@@ -124,6 +168,8 @@ function DomainRow({
   statusFilter?: StatusFilter;
   answeredExamIds?: Set<string | number>;
   bookmarkedExamIds?: Set<string | number>;
+  answeredExamMap?: Map<string, number>;
+  bookmarkedExamMap?: Map<string, number>;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded ?? false);
   useEffect(() => {
@@ -139,7 +185,19 @@ function DomainRow({
   const visibleSubCategories = hasSubs ? subCategories : [];
 
   const domainQs = hasSubs
-    ? subCategories.reduce((s, sc) => s + (sc.questionCount || 0), 0)
+    ? subCategories.reduce((s, sc) => {
+        const c = getSubCategoryCounts(
+          sc,
+          course,
+          difficultyFilter,
+          statusFilter,
+          answeredExamIds,
+          bookmarkedExamIds,
+          answeredExamMap,
+          bookmarkedExamMap
+        );
+        return s + c.available;
+      }, 0)
     : course.questionCount;
   const domainExams = course.examCount ?? (hasSubs ? subCategories.length : 0);
 
@@ -208,7 +266,16 @@ function DomainRow({
         <div className="border-t border-[#CBDCF8]/60 dark:border-white/5">
           {visibleSubCategories.map((sc) => {
             const isSelected = selectedSubs.has(sc.id);
-            const counts = getSubCategoryCounts(sc, course, difficultyFilter, statusFilter, answeredExamIds, bookmarkedExamIds);
+            const counts = getSubCategoryCounts(
+              sc,
+              course,
+              difficultyFilter,
+              statusFilter,
+              answeredExamIds,
+              bookmarkedExamIds,
+              answeredExamMap,
+              bookmarkedExamMap
+            );
             return (
               <div
                 key={sc.id}
@@ -346,6 +413,35 @@ export function NclexCustomTestPopup({
     return set;
   }, [allResults]);
 
+  const answeredExamMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of allResults || []) {
+      const key = String(r.examGuidId || r.examId);
+      const count = r.totalAnswered ?? r.answers?.length ?? 0;
+      if (count > (map.get(key) || 0)) {
+        map.set(key, count);
+      }
+    }
+    return map;
+  }, [allResults]);
+
+  const bookmarkedExamMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of allResults || []) {
+      const key = String(r.examGuidId || r.examId);
+      let count = 0;
+      for (const sec of (r as any).sections || []) {
+        for (const q of sec.questions || []) {
+          if (isQuestionBookmarked(q, bookmarkedQuestionIds)) count++;
+        }
+      }
+      if (count > (map.get(key) || 0)) {
+        map.set(key, count);
+      }
+    }
+    return map;
+  }, [allResults, bookmarkedQuestionIds]);
+
   const isExamMode =
     builderMode === "exams" ||
     (builderMode !== "questions" &&
@@ -364,40 +460,41 @@ export function NclexCustomTestPopup({
 
   // ─── Stats ────────────────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    if (customCourses && customCourses.length > 0) {
-      let totalExams = 0;
-      let totalQuestions = 0;
-      for (const sc of customCourses) {
-        totalExams += sc.examCount || (sc.subCategories && sc.subCategories.length > 0 ? sc.subCategories.length : 0);
-        if (sc.subCategories && sc.subCategories.length > 0) {
-          totalQuestions += sc.subCategories.reduce((s, sub) => s + sub.questionCount, 0);
-        } else {
-          totalQuestions += sc.questionCount || 0;
-        }
-      }
-      return { totalDomains: customCourses.length, totalExams, totalQuestions };
-    }
-
-    if (activeCategory === "clientNeed" && examBuilderStats?.clientNeed) {
-      return examBuilderStats.clientNeed;
-    }
-    if (activeCategory === "subject" && examBuilderStats?.subject) {
-      return examBuilderStats.subject;
-    }
-
-    let totalDomains = courses.length;
+    const coursesList = customCourses && customCourses.length > 0 ? customCourses : courses;
     let totalExams = 0;
     let totalQuestions = 0;
-    for (const sc of courses) {
-      totalExams += sc.examCount || (sc.subCategories && sc.subCategories.length > 0 ? sc.subCategories.length : 0);
-      if (sc.subCategories && sc.subCategories.length > 0) {
-        totalQuestions += sc.subCategories.reduce((s, sub) => s + sub.questionCount, 0);
+
+    for (const c of coursesList) {
+      totalExams += c.examCount || (c.subCategories && c.subCategories.length > 0 ? c.subCategories.length : 0);
+      if (c.subCategories && c.subCategories.length > 0) {
+        totalQuestions += c.subCategories.reduce((s, sub) => {
+          const counts = getSubCategoryCounts(
+            sub,
+            c,
+            difficultyFilter,
+            statusFilter,
+            answeredQuestionIds,
+            bookmarkedQuestionIds,
+            answeredExamMap,
+            bookmarkedExamMap
+          );
+          return s + counts.available;
+        }, 0);
       } else {
-        totalQuestions += sc.questionCount || 0;
+        totalQuestions += c.questionCount || 0;
       }
     }
-    return { totalDomains, totalExams, totalQuestions };
-  }, [customCourses, activeCategory, examBuilderStats, courses]);
+    return { totalDomains: coursesList.length, totalExams, totalQuestions };
+  }, [
+    customCourses,
+    courses,
+    difficultyFilter,
+    statusFilter,
+    answeredQuestionIds,
+    bookmarkedQuestionIds,
+    answeredExamMap,
+    bookmarkedExamMap,
+  ]);
 
   // ─── Selection Logic ──────────────────────────────────────────────────────────────────
   const toggleSub = useCallback((subId: string) => {
@@ -456,7 +553,17 @@ export function NclexCustomTestPopup({
       if (c.subCategories && c.subCategories.length > 0) {
         for (const sc of c.subCategories) {
           if (selectedSubs.has(sc.id)) {
-            total += sc.questionCount || 0;
+            const counts = getSubCategoryCounts(
+              sc,
+              c,
+              difficultyFilter,
+              statusFilter,
+              answeredQuestionIds,
+              bookmarkedQuestionIds,
+              answeredExamMap,
+              bookmarkedExamMap
+            );
+            total += counts.available;
           }
         }
       } else {
@@ -466,7 +573,16 @@ export function NclexCustomTestPopup({
       }
     }
     return total;
-  }, [courses, selectedSubs]);
+  }, [
+    courses,
+    selectedSubs,
+    difficultyFilter,
+    statusFilter,
+    answeredQuestionIds,
+    bookmarkedQuestionIds,
+    answeredExamMap,
+    bookmarkedExamMap,
+  ]);
 
   const totalSelectedExams = useMemo(() => {
     let total = 0;
@@ -814,6 +930,8 @@ export function NclexCustomTestPopup({
                 statusFilter={statusFilter}
                 answeredExamIds={answeredQuestionIds}
                 bookmarkedExamIds={bookmarkedQuestionIds}
+                answeredExamMap={answeredExamMap}
+                bookmarkedExamMap={bookmarkedExamMap}
               />
             ))
           )}
@@ -1357,10 +1475,38 @@ export function NclexCourseGrid({
     );
   }
 
-  const visibleCourses =
-    view === "clientNeed"
-      ? courses.filter((c) => c.category === "clientNeed")
-      : courses.filter((c) => c.category !== "clientNeed");
+  const { filteredExamResults: allResults = [] } = useRelativeStrataAssessmentResults({
+    page: 1,
+    perPage: 200,
+  });
+
+  const courseDoneCounts = useMemo(() => {
+    const map = new Map<number | string, number>();
+    for (const c of courses) {
+      const examIds = new Set((c.subCategories || []).map((sc) => String(sc.id)));
+      let totalAnswered = 0;
+      for (const r of allResults || []) {
+        const rKey = String(r.examGuidId || r.examId);
+        if (examIds.has(rKey)) {
+          totalAnswered += r.totalAnswered ?? r.answers?.length ?? 0;
+        }
+      }
+      map.set(c.id, totalAnswered);
+    }
+    return map;
+  }, [courses, allResults]);
+
+  const visibleCourses = useMemo(() => {
+    const list =
+      view === "clientNeed"
+        ? courses.filter((c) => c.category === "clientNeed")
+        : courses.filter((c) => c.category !== "clientNeed");
+
+    return list.map((c) => ({
+      ...c,
+      doneCount: courseDoneCounts.get(c.id) ?? c.doneCount,
+    }));
+  }, [courses, view, courseDoneCounts]);
 
   if (visibleCourses.length === 0) {
     return (

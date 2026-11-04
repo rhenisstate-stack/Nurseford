@@ -10,6 +10,9 @@ export interface DashboardSubCategory {
   usedCount: number;
   order: number;
   difficulty?: string | null;
+  easyCount?: number;
+  mediumCount?: number;
+  hardCount?: number;
 }
 
 export interface DashboardCourse {
@@ -25,6 +28,9 @@ export interface DashboardCourse {
   easyPct: number;
   mediumPct: number;
   hardPct: number;
+  easyCount?: number;
+  mediumCount?: number;
+  hardCount?: number;
   order: number;
   subCategories: DashboardSubCategory[];
 }
