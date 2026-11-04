@@ -229,13 +229,13 @@ export function SubjectExamsHierarchyPage({
         const resolvedCourseName = (rawItems[0] as any)?.courseName || currentCached?.courseName || "";
 
         const sortedExams = [...uniqueItems].sort((a, b) => {
+          const yrB = extractExamYear(b.title, resolvedSubName, b.year, b.createdAt) ?? 0;
+          const yrA = extractExamYear(a.title, resolvedSubName, a.year, a.createdAt) ?? 0;
+          if (yrB !== yrA) return yrB - yrA;
+
           const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
           const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
           if (timeB !== timeA) return timeB - timeA;
-
-          const yrB = extractExamYear(b.title, resolvedSubName, b.year) ?? 0;
-          const yrA = extractExamYear(a.title, resolvedSubName, a.year) ?? 0;
-          if (yrB !== yrA) return yrB - yrA;
 
           return (Number(b.id) || 0) - (Number(a.id) || 0);
         });
@@ -411,13 +411,13 @@ export function SubjectExamsHierarchyPage({
       }
       return true;
     }).sort((a, b) => {
+      const yrB = extractExamYear(b.title, currentSubjectTitle, b.year, b.createdAt) ?? 0;
+      const yrA = extractExamYear(a.title, currentSubjectTitle, a.year, a.createdAt) ?? 0;
+      if (yrB !== yrA) return yrB - yrA;
+
       const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
       const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
       if (timeB !== timeA) return timeB - timeA;
-
-      const yrB = extractExamYear(b.title, currentSubjectTitle, b.year) ?? 0;
-      const yrA = extractExamYear(a.title, currentSubjectTitle, a.year) ?? 0;
-      if (yrB !== yrA) return yrB - yrA;
 
       return (Number(b.id) || 0) - (Number(a.id) || 0);
     });

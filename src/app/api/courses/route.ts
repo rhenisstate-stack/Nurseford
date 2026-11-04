@@ -4,6 +4,7 @@ import {
 } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
+import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 import type { DashboardCourse, DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
 
 type CourseExamType =
@@ -156,6 +157,10 @@ async function fetchBackendSubjectExams(subjectId: number | string, sessionHeade
     };
     const items = converted.data?.items ?? [];
     const sortedItems = [...items].sort((a, b) => {
+      const yrB = extractExamYear(b.title, undefined, undefined, b.createdAt) ?? 0;
+      const yrA = extractExamYear(a.title, undefined, undefined, a.createdAt) ?? 0;
+      if (yrB !== yrA) return yrB - yrA;
+
       const timeB = b.updatedAt ? new Date(b.updatedAt).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
       const timeA = a.updatedAt ? new Date(a.updatedAt).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
       if (timeB !== timeA) return timeB - timeA;

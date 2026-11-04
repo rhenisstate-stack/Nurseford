@@ -91,8 +91,8 @@ export function SubjectExamsPopup({
         });
 
         const items = [...uniqueItems].sort((a, b) => {
-          const yrB = extractExamYear(b.title, subject?.name, b.year) ?? 0;
-          const yrA = extractExamYear(a.title, subject?.name, a.year) ?? 0;
+          const yrB = extractExamYear(b.title, subject?.name, b.year, b.createdAt) ?? 0;
+          const yrA = extractExamYear(a.title, subject?.name, a.year, a.createdAt) ?? 0;
           if (yrB !== yrA) return yrB - yrA;
 
           const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
