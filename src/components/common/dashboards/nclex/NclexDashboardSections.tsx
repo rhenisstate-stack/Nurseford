@@ -95,8 +95,7 @@ function getSubCategoryCounts(
     } else if ((course.easyPct || 0) > 0) {
       targetQ = Math.round((sc.questionCount || 0) * ((course.easyPct || 0) / 100));
     } else {
-      const d = (sc.difficulty || "").toLowerCase().trim();
-      targetQ = (d === "easy" || d === "beginner" || d === "1" || d === "foundation") ? (sc.questionCount || 0) : 0;
+      targetQ = 0;
     }
   } else if (difficultyFilter === "Medium") {
     if (sc.mediumCount !== undefined) {
@@ -104,8 +103,7 @@ function getSubCategoryCounts(
     } else if ((course.mediumPct || 0) > 0) {
       targetQ = Math.round((sc.questionCount || 0) * ((course.mediumPct || 0) / 100));
     } else {
-      const d = (sc.difficulty || "").toLowerCase().trim();
-      targetQ = (d === "medium" || d === "moderate" || d === "intermediate" || d === "2") ? (sc.questionCount || 0) : 0;
+      targetQ = 0;
     }
   } else if (difficultyFilter === "Hard") {
     if (sc.hardCount !== undefined) {
@@ -113,8 +111,7 @@ function getSubCategoryCounts(
     } else if ((course.hardPct || 0) > 0) {
       targetQ = Math.round((sc.questionCount || 0) * ((course.hardPct || 0) / 100));
     } else {
-      const d = (sc.difficulty || "").toLowerCase().trim();
-      targetQ = (d === "hard" || d === "difficult" || d === "advanced" || d === "3") ? (sc.questionCount || 0) : 0;
+      targetQ = 0;
     }
   }
 
@@ -354,6 +351,54 @@ export function NclexCustomTestPopup({
     const categoryCourses = filtered.filter((c) => c.category === activeCategory);
     return categoryCourses.length > 0 ? categoryCourses : filtered;
   }, [customCourses, rawCourses, activeCategory]);
+
+  const [breakdownMap, setBreakdownMap] = useState<
+    Record<string, { easy: number; medium: number; hard: number; total: number }>
+  >({});
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const idsToFetch: string[] = [];
+    for (const c of courses) {
+      for (const sc of c.subCategories || []) {
+        if (sc.id && !breakdownMap[sc.id]) {
+          idsToFetch.push(sc.id);
+        }
+      }
+    }
+    if (idsToFetch.length === 0) return;
+
+    fetch(`/api/exams/questions-breakdown?examIds=${encodeURIComponent(idsToFetch.join(","))}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.exams) {
+          setBreakdownMap((prev) => ({ ...prev, ...data.exams }));
+        }
+      })
+      .catch((err) => console.error("Failed to fetch questions breakdown for popup:", err));
+  }, [isOpen, courses, breakdownMap]);
+
+  const activeCourses = useMemo(() => {
+    return courses.map((c) => {
+      const enrichedSubs = (c.subCategories || []).map((sc) => {
+        const bd = breakdownMap[sc.id];
+        if (bd) {
+          return {
+            ...sc,
+            easyCount: bd.easy,
+            mediumCount: bd.medium,
+            hardCount: bd.hard,
+            questionCount: bd.total > 0 ? bd.total : sc.questionCount,
+          };
+        }
+        return sc;
+      });
+      return {
+        ...c,
+        subCategories: enrichedSubs,
+      };
+    });
+  }, [courses, breakdownMap]);
   const { user } = useCurrentSystemUser();
   const { filteredExamResults: allResults = [] } = useRelativeStrataAssessmentResults({
     page: 1,
@@ -460,7 +505,7 @@ export function NclexCustomTestPopup({
 
   // ─── Stats ────────────────────────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const coursesList = customCourses && customCourses.length > 0 ? customCourses : courses;
+    const coursesList = activeCourses;
     let totalExams = 0;
     let totalQuestions = 0;
 
@@ -486,8 +531,7 @@ export function NclexCustomTestPopup({
     }
     return { totalDomains: coursesList.length, totalExams, totalQuestions };
   }, [
-    customCourses,
-    courses,
+    activeCourses,
     difficultyFilter,
     statusFilter,
     answeredQuestionIds,
@@ -542,14 +586,14 @@ export function NclexCustomTestPopup({
   }, [isOpen, customCourses]);
 
   const visibleCourses = useMemo(() => {
-    return courses.filter((c) => {
+    return activeCourses.filter((c) => {
       return (c.questionCount || 0) > 0 || (c.examCount || 0) > 0 || (c.subCategories && c.subCategories.length > 0);
     });
-  }, [courses]);
+  }, [activeCourses]);
 
   const selectedQs = useMemo(() => {
     let total = 0;
-    for (const c of courses) {
+    for (const c of activeCourses) {
       if (c.subCategories && c.subCategories.length > 0) {
         for (const sc of c.subCategories) {
           if (selectedSubs.has(sc.id)) {
@@ -574,7 +618,7 @@ export function NclexCustomTestPopup({
     }
     return total;
   }, [
-    courses,
+    activeCourses,
     selectedSubs,
     difficultyFilter,
     statusFilter,
@@ -586,14 +630,14 @@ export function NclexCustomTestPopup({
 
   const totalSelectedExams = useMemo(() => {
     let total = 0;
-    for (const c of courses) {
+    for (const c of activeCourses) {
       const match = selectedSubs.has(String(c.id)) || (c.guidId && selectedSubs.has(c.guidId));
       if (match) {
         total += c.examCount || (c.subCategories.length > 0 ? c.subCategories.length : 0);
       }
     }
     return total;
-  }, [courses, selectedSubs]);
+  }, [activeCourses, selectedSubs]);
 
   // Keep questionCount and examCount aligned with selections
   useEffect(() => {
@@ -610,7 +654,7 @@ export function NclexCustomTestPopup({
 
   const activeSelectedCount = useMemo(() => {
     let count = 0;
-    for (const c of courses) {
+    for (const c of activeCourses) {
       if (c.subCategories && c.subCategories.length > 0) {
         for (const sc of c.subCategories) {
           if (selectedSubs.has(sc.id)) {
@@ -624,7 +668,7 @@ export function NclexCustomTestPopup({
       }
     }
     return count;
-  }, [courses, selectedSubs]);
+  }, [activeCourses, selectedSubs]);
 
   const hasSelection = activeSelectedCount > 0;
 
@@ -633,7 +677,7 @@ export function NclexCustomTestPopup({
     let domainCount = 0;
     let examCount = 0;
 
-    for (const c of courses) {
+    for (const c of activeCourses) {
       if (c.subCategories && c.subCategories.length > 0) {
         const selectedSubsInDomain = c.subCategories.filter((sc) => selectedSubs.has(sc.id));
         examCount += selectedSubsInDomain.length;
@@ -649,7 +693,7 @@ export function NclexCustomTestPopup({
     }
 
     return { selectedDomainsCount: domainCount, selectedExamsCount: examCount };
-  }, [courses, selectedSubs]);
+  }, [activeCourses, selectedSubs]);
 
 
   // ─── Start ────────────────────────────────────────────────────────────────────────────
@@ -669,7 +713,7 @@ export function NclexCustomTestPopup({
       totalAvailableExams: number;
     }[] = [];
 
-    for (const c of courses) {
+    for (const c of activeCourses) {
       if (c.subCategories && c.subCategories.length > 0) {
         const selectedInCourse: string[] = [];
         for (const sc of c.subCategories) {
@@ -704,7 +748,7 @@ export function NclexCustomTestPopup({
         resolvedTitle = `${cleanDomain(selectedCoursesData[0].course.title)} & ${cleanDomain(selectedCoursesData[1].course.title)}`;
       } else if (selectedCoursesData.length === 3) {
         resolvedTitle = `${cleanDomain(selectedCoursesData[0].course.title)}, ${cleanDomain(selectedCoursesData[1].course.title)} & ${cleanDomain(selectedCoursesData[2].course.title)}`;
-      } else if (selectedCoursesData.length > 3 && selectedCoursesData.length === courses.length) {
+      } else if (selectedCoursesData.length > 3 && selectedCoursesData.length === activeCourses.length) {
         resolvedTitle = `${EXAM_LABELS[examType] || "NCLEX"} - All Domains`;
       } else if (selectedCoursesData.length > 3) {
         resolvedTitle = `${cleanDomain(selectedCoursesData[0].course.title)}, ${cleanDomain(selectedCoursesData[1].course.title)} & ${selectedCoursesData.length - 2} more domains`;
@@ -924,7 +968,7 @@ export function NclexCustomTestPopup({
                 selectedSubs={selectedSubs}
                 onToggleSub={toggleSub}
                 onToggleDomain={toggleDomain}
-                defaultExpanded={courses.length <= 2}
+                defaultExpanded={activeCourses.length <= 2}
                 isExamMode={isExamMode}
                 difficultyFilter={difficultyFilter}
                 statusFilter={statusFilter}
@@ -1434,6 +1478,38 @@ export function NclexCourseGrid({
   onCreateCustomTest: (course?: DashboardCourse) => void;
 }) {
   const { courses, status, error, reload } = useExamCourses(examType);
+  const { filteredExamResults: allResults = [] } = useRelativeStrataAssessmentResults({
+    page: 1,
+    perPage: 200,
+  });
+
+  const courseDoneCounts = useMemo(() => {
+    const map = new Map<number | string, number>();
+    for (const c of courses) {
+      const examIds = new Set((c.subCategories || []).map((sc) => String(sc.id)));
+      let totalAnswered = 0;
+      for (const r of allResults || []) {
+        const rKey = String(r.examGuidId || r.examId);
+        if (examIds.has(rKey)) {
+          totalAnswered += r.totalAnswered ?? r.answers?.length ?? 0;
+        }
+      }
+      map.set(c.id, totalAnswered);
+    }
+    return map;
+  }, [courses, allResults]);
+
+  const visibleCourses = useMemo(() => {
+    const list =
+      view === "clientNeed"
+        ? courses.filter((c) => c.category === "clientNeed")
+        : courses.filter((c) => c.category !== "clientNeed");
+
+    return list.map((c) => ({
+      ...c,
+      doneCount: courseDoneCounts.get(c.id) ?? c.doneCount,
+    }));
+  }, [courses, view, courseDoneCounts]);
 
   if (status === "loading") {
     return (
@@ -1474,39 +1550,6 @@ export function NclexCourseGrid({
       </div>
     );
   }
-
-  const { filteredExamResults: allResults = [] } = useRelativeStrataAssessmentResults({
-    page: 1,
-    perPage: 200,
-  });
-
-  const courseDoneCounts = useMemo(() => {
-    const map = new Map<number | string, number>();
-    for (const c of courses) {
-      const examIds = new Set((c.subCategories || []).map((sc) => String(sc.id)));
-      let totalAnswered = 0;
-      for (const r of allResults || []) {
-        const rKey = String(r.examGuidId || r.examId);
-        if (examIds.has(rKey)) {
-          totalAnswered += r.totalAnswered ?? r.answers?.length ?? 0;
-        }
-      }
-      map.set(c.id, totalAnswered);
-    }
-    return map;
-  }, [courses, allResults]);
-
-  const visibleCourses = useMemo(() => {
-    const list =
-      view === "clientNeed"
-        ? courses.filter((c) => c.category === "clientNeed")
-        : courses.filter((c) => c.category !== "clientNeed");
-
-    return list.map((c) => ({
-      ...c,
-      doneCount: courseDoneCounts.get(c.id) ?? c.doneCount,
-    }));
-  }, [courses, view, courseDoneCounts]);
 
   if (visibleCourses.length === 0) {
     return (

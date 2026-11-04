@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
+import { getGuestPreviewToken } from "@/lib/services/exams/questionsBreakdownService";
 
 export interface DynamicStrataResponse<T = unknown> {
   message?: string;
@@ -71,7 +72,15 @@ async function forwardToBackend(
       }
     }
 
-    const headers: HeadersInit = {
+    if (!castoLine) {
+      const guestAuth = await getGuestPreviewToken();
+      if (guestAuth) {
+        castoLine = guestAuth.line;
+        if (!castoBadge) castoBadge = guestAuth.badge;
+      }
+    }
+
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...(await getSiteHeaders()),
     };
@@ -79,16 +88,38 @@ async function forwardToBackend(
     if (castoLine) headers["x-casto-line"] = castoLine;
     if (castoBadge) headers["x-casto-badge"] = castoBadge;
 
-    const backendResponse = await fetch(url, {
+    let backendResponse = await fetch(url, {
       method,
       headers,
       body: JSON.stringify(body),
     });
 
-    const responseBody: DynamicStrataResponse =
+    let responseBody: DynamicStrataResponse =
       await backendResponse.json().catch(() => ({
         error: "Failed to Parse Backend Response ⚓",
       }));
+
+    if (
+      (backendResponse.status === 400 || backendResponse.status === 401) &&
+      (responseBody.error?.includes("Unable To Resolve Authenticated User") ||
+        responseBody.message?.includes("Unable To Resolve Authenticated User") ||
+        responseBody.error?.includes("Invalid or expired Casto session"))
+    ) {
+      console.warn("⚠️ [exams/upserts Route] Auth failure, retrying with fresh guest preview token...");
+      const guestAuth = await getGuestPreviewToken();
+      if (guestAuth) {
+        headers["x-casto-line"] = guestAuth.line;
+        headers["x-casto-badge"] = guestAuth.badge;
+        backendResponse = await fetch(url, {
+          method,
+          headers,
+          body: JSON.stringify(body),
+        });
+        responseBody = await backendResponse.json().catch(() => ({
+          error: "Failed to Parse Backend Response ⚓",
+        }));
+      }
+    }
 
     if ("success" in responseBody && responseBody.success === false) {
       responseBody.error = responseBody.message ?? "Unknown Backend Error 🔖";

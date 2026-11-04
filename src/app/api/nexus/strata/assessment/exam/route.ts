@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
+import { getGuestPreviewToken } from "@/lib/services/exams/questionsBreakdownService";
 
 export interface DynamicStrataResponse<T = unknown> {
   message?: string;
@@ -16,61 +17,6 @@ const STRATA_GROUP = "assessment";
 const STRATA_NAME = "exams";
 const BASE_ROUTE = `/api/castoline/strata/${STRATA_GROUP}/${STRATA_NAME}`;
 
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-// Guest Preview Auth Token Cache (Allows unauthenticated guests to preview the first 10 questions)
-// ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-let cachedGuestBadge: string | null = "B536816D72FA09B200042157A4140BB5ADF8F2CA9D1BF7FEA592AB1A759D33C29696C0D09522571C8081FA69512A97AA";
-let cachedGuestLine: string | null = null;
-let guestTokenPromise: Promise<{ line: string; badge: string } | null> | null = null;
-
-export async function getGuestPreviewToken(): Promise<{ line: string; badge: string } | null> {
-  if (cachedGuestLine && cachedGuestBadge) {
-    return { line: cachedGuestLine, badge: cachedGuestBadge };
-  }
-  if (guestTokenPromise) return guestTokenPromise;
-
-  guestTokenPromise = (async () => {
-    try {
-      const backendBaseUrl = getBackendBaseUrl();
-      const loginUrl = `${backendBaseUrl}/api/castoline/auth/login`;
-      const email = "preview_guest@rhenis.internal";
-      const password = "PreviewGuest2026!#";
-
-      const loginRes = await fetch(loginUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(await getSiteHeaders()),
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          loginMethod: "password",
-          LoginProvider: "email",
-          dashboardName: "web",
-          role: "Learner",
-          challenge: "learner.login.skew8lancasto",
-        }),
-      });
-
-      const loginData = await loginRes.json().catch(() => null);
-      if (loginData?.user?.castoLine) {
-        const line = String(loginData.user.castoLine);
-        const badge = String(loginData.user.castoBadge || cachedGuestBadge);
-        cachedGuestLine = line;
-        cachedGuestBadge = badge;
-        return { line, badge };
-      }
-    } catch (e) {
-      console.error("Failed to acquire guest preview token:", e);
-    } finally {
-      guestTokenPromise = null;
-    }
-    return null;
-  })();
-
-  return guestTokenPromise;
-}
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // Helper function to Forward Requests to  Backend ⚓

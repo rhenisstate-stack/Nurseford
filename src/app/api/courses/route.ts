@@ -5,7 +5,10 @@ import {
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
-import { fetchExamBreakdown } from "@/app/api/exams/questions-breakdown/route";
+import {
+  fetchExamBreakdown,
+  fetchMultipleExamsBreakdown,
+} from "@/lib/services/exams/questionsBreakdownService";
 import type { DashboardCourse, DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
 
 type CourseExamType =
@@ -60,8 +63,8 @@ interface CoursesCacheEntry {
   timestamp: number;
 }
 const coursesResponseCache = new Map<string, CoursesCacheEntry>();
-// Zero-latency: avoid stale 5-minute cache so admin dashboard changes (add/delete/edit) reflect immediately
-const CACHE_TTL_MS = 0;
+// 1-minute TTL to keep dashboard fast while keeping admin updates responsive
+const CACHE_TTL_MS = 60 * 1000;
 
 function toNumber(value: unknown, fallback = 0): number {
   if (typeof value === "number") return value;
@@ -283,16 +286,6 @@ function computeDifficultyPercentages(
       easyQs += sc.easyCount || 0;
       mediumQs += sc.mediumCount || 0;
       hardQs += sc.hardCount || 0;
-      continue;
-    }
-
-    const diff = (sc.difficulty || "").toLowerCase().trim();
-    if (diff === "easy" || diff === "beginner" || diff === "1" || diff === "foundation") {
-      easyQs += sc.questionCount;
-    } else if (diff === "medium" || diff === "moderate" || diff === "intermediate" || diff === "2") {
-      mediumQs += sc.questionCount;
-    } else if (diff === "hard" || diff === "difficult" || diff === "advanced" || diff === "3") {
-      hardQs += sc.questionCount;
     }
   }
 
@@ -372,18 +365,20 @@ async function fetchBackendStandaloneSubjectsAsCourses(
       }
 
       if (subCategories.length > 0) {
-        const breakdowns = await Promise.allSettled(
-          subCategories.map((sc) => fetchExamBreakdown(sc.id, sessionHeaders))
+        const breakdowns = await fetchMultipleExamsBreakdown(
+          subCategories.map((sc) => sc.id),
+          sessionHeaders,
+          3
         );
         subCategories = subCategories.map((sc, index) => {
-          const res = breakdowns[index];
-          if (res.status === "fulfilled" && res.value && res.value.total > 0) {
+          const bd = breakdowns[index];
+          if (bd && bd.total > 0) {
             return {
               ...sc,
-              questionCount: res.value.total,
-              easyCount: res.value.easy,
-              mediumCount: res.value.medium,
-              hardCount: res.value.hard,
+              questionCount: bd.total,
+              easyCount: bd.easy,
+              mediumCount: bd.medium,
+              hardCount: bd.hard,
             };
           }
           return sc;
@@ -438,18 +433,20 @@ async function fetchBackendStandaloneSubjectsAsCourses(
           }));
 
           if (subCategories.length > 0) {
-            const breakdowns = await Promise.allSettled(
-              subCategories.map((sc) => fetchExamBreakdown(sc.id, sessionHeaders))
+            const breakdowns = await fetchMultipleExamsBreakdown(
+              subCategories.map((sc) => sc.id),
+              sessionHeaders,
+              3
             );
             subCategories = subCategories.map((sc, index) => {
-              const res = breakdowns[index];
-              if (res.status === "fulfilled" && res.value && res.value.total > 0) {
+              const bd = breakdowns[index];
+              if (bd && bd.total > 0) {
                 return {
                   ...sc,
-                  questionCount: res.value.total,
-                  easyCount: res.value.easy,
-                  mediumCount: res.value.medium,
-                  hardCount: res.value.hard,
+                  questionCount: bd.total,
+                  easyCount: bd.easy,
+                  mediumCount: bd.medium,
+                  hardCount: bd.hard,
                 };
               }
               return sc;
@@ -599,10 +596,32 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Extract session headers from the incoming request and forward them to the
-  // backend so it can resolve the authenticated user context.
-  const castoLine = req.headers.get("x-casto-line");
-  const castoBadge = req.headers.get("x-casto-badge");
+  // Extract session headers from the incoming request (or cookies) and forward
+  // them to the backend so it can resolve the authenticated user context.
+  let castoLine = req.headers.get("x-casto-line");
+  let castoBadge = req.headers.get("x-casto-badge");
+
+  if (!castoBadge) {
+    castoBadge = req.cookies.get("skew_blanc_session_badge")?.value || null;
+  }
+
+  if (!castoLine && castoBadge) {
+    const rawLine = req.cookies.get("skew_blanc_session_line")?.value;
+    if (rawLine) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(rawLine));
+        castoLine = parsed[castoBadge] || Object.values(parsed)[0] || null;
+      } catch {
+        try {
+          const parsed = JSON.parse(rawLine);
+          castoLine = parsed[castoBadge] || Object.values(parsed)[0] || null;
+        } catch {
+          castoLine = rawLine;
+        }
+      }
+    }
+  }
+
   const siteHeaders = await getSiteHeaders();
   const sessionHeaders: SessionHeaders = {
     ...siteHeaders,
