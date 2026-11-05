@@ -8,6 +8,7 @@ import type { DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
 import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
+import { getGuestPreviewToken } from "@/lib/services/exams/questionsBreakdownService";
 import {
   COURSE_ID_ALIASES,
 } from "@/lib/data/php-exam-counts";
@@ -25,6 +26,31 @@ const EXAM_SEGMENTS: Record<string, string> = {
   "pre-nursing": "PRE_NURSING",
   "certification": "CERTIFICATION",
 };
+
+function extractExamQuestionCount(e: any): number {
+  if (typeof e.questionsCount === "number" && e.questionsCount > 0) return e.questionsCount;
+  if (typeof e.questionCount === "number" && e.questionCount > 0) return e.questionCount;
+  if (typeof e.totalQuestions === "number" && e.totalQuestions > 0) return e.totalQuestions;
+  if (typeof e.QuestionsCount === "number" && e.QuestionsCount > 0) return e.QuestionsCount;
+  if (typeof e.TotalQuestions === "number" && e.TotalQuestions > 0) return e.TotalQuestions;
+  const resField = e.resources || e.Resources;
+  if (resField) {
+    try {
+      const parsed = typeof resField === "string" ? JSON.parse(resField) : resField;
+      const count = Number(parsed?.question_count ?? parsed?.questionCount ?? parsed?.QuestionCount ?? 0);
+      if (count > 0) return count;
+    } catch {}
+  }
+  const tqField = e.targetQuestions || e.TargetQuestions;
+  if (tqField) {
+    try {
+      const parsed = typeof tqField === "string" ? JSON.parse(tqField) : tqField;
+      if (typeof parsed?.total === "number" && parsed.total > 0) return parsed.total;
+      if (Array.isArray(parsed?.ids) && parsed.ids.length > 0) return parsed.ids.length;
+    } catch {}
+  }
+  return 0;
+}
 
 const courseNameCache = new Map<string, string>();
 const CACHE_TTL_MS = 0;
@@ -82,8 +108,36 @@ export async function GET(
   const segment = EXAM_SEGMENTS[examType] ?? null;
 
   // Forward the caller's session headers so the backend accepts the request.
-  const castoLine = req.headers.get("x-casto-line");
-  const castoBadge = req.headers.get("x-casto-badge");
+  let castoLine = req.headers.get("x-casto-line");
+  let castoBadge = req.headers.get("x-casto-badge");
+
+  if (!castoBadge) {
+    castoBadge = req.cookies.get("skew_blanc_session_badge")?.value || null;
+  }
+  if (!castoLine && castoBadge) {
+    const rawLine = req.cookies.get("skew_blanc_session_line")?.value;
+    if (rawLine) {
+      try {
+        const parsed = JSON.parse(decodeURIComponent(rawLine));
+        castoLine = parsed[castoBadge] || Object.values(parsed)[0] || null;
+      } catch {
+        try {
+          const parsed = JSON.parse(rawLine);
+          castoLine = parsed[castoBadge] || Object.values(parsed)[0] || null;
+        } catch {
+          castoLine = rawLine;
+        }
+      }
+    }
+  }
+
+  if (!castoLine) {
+    const guestAuth = await getGuestPreviewToken();
+    if (guestAuth) {
+      castoLine = guestAuth.line;
+      castoBadge = guestAuth.badge;
+    }
+  }
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -91,6 +145,10 @@ export async function GET(
   };
   if (castoLine) headers["x-casto-line"] = castoLine;
   if (castoBadge) headers["x-casto-badge"] = castoBadge;
+  const authHeader = req.headers.get("authorization");
+  if (authHeader) headers["authorization"] = authHeader;
+  const cookieHeader = req.headers.get("cookie");
+  if (cookieHeader) headers["cookie"] = cookieHeader;
 
   // If effectiveCourseId is numeric, resolve its GUID from backend courses so .NET backend doesn't fail
   let courseGuid = effectiveCourseId.includes("-") ? effectiveCourseId : "";
@@ -204,34 +262,53 @@ export async function GET(
     }
 
 
-    // Fetch true live exam count per subject directly from backend nominal endpoint
-    const liveCounts = await Promise.all(
+    // Fetch true live exams and question count per subject directly from backend nominal endpoint
+    const liveSubjectData = await Promise.all(
       items.map(async (c) => {
-        const subId = c.guidId ?? c.id;
-        if (!subId) return 0;
+        const subGuid = c.guidId || ((c as any).GuidId) || (typeof c.id === "string" && c.id.includes("-") ? c.id : "");
+        const subId = subGuid || c.id;
+        if (!subId) return { examCount: 0, questionCount: 0, subCategories: [] };
         try {
-          const nominalCountUrl = `${getBackendBaseUrl()}/api/castoline/strata/assessment/exams/list/nominal?fetchtype=nominal&identifier=${subId}&dynamicLearningStrataName=subject&dynamicPage=1&dynamicPerPage=1`;
-          const res = await fetch(nominalCountUrl, { headers, cache: "no-store" });
+          const nominalUrl = `${getBackendBaseUrl()}/api/castoline/strata/assessment/exams/list/nominal?fetchtype=nominal&identifier=${subId}&dynamicLearningStrataName=subject&dynamicPage=1&dynamicPerPage=100&dynamicSortColumn=updatedAt&dynamicSortDirection=desc`;
+          const res = await fetch(nominalUrl, { headers, cache: "no-store" });
           if (res.ok) {
-            const data = await res.json();
-            const count = data.data?.skewTotal ?? data.data?.totalItems ?? (data.data?.items || []).length;
-            if (typeof count === "number" && count > 0) {
-              return count;
-            }
+            const rawData = await res.json();
+            const convertedData = convertBackendKeysToCamel(rawData) as any;
+            const rawItems: any[] = convertedData?.data?.items || rawData?.data?.items || rawData?.Data?.Items || [];
+            const examCount = convertedData?.data?.skewTotal ?? rawData?.data?.skewTotal ?? rawItems.length;
+
+            const subCategories: DashboardSubCategory[] = rawItems.map((e, index) => {
+              const qCount = extractExamQuestionCount(e);
+              const examId = String(e.guidId || e.id || e.GuidId || e.Id);
+              const examTitle = e.title || e.Title || `Exam ${index + 1}`;
+              return {
+                id: examId,
+                title: examTitle,
+                questionCount: qCount,
+                difficulty: e.difficulty || e.Difficulty || null,
+                usedCount: 0,
+                order: index + 1,
+              };
+            });
+
+            const totalQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
+
+            return {
+              examCount: Math.max(typeof examCount === "number" ? examCount : 0, subCategories.length),
+              questionCount: totalQuestions,
+              subCategories,
+            };
           }
-        } catch {
-          // No exams found for this subject in backend
+        } catch (err) {
+          console.warn(`[subjects route] Failed to load exams for subject ${subId}:`, err);
         }
-        return 0;
+        return { examCount: 0, questionCount: 0, subCategories: [] };
       })
     );
 
     const subjects: BackendSubject[] = items.map((c, i) => {
       const name = c.name?.trim() || `Subject ${i + 1}`;
-      const examCount = liveCounts[i] || 0;
-      const subCategories: DashboardSubCategory[] = [];
-
-      const questionCount = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
+      const live = liveSubjectData[i] || { examCount: 0, questionCount: 0, subCategories: [] };
       const guid = c.guidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : undefined);
 
       return {
@@ -240,9 +317,9 @@ export async function GET(
         name,
         slug: toSlug(name),
         description: c.description,
-        examCount,
-        questionCount,
-        subCategories,
+        examCount: live.examCount,
+        questionCount: live.questionCount,
+        subCategories: live.subCategories,
       };
     });
 

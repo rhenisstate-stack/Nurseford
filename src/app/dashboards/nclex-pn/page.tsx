@@ -251,6 +251,7 @@ export default function NclexPnHomePage() {
         panelSlug={PANEL_SLUG}
         livePanelSlug={PANEL_SLUG}
         examType="nclex-pn"
+        builderMode="questions"
         customCourses={selectedCourse ? [selectedCourse] : undefined}
         initialCategory={selectedCourse?.category || activeCourseView}
       />

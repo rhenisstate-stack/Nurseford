@@ -105,7 +105,6 @@ async function forwardToBackend(
 
     // If guest preview token expired (401), refresh token and retry once
     if (backendResponse.status === 401 && !req.headers.get("x-casto-line") && isLiveExamPath) {
-      cachedGuestLine = null;
       const freshGuestAuth = await getGuestPreviewToken();
       if (freshGuestAuth) {
         headers["x-casto-line"] = freshGuestAuth.line;

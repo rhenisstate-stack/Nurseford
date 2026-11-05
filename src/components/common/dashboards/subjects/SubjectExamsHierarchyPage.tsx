@@ -10,7 +10,7 @@ import { useNominalStrataExams, type StrataItem } from "@/lib/hooks/nexus/strata
 import { ArrowLeft, Calendar, Check, ChevronLeft, ChevronRight, FileQuestion, Loader2, Play, Search, X } from "lucide-react";
 import { NclexCustomTestPopup } from "@/components/common/dashboards/nclex/NclexDashboardSections";
 import { useRelativeStrataAssessmentResults } from "@/lib/hooks/nexus/strata/assessment/results/relative/useRelativeStrataAssessmentResults";
-import type { DashboardCourse, DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
+import { useExamCourses, type DashboardCourse, type DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
@@ -36,6 +36,29 @@ interface SubjectExamsHierarchyCacheItem {
   hideSeason?: boolean;
 }
 const subjectExamsHierarchyClientCache = new Map<string, SubjectExamsHierarchyCacheItem>();
+
+function extractExamQuestionCount(e: any): number {
+  if (typeof e.questionsCount === "number" && e.questionsCount > 0) return e.questionsCount;
+  if (typeof e.questionCount === "number" && e.questionCount > 0) return e.questionCount;
+  if (typeof e.totalQuestions === "number" && e.totalQuestions > 0) return e.totalQuestions;
+  if (e.targetQuestions) {
+    try {
+      const parsed = typeof e.targetQuestions === "string" ? JSON.parse(e.targetQuestions) : e.targetQuestions;
+      if (typeof parsed?.total === "number" && parsed.total > 0) return parsed.total;
+      if (Array.isArray(parsed?.ids) && parsed.ids.length > 0) return parsed.ids.length;
+    } catch {}
+  }
+  if (e.resources) {
+    try {
+      const parsed = typeof e.resources === "string" ? JSON.parse(e.resources) : e.resources;
+      if (typeof parsed?.question_count === "number" && parsed.question_count > 0) return parsed.question_count;
+      if (typeof parsed?.questionCount === "number" && parsed.questionCount > 0) return parsed.questionCount;
+    } catch {}
+  }
+  return 0;
+}
+
+const cleanSubjectStr = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
 export function SubjectExamsHierarchyPage({
   panelSlug,
@@ -73,6 +96,71 @@ export function SubjectExamsHierarchyPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedSeason, setSelectedSeason] = useState<string>("all");
+
+  const normalizedExamType =
+    panelSlug === "hesi-a2"
+      ? "hesi-a2"
+      : panelSlug === "ati-teas"
+        ? "ati-teas"
+        : panelSlug === "rn-nursing"
+          ? "rn-nursing"
+          : panelSlug === "lpn-nursing"
+            ? "lpn-nursing"
+            : panelSlug === "nclex-pn"
+              ? "nclex-pn"
+              : "nclex-rn";
+
+  const { courses: dashboardCourses } = useExamCourses(normalizedExamType);
+
+  const matchingDashboardCourse = useMemo(() => {
+    if (!dashboardCourses || dashboardCourses.length === 0) return null;
+    const targetSubId = String(subjectId).trim().toLowerCase();
+    const targetTitle = cleanSubjectStr(dynamicSubjectName || subjectName);
+
+    // 1. Direct match on top-level course
+    const direct = dashboardCourses.find((c) => {
+      const cGuid = String(c.backendSubjectGuid || c.guidId || "").toLowerCase();
+      const cId = String(c.id).toLowerCase();
+      if (cGuid && (cGuid === targetSubId || cId === targetSubId)) return true;
+      const cTitle = cleanSubjectStr(c.title);
+      if (targetTitle && cTitle) {
+        if (cTitle === targetTitle) return true;
+        if (cTitle.includes(targetTitle) || targetTitle.includes(cTitle)) return true;
+      }
+      return false;
+    });
+    if (direct) return direct;
+
+    // 2. Search inside subCategories of all courses
+    for (const c of dashboardCourses) {
+      for (const sc of c.subCategories || []) {
+        const scId = String(sc.id).toLowerCase();
+        const scTitle = cleanSubjectStr(sc.title);
+        const matchesId = scId === targetSubId;
+        const matchesTitle = targetTitle && scTitle && (scTitle === targetTitle || scTitle.includes(targetTitle) || targetTitle.includes(scTitle));
+        if (matchesId || matchesTitle) {
+          return {
+            id: Number(sc.id) || c.id,
+            guidId: String(sc.id),
+            backendSubjectGuid: String(sc.id),
+            examType: c.examType,
+            title: sc.title,
+            category: c.category,
+            questionCount: sc.questionCount,
+            examCount: (sc as any).examCount ?? 0,
+            doneCount: sc.usedCount ?? 0,
+            easyPct: c.easyPct,
+            mediumPct: c.mediumPct,
+            hardPct: c.hardPct,
+            order: sc.order,
+            subCategories: (sc as any).subCategories || [],
+          };
+        }
+      }
+    }
+
+    return null;
+  }, [dashboardCourses, subjectId, dynamicSubjectName, subjectName]);
 
   useEffect(() => {
     if (exams.length > 0) {
@@ -326,32 +414,90 @@ export function SubjectExamsHierarchyPage({
   const backHref = `/dashboards/${panelSlug}/exams/${courseSlug}/${courseId}`;
 
   const customCoursesForBuilder: DashboardCourse[] = useMemo(() => {
-    const subCategories: DashboardSubCategory[] = exams.map((e, index) => ({
-      id: String(e.guidId || e.id),
-      title: e.title,
-      questionCount: e.questionsCount && e.questionsCount > 0 ? e.questionsCount : 0,
-      usedCount: 0,
-      order: index + 1,
-    }));
-    const totalQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
+    const subCategoriesMap = new Map<string, DashboardSubCategory>();
+
+    if (matchingDashboardCourse?.subCategories?.length) {
+      for (const sc of matchingDashboardCourse.subCategories) {
+        subCategoriesMap.set(sc.id, sc);
+        subCategoriesMap.set(cleanSubjectStr(sc.title), sc);
+      }
+    }
+
+    const mappedFromExams: DashboardSubCategory[] = exams.map((e, index) => {
+      const keyId = String(e.guidId || e.id);
+      const titleKey = cleanSubjectStr(e.title);
+      const matched = subCategoriesMap.get(keyId) || subCategoriesMap.get(titleKey);
+
+      const qCount =
+        matched?.questionCount && matched.questionCount > 0
+          ? matched.questionCount
+          : e.questionsCount && e.questionsCount > 0
+            ? e.questionsCount
+            : extractExamQuestionCount(e);
+
+      return {
+        id: keyId,
+        title: e.title,
+        questionCount: qCount,
+        usedCount: matched?.usedCount ?? 0,
+        order: index + 1,
+        difficulty: matched?.difficulty ?? e.difficulty ?? null,
+        easyCount: matched?.easyCount,
+        mediumCount: matched?.mediumCount,
+        hardCount: matched?.hardCount,
+      };
+    });
+
+    let finalSubs: DashboardSubCategory[] = [];
+    if (mappedFromExams.length > 0) {
+      finalSubs = [...mappedFromExams];
+      if (matchingDashboardCourse?.subCategories?.length) {
+        const existingIds = new Set(finalSubs.map((s) => s.id));
+        const existingTitles = new Set(finalSubs.map((s) => cleanSubjectStr(s.title)));
+        for (const sc of matchingDashboardCourse.subCategories) {
+          if (!existingIds.has(sc.id) && !existingTitles.has(cleanSubjectStr(sc.title))) {
+            finalSubs.push(sc);
+          }
+        }
+      }
+    } else {
+      finalSubs = matchingDashboardCourse?.subCategories || [];
+    }
+
+    const totalQuestions = finalSubs.reduce((sum, sc) => sum + sc.questionCount, 0);
+
+    let easyTotal = 0;
+    let medTotal = 0;
+    let hardTotal = 0;
+    for (const sc of finalSubs) {
+      if (sc.easyCount) easyTotal += sc.easyCount;
+      if (sc.mediumCount) medTotal += sc.mediumCount;
+      if (sc.hardCount) hardTotal += sc.hardCount;
+    }
+    const catTotal = easyTotal + medTotal + hardTotal;
+    const easyPct = catTotal > 0 ? Math.round((easyTotal / catTotal) * 100) : (matchingDashboardCourse?.easyPct ?? 33);
+    const mediumPct = catTotal > 0 ? Math.round((medTotal / catTotal) * 100) : (matchingDashboardCourse?.mediumPct ?? 34);
+    const hardPct = catTotal > 0 ? Math.round((hardTotal / catTotal) * 100) : (matchingDashboardCourse?.hardPct ?? 33);
+
     return [
       {
-        id: Number(subjectId) || 1,
+        id: Number(subjectId) || matchingDashboardCourse?.id || 1,
         guidId: String(subjectId),
+        backendSubjectGuid: matchingDashboardCourse?.backendSubjectGuid || String(subjectId),
         examType: panelSlug,
-        title: currentSubjectTitle,
+        title: currentSubjectTitle || matchingDashboardCourse?.title || "Examinations",
         category: "subject",
-        questionCount: totalQuestions,
-        examCount: exams.length,
-        doneCount: 0,
-        easyPct: 0,
-        mediumPct: 0,
-        hardPct: 0,
+        questionCount: totalQuestions || matchingDashboardCourse?.questionCount || 0,
+        examCount: finalSubs.length,
+        doneCount: matchingDashboardCourse?.doneCount || 0,
+        easyPct,
+        mediumPct,
+        hardPct,
         order: 1,
-        subCategories,
+        subCategories: finalSubs,
       },
     ];
-  }, [exams, subjectId, panelSlug, currentSubjectTitle]);
+  }, [matchingDashboardCourse, exams, subjectId, panelSlug, currentSubjectTitle]);
 
   // Unique years dynamically fetched from exams for this subject
   const availableYears = useMemo(() => {
@@ -472,62 +618,94 @@ export function SubjectExamsHierarchyPage({
       }}
     >
       <div className="p-3 md:p-5 lg:p-6 space-y-3.5 sm:space-y-4 w-full max-w-7xl mx-auto flex-1 flex flex-col">
-        {/* Top Breadcrumb & Navigation */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
-          {/* Breadcrumb line (Row 1 on phone, Left on desktop) */}
-          <div className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base md:text-lg text-slate-600 dark:text-white/70 min-w-0 max-w-full overflow-hidden whitespace-nowrap">
-            <Link
-              href={`/dashboards/${panelSlug}`}
-              className="hover:text-slate-950 dark:hover:text-white transition-colors font-normal shrink-0"
-            >
-              {panelLabel}
-            </Link>
-            <span className="text-slate-400 dark:text-white/40 font-normal shrink-0">/</span>
-            <Link
-              href={backHref}
-              className="hover:text-slate-950 dark:hover:text-white transition-colors font-normal shrink-0 max-w-[130px] sm:max-w-none truncate"
-              title={courseName}
-            >
-              {courseName}
-            </Link>
-            <span className="text-slate-400 dark:text-white/40 font-normal shrink-0">/</span>
-            <span
-              className="text-slate-950 dark:text-white font-normal truncate min-w-0"
-              title={currentSubjectTitle}
-            >
-              {currentSubjectTitle}
-            </span>
-          </div>
-
-          {/* Desktop Back button */}
+        {/* Top Breadcrumb */}
+        <div className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base md:text-lg text-slate-600 dark:text-white/70 min-w-0 max-w-full overflow-hidden whitespace-nowrap">
+          <Link
+            href={`/dashboards/${panelSlug}`}
+            className="hover:text-slate-950 dark:hover:text-white transition-colors font-normal shrink-0"
+          >
+            {panelLabel}
+          </Link>
+          <span className="text-slate-400 dark:text-white/40 font-normal shrink-0">/</span>
           <Link
             href={backHref}
-            className="hidden sm:inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-sm sm:text-base font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 transition-all duration-200 active:scale-[0.98] shadow-2xs shrink-0 self-center"
+            className="hover:text-slate-950 dark:hover:text-white transition-colors font-normal shrink-0 max-w-[130px] sm:max-w-none truncate"
+            title={courseName}
           >
-            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-            Back to {courseName}
+            {courseName}
           </Link>
+          <span className="text-slate-400 dark:text-white/40 font-normal shrink-0">/</span>
+          <span
+            className="text-slate-950 dark:text-white font-normal truncate min-w-0"
+            title={currentSubjectTitle}
+          >
+            {currentSubjectTitle}
+          </span>
+        </div>
 
-          {/* Phone mode: Back button & Exams last updated on (same row outside container) */}
-          <div className="flex sm:hidden items-center justify-between w-full pt-0.5 gap-2">
-            <Link
-              href={backHref}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 transition-all duration-200 active:scale-[0.98] shadow-2xs shrink-0"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back to {courseName}
-            </Link>
-
-            <p className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-white/80 font-medium shrink-0">
-              <Calendar className="w-3.5 h-3.5 text-teal-600 dark:text-[#2FD9C4] shrink-0" />
-              <span>
-                Exams last updated on{" "}
-                <span suppressHydrationWarning className="text-emerald-700 dark:text-emerald-400 font-bold">
+        {/* ─── Top Row: Build Your Own Exam & Subject Overview Card (Matching Course Level) ─── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+          {/* Card 1: Subject Overview Card */}
+          <div className="group relative overflow-hidden rounded-xl bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] border border-[var(--card-border,#CBDCF8)] dark:border-white/10 hover:border-[#3B82F6]/60 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] p-3 sm:p-3.5 md:p-4 transition-all duration-200 shadow-xs hover:shadow-md text-left">
+            <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base md:text-lg font-bold text-[#2563EB] dark:text-[#60A5FA] truncate leading-tight">
+                  {currentSubjectTitle}
+                </h1>
+                <p className="text-xs sm:text-sm md:text-base text-slate-700 dark:text-white/80 font-semibold truncate mt-1">
+                  {status === "loading"
+                    ? "Loading exams..."
+                    : `${exams.length} Exam${exams.length === 1 ? "" : "s"} under this subject`}
+                </p>
+              </div>
+              <div className="flex flex-col items-end shrink-0">
+                <span suppressHydrationWarning className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm md:text-base font-bold shrink-0">
+                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-600 dark:text-[#2FD9C4]" />
                   {formattedUpdateDate}
                 </span>
-              </span>
-            </p>
+                <p className="text-xs sm:text-sm md:text-base text-slate-700 dark:text-white/70 font-semibold pt-1 text-right whitespace-nowrap">
+                  Exams last updated on{" "}
+                  <span suppressHydrationWarning className="text-emerald-700 dark:text-emerald-400 font-bold">
+                    {formattedUpdateDate}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div className="flex-1 min-h-[6px] sm:min-h-[8px]" />
+            <Link
+              href={backHref}
+              className="w-full select-none inline-flex items-center justify-center gap-1.5 py-1.5 sm:py-2 md:py-2.5 rounded-lg text-xs sm:text-sm font-semibold border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 hover:bg-teal-500/35 dark:hover:bg-teal-500/40 text-teal-800 dark:text-teal-300 active:scale-[0.99] transition-all duration-200 shadow-2xs"
+            >
+              <ArrowLeft className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+              Back to {courseName}
+            </Link>
           </div>
+
+          {/* Card 2: Build Your Own Exam (Custom) */}
+          <button
+            type="button"
+            onClick={() => setIsBuilderOpen(true)}
+            className="group relative overflow-hidden rounded-xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 hover:border-[#8B5CF6]/60 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] p-3 sm:p-3.5 md:p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
+          >
+            <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
+              <div className="min-w-0">
+                <span className="text-sm sm:text-base md:text-lg font-medium text-slate-900 dark:text-white block leading-tight">
+                  Build Your Own Exam
+                </span>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-white/60 font-medium truncate mt-1">
+                  Select exams & configure question pool
+                </p>
+              </div>
+              <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-md bg-[#8B5CF6]/15 text-[#8B5CF6] dark:text-[#A78BFA] border border-[#8B5CF6]/30 text-xs sm:text-sm font-medium shrink-0">
+                Custom
+              </span>
+            </div>
+            <div className="flex-1 min-h-[6px] sm:min-h-[8px]" />
+            <span className="w-full select-none inline-flex items-center justify-center gap-1.5 py-1.5 sm:py-2 md:py-2.5 rounded-lg text-xs sm:text-sm font-semibold border border-purple-500/80 dark:border-purple-400/60 bg-purple-500/25 dark:bg-purple-500/30 group-hover:bg-purple-500/35 dark:group-hover:bg-purple-500/40 text-purple-700 dark:text-purple-300 active:scale-[0.99] transition-all duration-200 shadow-2xs">
+              <Play className="w-3 sm:w-3.5 h-3 sm:h-3.5 fill-current" />
+              Create Custom Exam
+            </span>
+          </button>
         </div>
 
         {/* Reference-style Filter Bar & Create Custom Test */}
@@ -726,6 +904,20 @@ export function SubjectExamsHierarchyPage({
                 exam.status === "Completed";
               const isCompleted = hasCompletedAction || hasResultCompleted;
 
+              const matchingSub = matchingDashboardCourse?.subCategories?.find(
+                (sc: any) =>
+                  sc.id === examGuid ||
+                  sc.id === examIdStr ||
+                  sc.id === examId ||
+                  cleanSubjectStr(sc.title) === cleanSubjectStr(exam.title)
+              );
+              const resolvedQCount =
+                exam.questionsCount && exam.questionsCount > 0
+                  ? exam.questionsCount
+                  : matchingSub?.questionCount && matchingSub.questionCount > 0
+                    ? matchingSub.questionCount
+                    : extractExamQuestionCount(exam);
+
               return (
                 <div
                   key={examId}
@@ -751,7 +943,7 @@ export function SubjectExamsHierarchyPage({
                   {/* Middle: Meta pills */}
                   <div className="relative flex items-center justify-between gap-1.5 my-1.5 min-h-[22px]">
                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-normal text-emerald-800 dark:text-emerald-400 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 shadow-xs shrink-0 whitespace-nowrap">
-                      Total Questions : {exam.questionsCount ?? 0}
+                      Total Questions : {resolvedQCount ?? 0}
                     </span>
 
                     {!hideSeason && (resolveExamSeason(exam.season, exam.title, exam.description) || exam.season) && (
@@ -871,19 +1063,8 @@ export function SubjectExamsHierarchyPage({
         title={`${currentSubjectTitle.toUpperCase()} EXAM BUILDER`}
         builderMode="questions"
         customCourses={customCoursesForBuilder}
-        examType={
-          panelSlug === "hesi-a2"
-            ? "hesi-a2"
-            : panelSlug === "ati-teas"
-              ? "ati-teas"
-              : panelSlug === "rn-nursing"
-                ? "rn-nursing"
-                : panelSlug === "lpn-nursing"
-                  ? "lpn-nursing"
-                  : panelSlug === "nclex-pn"
-                    ? "nclex-pn"
-                    : "nclex-rn"
-        }
+        examType={normalizedExamType}
+        initialCategory="subject"
       />
     </div>
   );

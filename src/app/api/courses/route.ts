@@ -160,8 +160,8 @@ async function fetchBackendSubjectExams(subjectId: number | string, sessionHeade
       };
     };
     const items = converted.data?.items ?? [];
-    if (items.length > 0 && !globalThis.__loggedExamSample) {
-      globalThis.__loggedExamSample = true;
+    if (items.length > 0 && !(globalThis as any).__loggedExamSample) {
+      (globalThis as any).__loggedExamSample = true;
       console.log("🔍 [Backend Nominal Exam Sample]:", JSON.stringify(items[0], null, 2));
     }
     const sortedItems = [...items].sort((a, b) => {
@@ -349,18 +349,21 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         });
       }
 
-      // If units are empty, fetch the real nominal exams under this subject from the backend
-      if (subCategories.length === 0) {
+      // If units are empty or have 0 questions, fetch the real nominal exams under this subject from the backend
+      const unitsQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
+      if (subCategories.length === 0 || unitsQuestions === 0) {
         const subjectIdentifier = s.guidId ?? s.id ?? "";
         if (subjectIdentifier) {
           const rawExams = await fetchBackendSubjectExams(subjectIdentifier, sessionHeaders);
-          subCategories = rawExams.map((e, index) => {
-            return {
-              ...e,
-              questionCount: e.questionCount || 0,
-              order: index + 1,
-            };
-          });
+          if (rawExams.length > 0) {
+            subCategories = rawExams.map((e, index) => {
+              return {
+                ...e,
+                questionCount: e.questionCount || 0,
+                order: index + 1,
+              };
+            });
+          }
         }
       }
 

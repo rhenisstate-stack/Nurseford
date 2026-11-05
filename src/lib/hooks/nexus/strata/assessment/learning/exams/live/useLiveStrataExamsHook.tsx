@@ -882,8 +882,8 @@ export const useLiveStrataExam = ({
 
         if (builderMode === "questions" || (examIds.length > 1 && !builderMode)) {
           // Fetch all exams in parallel with resilient subject-to-exam fallback
-          const liveSessions = await Promise.all(
-            examIds.map(async (id) => {
+          const liveSessionsNested = await Promise.all(
+            examIds.map(async (id): Promise<StrataExamSessionResponse[]> => {
               try {
                 const res = await strataService<StrataExamSessionResponse>(
                   "Exam",
@@ -896,9 +896,9 @@ export const useLiveStrataExam = ({
                     dynamicPerPage: 500,
                   }
                 );
-                if (res?.data?.exam) return res.data;
+                if (res?.data?.exam) return [res.data];
                 if ((res as unknown as StrataExamSessionResponse)?.exam) {
-                  return res as unknown as StrataExamSessionResponse;
+                  return [res as unknown as StrataExamSessionResponse];
                 }
                 if (res?.error) {
                   console.warn(`[useLiveStrataExam] Live exam fetch error for ${id}:`, res.error);
@@ -916,37 +916,51 @@ export const useLiveStrataExam = ({
                     identifier: id,
                     dynamicLearningStrataName: "subject",
                     dynamicPage: 1,
-                    dynamicPerPage: 10,
+                    dynamicPerPage: 50,
                   }
                 );
                 const rawItems = (nomRes?.data as { items?: StrataItem[] })?.items || (nomRes as unknown as { items?: StrataItem[] })?.items || [];
                 if (rawItems.length > 0) {
-                  const fallbackExamId = String(rawItems[0].guidId || rawItems[0].id);
-                  const retryRes = await strataService<StrataExamSessionResponse>(
-                    "Exam",
-                    FETCH_TYPE,
-                    {
-                      identifier: fallbackExamId,
-                      dynamicExamLayout: selectedLayout,
-                      dynamicExamMode: selectedMode,
-                      dynamicPage: 1,
-                      dynamicPerPage: 500,
-                    }
+                  // Determine how many exams to load based on requested question count (e.g. 5, 50, or 85 questions)
+                  const reqQ = questionCount && questionCount > 0 ? questionCount : 50;
+                  const examsNeeded = Math.max(1, Math.ceil(reqQ / 20));
+                  const targetItems = rawItems.slice(0, Math.min(rawItems.length, examsNeeded));
+
+                  const subjectExamSessions = await Promise.all(
+                    targetItems.map(async (subExam) => {
+                      const examSubId = String(subExam.guidId || subExam.id);
+                      try {
+                        const retryRes = await strataService<StrataExamSessionResponse>(
+                          "Exam",
+                          FETCH_TYPE,
+                          {
+                            identifier: examSubId,
+                            dynamicExamLayout: selectedLayout,
+                            dynamicExamMode: selectedMode,
+                            dynamicPage: 1,
+                            dynamicPerPage: 500,
+                          }
+                        );
+                        if (retryRes?.data?.exam) return retryRes.data;
+                        if ((retryRes as unknown as StrataExamSessionResponse)?.exam) {
+                          return retryRes as unknown as StrataExamSessionResponse;
+                        }
+                      } catch {}
+                      return null;
+                    })
                   );
-                  if (retryRes?.data?.exam) return retryRes.data;
-                  if ((retryRes as unknown as StrataExamSessionResponse)?.exam) {
-                    return retryRes as unknown as StrataExamSessionResponse;
-                  }
+                  const validSubs = subjectExamSessions.filter((s): s is StrataExamSessionResponse => s !== null && s.exam !== undefined);
+                  if (validSubs.length > 0) return validSubs;
                 }
               } catch (fallbackErr) {
                 console.warn(`[useLiveStrataExam] Nominal fallback failed for ${id}:`, fallbackErr);
               }
 
-              return null;
+              return [];
             })
           );
 
-          const validSessions = liveSessions.filter(
+          const validSessions = liveSessionsNested.flat().filter(
             (s): s is StrataExamSessionResponse => s !== null && s.exam !== undefined
           );
 
@@ -1001,7 +1015,7 @@ export const useLiveStrataExam = ({
           const sections: StrataSessionSection[] = examPools.map((p, idx) => {
             const alloc = allocations[p.id] || 0;
             const sampled = sampleRandomItems(p.questions, alloc);
-            const firstRealSec = p.session.sections?.[0];
+            const firstRealSec = p.session.sections?.find((s) => s.questions && s.questions.length > 0) || p.session.sections?.[0];
             return {
               id: firstRealSec?.id || p.session.exam.id || idx + 1,
               guidId: firstRealSec?.guidId || p.session.exam.guidId || String(idx + 1),
@@ -1009,9 +1023,21 @@ export const useLiveStrataExam = ({
               description: p.session.exam.description,
               questions: sampled,
             };
-          });
+          }).filter((s) => s.questions.length > 0);
 
-          const totalSampled = sections.reduce((sum, sec) => sum + sec.questions.length, 0);
+          let totalSampled = sections.reduce((sum, sec) => sum + sec.questions.length, 0);
+
+          // If due to rounding totalSampled is slightly less than targetQuestions, top up from available candidate questions
+          if (totalSampled < targetQuestions && sections.length > 0) {
+            const needed = targetQuestions - totalSampled;
+            const chosenQIds = new Set(sections.flatMap((s) => (s.questions ?? []).map((q: any) => q.id)));
+            const remainingCandidates = examPools.flatMap((p) => p.questions).filter((q: any) => !chosenQIds.has(q.id));
+            if (remainingCandidates.length > 0) {
+              const extraSampled = sampleRandomItems(remainingCandidates, needed);
+              sections[0].questions = [...(sections[0].questions || []), ...extraSampled];
+              totalSampled += extraSampled.length;
+            }
+          }
 
           const resolvedExamTitle = customTitle || (
             examPools.length <= 3

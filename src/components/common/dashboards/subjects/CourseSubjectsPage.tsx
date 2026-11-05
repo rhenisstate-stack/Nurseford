@@ -7,10 +7,10 @@ import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClas
 import { NclexCustomTestPopup } from "@/components/common/dashboards/nclex/NclexDashboardSections";
 import { SubjectExamsPopup } from "@/components/common/dashboards/subjects/SubjectExamsPopup";
 import { toSlug, type BackendSubject } from "@/lib/data/exam-subjects";
-import type { DashboardCourse } from "@/lib/hooks/home/useExamCourses";
+import { useExamCourses, type DashboardCourse } from "@/lib/hooks/home/useExamCourses";
 import { renderSystemSessionHeaders } from "@/lib/services/partial/helper/systemSessionHeaders";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
-import { ArrowLeft, Calendar, Command, Play } from "lucide-react";
+import { ArrowLeft, ArrowRight, Calendar, Command, Play } from "lucide-react";
 import { registerSearchSubjects } from "@/lib/services/search/searchRegistry";
 
 /**
@@ -26,6 +26,8 @@ import { registerSearchSubjects } from "@/lib/services/search/searchRegistry";
  * exam hierarchy page for that subject. Otherwise the legacy behaviour is kept:
  * clicking a subject opens the exam picker popup.
  */
+const cleanSubjectStr = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
 const courseSubjectsClientCache = new Map<
   string,
   { subjects: BackendSubject[]; courseName: string }
@@ -50,11 +52,28 @@ export function CourseSubjectsPage({
   const cacheKey = `${panelSlug}:${courseId}`;
   const cached = courseSubjectsClientCache.get(cacheKey);
 
-  const [subjects, setSubjects] = useState<BackendSubject[]>(() => cached?.subjects ?? []);
+  const hasValidCached = Boolean(cached?.subjects?.length && cached.subjects.some((s) => (s.questionCount || 0) > 0));
+  const [subjects, setSubjects] = useState<BackendSubject[]>(() => (hasValidCached ? (cached?.subjects ?? []) : []));
   const [dynamicCourseName, setDynamicCourseName] = useState<string>(() => cached?.courseName ?? "");
-  const [isLoading, setIsLoading] = useState<boolean>(() => !cached?.subjects?.length);
+  const [isLoading, setIsLoading] = useState<boolean>(() => !hasValidCached);
   const [showBuilder, setShowBuilder] = useState(false);
+  const [selectedBuilderSubject, setSelectedBuilderSubject] = useState<BackendSubject | null>(null);
   const [activeSubject, setActiveSubject] = useState<BackendSubject | null>(null);
+
+  const normalizedExamType =
+    panelSlug === "hesi-a2"
+      ? "hesi-a2"
+      : panelSlug === "ati-teas"
+        ? "ati-teas"
+        : panelSlug === "rn-nursing"
+          ? "rn-nursing"
+          : panelSlug === "lpn-nursing"
+            ? "lpn-nursing"
+            : panelSlug === "nclex-pn"
+              ? "nclex-pn"
+              : "nclex-rn";
+
+  const { courses: dashboardCourses } = useExamCourses(normalizedExamType);
 
   const formattedUpdateDate = useMemo(() => {
     return getPreviousDayFormatted();
@@ -62,30 +81,57 @@ export function CourseSubjectsPage({
 
   const customCoursesForBuilder: DashboardCourse[] = useMemo(() => {
     return subjects.map((s, index) => {
-      const subs = s.subCategories || [];
+      const sGuid = String(s.guidId || s.id).toLowerCase();
+      const sTitle = cleanSubjectStr(s.name);
+      const matched = dashboardCourses.find((c) => {
+        const cGuid = String(c.backendSubjectGuid || c.guidId || "").toLowerCase();
+        const cId = String(c.id).toLowerCase();
+        if (cGuid && (cGuid === sGuid || cId === sGuid)) return true;
+        const cTitle = cleanSubjectStr(c.title);
+        return cTitle === sTitle || (sTitle && cTitle && (cTitle.includes(sTitle) || sTitle.includes(cTitle)));
+      });
+
+      const subs = (s.subCategories && s.subCategories.length > 0)
+        ? s.subCategories
+        : (matched?.subCategories && matched.subCategories.length > 0)
+          ? matched.subCategories
+          : [];
+
       const qCount =
         s.questionCount ||
         (subs.length > 0
-          ? subs.reduce((a, b) => a + b.questionCount, 0)
-          : 0);
+          ? subs.reduce((a, b) => a + (b.questionCount || 0), 0)
+          : 0) ||
+        matched?.questionCount ||
+        0;
+
       return {
         id: typeof s.id === "number" ? s.id : (Number(s.id) || index + 1),
         guidId: s.guidId || String(s.id),
-        backendSubjectGuid: s.guidId || String(s.id),
+        backendSubjectGuid: matched?.backendSubjectGuid || s.guidId || String(s.id),
         examType: panelSlug,
         title: s.name,
         category: "subject",
         questionCount: qCount,
-        examCount: s.examCount ?? subs.length,
-        doneCount: 0,
-        easyPct: 0,
-        mediumPct: 0,
-        hardPct: 0,
+        examCount: s.examCount ?? (subs.length || matched?.examCount || 0),
+        doneCount: matched?.doneCount || 0,
+        easyPct: matched?.easyPct || 33,
+        mediumPct: matched?.mediumPct || 34,
+        hardPct: matched?.hardPct || 33,
         order: index + 1,
-        subCategories: subs,
+        subCategories: [], // Strictly subjects only — do not spread to show exams
       };
     });
-  }, [subjects, panelSlug]);
+  }, [subjects, panelSlug, dashboardCourses]);
+
+  const activeCustomCourses = useMemo(() => {
+    if (!selectedBuilderSubject) return customCoursesForBuilder;
+    const match = customCoursesForBuilder.find(
+      (c) => String(c.backendSubjectGuid || c.guidId || c.id) === String(selectedBuilderSubject.guidId || selectedBuilderSubject.id) ||
+             cleanSubjectStr(c.title) === cleanSubjectStr(selectedBuilderSubject.name)
+    );
+    return match ? [match] : customCoursesForBuilder;
+  }, [selectedBuilderSubject, customCoursesForBuilder]);
 
   useEffect(() => {
     if (subjects.length > 0) {
@@ -282,7 +328,7 @@ export function CourseSubjectsPage({
                 key={`${card.id}-${card.slug}`}
                 type="button"
                 onClick={() => openSubjectExams(card)}
-                className="group relative overflow-hidden rounded-xl bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] border border-[var(--card-border,#CBDCF8)] dark:border-white/10 hover:border-[#3B82F6]/60 flex flex-col justify-between min-h-[60px] sm:min-h-[68px] md:min-h-[85px] p-2 sm:p-2.5 md:p-3 transition-all duration-200 shadow-xs hover:shadow-md text-left"
+                className="group relative overflow-hidden rounded-xl bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] border border-[var(--card-border,#CBDCF8)] dark:border-white/10 hover:border-[#3B82F6]/60 flex flex-col justify-between min-h-[60px] sm:min-h-[68px] md:min-h-[85px] p-2 sm:p-2.5 md:p-3 transition-all duration-200 shadow-xs hover:shadow-md text-left cursor-pointer"
               >
                 <div className="flex items-start justify-between gap-1 sm:gap-2 w-full">
                   <span className="text-xs sm:text-sm md:text-[15px] font-semibold text-slate-900 dark:text-white line-clamp-2 leading-tight">
@@ -306,25 +352,20 @@ export function CourseSubjectsPage({
       {showExamBuilder && (
         <NclexCustomTestPopup
           isOpen={showBuilder}
-          onClose={() => setShowBuilder(false)}
+          onClose={() => {
+            setShowBuilder(false);
+            setSelectedBuilderSubject(null);
+          }}
           panelSlug={panelSlug}
           livePanelSlug={livePanelSlug}
-          title={`${courseName.toUpperCase()} EXAM BUILDER`}
-          builderMode="exams"
-          customCourses={customCoursesForBuilder}
-          examType={
-            panelSlug === "hesi-a2"
-              ? "hesi-a2"
-              : panelSlug === "ati-teas"
-                ? "ati-teas"
-                : panelSlug === "rn-nursing"
-                  ? "rn-nursing"
-                  : panelSlug === "lpn-nursing"
-                    ? "lpn-nursing"
-                    : panelSlug === "nclex-pn"
-                      ? "nclex-pn"
-                      : "nclex-rn"
+          title={
+            selectedBuilderSubject
+              ? `${selectedBuilderSubject.name.toUpperCase()} EXAM BUILDER`
+              : `${courseName.toUpperCase()} EXAM BUILDER`
           }
+          builderMode="questions"
+          customCourses={activeCustomCourses}
+          examType={normalizedExamType}
         />
       )}
 

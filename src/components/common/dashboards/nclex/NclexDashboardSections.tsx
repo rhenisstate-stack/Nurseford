@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
@@ -251,35 +251,73 @@ function DomainRow({
       bookmarkedExamMap,
       breakdownMap?.[sc.id]
     );
-    return c.available > 0;
+    return c.available > 0 || (sc.questionCount || 0) > 0;
   });
 
-  const selectedCount = selectableSubs.filter((sc) => selectedSubs.has(sc.id)).length;
-  const allSelected = selectableSubs.length > 0 && selectedCount === selectableSubs.length;
-  const someSelected = selectableSubs.length > 0 ? selectedCount > 0 && !allSelected : false;
+  const isScSelected = (sub: DashboardSubCategory) => {
+    const sId = String(sub.id);
+    const sGuid = (sub as any).guidId ? String((sub as any).guidId) : null;
+    return selectedSubs.has(sId) || selectedSubs.has(sub.id as any) || (sGuid ? selectedSubs.has(sGuid) : false);
+  };
+
+  const selectedCount = selectableSubs.filter((sc) => isScSelected(sc)).length;
+
+  const isDomainIdSelected =
+    selectedSubs.has(String(course.id)) ||
+    selectedSubs.has(course.id as any) ||
+    (course.guidId ? selectedSubs.has(String(course.guidId)) : false) ||
+    (course.backendSubjectGuid ? selectedSubs.has(String(course.backendSubjectGuid)) : false);
+
+  const isDomainSelected = hasSubs
+    ? (selectableSubs.length > 0 && selectedCount === selectableSubs.length)
+    : isDomainIdSelected;
+
+  const someSelected = hasSubs
+    ? (selectableSubs.length > 0 ? selectedCount > 0 && !isDomainSelected : false)
+    : false;
 
   return (
-    <div className="border border-[#CBDCF8] dark:border-white/10 rounded-2xl overflow-hidden bg-white/70 dark:bg-black/20 shadow-2xs">
+    <div className={`border rounded-2xl overflow-hidden transition-all shadow-2xs ${
+      isDomainSelected
+        ? "border-teal-500 ring-2 ring-teal-500/30 bg-teal-500/10 dark:bg-teal-950/20"
+        : "border-[#CBDCF8] dark:border-white/10 bg-white/70 dark:bg-black/20"
+    }`}>
       {/* Domain Header (Clean non-collapsible banner: no chevrons, all exams display cleanly) */}
-      <div className="flex items-center gap-2.5 px-3.5 py-2 bg-slate-100/90 dark:bg-white/5 border-b border-[#CBDCF8]/60 dark:border-white/5">
-        {/* Domain Select-All Checkbox */}
+      <div
+        onClick={() => {
+          if (!hasSubs) {
+            onToggleDomain(selectableSubs, String(course.guidId || course.id));
+          }
+        }}
+        className={`flex items-center gap-2.5 px-3.5 py-2.5 transition-all select-none ${
+          !hasSubs ? "cursor-pointer" : ""
+        } ${
+          isDomainSelected
+            ? "bg-teal-500/15 border-b border-teal-500/30 text-slate-900 dark:text-white"
+            : "bg-slate-100/90 dark:bg-white/5 border-b border-[#CBDCF8]/60 dark:border-white/5 hover:bg-slate-200/50 dark:hover:bg-white/10"
+        }`}
+      >
+        {/* Domain Select Checkbox */}
         <button
           type="button"
-          onClick={() => onToggleDomain(selectableSubs, String(course.guidId || course.id))}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleDomain(selectableSubs, String(course.guidId || course.id));
+          }}
           className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-all cursor-pointer ${
-            allSelected
-              ? "bg-[#2FD9C4] border-[#2FD9C4]"
+            isDomainSelected
+              ? "bg-[#2FD9C4] border-[#2FD9C4] text-[#08111F]"
               : someSelected
                 ? "bg-[#2FD9C4]/40 border-[#2FD9C4]"
                 : "border-slate-400 dark:border-white/30 hover:border-slate-600 dark:hover:border-white/50"
           }`}
         >
-          {allSelected && <Check className="w-2.5 h-2.5 text-[#08111F]" />}
-          {someSelected && !allSelected && <div className="w-1.5 h-0.5 bg-[#08111F]" />}
+          {isDomainSelected && <Check className="w-2.5 h-2.5 stroke-[3] text-[#08111F]" />}
+          {someSelected && !isDomainSelected && <div className="w-1.5 h-0.5 bg-[#08111F]" />}
         </button>
 
         {/* Domain Title */}
-        <span className="text-sm md:text-base font-bold text-slate-900 dark:text-[var(--text-color)] truncate flex-1 min-w-0">
+        <span className={`text-sm md:text-base truncate flex-1 min-w-0 ${isDomainSelected ? "font-bold text-slate-900 dark:text-white" : "font-semibold text-slate-900 dark:text-[var(--text-color)]"}`}>
           {course.title}
         </span>
 
@@ -293,7 +331,7 @@ function DomainRow({
       {visibleSubCategories.length > 0 && (
         <div className="p-2 sm:p-2.5 bg-slate-50/40 dark:bg-black/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {visibleSubCategories.map((sc) => {
-            const isSelected = selectedSubs.has(sc.id);
+            const isSelected = isScSelected(sc);
             const counts = getSubCategoryCounts(
               sc,
               course,
@@ -305,20 +343,20 @@ function DomainRow({
               bookmarkedExamMap,
               breakdownMap?.[sc.id]
             );
-            const isSelectable = counts.available > 0;
+            const isSelectable = counts.available > 0 || (sc.questionCount || 0) > 0;
 
             return (
               <div
                 key={sc.id}
                 onClick={() => {
-                  if (isSelectable) onToggleSub(sc.id);
+                  if (isSelectable) onToggleSub(String(sc.id));
                 }}
-                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-all ${
+                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer select-none ${
                   !isSelectable
                     ? "opacity-45 cursor-not-allowed bg-slate-100/50 dark:bg-white/5 border-slate-200/50 dark:border-white/5"
                     : isSelected
-                      ? "bg-teal-500/10 border-teal-500/50 dark:bg-teal-950/20 dark:border-teal-400/40 shadow-2xs cursor-pointer"
-                      : "bg-white dark:bg-white/5 border-slate-200/80 dark:border-white/10 hover:bg-slate-100/70 dark:hover:bg-white/10 cursor-pointer"
+                      ? "bg-teal-500/15 border-teal-500 ring-2 ring-teal-500/30 dark:bg-teal-950/30 dark:border-teal-400 shadow-xs text-slate-900 dark:text-white"
+                      : "bg-white dark:bg-white/5 border-slate-200/80 dark:border-white/10 hover:bg-slate-100/70 dark:hover:bg-white/10"
                 }`}
               >
                 {/* Sub Checkbox */}
@@ -327,22 +365,22 @@ function DomainRow({
                   disabled={!isSelectable}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (isSelectable) onToggleSub(sc.id);
+                    if (isSelectable) onToggleSub(String(sc.id));
                   }}
                   className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-all ${
                     !isSelectable
                       ? "border-slate-300 dark:border-white/10 cursor-not-allowed"
                       : isSelected
-                        ? "bg-[#2FD9C4] border-[#2FD9C4] cursor-pointer"
+                        ? "bg-[#2FD9C4] border-[#2FD9C4] text-[#08111F] ring-1 ring-[#08111F]/20 cursor-pointer"
                         : "border-slate-400 dark:border-white/30 hover:border-slate-600 dark:hover:border-white/50 cursor-pointer"
                   }`}
                 >
-                  {isSelected && <Check className="w-2.5 h-2.5 text-[#08111F]" />}
+                  {isSelected && <Check className="w-2.5 h-2.5 stroke-[3] text-[#08111F]" />}
                 </button>
 
                 {/* Sub Title & Used/Total */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs sm:text-[13px] text-slate-800 dark:text-[var(--text-color)]/90 font-semibold truncate leading-tight">
+                  <p className={`text-xs sm:text-[13px] font-semibold truncate leading-tight ${isSelected ? "text-teal-950 dark:text-teal-200 font-bold" : "text-slate-800 dark:text-[var(--text-color)]/90"}`}>
                     {sc.title}
                   </p>
                   <p className="text-[10.5px] sm:text-[11.5px] text-slate-500 dark:text-[var(--text-color)]/50 font-medium truncate leading-tight mt-0.5">
@@ -356,9 +394,11 @@ function DomainRow({
                   className={`text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded-md shrink-0 min-w-6 text-center ${
                     !isSelectable
                       ? "bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/30"
-                      : counts.available > 0
-                        ? "bg-slate-200/70 dark:bg-white/10 text-slate-700 dark:text-[var(--text-color)]/80"
-                        : "bg-slate-100 dark:bg-white/5 text-slate-400"
+                      : isSelected
+                        ? "bg-[#0891b2]/20 dark:bg-[#2FD9C4]/20 text-[#0891b2] dark:text-[#2FD9C4] border border-[#0891b2]/30 dark:border-[#2FD9C4]/40"
+                        : counts.available > 0
+                          ? "bg-slate-200/70 dark:bg-white/10 text-slate-700 dark:text-[var(--text-color)]/80"
+                          : "bg-slate-100 dark:bg-white/5 text-slate-400"
                   }`}
                 >
                   {counts.available}
@@ -408,11 +448,22 @@ export function NclexCustomTestPopup({
       (c) => !/^(?:ATI|HESI)\s*Exit\s*Exams/i.test(c.title.trim())
     );
     const categoryCourses = filtered.filter((c) => c.category === activeCategory);
-    return categoryCourses.length > 0 ? categoryCourses : filtered;
+    const resolvedList = categoryCourses.length > 0 ? categoryCourses : filtered;
+
+    // Only show subjects to select: do not spread to show sub-categories/exams
+    return resolvedList.map((c) => ({
+      ...c,
+      questionCount:
+        c.questionCount ||
+        (c.subCategories && c.subCategories.length > 0
+          ? c.subCategories.reduce((s, sc) => s + (sc.questionCount || 0), 0)
+          : 0),
+      subCategories: [],
+    }));
   }, [customCourses, rawCourses, activeCategory]);
 
   const [breakdownMap, setBreakdownMap] = useState<
-    Record<string, { easy: number; medium: number; hard: number; total: number }>
+    Record<string, any>
   >({});
 
   useEffect(() => {
@@ -420,14 +471,19 @@ export function NclexCustomTestPopup({
     const idsToFetch: string[] = [];
     for (const c of courses) {
       for (const sc of c.subCategories || []) {
-        if (sc.id && !breakdownMap[sc.id]) {
+        if (
+          sc.id &&
+          !breakdownMap[sc.id] &&
+          (sc.easyCount === undefined || sc.mediumCount === undefined)
+        ) {
           idsToFetch.push(sc.id);
         }
       }
     }
     if (idsToFetch.length === 0) return;
 
-    fetch(`/api/exams/questions-breakdown?examIds=${encodeURIComponent(idsToFetch.join(","))}`)
+    const batch = idsToFetch.slice(0, 15);
+    fetch(`/api/exams/questions-breakdown?examIds=${encodeURIComponent(batch.join(","))}`)
       .then((r) => r.json())
       .then((data) => {
         if (data?.exams) {
@@ -604,15 +660,11 @@ export function NclexCustomTestPopup({
     return map;
   }, [allResults, courses, breakdownMap, bookmarkedQuestionIds]);
 
-  const isExamMode =
-    builderMode === "exams" ||
-    (builderMode !== "questions" &&
-      courses.length > 0 &&
-      courses.every((c) => (!c.subCategories || c.subCategories.length === 0) && (c.examCount || 0) > 0));
+  const isExamMode = builderMode === "exams";
 
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
   const [questionCount, setQuestionCount] = useState(50);
-  const [examCount, setExamCount] = useState(3);
+  const [examCount, setExamCount] = useState(1);
   const [hasUserAdjustedCount, setHasUserAdjustedCount] = useState(false);
   const [difficultyFilter, setDifficultyFilter] = useState<DifficultyFilter>("All");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All");
@@ -659,11 +711,25 @@ export function NclexCustomTestPopup({
   ]);
 
   // ─── Selection Logic ──────────────────────────────────────────────────────────────────
-  const toggleSub = useCallback((subId: string) => {
+  const isIdSelected = useCallback(
+    (id: string | number, guidId?: string | number) => {
+      const sId = String(id);
+      const sGuid = guidId ? String(guidId) : null;
+      return selectedSubs.has(sId) || selectedSubs.has(id as any) || (sGuid ? selectedSubs.has(sGuid) : false);
+    },
+    [selectedSubs]
+  );
+
+  const toggleSub = useCallback((subId: string | number) => {
+    const key = String(subId);
     setSelectedSubs((prev) => {
       const next = new Set(prev);
-      if (next.has(subId)) next.delete(subId);
-      else next.add(subId);
+      if (next.has(key) || next.has(subId as any)) {
+        next.delete(key);
+        next.delete(subId as any);
+      } else {
+        next.add(key);
+      }
       return next;
     });
   }, []);
@@ -673,14 +739,24 @@ export function NclexCustomTestPopup({
       setSelectedSubs((prev) => {
         const next = new Set(prev);
         if (subs && subs.length > 0) {
-          const allSelected = subs.every((sc) => next.has(sc.id));
+          const allSelected = subs.every(
+            (sc) => next.has(String(sc.id)) || ((sc as any).guidId && next.has(String((sc as any).guidId))) || next.has(sc.id as any)
+          );
           for (const sc of subs) {
-            if (allSelected) next.delete(sc.id);
-            else next.add(sc.id);
+            const key = String(sc.id);
+            const guidKey = (sc as any).guidId ? String((sc as any).guidId) : null;
+            if (allSelected) {
+              next.delete(key);
+              next.delete(sc.id as any);
+              if (guidKey) next.delete(guidKey);
+            } else {
+              next.add(key);
+            }
           }
         } else if (courseId) {
-          if (next.has(courseId)) next.delete(courseId);
-          else next.add(courseId);
+          const key = String(courseId);
+          if (next.has(key)) next.delete(key);
+          else next.add(key);
         }
         return next;
       });
@@ -697,11 +773,13 @@ export function NclexCustomTestPopup({
     setStatusFilter("All");
   };
 
+  const wasOpenRef = useRef(false);
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpenRef.current) {
       clearAll();
     }
-  }, [isOpen, customCourses]);
+    wasOpenRef.current = isOpen;
+  }, [isOpen]);
 
   const visibleCourses = useMemo(() => {
     return activeCourses.filter((c) => {
@@ -714,7 +792,7 @@ export function NclexCustomTestPopup({
     for (const c of activeCourses) {
       if (c.subCategories && c.subCategories.length > 0) {
         for (const sc of c.subCategories) {
-          if (selectedSubs.has(sc.id)) {
+          if (isIdSelected(sc.id, (sc as any).guidId)) {
             const counts = getSubCategoryCounts(
               sc,
               c,
@@ -730,7 +808,7 @@ export function NclexCustomTestPopup({
           }
         }
       } else {
-        if (selectedSubs.has(String(c.id)) || (c.guidId && selectedSubs.has(c.guidId))) {
+        if (isIdSelected(c.id, c.guidId || (c as any).backendSubjectGuid)) {
           total += c.questionCount || 0;
         }
       }
@@ -738,13 +816,14 @@ export function NclexCustomTestPopup({
     return total;
   }, [
     activeCourses,
-    selectedSubs,
+    isIdSelected,
     difficultyFilter,
     statusFilter,
     answeredQuestionIds,
     bookmarkedQuestionIds,
     answeredExamMap,
     bookmarkedExamMap,
+    breakdownMap,
   ]);
 
   const totalSelectedExams = useMemo(() => {
@@ -762,11 +841,17 @@ export function NclexCustomTestPopup({
   useEffect(() => {
     if (isExamMode) {
       if (totalSelectedExams > 0) {
-        setExamCount((prev) => (hasUserAdjustedCount ? Math.min(Math.max(1, prev), totalSelectedExams) : Math.min(3, totalSelectedExams)));
+        setExamCount((prev) => (hasUserAdjustedCount ? Math.min(Math.max(1, prev), totalSelectedExams) : Math.min(1, totalSelectedExams)));
       }
     } else {
       if (selectedQs > 0) {
-        setQuestionCount((prev) => (hasUserAdjustedCount ? Math.min(85, Math.max(5, prev)) : Math.min(85, Math.max(5, 50))));
+        const minQ = Math.min(5, selectedQs);
+        const maxQ = Math.min(85, selectedQs);
+        setQuestionCount((prev) =>
+          hasUserAdjustedCount
+            ? Math.min(Math.max(minQ, prev), maxQ)
+            : Math.min(50, maxQ)
+        );
       }
     }
   }, [isExamMode, totalSelectedExams, selectedQs, hasUserAdjustedCount]);
@@ -776,18 +861,18 @@ export function NclexCustomTestPopup({
     for (const c of activeCourses) {
       if (c.subCategories && c.subCategories.length > 0) {
         for (const sc of c.subCategories) {
-          if (selectedSubs.has(sc.id)) {
+          if (isIdSelected(sc.id, (sc as any).guidId)) {
             count++;
           }
         }
       } else {
-        if (selectedSubs.has(String(c.id)) || (c.guidId && selectedSubs.has(c.guidId))) {
+        if (isIdSelected(c.id, c.guidId || (c as any).backendSubjectGuid)) {
           count++;
         }
       }
     }
     return count;
-  }, [activeCourses, selectedSubs]);
+  }, [activeCourses, isIdSelected]);
 
   const hasSelection = activeSelectedCount > 0;
 
@@ -798,21 +883,21 @@ export function NclexCustomTestPopup({
 
     for (const c of activeCourses) {
       if (c.subCategories && c.subCategories.length > 0) {
-        const selectedSubsInDomain = c.subCategories.filter((sc) => selectedSubs.has(sc.id));
+        const selectedSubsInDomain = c.subCategories.filter((sc) => isIdSelected(sc.id, (sc as any).guidId));
         examCount += selectedSubsInDomain.length;
         if (selectedSubsInDomain.length > 0) {
           domainCount += 1;
         }
       } else {
-        if (selectedSubs.has(String(c.id)) || (c.guidId && selectedSubs.has(c.guidId))) {
+        if (isIdSelected(c.id, c.guidId || (c as any).backendSubjectGuid)) {
           domainCount += 1;
-          examCount += c.examCount || 0;
+          examCount += c.examCount || 1;
         }
       }
     }
 
     return { selectedDomainsCount: domainCount, selectedExamsCount: examCount };
-  }, [activeCourses, selectedSubs]);
+  }, [activeCourses, isIdSelected]);
 
 
   // ─── Start ────────────────────────────────────────────────────────────────────────────
@@ -836,7 +921,7 @@ export function NclexCustomTestPopup({
       if (c.subCategories && c.subCategories.length > 0) {
         const selectedInCourse: string[] = [];
         for (const sc of c.subCategories) {
-          if (selectedSubs.has(sc.id)) {
+          if (isIdSelected(sc.id, (sc as any).guidId)) {
             selectedInCourse.push(sc.title);
           }
         }
@@ -917,7 +1002,10 @@ export function NclexCustomTestPopup({
       params.set("examCount", String(Math.min(Math.max(1, examCount), Math.max(1, totalSelectedExams))));
     } else {
       params.set("builderMode", "questions");
-      params.set("questionCount", String(Math.min(85, Math.max(5, questionCount))));
+      const effectiveMinQ = selectedQs > 0 ? Math.min(5, selectedQs) : 5;
+      const effectiveMaxQ = selectedQs > 0 ? Math.min(85, selectedQs) : 85;
+      const finalQ = Math.min(effectiveMaxQ, Math.max(effectiveMinQ, questionCount));
+      params.set("questionCount", String(finalQ));
       if (firstId) {
         params.set("identifier", firstId);
       }
@@ -1119,75 +1207,83 @@ export function NclexCustomTestPopup({
               </div>
             </div>
           ) : (
-            <div className="mb-2">
-              <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-white/70">
-                    Set Total Questions
-                  </span>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min={5}
-                      max={85}
-                      value={questionCount}
-                      onChange={(e) => {
-                        const raw = parseInt(e.target.value, 10);
-                        setHasUserAdjustedCount(true);
-                        if (!isNaN(raw)) {
-                          setQuestionCount(Math.min(85, Math.max(5, raw)));
-                        }
-                      }}
-                      className="w-16 px-2 py-1 text-center font-bold text-sm bg-white dark:bg-white/10 border border-slate-300 dark:border-white/20 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]"
-                    />
+            (() => {
+              const minQuestions = selectedQs > 0 ? Math.min(5, selectedQs) : 5;
+              const maxQuestions = selectedQs > 0 ? Math.min(85, selectedQs) : 85;
+              const currentVal = Math.min(maxQuestions, Math.max(minQuestions, questionCount));
+              return (
+                <div className="mb-2">
+                  <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-white/70">
+                        Set Total Questions
+                      </span>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min={minQuestions}
+                          max={maxQuestions}
+                          value={currentVal}
+                          onChange={(e) => {
+                            const raw = parseInt(e.target.value, 10);
+                            setHasUserAdjustedCount(true);
+                            if (!isNaN(raw)) {
+                              setQuestionCount(Math.min(maxQuestions, Math.max(minQuestions, raw)));
+                            }
+                          }}
+                          className="w-16 px-2 py-1 text-center font-bold text-sm bg-white dark:bg-white/10 border border-slate-300 dark:border-white/20 rounded-md text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#1877F2]"
+                        />
+                      </div>
+                      <span className="text-xs text-slate-500 dark:text-white/40 font-medium">
+                        Min {minQuestions} · Max {maxQuestions}
+                      </span>
+                    </div>
+
+                    {/* Middle Selection Indicator */}
+                    <div className="flex items-center justify-center">
+                      {selectedDomainsCount > 0 ? (
+                        <span className="text-xs sm:text-[13px] font-bold text-[#0891b2] dark:text-[#2FD9C4] px-2.5 py-0.5 rounded-full bg-[#0891b2]/10 dark:bg-[#2FD9C4]/15 border border-[#0891b2]/20 dark:border-[#2FD9C4]/30">
+                          ✓ {selectedDomainsCount} {selectedDomainsCount === 1 ? (courses.every((c) => !c.subCategories?.length) ? "Subject" : "Exam") : (courses.every((c) => !c.subCategories?.length) ? "Subjects" : "Exams")} Selected ({selectedQs.toLocaleString()} Questions in Pool)
+                        </span>
+                      ) : (
+                        <span className="text-xs font-semibold text-slate-500 dark:text-white/40">
+                          No Selection
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Mode & Layout Button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowModeLayout(!showModeLayout)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-bold text-slate-700 dark:text-white transition-all cursor-pointer shadow-xs shrink-0"
+                    >
+                      <Settings className="w-3.5 h-3.5 text-[#1877F2] dark:text-[#2FD9C4]" />
+                      <span>Mode & Layout</span>
+                    </button>
                   </div>
-                  <span className="text-xs text-slate-500 dark:text-white/40 font-medium">
-                    Min 5 · Max 85
-                  </span>
+
+                  <input
+                    type="range"
+                    min={minQuestions}
+                    max={maxQuestions}
+                    step={1}
+                    value={currentVal}
+                    onChange={(e) => {
+                      setHasUserAdjustedCount(true);
+                      setQuestionCount(Number(e.target.value));
+                    }}
+                    disabled={!hasSelection || maxQuestions <= minQuestions}
+                    className="w-full h-2 rounded-full bg-slate-300 dark:bg-white/10 appearance-none cursor-pointer accent-[#1877F2] dark:accent-[#2FD9C4]"
+                  />
+
+                  <div className="flex justify-between text-[11px] text-slate-500 dark:text-white/40 font-medium mt-1 mb-2">
+                    <span>Min {minQuestions}</span>
+                    <span>Max {maxQuestions}</span>
+                  </div>
                 </div>
-
-                {/* Middle Selection Indicator (e.g. "0 Domain(s) · 3 Exam(s) · 12 Q Pool") */}
-                <div className="flex items-center justify-center">
-                  {selectedExamsCount > 0 ? (
-                    <span className="text-xs font-bold text-[#0891b2] dark:text-[#2FD9C4]">
-                      {selectedDomainsCount} Domain(s) · {selectedExamsCount} Exam(s) · {selectedQs.toLocaleString()} Q Pool
-                    </span>
-                  ) : (
-                    <span className="text-xs font-bold text-[#10B981] dark:text-[#2FD9C4]">
-                      No Selection
-                    </span>
-                  )}
-                </div>
-
-                {/* Mode & Layout Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowModeLayout(!showModeLayout)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-bold text-slate-700 dark:text-white transition-all cursor-pointer shadow-xs shrink-0"
-                >
-                  <Settings className="w-3.5 h-3.5 text-[#1877F2] dark:text-[#2FD9C4]" />
-                  <span>Mode & Layout</span>
-                </button>
-              </div>
-
-              <input
-                type="range"
-                min={5}
-                max={85}
-                step={1}
-                value={Math.min(85, Math.max(5, questionCount))}
-                onChange={(e) => {
-                  setHasUserAdjustedCount(true);
-                  setQuestionCount(Number(e.target.value));
-                }}
-                className="w-full h-2 rounded-full bg-slate-300 dark:bg-white/10 appearance-none cursor-pointer accent-[#1877F2] dark:accent-[#2FD9C4]"
-              />
-
-              <div className="flex justify-between text-[11px] text-slate-500 dark:text-white/40 font-medium mt-1 mb-2">
-                <span>Min 5</span>
-                <span>Max 85</span>
-              </div>
-            </div>
+              );
+            })()
           )}
 
           {/* Mode & Layout Panel */}
@@ -1505,13 +1601,12 @@ const CourseCard = ({
   return (
     <div className="rounded-xl border border-[#CBDCF8] dark:border-white/10 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] p-1.5 sm:p-2 flex flex-col gap-1 hover:border-blue-400 dark:hover:border-white/20 shadow-xs hover:shadow-md transition-all duration-200">
       <div className="flex items-start justify-between gap-1.5">
-        <button
-          type="button"
-          onClick={() => onCreateCustomTest(course)}
-          className="text-left text-[13.5px] sm:text-sm md:text-[15px] font-bold text-slate-900 dark:text-[var(--text-color)] leading-tight truncate flex-1 min-w-0 hover:text-blue-600 dark:hover:text-[#2FD9C4] transition-colors cursor-pointer"
+        <Link
+          href={examsHref}
+          className="text-left text-[13.5px] sm:text-sm md:text-[15px] font-bold text-slate-900 dark:text-[var(--text-color)] leading-tight truncate flex-1 min-w-0 hover:text-blue-600 dark:hover:text-[#2FD9C4] transition-colors"
         >
           {course.title}
-        </button>
+        </Link>
         <button
           onClick={() => setBookmarked((b) => !b)}
           aria-label={bookmarked ? "Remove bookmark" : "Bookmark course"}
