@@ -109,14 +109,23 @@ export const clearAuthSessionCookies = () => {
       localStorage.removeItem("skew_blanc_session_line");
 
       // Purge all cached user subscription keys: user_sub_*
-      const keysToRemove: string[] = [];
+      const sessionKeysToRemove: string[] = [];
       for (let i = 0; i < sessionStorage.length; i++) {
         const k = sessionStorage.key(i);
         if (k && (k.startsWith("user_sub_") || k.startsWith("skew_blanc_"))) {
-          keysToRemove.push(k);
+          sessionKeysToRemove.push(k);
         }
       }
-      keysToRemove.forEach((k) => sessionStorage.removeItem(k));
+      sessionKeysToRemove.forEach((k) => sessionStorage.removeItem(k));
+
+      const localKeysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith("user_sub_") || k.startsWith("skew_blanc_"))) {
+          localKeysToRemove.push(k);
+        }
+      }
+      localKeysToRemove.forEach((k) => localStorage.removeItem(k));
     } catch {}
   }
 };

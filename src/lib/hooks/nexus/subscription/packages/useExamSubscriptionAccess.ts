@@ -383,17 +383,13 @@ export function useExamSubscriptionAccess({
     refresh: refreshSubscriptions,
   } = useDiscreteDominionSubscriptionPackages({ page: 1, perPage: 200 });
 
-  // Resolve stable username even if user state is momentarily revalidating
+  // Resolve stable username only for real authenticated users (prevents ghost access for guests)
   const username = useMemo(() => {
-    if (user?.userName && user.userName.toLowerCase() !== "guest") {
+    if (user && user.id > 0 && user.userName && user.userName.toLowerCase() !== "guest") {
       return user.userName.toLowerCase().trim();
     }
-    const cookieUser = getUsernameCookie();
-    if (cookieUser && cookieUser.toLowerCase() !== "guest") {
-      return cookieUser.toLowerCase().trim();
-    }
     return null;
-  }, [user?.userName]);
+  }, [user]);
 
   const programFamily = useMemo(
     () => getProgramFamily(programSlug),
@@ -540,7 +536,24 @@ export function useExamSubscriptionAccess({
     isGuest,
   ]);
 
-  // Only evict subscription cache on explicit user logout
+  // Automatically revalidate subscriptions when user returns to tab (e.g. after subscribing in another tab)
+  useEffect(() => {
+    const handleRevalidate = () => {
+      if (document.visibilityState === "visible" && !isGuest && user && user.id > 0) {
+        refreshSubscriptions();
+      }
+    };
+    document.addEventListener("visibilitychange", handleRevalidate);
+    window.addEventListener("focus", handleRevalidate);
+    window.addEventListener("subscription:updated", handleRevalidate);
+    return () => {
+      document.removeEventListener("visibilitychange", handleRevalidate);
+      window.removeEventListener("focus", handleRevalidate);
+      window.removeEventListener("subscription:updated", handleRevalidate);
+    };
+  }, [isGuest, user, refreshSubscriptions]);
+
+  // Evict subscription cache on user logout or session expiration
   useEffect(() => {
     const handleLogout = () => {
       if (typeof window !== "undefined") {
@@ -548,14 +561,14 @@ export function useExamSubscriptionAccess({
           const localKeys: string[] = [];
           for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
-            if (k && k.startsWith("user_sub_")) localKeys.push(k);
+            if (k && (k.startsWith("user_sub_") || k.startsWith("skew_blanc_"))) localKeys.push(k);
           }
           localKeys.forEach((k) => localStorage.removeItem(k));
 
           const sessionKeys: string[] = [];
           for (let i = 0; i < sessionStorage.length; i++) {
             const k = sessionStorage.key(i);
-            if (k && k.startsWith("user_sub_")) sessionKeys.push(k);
+            if (k && (k.startsWith("user_sub_") || k.startsWith("skew_blanc_"))) sessionKeys.push(k);
           }
           sessionKeys.forEach((k) => sessionStorage.removeItem(k));
         } catch {}
@@ -563,7 +576,13 @@ export function useExamSubscriptionAccess({
     };
 
     window.addEventListener("session:logout", handleLogout);
-    return () => window.removeEventListener("session:logout", handleLogout);
+    window.addEventListener("user-logout", handleLogout);
+    window.addEventListener("user-session-expired", handleLogout);
+    return () => {
+      window.removeEventListener("session:logout", handleLogout);
+      window.removeEventListener("user-logout", handleLogout);
+      window.removeEventListener("user-session-expired", handleLogout);
+    };
   }, []);
 
   return {

@@ -4,7 +4,8 @@
 import { useEffect, useState } from "react";
 import { userService, UserAction } from "@/lib/services/users/user/userService";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
-import { getCookie, setUsernameCookie, getUsernameCookie, deleteUsernameCookie } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
+import { getCookie, setUsernameCookie, getUsernameCookie, deleteUsernameCookie, clearAuthSessionCookies } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
+import { useSessionHeartbeat } from "@/lib/hooks/users/session/useSessionHeartbeat";
 
 export interface SystemUser {
   id: number;
@@ -337,41 +338,20 @@ export const useCurrentSystemUser = () => {
           return;
         }
 
-        const badgeCookie = getCookie("skew_blanc_session_badge");
-        const lineCookie = getCookie("skew_blanc_session_line");
+        const errMsg = err instanceof Error ? err.message : String(err);
+        const isSessionExpired =
+          errMsg.includes("expired") ||
+          errMsg.includes("401") ||
+          errMsg.includes("Unauthorized") ||
+          errMsg.includes("Casto session");
 
-        if (badgeCookie && lineCookie) {
-          const fallbackUser: SystemUser = {
-            id: 0,
-            guidId: "",
-            userName: getUsernameCookie() ?? "",
-            email: "",
-            emailConfirmed: false,
-            phoneNumber: null,
-            phoneNumberConfirmed: false,
-            userType: "",
-            twoFactorEnabled: false,
-            lockoutEnabled: false,
-            lockoutEnd: null,
-            createdAt: "",
-            updatedAt: null,
-            deletedAt: null,
-            profile: null,
-            accesses: [],
-            roles: [],
-            grants: [],
-            emails: [],
-            phones: [],
-            categories: [],
-            backupCodes: [],
-            badges: [],
-          };
-          setUser(fallbackUser);
-          setAuthenticated(true);
-        } else {
-          setUser(null);
-          setAuthenticated(false);
+        if (isSessionExpired) {
+          console.warn("🔒 [useCurrentSystemUser] Session expired on backend. Clearing local session.");
+          clearAuthSessionCookies();
         }
+
+        setUser(null);
+        setAuthenticated(false);
 
         if (!cancelled) {
           setLoading(false);
@@ -436,6 +416,20 @@ export const useCurrentSystemUser = () => {
         window.removeEventListener("session:login", handleLogin);
       }
     };
+  }, []);
+
+  // Heartbeat keeps sliding backend session active while student is active in tab
+  useSessionHeartbeat(authenticated);
+
+  useEffect(() => {
+    const handleExpired = () => {
+      setUser(null);
+      setAuthenticated(false);
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("user-session-expired", handleExpired);
+      return () => window.removeEventListener("user-session-expired", handleExpired);
+    }
   }, []);
 
   return {

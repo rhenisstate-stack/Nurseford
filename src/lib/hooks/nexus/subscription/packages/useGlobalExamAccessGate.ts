@@ -23,14 +23,10 @@ export function useGlobalExamAccessGate({
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   const isGuest = useMemo(() => {
-    if (user?.userName && user.userName.toLowerCase() !== "guest") {
+    if (user && user.id > 0 && user.userName && user.userName.toLowerCase() !== "guest") {
       return false;
     }
-    const cookieUser = getUsernameCookie();
-    if (cookieUser && cookieUser.toLowerCase() !== "guest") {
-      return false;
-    }
-    return !user;
+    return true;
   }, [user]);
 
   const { isSubscribed, subscriptionsLoading } = useExamSubscriptionAccess({
