@@ -87,7 +87,8 @@ export default function DashboardNavbarSearch() {
 
   // Combined live results: purely dynamic from backend API + active page data
   const displayedResults = useMemo(() => {
-    if (!query.trim()) {
+    const q = query.trim();
+    if (!q) {
       return [];
     }
 
@@ -113,8 +114,29 @@ export default function DashboardNavbarSearch() {
       }
     }
 
+    // Exact Match Gate:
+    // If the user searched a specific exam or subject name and exact matches exist,
+    // show ONLY the exact match(es) so we don't overwhelm with too many relative options.
+    const clean = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const qClean = clean(q);
+
+    const isExact = (title: string) => {
+      const tClean = clean(title);
+      if (tClean === qClean) return true;
+      const tNoSuffix = clean(title.replace(/\s*(?:nclex|hesi|ati|teas|rn|pn|exams?)+\s*$/i, ""));
+      const qNoSuffix = clean(q.replace(/\s*(?:nclex|hesi|ati|teas|rn|pn|exams?)+\s*$/i, ""));
+      return Boolean(tNoSuffix && qNoSuffix && tNoSuffix === qNoSuffix);
+    };
+
+    const exactMatches = merged.filter((item) => isExact(item.title));
+    if (exactMatches.length > 0) {
+      const panelExact = exactMatches.filter((item) => !item.panelSlug || item.panelSlug === currentPanel);
+      return panelExact.length > 0 ? panelExact : exactMatches;
+    }
+
+    // Otherwise, show relative / broader search results
     return merged.slice(0, 12);
-  }, [query, dynamicResults, clientMatches]);
+  }, [query, dynamicResults, clientMatches, currentPanel]);
 
   // Debounced dynamic API search querying the live database
   const performDynamicSearch = useCallback(

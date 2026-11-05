@@ -217,12 +217,12 @@ export function SubjectExamsPopup({
                 className="group w-full text-left rounded-xl border border-[#CBDCF8] dark:border-white/10 bg-white/70 dark:bg-white/5 px-3 py-3 flex items-center gap-3 hover:border-[#2FD9C4]/60 hover:bg-white dark:hover:bg-white/10 shadow-2xs hover:shadow-xs transition-all duration-200"
               >
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-xs md:text-sm font-medium text-slate-900 dark:text-[var(--text-color)] truncate">
+                  <h3 className="text-sm md:text-[15px] font-semibold text-slate-900 dark:text-[var(--text-color)] truncate">
                     {exam.title}
                   </h3>
-                  <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[10px] text-slate-600 dark:text-[var(--text-color)]/50 font-medium">
-                    <span className="inline-flex items-center gap-1">
-                      <FileQuestion className="w-3 h-3 text-[#0891b2] dark:text-[#2FD9C4]" />
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-slate-600 dark:text-[var(--text-color)]/60 font-medium">
+                    <span className="inline-flex items-center gap-1.5">
+                      <FileQuestion className="w-3.5 h-3.5 text-[#0891b2] dark:text-[#2FD9C4]" />
                       {exam.questionsCount ?? 0} Qs
                     </span>
                   </div>

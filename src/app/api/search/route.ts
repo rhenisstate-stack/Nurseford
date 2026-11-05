@@ -234,12 +234,20 @@ export async function GET(req: NextRequest) {
     const title = (exam.title || exam.name || "").trim();
     if (!title) return;
 
+    const titleLower = title.toLowerCase();
+    const qLower = q.toLowerCase();
     const fullText = `${title} ${exam.subjectName || ""} ${exam.courseName || ""} ${exam.season || ""} ${exam.year || ""}`.toLowerCase();
+    const matchesPhrase = titleLower.includes(qLower) || fullText.includes(qLower);
     const matchesAll = rawTerms.every((t) => fullText.includes(t));
     const matchesNonExam = nonExamTerms.length > 0 && nonExamTerms.every((t) => fullText.includes(t));
-    const matchesAny = rawTerms.some((t) => title.toLowerCase().includes(t));
 
-    if (!matchesAll && !matchesNonExam && !matchesAny) return;
+    // For multi-word searches, require phrase match, all words, or all non-exam words
+    if (words.length > 1) {
+      if (!matchesPhrase && !matchesAll && !matchesNonExam) return;
+    } else {
+      const singleWord = rawTerms[0] || qLower;
+      if (!titleLower.includes(singleWord) && !matchesAll) return;
+    }
 
     const panel = resolvePanelFromText(`${title} ${exam.courseName || ""} ${exam.subjectName || ""}`, currentPanel);
     const href = `/web/${panel}/vista/exam/generic?mode=Practice&identifier=${id}`;
@@ -341,28 +349,47 @@ export async function GET(req: NextRequest) {
     }
   });
 
-  // Prioritize active panel and exact matches
-  results.sort((a, b) => {
-    const aTitle = a.title.toLowerCase();
-    const bTitle = b.title.toLowerCase();
-    const qLower = q.toLowerCase();
+  // Exact Match Gate:
+  // If the user searched a specific exam or subject name and exact matches exist,
+  // return ONLY the exact match(es) so we don't overwhelm with other relative results.
+  const clean = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const qClean = clean(q);
 
-    // Exact title match comes first
-    if (aTitle === qLower && bTitle !== qLower) return -1;
-    if (bTitle === qLower && aTitle !== qLower) return 1;
+  const isExact = (title: string) => {
+    const tClean = clean(title);
+    if (tClean === qClean) return true;
+    const tNoSuffix = clean(title.replace(/\s*(?:nclex|hesi|ati|teas|rn|pn|exams?)+\s*$/i, ""));
+    const qNoSuffix = clean(q.replace(/\s*(?:nclex|hesi|ati|teas|rn|pn|exams?)+\s*$/i, ""));
+    return Boolean(tNoSuffix && qNoSuffix && tNoSuffix === qNoSuffix);
+  };
 
-    // Starts with comes next
-    if (aTitle.startsWith(qLower) && !bTitle.startsWith(qLower)) return -1;
-    if (bTitle.startsWith(qLower) && !aTitle.startsWith(qLower)) return 1;
+  const exactMatches = results.filter((r) => isExact(r.title));
+  let finalResults: SearchApiResultItem[] = [];
 
-    // Current panel boost
-    if (a.panelSlug === currentPanel && b.panelSlug !== currentPanel) return -1;
-    if (b.panelSlug === currentPanel && a.panelSlug !== currentPanel) return 1;
+  if (exactMatches.length > 0) {
+    const panelExact = exactMatches.filter((r) => !r.panelSlug || r.panelSlug === currentPanel);
+    finalResults = panelExact.length > 0 ? panelExact : exactMatches;
+  } else {
+    // Only when no exact match exists do we show relative searches
+    results.sort((a, b) => {
+      const aTitle = a.title.toLowerCase();
+      const bTitle = b.title.toLowerCase();
+      const qLower = q.toLowerCase();
 
-    return 0;
-  });
+      // Starts with comes next
+      if (aTitle.startsWith(qLower) && !bTitle.startsWith(qLower)) return -1;
+      if (bTitle.startsWith(qLower) && !aTitle.startsWith(qLower)) return 1;
 
-  const finalResults = results.slice(0, 12);
+      // Current panel boost
+      if (a.panelSlug === currentPanel && b.panelSlug !== currentPanel) return -1;
+      if (b.panelSlug === currentPanel && a.panelSlug !== currentPanel) return 1;
+
+      return 0;
+    });
+
+    finalResults = results.slice(0, 12);
+  }
+
   searchCache.set(cacheKey, { results: finalResults, timestamp: now });
 
   return NextResponse.json({
