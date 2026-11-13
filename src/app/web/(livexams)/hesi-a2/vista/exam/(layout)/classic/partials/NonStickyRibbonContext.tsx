@@ -3,7 +3,6 @@
 import {
     createContext,
     useContext,
-    useEffect,
     useState,
     ReactNode,
 } from "react";
@@ -11,11 +10,9 @@ import {
 // ─────────────────────────────────────────────────────────────────────────────
 // NON-STICKY RIBBON CONTEXT
 // Controls visibility of NonStickyNavBar
-// Persisted in localStorage
+// Session-only state (in-memory)
 // Default = hidden
 // ─────────────────────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = "exam_nonsticky_ribbon_open";
 
 interface NonStickyRibbonCtx {
     isOpen: boolean;
@@ -35,26 +32,8 @@ export function NonStickyRibbonProvider({
     // default hidden
     const [isOpen, setIsOpen] = useState(false);
 
-    useEffect(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-
-            if (stored !== null) {
-                setIsOpen(stored === "true");
-            }
-        } catch {
-            // noop
-        }
-    }, []);
-
     const persist = (next: boolean) => {
         setIsOpen(next);
-
-        try {
-            localStorage.setItem(STORAGE_KEY, String(next));
-        } catch {
-            // noop
-        }
     };
 
     return (

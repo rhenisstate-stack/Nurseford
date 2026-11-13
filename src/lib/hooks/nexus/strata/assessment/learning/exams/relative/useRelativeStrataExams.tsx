@@ -2,7 +2,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from "react";
-import { strataService } from "@/lib/services/nexus/strata/strataService";
+import type { NursingProgramScope } from "@/lib/utils/exams/nursingProgramScope";
+import { fetchScopedNominalExams } from "@/lib/utils/exams/scopedExamFetch";
 
 export interface StrataItem {
   id: number;
@@ -48,51 +49,30 @@ export interface StrataItem {
   sectionsCount?: number;
 }
 
-export const useRelativeStrataExams = () => {
+export const useRelativeStrataExams = (
+  programScope: NursingProgramScope = "all"
+) => {
   const [exams, setExams] = useState<StrataItem[]>([]);
   const [filteredExams, setFilteredExams] = useState<StrataItem[]>([]);
   const [examSearch, setExamSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const FETCH_TYPE = 'RelativeFetch';
 
   // useCallback at top level
   const fetchExams = useCallback(async (search: string) => {
     try {
       setIsLoading(true);
-      console.log(`🚀 [useRelativeStrataExams] Fetching Exams with search: "${search}"`);
+      const scoped = await fetchScopedNominalExams<StrataItem>({
+        scope: programScope,
+        page: 1,
+        perPage: 20,
+        search,
+        sortColumn: "id",
+        sortDirection: "desc",
+        sliceMerged: true,
+      });
 
-      // Pass Search To Backend
-      const result = await strataService<StrataItem[]>(
-        "Exam",
-        FETCH_TYPE,
-        search
-          ? { dynamicSearch: search, limit: 20 }
-          : { limit: 20 }
-      );
-
-      console.log("📥 [useRelativeStrataExams] Raw result:", result);
-      console.log("📦 [useRelativeStrataExams] result.data:", result?.data);
-      console.log(
-        "🔢 [useRelativeStrataExams] Count:",
-        Array.isArray(result?.data) ? result.data.length : "Not an array"
-      );
-
-      if (Array.isArray(result?.data)) {
-        console.log(
-          "🧪 [useRelativeStrataExams] First 3 items:",
-          result.data.slice(0, 3)
-        );
-      }
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
-      const data = result?.data ?? [];
-
-      setExams(data);
-      setFilteredExams(data.slice(0, 20));
-
+      setExams(scoped.items);
+      setFilteredExams(scoped.items.slice(0, 20));
     } catch (err) {
       console.error("❌ [useRelativeStrataExams] Failed to fetch Exams:", err);
       setExams([]);
@@ -100,7 +80,7 @@ export const useRelativeStrataExams = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [programScope]);
 
   // Fetch Exams when search changes
   useEffect(() => {

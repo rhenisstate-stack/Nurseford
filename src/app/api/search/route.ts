@@ -3,6 +3,114 @@ import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
 import { toSlug } from "@/lib/data/exam-subjects";
+import {
+  inferNursingPanelFromText,
+  isAllowedNursingCourse,
+  isAllowedNursingProgram,
+  type CourseScopeShape,
+  type ProgramScopeShape,
+} from "@/lib/utils/exams/nursingProgramScope";
+
+interface AllowedScopeCatalog {
+  allowedPrograms: Array<ProgramScopeShape & { resolvedPanel: "rn-nursing" | "lpn-nursing" }>;
+  allowedCourseIds: Set<string>;
+  allowedCourseGuids: Set<string>;
+  allowedCourseNames: Set<string>;
+  timestamp: number;
+}
+
+const SCOPE_CATALOG_TTL_MS = 5 * 60 * 1000;
+let cachedScopeCatalog: AllowedScopeCatalog | null = null;
+let inflightScopeCatalog: Promise<AllowedScopeCatalog> | null = null;
+
+async function getAllowedScopeCatalog(
+  baseUrl: string,
+  headers: HeadersInit
+): Promise<AllowedScopeCatalog> {
+  if (
+    cachedScopeCatalog &&
+    Date.now() - cachedScopeCatalog.timestamp < SCOPE_CATALOG_TTL_MS
+  ) {
+    return cachedScopeCatalog;
+  }
+
+  if (inflightScopeCatalog) return inflightScopeCatalog;
+
+  inflightScopeCatalog = (async () => {
+    try {
+      const [progRes, courseRes] = await Promise.all([
+        fetch(
+          `${baseUrl}/api/castoline/strata/learning/programs/list/absolute?fetchtype=absolute&dynamicPage=1&dynamicPerPage=100`,
+          { headers, cache: "no-store", signal: AbortSignal.timeout(4000) }
+        ).catch(() => null),
+        fetch(
+          `${baseUrl}/api/castoline/strata/learning/courses/list/absolute?fetchtype=absolute&dynamicPage=1&dynamicPerPage=200`,
+          { headers, cache: "no-store", signal: AbortSignal.timeout(4000) }
+        ).catch(() => null),
+      ]);
+
+      const rawProgramsJson = progRes && progRes.ok ? await progRes.json().catch(() => null) : null;
+      const rawCoursesJson = courseRes && courseRes.ok ? await courseRes.json().catch(() => null) : null;
+
+      const rawProgs =
+        rawProgramsJson?.data?.items ||
+        rawProgramsJson?.Data?.Items ||
+        rawProgramsJson?.items ||
+        [];
+      const rawCourses =
+        rawCoursesJson?.data?.items ||
+        rawCoursesJson?.Data?.Items ||
+        rawCoursesJson?.items ||
+        [];
+
+      const progsConverted = (convertBackendKeysToCamel({ items: rawProgs }) as {
+        items?: ProgramScopeShape[];
+      })?.items ?? [];
+      const coursesConverted = (convertBackendKeysToCamel({ items: rawCourses }) as {
+        items?: CourseScopeShape[];
+      })?.items ?? [];
+
+      const allowedPrograms = progsConverted
+        .filter((p) => isAllowedNursingProgram(p, "all"))
+        .map((p) => ({
+          ...p,
+          resolvedPanel: inferNursingPanelFromText(p.name ?? p.programName ?? "", "rn-nursing"),
+        }));
+
+      const allowedCourses = coursesConverted.filter((c) =>
+        isAllowedNursingCourse(c, "all")
+      );
+
+      const allowedCourseIds = new Set<string>();
+      const allowedCourseGuids = new Set<string>();
+      const allowedCourseNames = new Set<string>();
+
+      for (const c of allowedCourses) {
+        if (c.id != null) allowedCourseIds.add(String(c.id));
+        if (c.guidId) allowedCourseGuids.add(c.guidId.toLowerCase());
+        const cname = (c.name ?? c.title ?? "").trim().toLowerCase();
+        if (cname) allowedCourseNames.add(cname);
+      }
+
+      const catalog: AllowedScopeCatalog = {
+        allowedPrograms,
+        allowedCourseIds,
+        allowedCourseGuids,
+        allowedCourseNames,
+        timestamp: Date.now(),
+      };
+
+      if (allowedPrograms.length > 0 && allowedCourseIds.size > 0) {
+        cachedScopeCatalog = catalog;
+      }
+      return catalog;
+    } finally {
+      inflightScopeCatalog = null;
+    }
+  })();
+
+  return inflightScopeCatalog;
+}
 
 export interface SearchApiResultItem {
   id: string;
@@ -71,15 +179,9 @@ async function getGuestAuth(): Promise<{ line: string; badge: string } | null> {
   return guestTokenPromise;
 }
 
-function resolvePanelFromText(text: string, fallback = "rn-nursing"): string {
-  const t = text.toLowerCase();
-  if (t.includes("nclex-rn") || t.includes("nclex rn")) return "nclex-rn";
-  if (t.includes("nclex-pn") || t.includes("nclex pn") || t.includes("lpn practical")) return "nclex-pn";
-  if (t.includes("ati-teas") || t.includes("ati teas") || t.includes("teas 7") || t.includes("teas")) return "ati-teas";
-  if (t.includes("hesi-a2") || t.includes("hesi a2") || t.includes("hesi admission")) return "hesi-a2";
-  if (t.includes("lpn-nursing") || t.includes("lpn nursing") || t.includes("lpn")) return "lpn-nursing";
-  if (t.includes("rn-nursing") || t.includes("rn nursing")) return "rn-nursing";
-  return fallback;
+function resolvePanelFromText(text: string, fallback = "rn-nursing"): "rn-nursing" | "lpn-nursing" {
+  const safeFallback = fallback === "lpn-nursing" ? "lpn-nursing" : "rn-nursing";
+  return inferNursingPanelFromText(text, safeFallback);
 }
 
 export async function GET(req: NextRequest) {
@@ -150,18 +252,32 @@ export async function GET(req: NextRequest) {
   const words = q.split(/\s+/).filter(Boolean);
   const primaryWord = words[0] || q;
 
+  const scopeCatalog = await getAllowedScopeCatalog(baseUrl, headers);
+
   const queryExams = async (searchTerm: string) => {
-    try {
-      const url = `${baseUrl}/api/castoline/strata/assessment/exams/list/absolute?fetchtype=absolute&dynamicPage=1&dynamicPerPage=25&dynamicSearch=${encodeURIComponent(searchTerm)}`;
-      const res = await fetch(url, { headers, cache: "no-store", signal: AbortSignal.timeout(3500) });
-      if (!res.ok) return [];
-      const raw = await res.json();
-      const rawItems = raw?.data?.items || raw?.Data?.Items || raw?.items || raw?.Items || [];
-      const converted = convertBackendKeysToCamel({ items: rawItems }) as { items?: any[] };
-      return converted?.items || [];
-    } catch {
-      return [];
-    }
+    if (scopeCatalog.allowedPrograms.length === 0) return [];
+    const resultsPerProgram = await Promise.all(
+      scopeCatalog.allowedPrograms.map(async (prog) => {
+        const progId = String(prog.guidId || prog.id || "");
+        if (!progId) return [];
+        try {
+          const url = `${baseUrl}/api/castoline/strata/assessment/exams/list/nominal?fetchtype=nominal&identifier=${encodeURIComponent(progId)}&dynamicLearningStrataName=program&dynamicPage=1&dynamicPerPage=25&dynamicSearch=${encodeURIComponent(searchTerm)}`;
+          const res = await fetch(url, { headers, cache: "no-store", signal: AbortSignal.timeout(3500) });
+          if (!res.ok) return [];
+          const raw = await res.json();
+          const rawItems = raw?.data?.items || raw?.Data?.Items || raw?.items || raw?.Items || [];
+          const converted = convertBackendKeysToCamel({ items: rawItems }) as { items?: any[] };
+          return (converted?.items || []).map((item) => ({
+            ...item,
+            programName: item.programName || prog.name || prog.programName,
+            __resolvedPanel: prog.resolvedPanel,
+          }));
+        } catch {
+          return [];
+        }
+      })
+    );
+    return resultsPerProgram.flat();
   };
 
   const querySubjects = async (searchTerm: string) => {
@@ -172,7 +288,19 @@ export async function GET(req: NextRequest) {
       const raw = await res.json();
       const rawItems = raw?.data?.items || raw?.Data?.Items || raw?.items || raw?.Items || [];
       const converted = convertBackendKeysToCamel({ items: rawItems }) as { items?: any[] };
-      return converted?.items || [];
+      return (converted?.items || []).filter((s) => {
+        if (s.programName && isAllowedNursingProgram({ programName: s.programName }, "all")) {
+          return true;
+        }
+        const cGuid = s.courseGuidId ? String(s.courseGuidId).toLowerCase() : "";
+        const cId = s.courseId != null ? String(s.courseId) : "";
+        const cName = (s.courseName || "").trim().toLowerCase();
+        return (
+          (cGuid && scopeCatalog.allowedCourseGuids.has(cGuid)) ||
+          (cId && scopeCatalog.allowedCourseIds.has(cId)) ||
+          (cName && scopeCatalog.allowedCourseNames.has(cName))
+        );
+      });
     } catch {
       return [];
     }
@@ -180,13 +308,13 @@ export async function GET(req: NextRequest) {
 
   const queryCourses = async (searchTerm: string) => {
     try {
-      const url = `${baseUrl}/api/castoline/strata/learning/courses/list/absolute?fetchtype=absolute&dynamicPage=1&dynamicPerPage=15&dynamicSearch=${encodeURIComponent(searchTerm)}`;
+      const url = `${baseUrl}/api/castoline/strata/learning/courses/list/absolute?fetchtype=absolute&dynamicPage=1&dynamicPerPage=25&dynamicSearch=${encodeURIComponent(searchTerm)}`;
       const res = await fetch(url, { headers, cache: "no-store", signal: AbortSignal.timeout(3500) });
       if (!res.ok) return [];
       const raw = await res.json();
       const rawItems = raw?.data?.items || raw?.Data?.Items || raw?.items || raw?.Items || [];
       const converted = convertBackendKeysToCamel({ items: rawItems }) as { items?: any[] };
-      return converted?.items || [];
+      return (converted?.items || []).filter((c) => isAllowedNursingCourse(c, "all"));
     } catch {
       return [];
     }
@@ -249,7 +377,7 @@ export async function GET(req: NextRequest) {
       if (!titleLower.includes(singleWord) && !matchesAll) return;
     }
 
-    const panel = resolvePanelFromText(`${title} ${exam.courseName || ""} ${exam.subjectName || ""}`, currentPanel);
+    const panel = exam.__resolvedPanel || resolvePanelFromText(`${title} ${exam.programName || ""} ${exam.courseName || ""} ${exam.subjectName || ""}`, currentPanel);
     const href = `/web/${panel}/vista/exam/generic?mode=Practice&identifier=${id}`;
 
     if (!seenHrefs.has(href)) {

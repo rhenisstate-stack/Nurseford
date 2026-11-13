@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
-import { getGuestPreviewToken } from "@/lib/services/exams/questionsBreakdownService";
+
 
 export interface DynamicStrataResponse<T = unknown> {
   message?: string;
@@ -72,14 +72,6 @@ async function forwardToBackend(
       }
     }
 
-    if (!castoLine) {
-      const guestAuth = await getGuestPreviewToken();
-      if (guestAuth) {
-        castoLine = guestAuth.line;
-        if (!castoBadge) castoBadge = guestAuth.badge;
-      }
-    }
-
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...(await getSiteHeaders()),
@@ -88,39 +80,18 @@ async function forwardToBackend(
     if (castoLine) headers["x-casto-line"] = castoLine;
     if (castoBadge) headers["x-casto-badge"] = castoBadge;
 
-    let backendResponse = await fetch(url, {
+        const backendResponse = await fetch(url, {
       method,
       headers,
       body: JSON.stringify(body),
     });
 
-    let responseBody: DynamicStrataResponse =
+    const responseBody: DynamicStrataResponse =
       await backendResponse.json().catch(() => ({
         error: "Failed to Parse Backend Response ⚓",
       }));
 
-    const isAuthFailure = (backendResponse.status === 400 || backendResponse.status === 401) &&
-      (responseBody.error?.includes("Unable To Resolve Authenticated User") ||
-        responseBody.message?.includes("Unable To Resolve Authenticated User") ||
-        responseBody.error?.includes("Invalid or expired Casto session"));
-
-    if (isAuthFailure) {
-      console.warn("⚠️ [exams/upserts Route] Auth failure, retrying with fresh guest preview token...");
-      const guestAuth = await getGuestPreviewToken();
-      if (guestAuth) {
-        headers["x-casto-line"] = guestAuth.line;
-        headers["x-casto-badge"] = guestAuth.badge;
-        backendResponse = await fetch(url, {
-          method,
-          headers,
-          body: JSON.stringify(body),
-        });
-        responseBody = await backendResponse.json().catch(() => ({
-          error: "Failed to Parse Backend Response ⚓",
-        }));
-      }
-    }
-
+      
     // Graceful self-healing for unauthenticated/guest users:
     // If backend cannot resolve the user in its DB, acknowledge answer with 200 so exam answers
     // are stored locally and learner is never blocked by a red 400 error banner.

@@ -54,7 +54,7 @@ export function ExamSubscriptionPaywallModal({
 
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-amber-300 text-xs font-bold uppercase tracking-wider mb-2">
             <Sparkles size={12} className="fill-amber-300" />
-            <span>30% Free Preview Limit Reached</span>
+            <span>Subscription Required</span>
           </div>
 
           <h2 className="text-lg font-bold leading-tight">
@@ -73,7 +73,7 @@ export function ExamSubscriptionPaywallModal({
             </div>
             <div className="text-xs sm:text-sm">
               <p className="font-semibold text-slate-900 dark:text-white">
-                You&apos;ve completed {allowedQuestions} of {totalQuestions} questions (30% preview)
+                Subscribe now to access all {totalQuestions} questions and full rationales
               </p>
               <p className="text-slate-500 dark:text-slate-400 mt-0.5 text-xs">
                 Subscribe now to unlock the remaining {remainingQuestions} questions, in-depth clinical rationales, and complete answers.

@@ -7,8 +7,8 @@ import { apiFetch } from '@/lib/api/api/api';
 const contactChannels = [
   {
     label: 'Email Us',
-    value: 'support@rhenisnursing.com',
-    href: 'mailto:support@rhenisnursing.com',
+    value: 'support@nurseford.com',
+    href: 'mailto:support@nurseford.com',
   },
   {
     label: 'Phone',

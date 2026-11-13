@@ -1,35 +1,38 @@
+.nurseford-web,
 .rhenis-web {
-  --font-sans: var(--font-ibm-plex-sans);
-  --font-serif: var(--font-fraunces);
-  --font-mono: var(--font-ibm-plex-mono);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-serif: var(--font-plus-jakarta), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
 
   /* Concentrated midnight navy blue theme matching background images */
-  --background: #000f25;
-  --navbar-bg: #000f25;
-  --content-bg: #000f25;
-  --footer-bg: #000f25;
-  --card-bg: #15273e;
+  --background: #171C27;
+  --navbar-bg: #171C27;
+  --content-bg: #171C27;
+  --footer-bg: #171C27;
+  --card-bg: #2C3749;
   --text-color: #ffffff;
   --navbar-text: #ffffff;
   --sidebar-text: #ffffff;
   --content-text: #ffffff;
   --footer-text: #ffffff;
 
-  background: #000f25;
+  background: #171C27;
   min-height: 100vh;
   color: var(--text-color, #ffffff);
-  font-family: var(--font-ibm-plex-sans), system-ui, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
 }
 
 /* Light mode: clean off-white background, dark typography, light tinted card surfaces */
 html.light .rhenis-web,
+html.light .nurseford-web,
+.nurseford-web.light,
 .rhenis-web.light {
   --background: #f8fafc;
   --navbar-bg: #ffffff;
   --content-bg: #f8fafc;
   --footer-bg: #f1f5f9;
-  --card-bg: #EEF3FE;
-  --card-border: rgba(0, 0, 0, 0.5);
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.08);
   --text-color: #000000;
   --navbar-text: #000000;
   --sidebar-text: #000000;
@@ -42,12 +45,14 @@ html.light .rhenis-web,
 
 /* Dark mode: concentrated midnight navy */
 html.dark .rhenis-web,
+html.dark .nurseford-web,
+.nurseford-web.dark,
 .rhenis-web.dark {
-  --background: #000f25;
-  --navbar-bg: #000f25;
-  --content-bg: #000f25;
-  --footer-bg: #000f25;
-  --card-bg: #15273e;
+  --background: #171C27;
+  --navbar-bg: #171C27;
+  --content-bg: #171C27;
+  --footer-bg: #171C27;
+  --card-bg: #2C3749;
   --card-border: rgba(255, 255, 255, 0.1);
   --text-color: #ffffff;
   --navbar-text: #ffffff;
@@ -55,7 +60,7 @@ html.dark .rhenis-web,
   --content-text: #ffffff;
   --footer-text: #ffffff;
 
-  background: #000f25;
+  background: #171C27;
   color: #ffffff;
 }
 
@@ -65,5 +70,5 @@ html.dark .rhenis-web,
 .rhenis-web h4,
 .rhenis-web h5,
 .rhenis-web h6 {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-plus-jakarta), var(--font-inter), sans-serif;
 }

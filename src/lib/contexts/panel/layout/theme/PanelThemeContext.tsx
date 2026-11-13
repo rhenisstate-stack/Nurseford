@@ -24,11 +24,11 @@ export type CustomColors = {
 
 // Default Dashboard Colors — concentrated midnight navy matching background images
 export const DEFAULT_THEME_COLORS: CustomColors = {
-  navbar: "#000f25",
-  leftSidebar: "#000f25",
-  rightSidebar: "#000f25",
-  content: "#000f25",
-  footer: "#000f25",
+  navbar: "#171C27",
+  leftSidebar: "#171C27",
+  rightSidebar: "#171C27",
+  content: "#171C27",
+  footer: "#171C27",
   text: "#e2e8f0",
 };
 
@@ -96,11 +96,11 @@ export function applyThemeToDocument(
   };
 
   const darkColors: Record<keyof CustomColors, string> = {
-    navbar: "#000f25",
-    leftSidebar: "#000f25",
-    rightSidebar: "#000f25",
-    content: "#000f25",
-    footer: "#000f25",
+    navbar: "#171C27",
+    leftSidebar: "#171C27",
+    rightSidebar: "#171C27",
+    content: "#171C27",
+    footer: "#171C27",
     text: "#e2e8f0",
   };
 
@@ -125,7 +125,7 @@ export function applyThemeToDocument(
   }
 
   // Set distinct elevated card background and border
-  root.style.setProperty("--card-bg", effectiveTheme === "light" ? "#EEF3FE" : "#15273e");
+  root.style.setProperty("--card-bg", effectiveTheme === "light" ? "#EEF3FE" : "#2C3749");
   root.style.setProperty("--card-border", effectiveTheme === "light" ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.1)");
 
   // Apply global text color

@@ -193,7 +193,7 @@ export default function HeedMessageBellDropdown({
 
     const email =
       user?.email ||
-      (user?.userName ? `${user.userName}@rhenisnursing.com` : "support@rhenisnursing.com");
+      (user?.userName ? `${user.userName}@nurseford.com` : "support@nurseford.com");
 
     try {
       setIsSending(true);
@@ -210,7 +210,7 @@ export default function HeedMessageBellDropdown({
       }
 
       setComposerText("");
-      setSendSuccess("Message sent to Rhenis Support ✅");
+      setSendSuccess("Message sent to Nurseford Support ✅");
       setIsComposerOpen(false);
       window.dispatchEvent(new CustomEvent(HEED_STATUS_EVENT));
       refetch();
@@ -230,10 +230,10 @@ export default function HeedMessageBellDropdown({
 
   const alignmentClass =
     align === "left"
-      ? "left-0"
+      ? "sm:left-0 sm:right-auto"
       : align === "center"
-      ? "left-1/2 -translate-x-1/2"
-      : "right-0";
+      ? "sm:left-1/2 sm:-translate-x-1/2 sm:right-auto"
+      : "sm:right-0 sm:left-auto";
 
   const actionIconBtn =
     "flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 dark:border-white/10 transition hover:scale-110 hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95 disabled:opacity-40 text-slate-600 dark:text-slate-300";
@@ -275,12 +275,19 @@ export default function HeedMessageBellDropdown({
 
       {/* Dropdown with all components of the Heed page */}
       {isOpen && (
-        <div
-          role="dialog"
-          aria-label="Message Support"
-          className={`absolute mt-2 w-[420px] sm:w-[460px] max-w-[calc(100vw-1.5rem)] max-h-[min(650px,calc(100vh-5rem))] rounded-2xl border border-blue-200 dark:border-white/15 bg-white dark:bg-[#111C2E] shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 overflow-hidden flex flex-col ${alignmentClass}`}
-        >
-          {/* Header (Matching Rhenis Support & Heed Page) */}
+        <>
+          {/* Mobile backdrop */}
+          <div
+            className="fixed inset-0 bg-black/25 sm:hidden z-40"
+            onClick={() => setIsOpen(false)}
+          />
+
+          <div
+            role="dialog"
+            aria-label="Message Support"
+            className={`fixed sm:absolute inset-x-2 top-14 sm:top-full mt-1 sm:mt-2 sm:w-[460px] max-w-[calc(100vw-1.5rem)] max-h-[min(650px,calc(100vh-4.5rem))] sm:max-h-[min(650px,calc(100vh-5rem))] rounded-2xl border border-blue-200 dark:border-white/15 bg-white dark:bg-[#111C2E] shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 overflow-hidden flex flex-col ${alignmentClass}`}
+          >
+          {/* Header (Matching Nurseford Support & Heed Page) */}
           <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 px-4 py-3 text-white flex items-center justify-between shadow-md shrink-0 select-none">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center font-bold text-white shadow-inner">
@@ -677,7 +684,8 @@ export default function HeedMessageBellDropdown({
             </Link>
           </div>
         </div>
-      )}
-    </div>
-  );
+      </>
+    )}
+  </div>
+);
 }

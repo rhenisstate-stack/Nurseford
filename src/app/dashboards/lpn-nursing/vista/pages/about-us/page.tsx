@@ -86,7 +86,7 @@ export default function AboutUsPage() {
             was scattered across a dozen apps, PDFs, and outdated question
             banks. We set out to bring notes, resource categories, practice
             exams, and progress tracking into one focused workspace — built
-            for TEAS 7 Prep, HESI A2, RN, LPN, and beyond.
+            for RN Nursing, LPN Nursing, and Exit Exams.
           </p>
           <p className="text-sm leading-relaxed opacity-75 text-[var(--text-color)]">
             Today, that same idea drives everything we ship: less friction,

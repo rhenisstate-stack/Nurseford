@@ -58,7 +58,7 @@ export function SubjectExamsPopup({
         }
 
         const rawItems = [...(result?.data?.items ?? [])];
-        const totalPages = (result?.data as any)?.skewTotalPages ?? 1;
+        const totalPages = result?.data?.skewTotalPages ?? 1;
         if (totalPages > 1 && rawItems.length < (result?.data?.skewTotal ?? 0)) {
           const remainingPagePromises = [];
           for (let p = 2; p <= totalPages; p++) {
@@ -101,18 +101,6 @@ export function SubjectExamsPopup({
 
           return (Number(b.id) || 0) - (Number(a.id) || 0);
         });
-        try {
-          items.forEach((e) => {
-            if (e.guidId && e.title) {
-              localStorage.setItem(`exam_title_${e.guidId}`, e.title);
-              sessionStorage.setItem(`exam_title_${e.guidId}`, e.title);
-            }
-            if (e.id && e.title) {
-              localStorage.setItem(`exam_title_${e.id}`, e.title);
-              sessionStorage.setItem(`exam_title_${e.id}`, e.title);
-            }
-          });
-        } catch {}
         setExams(items);
         setStatus("ready");
       } catch (err) {
@@ -129,20 +117,6 @@ export function SubjectExamsPopup({
   }, [isOpen, subject]);
 
   const startExam = (exam: StrataItem) => {
-    try {
-      if (exam.guidId) {
-        if (exam.title) {
-          localStorage.setItem(`exam_title_${exam.guidId}`, exam.title);
-          sessionStorage.setItem(`exam_title_${exam.guidId}`, exam.title);
-        }
-      }
-      if (exam.id) {
-        if (exam.title) {
-          localStorage.setItem(`exam_title_${exam.id}`, exam.title);
-          sessionStorage.setItem(`exam_title_${exam.id}`, exam.title);
-        }
-      }
-    } catch {}
     const params = new URLSearchParams({
       mode: "Exam",
       identifier: String(exam.guidId ?? exam.id),

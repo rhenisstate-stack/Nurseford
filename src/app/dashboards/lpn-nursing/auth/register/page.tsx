@@ -237,7 +237,7 @@ export default function RegisterPage() {
                 loginMethod: form.loginMethod,
                 agree: form.agree,
                 role: role,
-                dashboardName: 'ati-teas',
+                dashboardName: 'lpn-nursing',
                 provider: selectedProvider || 'email',
                 providerPayload: selectedProvider && selectedProvider !== 'email' ? 'OAuth' : 'Void',
                 challenge: "register-skew8@lancasto",

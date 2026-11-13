@@ -1,13 +1,32 @@
 // This is the root layout
 import './globals.css';
-import { Outfit } from 'next/font/google';
+import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 import type { Metadata } from 'next';
 import { LeftSidebarProvider } from '@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext';
 import { RightSidebarProvider } from '@/lib/contexts/panel/layout/includes/sidebar/RightSidebarContext';
 import { ThemeProvider } from '@/lib/contexts/panel/layout/theme/PanelThemeContext';
 import { APP_NAME } from '@/lib/config/config';
 
-const outfit = Outfit({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['500', '600', '700', '800'],
+  variable: '--font-plus-jakarta',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -25,7 +44,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`dark ${inter.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -44,7 +67,7 @@ export default function RootLayout({
                     if (examMode === 'dark') {
                       document.documentElement.classList.remove('light');
                       document.documentElement.classList.add('dark');
-                      document.documentElement.style.setProperty('--content-bg', '#000f25');
+                      document.documentElement.style.setProperty('--content-bg', '#171C27');
                       document.documentElement.style.setProperty('--text-color', '#e2e8f0');
                     } else {
                       document.documentElement.classList.remove('dark');
@@ -70,10 +93,10 @@ export default function RootLayout({
                     } else {
                       document.documentElement.classList.remove('light');
                       document.documentElement.classList.add('dark');
-                      document.documentElement.style.setProperty('--card-bg', '#15273e');
+                      document.documentElement.style.setProperty('--card-bg', '#2C3749');
                       document.documentElement.style.setProperty('--card-border', 'rgba(255, 255, 255, 0.1)');
-                      document.documentElement.style.setProperty('--content-bg', '#000f25');
-                      document.documentElement.style.setProperty('--navbar-bg', '#000f25');
+                      document.documentElement.style.setProperty('--content-bg', '#171C27');
+                      document.documentElement.style.setProperty('--navbar-bg', '#171C27');
                       document.documentElement.style.setProperty('--text-color', '#e2e8f0');
                     }
                   }
@@ -84,9 +107,9 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${outfit.className} transition-colors duration-300`}
+        className={`${inter.className} transition-colors duration-300`}
         style={{
-          backgroundColor: "var(--content-bg, #000f25)",
+          backgroundColor: "var(--content-bg, #171C27)",
           color: "var(--text-color, #e2e8f0)",
         }}
       >

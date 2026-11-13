@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 import {
   toSlug,
   VALID_EXAM_TYPES,
@@ -23,6 +26,8 @@ const EXAM_SEGMENTS: Record<string, string> = {
   "hesi-a2": "HESI_A2",
   "rn-nursing": "RN_NURSING",
   "lpn-nursing": "LPN_NURSING",
+  "rn-exit": "RN_NURSING",
+  "lpn-exit": "LPN_NURSING",
   "nclex-rn": "NCLEX_RN",
   "nclex-pn": "NCLEX_PN",
   "cna": "CNA",
@@ -32,19 +37,17 @@ const EXAM_SEGMENTS: Record<string, string> = {
 };
 
 // The backend truthfully labels every course with a `programName` (e.g. "ATI TEAS",
-// "HESI A2", "RN Nursing Exams", "LPN Nursing Exams").  The `segment` field is
-// NOT reliable — it is set to "ATI_TEAS" for virtually every course, which is
-// what caused all courses to pile into the ATI TEAS dashboard.  Map each
-// dashboard to its intended program name(s).  The dedicated "RN/LPN Exit Exams"
-// programs are deliberately excluded — their exit exams live under the Exit
-// programs, not the Nursing-exam dashboards.
+// "HESI A2", "RN Nursing Exams", "LPN Nursing Exams", "RN Exit Exams", "LPN Exit Exams").
+// Map each dashboard / track to its intended program name(s).
 const PROGRAM_NAME_FILTERS: Record<string, RegExp> = {
-  "ati-teas": /^ATI\s*TEAS$/i,
-  "hesi-a2": /^HESI\s*A2$/i,
-  "rn-nursing": /^RN\s*Nursing\s*Exams$/i,
-  "lpn-nursing": /^LPN\s*Nursing\s*Exams$/i,
-  "nclex-rn": /^NCLEX\s*RN$/i,
-  "nclex-pn": /^NCLEX\s*PN$/i,
+  "ati-teas": /^ATI[\s\-]*TEAS$/i,
+  "hesi-a2": /^HESI[\s\-]*A2$/i,
+  "rn-nursing": /^RN[\s\-]*Nursing\s*Exams$/i,
+  "lpn-nursing": /^LPN[\s\-]*Nursing\s*Exams$/i,
+  "rn-exit": /^(?:RN[\s\-]*Exit(?:\s*Exams)?|Exit\s*Exams[\s\-–(]*RN\)?)/i,
+  "lpn-exit": /^(?:LPN[\s\-]*Exit(?:\s*Exams)?|Exit\s*Exams[\s\-–(]*LPN\)?)/i,
+  "nclex-rn": /^NCLEX[\s\-]*RN$/i,
+  "nclex-pn": /^NCLEX[\s\-]*PN$/i,
   "cna": /^CNA/i,
   "ged": /^GED/i,
   "pre-nursing": /^Pre[-\s]*Nursing/i,
@@ -58,7 +61,13 @@ interface BackendCourseItem {
   description?: string;
   segment?: string;
   programName?: string;
+  coursesCount?: number;
   subjectsCount?: number;
+  order?: number | string;
+  rank?: number | string;
+  position?: number | string;
+  sortOrder?: number | string;
+  displayOrder?: number | string;
 }
 
 const subjectsEndpoint = (): string =>
@@ -71,6 +80,15 @@ function toNumber(value: unknown, fallback = 0): number {
     return Number.isFinite(n) ? n : fallback;
   }
   return fallback;
+}
+
+function parseOrder(value: unknown, fallbackIndex: number): number {
+  if (typeof value === "number" && !isNaN(value)) return value;
+  if (typeof value === "string") {
+    const parsed = parseInt(value, 10);
+    if (!isNaN(parsed)) return parsed;
+  }
+  return 10000 + fallbackIndex;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -143,48 +161,64 @@ async function fetchBackendSubjects(examType: string, req: NextRequest): Promise
   const items = converted.data?.items ?? [];
 
   // Primary filter: use the backend's programName, which truthfully labels
-  // each course's exam.  This cleanly separates ATI TEAS / HESI A2 /
-  // RN (incl. exit) / LPN (incl. exit).
+  // each course's exam.
   const byProgramName = items.filter((c) =>
     segmentProg ? segmentProg.test(c.programName ?? "") : false
   );
 
-  // Fallback: if nothing matched from programName, use the programName→segment
-  // classifier, then the name-based classifier as a last resort.
-  const filtered =
-    byProgramName.length > 0
-      ? byProgramName
-      : (() => {
-          // only courses the program classifier assigns to this exact segment
-          const byProg = items.filter(
-            (c) => programNameToSegment(c.programName) === segment
-          );
-          if (byProg.length > 0) return byProg;
-          return items.filter(
-            (c) => inferSegmentFromName(c.name ?? "") === segment
-          );
-        })();
+  let filtered = byProgramName;
+
+  if (examType === "rn-nursing") {
+    filtered = filtered.filter((c) => !/exit/i.test(c.name ?? "") && !/exit/i.test(c.programName ?? ""));
+  } else if (examType === "lpn-nursing") {
+    filtered = filtered.filter((c) => !/exit/i.test(c.name ?? "") && !/exit/i.test(c.programName ?? ""));
+  }
+
+  // Fallback: if nothing matched from programName, use specialized classifiers
+  if (filtered.length === 0) {
+    if (examType === "rn-exit") {
+      filtered = items.filter((c) => /exit/i.test(c.name ?? "") && /rn/i.test(c.name ?? ""));
+    } else if (examType === "lpn-exit") {
+      filtered = items.filter((c) => /exit/i.test(c.name ?? "") && /lpn/i.test(c.name ?? ""));
+    } else if (examType === "rn-nursing") {
+      filtered = items.filter((c) => !/exit/i.test(c.name ?? "") && (/rn/i.test(c.name ?? "") || /rn/i.test(c.programName ?? "")));
+    } else if (examType === "lpn-nursing") {
+      filtered = items.filter((c) => !/exit/i.test(c.name ?? "") && (/lpn/i.test(c.name ?? "") || /lpn/i.test(c.programName ?? "")));
+    } else if (examType === "nclex-rn") {
+      filtered = items.filter((c) => /nclex[\s\-]*rn/i.test(c.name ?? "") || /nclex[\s\-]*rn/i.test(c.programName ?? ""));
+    } else if (examType === "nclex-pn") {
+      filtered = items.filter((c) => /nclex[\s\-]*pn/i.test(c.name ?? "") || /nclex[\s\-]*pn/i.test(c.programName ?? ""));
+    } else {
+      const byProg = items.filter(
+        (c) => programNameToSegment(c.programName) === segment
+      );
+      filtered = byProg.length > 0 ? byProg : items.filter((c) => inferSegmentFromName(c.name ?? "") === segment);
+    }
+  }
 
   console.log(
     `🌿 [/api/exams/${examType}/subjects] Backend returned ${items.length} items, ` +
-      `programName matched ${byProgramName.length}, ` +
-      `final: ${filtered.length}`
+    `programName matched ${byProgramName.length}, ` +
+    `final: ${filtered.length}`
   );
 
-  return filtered
-    .map((c, i) => {
-      const name = c.name?.trim() || `Subject ${i + 1}`;
-      const guid = c.guidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : undefined);
-      return {
-        id: guid ?? c.id ?? name,
-        guidId: guid,
-        name,
-        slug: toSlug(name),
-        description: c.description,
-        examCount: toNumber(c.subjectsCount, 0),
-      };
-    })
-;
+  const mapped: BackendSubject[] = filtered.map((c, i) => {
+    const name = c.name?.trim() || `Subject ${i + 1}`;
+    const guid = c.guidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : undefined);
+    return {
+      id: guid ?? c.id ?? name,
+      guidId: guid,
+      name,
+      slug: toSlug(name),
+      description: c.description,
+      coursesCount: toNumber(c.coursesCount, 0),
+      examCount: toNumber(c.subjectsCount, 0),
+      order: parseOrder(c.order ?? c.position ?? c.rank ?? c.sortOrder ?? c.displayOrder, i + 1),
+    };
+  });
+
+  mapped.sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  return mapped;
 }
 
 const examSubjectsCache = new Map<string, { subjects: BackendSubject[]; timestamp: number }>();
@@ -196,7 +230,7 @@ export async function GET(
 ) {
   const { examType } = await params;
 
-  if (!VALID_EXAM_TYPES.includes(examType as any)) {
+  if (!(VALID_EXAM_TYPES as readonly string[]).includes(examType)) {
     return NextResponse.json(
       {
         error: `Unknown exam type '${examType}'. Valid types: ${VALID_EXAM_TYPES.join(

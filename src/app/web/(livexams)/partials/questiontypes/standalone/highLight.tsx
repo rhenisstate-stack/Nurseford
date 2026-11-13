@@ -7,7 +7,6 @@ import type {
   StrataSessionQuestionOption,
 } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionToolbar } from "../../components/QuestionToolbar";
-import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
 
 interface Props {
@@ -41,7 +40,10 @@ export const HighLightQuestion = ({
   const m = (mode ?? "").toLowerCase().trim();
   const showFeedback = m === "review" || m === "tutor";
 
-  const passage = q.questionContents?.[0]?.title ?? "";
+  // Passage lives in the content tagged "HighLightData" (case-based questions also carry "CaseBasedData" entries first)
+  const passage =
+    q.questionContents?.find((c) => c.prerequisites === "HighLightData")?.title ??
+    ((q.type ?? "").toLowerCase().startsWith("casebased") ? "" : q.questionContents?.[0]?.title ?? "");
 
   // marker label ("1","2","3"...) -> matching questionOption
   const optionByLabel = new Map<string, StrataSessionQuestionOption>();
@@ -165,13 +167,21 @@ export const HighLightQuestion = ({
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
-      <QuestionPromptHeader
-        questionNumber={questionNumber}
-        questionText={q.questionText}
-        metaQuestionText={q.metaQuestionText}
-        hideQuestionHeader={hideQuestionHeader}
-      />
-{/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
+      {!hideQuestionHeader && (
+        <div className="flex items-center gap-3">
+          <div className="shrink-0 py-1 px-2 rounded
+            bg-gradient-to-br from-indigo-800 to-blue-600 text-white
+            flex items-center justify-center text-xs md:text-sm font-bold shadow-md">
+            {questionNumber}
+          </div>
+          <div
+            className="flex-1 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: q.questionText ?? "" }}
+          />
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
       {!hideQuestionHeader &&
         q.metaQuestionText &&

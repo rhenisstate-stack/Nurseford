@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { assessmentService } from "@/lib/services/nexus/strata/assessmentService";
+import {
+  isAllowedNursingResult,
+  type NursingProgramScope,
+} from "@/lib/utils/exams/nursingProgramScope";
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
 // EXAM RESULTS + PER-USER 
@@ -205,11 +209,13 @@ export const useRelativeStrataAssessmentResults = ({
   perPage = 20,
   sortColumn = null,
   sortDirection = "asc",
+  programScope = "all",
 }: {
   page?: number | string;
   perPage?: number | string;
   sortColumn?: keyof StrataExamResultItem | null;
   sortDirection?: "asc" | "desc";
+  programScope?: NursingProgramScope;
 } = {}) => {
   const [examresults, setExams] = useState<StrataExamResultItem[]>([]);
   const [filteredExamResults, setFilteredExams] = useState<StrataExamResultItem[]>([]);
@@ -280,7 +286,7 @@ export const useRelativeStrataAssessmentResults = ({
         const dataObj: ResultsListData = Array.isArray(rawData) ? {} : rawData;
         const topLevel = (result ?? {}) as unknown as ResultsListData;
 
-        const items: StrataExamResultItem[] = Array.isArray(rawData)
+        const rawItems: StrataExamResultItem[] = Array.isArray(rawData)
           ? rawData
           : [
               dataObj.results,
@@ -291,19 +297,26 @@ export const useRelativeStrataAssessmentResults = ({
               topLevel.items,
             ].find((candidate): candidate is StrataExamResultItem[] => Array.isArray(candidate)) ?? [];
 
-        const totalItems =
+        const items = rawItems.filter((item) =>
+          isAllowedNursingResult(item, programScope)
+        );
+
+        const rawTotal =
           dataObj.totalResults ??
           dataObj.TotalResults ??
           dataObj.skewTotal ??
           dataObj.total ??
           topLevel.totalResults ??
-          items.length;
+          rawItems.length;
 
-        const totalPages =
-          dataObj.totalPages ??
-          dataObj.TotalPages ??
-          dataObj.skewTotalPages ??
-          1;
+        const allOnSinglePage = cleanPage === 1 && rawItems.length < cleanPerPage;
+        const totalItems = allOnSinglePage ? items.length : rawTotal;
+        const totalPages = allOnSinglePage
+          ? 1
+          : dataObj.totalPages ??
+            dataObj.TotalPages ??
+            dataObj.skewTotalPages ??
+            1;
 
         setExams(items);
         setFilteredExams(items);
@@ -321,7 +334,7 @@ export const useRelativeStrataAssessmentResults = ({
     };
 
     fetchExams();
-  }, [examResultSearch, cleanPage, cleanPerPage, sortColumn, sortDirection, refreshKey]);
+  }, [examResultSearch, cleanPage, cleanPerPage, sortColumn, sortDirection, programScope, refreshKey]);
 
   // Pass Exams when search changes [ Frontend is just to display !]
   useEffect(() => {

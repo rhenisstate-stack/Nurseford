@@ -22,7 +22,7 @@ export const HESI_A2_SHOP_DOCS: StudyDoc[] = [
   { id: "anatomy-physiology", title: "HESI-A2 - Anatomy & Physiology", price: 49, formats: ["pdf", "word"] },
 ];
 
-export const RHENIS_SHOP_DOCS: StudyDoc[] = [
+export const NURSEFORD_SHOP_DOCS: StudyDoc[] = [
   { id: "lpn-exit", title: "LPN Exit Exams", price: 49, formats: ["pdf", "word"] },
   { id: "rn-exit", title: "RN Exit Exams", price: 49, formats: ["pdf", "word"] },
   { id: "ati-teas-7", title: "TEAS 7 Prep", price: 49, formats: ["pdf", "word"] },
@@ -30,3 +30,5 @@ export const RHENIS_SHOP_DOCS: StudyDoc[] = [
   { id: "ged", title: "GED", price: 49, formats: ["pdf", "word"] },
   { id: "cna", title: "CNA", price: 49, formats: ["pdf", "word"] },
 ];
+
+export const RHENIS_SHOP_DOCS = NURSEFORD_SHOP_DOCS;

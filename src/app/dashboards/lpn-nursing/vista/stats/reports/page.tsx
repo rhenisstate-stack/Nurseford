@@ -39,13 +39,14 @@ export default function ReportsStatsPage() {
   const [sortColumn, setSortColumn] = useState<ReportColumn | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  // ⚠️ ASSUMPTION: parentIdentifier="" fetches across all parents for this panel.
+  // Scale reports fetch strictly to LPN Nursing & LPN Exit Exam programs.
   const { filteredExams, examSearch, setExamSearch, skewTotal } = useNominalStrataExams({
     parentIdentifier: "",
     page: currentPage,
     perPage,
     sortColumn: (sortColumn as keyof StrataItem) ?? null,
     sortDirection,
+    programScope: "lpn-nursing",
   });
 
   const handleSort = (column: ReportColumn) => {

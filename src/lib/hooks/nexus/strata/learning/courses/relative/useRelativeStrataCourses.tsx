@@ -2,6 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { strataService } from "@/lib/services/nexus/strata/strataService";
+import {
+  isAllowedNursingCourse,
+  type CourseScopeShape,
+} from "@/lib/utils/exams/nursingProgramScope";
 
 export interface StrataItem {
   id: number;
@@ -87,7 +91,9 @@ export const useRelativeStrataCourses = () => {
         throw new Error(result.error);
       }
 
-      const data = result?.data ?? [];
+      const data = (result?.data ?? []).filter((c) =>
+        isAllowedNursingCourse(c as unknown as CourseScopeShape, "all")
+      );
 
       setCourses(data);
       setFilteredCourses(data.slice(0, 20));

@@ -3,7 +3,6 @@
 import {
     createContext,
     useContext,
-    useEffect,
     useState,
     ReactNode,
 } from "react";
@@ -12,10 +11,8 @@ import {
 // FOOTER RIBBON CONTEXT
 // Controls StickyFooter visibility
 // Default = OPEN
-// Persisted in localStorage
+// Session-only state (in-memory)
 // ─────────────────────────────────────────────────────────────────────────────
-
-const STORAGE_KEY = "exam_footer_ribbon_open";
 
 interface FooterRibbonCtx {
     isOpen: boolean;
@@ -36,26 +33,8 @@ export function FooterRibbonProvider({
     // DEFAULT OPEN
     const [isOpen, setIsOpen] = useState(true);
 
-    useEffect(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY);
-
-            if (stored !== null) {
-                setIsOpen(stored === "true");
-            }
-        } catch {
-            // noop
-        }
-    }, []);
-
     const persist = (next: boolean) => {
         setIsOpen(next);
-
-        try {
-            localStorage.setItem(STORAGE_KEY, String(next));
-        } catch {
-            // noop
-        }
     };
 
     return (

@@ -8,12 +8,8 @@ export interface ExamOption {
 }
 
 export const EXAM_OPTIONS: ExamOption[] = [
-  { value: "ati-teas", label: "TEAS 7 PREP", segment: "ATI_TEAS" },
-  { value: "hesi-a2", label: "HESI A2 PREP", segment: "HESI_A2" },
-  { value: "nclex-rn", label: "NCLEX-RN", segment: "NCLEX_RN" },
-  { value: "nclex-pn", label: "NCLEX-PN", segment: "NCLEX_PN" },
-  { value: "rn-nursing", label: "RN Nursing", segment: "RN_NURSING" },
-  { value: "lpn-nursing", label: "LPN Nursing", segment: "LPN_NURSING" },
+  { value: "rn-nursing", label: "RN Nursing & Exit Exams", segment: "RN_NURSING" },
+  { value: "lpn-nursing", label: "LPN Nursing & Exit Exams", segment: "LPN_NURSING" },
 ];
 
 export const EXAM_OPTION_MAP: Record<string, ExamOption> = Object.fromEntries(

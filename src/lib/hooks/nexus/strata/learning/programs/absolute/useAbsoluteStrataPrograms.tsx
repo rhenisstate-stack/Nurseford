@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { strataService } from "@/lib/services/nexus/strata/strataService";
+import { isAllowedNursingProgram } from "@/lib/utils/exams/nursingProgramScope";
 
 export interface StrataItem {
   id: number;
@@ -111,9 +112,12 @@ export const useAbsoluteStrataPrograms = ({
           throw new Error(result.error);
         }
 
-        const items = result?.data?.items ?? [];
-        const totalItems = result?.data?.skewTotal ?? 0;
-        const totalPages = result?.data?.skewTotalPages ?? 1;
+        const rawItems = result?.data?.items ?? [];
+        const items = rawItems.filter((program) =>
+          isAllowedNursingProgram(program, "all")
+        );
+        const totalItems = items.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / perPage));
 
         setPrograms(items);
         setFilteredPrograms(items);

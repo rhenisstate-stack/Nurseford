@@ -77,7 +77,7 @@ export function LiveStrataExamProvider({
     status,
   });
 
-  // Synchronize exam title and in-progress metadata across storage so all dashboards and progress pages know the exam name
+  // Notify listeners when exam metadata is loaded without storing progress in browser storage
   useEffect(() => {
     if (!examSession?.exam || typeof window === "undefined") return;
     const exam = examSession.exam;
@@ -85,37 +85,8 @@ export function LiveStrataExamProvider({
     const id = exam.id;
     const title = exam.title;
     const subjectName = exam.subjectName || exam.assessmentName;
-    const courseName = exam.courseName;
-    const questionsCount = exam.questionsCount || 0;
-
-    const examPayload = JSON.stringify({
-      id,
-      guidId,
-      title,
-      assessmentName: exam.assessmentName,
-      subjectName,
-      courseName,
-      questionsCount,
-      startedAt: new Date().toISOString(),
-    });
 
     try {
-      if (guidId) {
-        localStorage.setItem(`exam_in_progress_${guidId}`, examPayload);
-        sessionStorage.setItem(`exam_in_progress_${guidId}`, examPayload);
-        if (title) {
-          localStorage.setItem(`exam_title_${guidId}`, title);
-          sessionStorage.setItem(`exam_title_${guidId}`, title);
-        }
-      }
-      if (id) {
-        localStorage.setItem(`exam_in_progress_${id}`, examPayload);
-        sessionStorage.setItem(`exam_in_progress_${id}`, examPayload);
-        if (title) {
-          localStorage.setItem(`exam_title_${id}`, title);
-          sessionStorage.setItem(`exam_title_${id}`, title);
-        }
-      }
       window.dispatchEvent(
         new CustomEvent("exam:progress:sync", {
           detail: { guidId, id, title, subjectName },

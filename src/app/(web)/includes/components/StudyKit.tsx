@@ -19,7 +19,7 @@ const tools = [
     eyebrow: "Quick Recall",
     title: "FlashCards",
     description:
-      "Short and precise study notes for RN, LPN & NCLEX — perfect for rapid review and last-minute prep.",
+      "Short and precise study notes for RN, LPN & Exit Exams — perfect for rapid review and last-minute prep.",
     ctaLabel: "Get Started",
     href: "/auth/register",
     accent: "coral" as const,
@@ -29,7 +29,7 @@ const tools = [
     eyebrow: "In-Depth Review",
     title: "Study Notes",
     description:
-      "Detailed, organized and comprehensive notes covering RN, LPN and NCLEX content for thorough exam preparation.",
+      "Detailed, organized and comprehensive notes covering RN, LPN and Exit Exam content for thorough exam preparation.",
     ctaLabel: "Start Now",
     href: "/auth/register",
     accent: "blue" as const,
@@ -42,7 +42,7 @@ export default function StudyKit() {
       <div className="mx-auto w-full max-w-[1600px] px-4 md:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="inline-block font-mono text-xs tracking-widest uppercase text-sage mb-3">
-            Rhenis Study Kit
+            Nurseford Study Kit
           </span>
           <h2 className="font-serif text-3xl md:text-4xl font-semibold text-navy tracking-tight">
             FlashCards &amp; Study Notes

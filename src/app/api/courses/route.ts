@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 import {
   getBackendBaseUrl,
 } from "@/lib/api/api/api";
@@ -34,13 +38,34 @@ interface BackendCourseItem {
   id?: number | string;
   guidId?: string;
   name?: string;
+  description?: string;
+  difficulty?: string;
+  level?: string;
+  coursesCount?: number;
+  subjectsCount?: number;
+  order?: number | string;
+  rank?: number | string;
+  position?: number | string;
+  sortOrder?: number | string;
+  displayOrder?: number | string;
 }
 
 interface BackendSubjectItem {
   id?: number | string;
   guidId?: string;
   name?: string;
+  description?: string;
+  difficulty?: string;
+  level?: string;
+  coursesCount?: number;
   unitsCount?: number;
+  examsCount?: number;
+  questionsCount?: number;
+  order?: number | string;
+  rank?: number | string;
+  position?: number | string;
+  sortOrder?: number | string;
+  displayOrder?: number | string;
 }
 
 interface BackendUnitItem {
@@ -63,8 +88,8 @@ interface CoursesCacheEntry {
   timestamp: number;
 }
 const coursesResponseCache = new Map<string, CoursesCacheEntry>();
-// 1-minute TTL to keep dashboard fast while keeping admin updates responsive
-const CACHE_TTL_MS = 60 * 1000;
+// 0ms TTL for 100% dynamic loading so admin reordering & updates reflect immediately
+const CACHE_TTL_MS = 0;
 
 function toNumber(value: unknown, fallback = 0): number {
   if (typeof value === "number") return value;
@@ -73,6 +98,15 @@ function toNumber(value: unknown, fallback = 0): number {
     return Number.isFinite(n) ? n : fallback;
   }
   return fallback;
+}
+
+function parseOrder(value: unknown, fallbackIndex: number): number {
+  if (typeof value === "number" && !isNaN(value)) return value;
+  if (typeof value === "string") {
+    const parsed = parseInt(value, 10);
+    if (!isNaN(parsed)) return parsed;
+  }
+  return 10000 + fallbackIndex;
 }
 
 // Live-only NCLEX subject cards.  No seed fallback: every field on the returned
@@ -154,14 +188,16 @@ async function fetchBackendSubjectExams(subjectId: number | string, sessionHeade
           title?: string;
           questionsCount?: number;
           difficulty?: string;
+          level?: string;
           updatedAt?: string;
           createdAt?: string;
         }>;
       };
     };
     const items = converted.data?.items ?? [];
-    if (items.length > 0 && !(globalThis as any).__loggedExamSample) {
-      (globalThis as any).__loggedExamSample = true;
+    const g = globalThis as { __loggedExamSample?: boolean };
+    if (items.length > 0 && !g.__loggedExamSample) {
+      g.__loggedExamSample = true;
       console.log("🔍 [Backend Nominal Exam Sample]:", JSON.stringify(items[0], null, 2));
     }
     const sortedItems = [...items].sort((a, b) => {
@@ -178,7 +214,7 @@ async function fetchBackendSubjectExams(subjectId: number | string, sessionHeade
       id: String(e.guidId || e.id),
       title: e.title || `Exam ${index + 1}`,
       questionCount: e.questionsCount && e.questionsCount > 0 ? e.questionsCount : 0,
-      difficulty: e.difficulty || null,
+      difficulty: e.difficulty || e.level || null,
       usedCount: 0,
       order: index + 1,
     }));
@@ -263,6 +299,47 @@ const PROGRAM_NAMES: Record<CourseExamType, RegExp> = {
 };
 
 // Subjects follow the exact natural arrangement from the backend.
+
+function normalizeDiff(val: unknown): "easy" | "medium" | "hard" | null {
+  if (val === null || val === undefined) return null;
+  const s = String(val).toLowerCase().trim();
+  if (
+    s === "easy" ||
+    s === "beginner" ||
+    s === "foundation" ||
+    s === "novice" ||
+    s === "1" ||
+    s.includes("easy") ||
+    s.includes("beginner") ||
+    s.includes("foundation")
+  ) {
+    return "easy";
+  }
+  if (
+    s === "medium" ||
+    s === "moderate" ||
+    s === "intermediate" ||
+    s === "2" ||
+    s.includes("medium") ||
+    s.includes("intermediate") ||
+    s.includes("moderate")
+  ) {
+    return "medium";
+  }
+  if (
+    s === "hard" ||
+    s === "difficult" ||
+    s === "advanced" ||
+    s === "expert" ||
+    s === "3" ||
+    s.includes("hard") ||
+    s.includes("advanced") ||
+    s.includes("difficult")
+  ) {
+    return "hard";
+  }
+  return null;
+}
 
 function computeDifficultyPercentages(
   subCategories: Array<{
@@ -375,7 +452,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         );
         subCategories = subCategories.map((sc, index) => {
           const bd = breakdowns[index];
-          if (bd && bd.total > 0) {
+          if (bd && bd.total > 0 && (bd.easy > 0 || bd.medium > 0 || bd.hard > 0)) {
             return {
               ...sc,
               questionCount: bd.total,
@@ -391,7 +468,9 @@ async function fetchBackendStandaloneSubjectsAsCourses(
       const calculatedQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
       const questionCount = calculatedQuestions;
       const examCount = subCategories.length;
-      const { easyPct, mediumPct, hardPct, easyCount, mediumCount, hardCount } = computeDifficultyPercentages(subCategories);
+      const { easyPct, mediumPct, hardPct, easyCount, mediumCount, hardCount } = computeDifficultyPercentages(
+        subCategories
+      );
 
       const card: DashboardCourse = {
         id: toNumber(s.id, i + 1),
@@ -399,6 +478,8 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         backendSubjectGuid: s.guidId,
         examType,
         title,
+        description: s.description,
+        coursesCount: toNumber(s.coursesCount, 0),
         category: "subject",
         questionCount,
         examCount,
@@ -409,13 +490,16 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         easyCount,
         mediumCount,
         hardCount,
-        order: i + 1,
+        order: parseOrder(s.order ?? s.position ?? s.rank ?? s.sortOrder ?? s.displayOrder, i + 1),
         subCategories,
       };
 
       return card;
     })
   );
+
+  // Dynamic sorting strictly by backend order/rank/position
+  subjectCards.sort((a, b) => a.order - b.order);
 
   // Fetch real clientNeed categories from backend course if present (e.g. Course 30 "Client Needs" for NCLEX-RN)
   let clientNeedCards: DashboardCourse[] = [];
@@ -443,7 +527,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
             );
             subCategories = subCategories.map((sc, index) => {
               const bd = breakdowns[index];
-              if (bd && bd.total > 0) {
+              if (bd && bd.total > 0 && (bd.easy > 0 || bd.medium > 0 || bd.hard > 0)) {
                 return {
                   ...sc,
                   questionCount: bd.total,
@@ -459,7 +543,9 @@ async function fetchBackendStandaloneSubjectsAsCourses(
           const calculatedQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
           const questionCount = calculatedQuestions;
           const examCount = subCategories.length;
-          const { easyPct, mediumPct, hardPct, easyCount, mediumCount, hardCount } = computeDifficultyPercentages(subCategories);
+          const { easyPct, mediumPct, hardPct, easyCount, mediumCount, hardCount } = computeDifficultyPercentages(
+            subCategories
+          );
 
           return {
             id: toNumber(s.id, 100 + i),
@@ -467,6 +553,8 @@ async function fetchBackendStandaloneSubjectsAsCourses(
             backendSubjectGuid: s.guidId,
             examType,
             title,
+            description: s.description,
+            coursesCount: toNumber(s.coursesCount, 0),
             category: "clientNeed" as const,
             questionCount,
             examCount,
@@ -477,11 +565,13 @@ async function fetchBackendStandaloneSubjectsAsCourses(
             easyCount,
             mediumCount,
             hardCount,
-            order: subjectCards.length + i + 1,
+            order: parseOrder(s.order ?? s.position ?? s.rank ?? s.sortOrder ?? s.displayOrder, subjectCards.length + i + 1),
             subCategories,
           };
         })
       );
+      // Dynamic sorting strictly by backend order/rank/position
+      clientNeedCards.sort((a, b) => a.order - b.order);
     }
   }
 
@@ -533,8 +623,11 @@ async function fetchBackendProgramCourseCards(
 
       return {
         id: toNumber(c.id, i + 1),
+        guidId: c.guidId,
         examType,
         title,
+        description: c.description,
+        coursesCount: toNumber(c.coursesCount ?? c.subjectsCount, 0),
         category: "subject" as const,
         questionCount: subCategories.reduce((sum, sc) => sum + sc.questionCount, 0),
         examCount: 0,
@@ -542,11 +635,13 @@ async function fetchBackendProgramCourseCards(
         easyPct: 0,
         mediumPct: 0,
         hardPct: 0,
-        order: i + 1,
+        order: parseOrder(c.order ?? c.position ?? c.rank ?? c.sortOrder ?? c.displayOrder, i + 1),
         subCategories,
       };
     })
   );
+
+  result.sort((a, b) => a.order - b.order);
 
   return result;
 }
@@ -636,6 +731,14 @@ export async function GET(req: NextRequest) {
   try {
     courses = await fetchBackendCourses(examType as CourseExamType, sessionHeaders);
     console.log(`🌿 [/api/courses] Fetched ${courses.length} courses from backend`);
+    for (const c of courses) {
+      console.log(`📊 [COURSE DIFFICULTY LOG]: "${c.title}" (${c.category}) => easy:${c.easyPct}% med:${c.mediumPct}% hard:${c.hardPct}% (easyC:${c.easyCount}, medC:${c.mediumCount}, hardC:${c.hardCount})`);
+      if (c.subCategories && c.subCategories.length > 0) {
+        for (const sc of c.subCategories.slice(0, 4)) {
+          console.log(`   └─ sub "${sc.title}": diff=${sc.difficulty}, easyC=${sc.easyCount}, medC=${sc.mediumCount}, hardC=${sc.hardCount}, qCount=${sc.questionCount}`);
+        }
+      }
+    }
   } catch (err) {
     console.error(`❌ [/api/courses] Backend fetch failed:`, err);
   }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
@@ -8,6 +9,8 @@ import {
   Activity,
   Bookmark,
   Check,
+  ChevronDown,
+  ChevronUp,
   Edit3,
   GraduationCap,
   Play,
@@ -103,7 +106,7 @@ function getSubCategoryCounts(
     if (breakdown?.easyQuestionIds && breakdown.easyQuestionIds.length > 0) {
       diffPool = breakdown.easyQuestionIds;
       targetQ = diffPool.length;
-    } else if (sc.easyCount !== undefined) {
+    } else if (sc.easyCount !== undefined && sc.easyCount > 0) {
       targetQ = sc.easyCount;
     } else if ((course.easyPct || 0) > 0) {
       targetQ = Math.round((sc.questionCount || 0) * ((course.easyPct || 0) / 100));
@@ -114,7 +117,7 @@ function getSubCategoryCounts(
     if (breakdown?.mediumQuestionIds && breakdown.mediumQuestionIds.length > 0) {
       diffPool = breakdown.mediumQuestionIds;
       targetQ = diffPool.length;
-    } else if (sc.mediumCount !== undefined) {
+    } else if (sc.mediumCount !== undefined && sc.mediumCount > 0) {
       targetQ = sc.mediumCount;
     } else if ((course.mediumPct || 0) > 0) {
       targetQ = Math.round((sc.questionCount || 0) * ((course.mediumPct || 0) / 100));
@@ -125,7 +128,7 @@ function getSubCategoryCounts(
     if (breakdown?.hardQuestionIds && breakdown.hardQuestionIds.length > 0) {
       diffPool = breakdown.hardQuestionIds;
       targetQ = diffPool.length;
-    } else if (sc.hardCount !== undefined) {
+    } else if (sc.hardCount !== undefined && sc.hardCount > 0) {
       targetQ = sc.hardCount;
     } else if ((course.hardPct || 0) > 0) {
       targetQ = Math.round((sc.questionCount || 0) * ((course.hardPct || 0) / 100));
@@ -189,6 +192,8 @@ function DomainRow({
   selectedSubs,
   onToggleSub,
   onToggleDomain,
+  showExams = false,
+  defaultExpanded,
   isExamMode = false,
   difficultyFilter = "All",
   statusFilter = "All",
@@ -200,8 +205,9 @@ function DomainRow({
 }: {
   course: DashboardCourse;
   selectedSubs: Set<string>;
-  onToggleSub: (subId: string) => void;
-  onToggleDomain: (subs: DashboardSubCategory[], courseId?: string) => void;
+  onToggleSub?: (subId: string) => void;
+  onToggleDomain: (subs: DashboardSubCategory[], course?: DashboardCourse | string) => void;
+  showExams?: boolean;
   defaultExpanded?: boolean;
   isExamMode?: boolean;
   difficultyFilter?: DifficultyFilter;
@@ -216,8 +222,25 @@ function DomainRow({
   const hasSubs = subCategories.length > 0;
   const visibleSubCategories = hasSubs ? subCategories : [];
 
-  const domainQs = hasSubs
-    ? subCategories.reduce((s, sc) => {
+  const [isExpanded, setIsExpanded] = useState(() => {
+    if (defaultExpanded !== undefined) return defaultExpanded;
+    return Boolean(showExams && hasSubs);
+  });
+
+  useEffect(() => {
+    if (defaultExpanded !== undefined) {
+      setIsExpanded(defaultExpanded);
+    } else if (showExams && hasSubs) {
+      setIsExpanded(true);
+    }
+  }, [defaultExpanded, showExams, hasSubs]);
+
+  let domainQs = 0;
+  if (difficultyFilter === "Easy") {
+    if (course.easyCount !== undefined && course.easyCount > 0) {
+      domainQs = course.easyCount;
+    } else if (hasSubs) {
+      domainQs = subCategories.reduce((s, sc) => {
         const c = getSubCategoryCounts(
           sc,
           course,
@@ -230,12 +253,97 @@ function DomainRow({
           breakdownMap?.[sc.id]
         );
         return s + c.available;
-      }, 0)
-    : course.questionCount;
+      }, 0);
+    } else if ((course.easyPct || 0) > 0) {
+      domainQs = Math.round((course.questionCount || 0) * (course.easyPct / 100));
+    }
+  } else if (difficultyFilter === "Medium") {
+    if (course.mediumCount !== undefined && course.mediumCount > 0) {
+      domainQs = course.mediumCount;
+    } else if (hasSubs) {
+      domainQs = subCategories.reduce((s, sc) => {
+        const c = getSubCategoryCounts(
+          sc,
+          course,
+          difficultyFilter,
+          statusFilter,
+          answeredExamIds,
+          bookmarkedExamIds,
+          answeredExamMap,
+          bookmarkedExamMap,
+          breakdownMap?.[sc.id]
+        );
+        return s + c.available;
+      }, 0);
+    } else if ((course.mediumPct || 0) > 0) {
+      domainQs = Math.round((course.questionCount || 0) * (course.mediumPct / 100));
+    }
+  } else if (difficultyFilter === "Hard") {
+    if (course.hardCount !== undefined && course.hardCount > 0) {
+      domainQs = course.hardCount;
+    } else if (hasSubs) {
+      domainQs = subCategories.reduce((s, sc) => {
+        const c = getSubCategoryCounts(
+          sc,
+          course,
+          difficultyFilter,
+          statusFilter,
+          answeredExamIds,
+          bookmarkedExamIds,
+          answeredExamMap,
+          bookmarkedExamMap,
+          breakdownMap?.[sc.id]
+        );
+        return s + c.available;
+      }, 0);
+    } else if ((course.hardPct || 0) > 0) {
+      domainQs = Math.round((course.questionCount || 0) * (course.hardPct / 100));
+    }
+  } else {
+    if (hasSubs) {
+      domainQs = subCategories.reduce((s, sc) => {
+        const c = getSubCategoryCounts(
+          sc,
+          course,
+          difficultyFilter,
+          statusFilter,
+          answeredExamIds,
+          bookmarkedExamIds,
+          answeredExamMap,
+          bookmarkedExamMap,
+          breakdownMap?.[sc.id]
+        );
+        return s + c.available;
+      }, 0);
+    } else {
+      domainQs = course.questionCount;
+    }
+  }
+
   const domainExams = course.examCount ?? (hasSubs ? subCategories.length : 0);
 
-  if (hasSubs && subCategories.length === 0) {
-    return null;
+  // Calculate used and total for this domain
+  let domainUsed = 0;
+  let domainTotal = 0;
+  if (hasSubs) {
+    for (const sc of subCategories) {
+      const c = getSubCategoryCounts(
+        sc,
+        course,
+        difficultyFilter,
+        statusFilter,
+        answeredExamIds,
+        bookmarkedExamIds,
+        answeredExamMap,
+        bookmarkedExamMap,
+        breakdownMap?.[sc.id]
+      );
+      domainUsed += c.usedInScope;
+      domainTotal += c.totalInScope;
+    }
+  } else {
+    domainTotal = domainQs;
+    domainUsed = course.doneCount || 0;
   }
 
   // Filter selectable subcategories that have available questions matching the active filter
@@ -269,66 +377,84 @@ function DomainRow({
     (course.backendSubjectGuid ? selectedSubs.has(String(course.backendSubjectGuid)) : false);
 
   const isDomainSelected = hasSubs
-    ? (selectableSubs.length > 0 && selectedCount === selectableSubs.length)
+    ? (selectableSubs.length > 0 && selectedCount === selectableSubs.length) || isDomainIdSelected
     : isDomainIdSelected;
 
   const someSelected = hasSubs
     ? (selectableSubs.length > 0 ? selectedCount > 0 && !isDomainSelected : false)
     : false;
 
-  return (
-    <div className={`border rounded-2xl overflow-hidden transition-all shadow-2xs ${
-      isDomainSelected
-        ? "border-teal-500 ring-2 ring-teal-500/30 bg-teal-500/10 dark:bg-teal-950/20"
-        : "border-[#CBDCF8] dark:border-white/10 bg-white/70 dark:bg-black/20"
-    }`}>
-      {/* Domain Header (Clean non-collapsible banner: no chevrons, all exams display cleanly) */}
-      <div
-        onClick={() => {
-          if (!hasSubs) {
-            onToggleDomain(selectableSubs, String(course.guidId || course.id));
-          }
-        }}
-        className={`flex items-center gap-2.5 px-3.5 py-2.5 transition-all select-none ${
-          !hasSubs ? "cursor-pointer" : ""
-        } ${
-          isDomainSelected
-            ? "bg-teal-500/15 border-b border-teal-500/30 text-slate-900 dark:text-white"
-            : "bg-slate-100/90 dark:bg-white/5 border-b border-[#CBDCF8]/60 dark:border-white/5 hover:bg-slate-200/50 dark:hover:bg-white/10"
-        }`}
-      >
-        {/* Domain Select Checkbox */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleDomain(selectableSubs, String(course.guidId || course.id));
+  const isSelectable = domainQs > 0 || domainTotal > 0;
+
+  // Expanded Mode: Spread out underlying exams in a compact 3-column subgrid
+  if (isExpanded && hasSubs) {
+    return (
+      <div className={`col-span-1 sm:col-span-2 lg:col-span-3 col-span-full border rounded-2xl overflow-hidden transition-all shadow-2xs ${
+        isDomainSelected
+          ? "border-teal-500 ring-2 ring-teal-500/30 bg-teal-500/10 dark:bg-teal-950/20"
+          : "border-[#CBDCF8] dark:border-white/10 bg-white/70 dark:bg-black/20"
+      }`}>
+        {/* Domain Header */}
+        <div
+          onClick={() => {
+            onToggleDomain(selectableSubs, course);
           }}
-          className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-all cursor-pointer ${
+          className={`flex items-center gap-2.5 px-3.5 py-2.5 transition-all select-none cursor-pointer ${
             isDomainSelected
-              ? "bg-[#2FD9C4] border-[#2FD9C4] text-[#08111F]"
-              : someSelected
-                ? "bg-[#2FD9C4]/40 border-[#2FD9C4]"
-                : "border-slate-400 dark:border-white/30 hover:border-slate-600 dark:hover:border-white/50"
+              ? "bg-teal-500/15 border-b border-teal-500/30 text-slate-900 dark:text-white"
+              : "bg-slate-100/90 dark:bg-white/5 border-b border-[#CBDCF8]/60 dark:border-white/5 hover:bg-slate-200/50 dark:hover:bg-white/10"
           }`}
         >
-          {isDomainSelected && <Check className="w-2.5 h-2.5 stroke-[3] text-[#08111F]" />}
-          {someSelected && !isDomainSelected && <div className="w-1.5 h-0.5 bg-[#08111F]" />}
-        </button>
+          {/* Domain Select Checkbox */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleDomain(selectableSubs, course);
+            }}
+            className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-all cursor-pointer ${
+              isDomainSelected
+                ? "bg-[#2FD9C4] border-[#2FD9C4] text-[#08111F]"
+                : someSelected
+                  ? "bg-[#2FD9C4]/40 border-[#2FD9C4]"
+                  : "border-slate-400 dark:border-white/30 hover:border-slate-600 dark:hover:border-white/50"
+            }`}
+          >
+            {isDomainSelected && <Check className="w-2.5 h-2.5 stroke-[3] text-[#08111F]" />}
+            {someSelected && !isDomainSelected && <div className="w-1.5 h-0.5 bg-[#08111F]" />}
+          </button>
 
-        {/* Domain Title */}
-        <span className={`text-sm md:text-base truncate flex-1 min-w-0 ${isDomainSelected ? "font-bold text-slate-900 dark:text-white" : "font-semibold text-slate-900 dark:text-[var(--text-color)]"}`}>
-          {course.title}
-        </span>
+          {/* Domain Title & Stats */}
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm md:text-base font-bold truncate leading-tight ${isDomainSelected ? "text-slate-900 dark:text-white" : "text-slate-900 dark:text-[var(--text-color)]"}`}>
+              {course.title}
+            </p>
+            <p className="text-xs text-slate-500 dark:text-[var(--text-color)]/60 font-medium truncate mt-0.5">
+              {domainExams > 0 ? `${domainExams} ${domainExams === 1 ? "Exam" : "Exams"} · ` : ""}Used {domainUsed} of {domainTotal}
+            </p>
+          </div>
 
-        {/* Question / Exam Count Badge */}
-        <span className="text-xs md:text-[13px] font-bold px-2.5 py-0.5 rounded-full bg-[#0891b2]/10 dark:bg-[#2FD9C4]/15 text-[#0891b2] dark:text-[#2FD9C4] shrink-0 border border-[#0891b2]/20 dark:border-[#2FD9C4]/30">
-          {isExamMode ? `${domainExams} ${domainExams === 1 ? "Exam" : "Exams"}` : `${domainQs} Qs`}
-        </span>
-      </div>
+          {/* Question / Exam Count Badge */}
+          <span className="text-xs md:text-[13px] font-bold px-2.5 py-0.5 rounded-full bg-[#0891b2]/10 dark:bg-[#2FD9C4]/15 text-[#0891b2] dark:text-[#2FD9C4] shrink-0 border border-[#0891b2]/20 dark:border-[#2FD9C4]/30">
+            {isExamMode ? `${domainExams} ${domainExams === 1 ? "Exam" : "Exams"}` : `${domainQs} Qs`}
+          </span>
 
-      {/* Sub-Categories / Exams Grid: Compact cards in 3 columns so all 14 exams display cleanly in window without scrollbar */}
-      {visibleSubCategories.length > 0 && (
+          {/* Dropdown Chevron Toggle Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(false);
+            }}
+            className="p-1 -mr-1 rounded-lg hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
+            title="Collapse exams"
+            aria-label="Collapse exams"
+          >
+            <ChevronUp className="w-4 h-4 text-slate-700 dark:text-white/80" />
+          </button>
+        </div>
+
+        {/* Sub-Categories / Exams Grid: Compact cards in 3 columns */}
         <div className="p-2 sm:p-2.5 bg-slate-50/40 dark:bg-black/10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {visibleSubCategories.map((sc) => {
             const isSelected = isScSelected(sc);
@@ -349,7 +475,7 @@ function DomainRow({
               <div
                 key={sc.id}
                 onClick={() => {
-                  if (isSelectable) onToggleSub(String(sc.id));
+                  if (isSelectable && onToggleSub) onToggleSub(String(sc.id));
                 }}
                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer select-none ${
                   !isSelectable
@@ -365,7 +491,7 @@ function DomainRow({
                   disabled={!isSelectable}
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (isSelectable) onToggleSub(String(sc.id));
+                    if (isSelectable && onToggleSub) onToggleSub(String(sc.id));
                   }}
                   className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-all ${
                     !isSelectable
@@ -407,6 +533,83 @@ function DomainRow({
             );
           })}
         </div>
+      </div>
+    );
+  }
+
+  // Collapsed Subject Card
+  return (
+    <div
+      onClick={() => {
+        if (isSelectable) {
+          onToggleDomain(selectableSubs, course);
+        }
+      }}
+      className={`col-span-1 flex items-center gap-3 px-3.5 py-2.5 rounded-2xl border transition-all cursor-pointer select-none shadow-2xs ${
+        !isSelectable
+          ? "opacity-50 cursor-not-allowed bg-slate-100/50 dark:bg-white/5 border-slate-200/50 dark:border-white/5"
+          : isDomainSelected
+            ? "border-teal-500 ring-2 ring-teal-500/30 bg-teal-500/15 dark:bg-teal-950/30 text-slate-900 dark:text-white"
+            : "border-[#CBDCF8] dark:border-white/10 bg-white/80 dark:bg-black/20 hover:bg-slate-100/80 dark:hover:bg-white/10"
+      }`}
+    >
+      {/* Domain Select Checkbox */}
+      <button
+        type="button"
+        disabled={!isSelectable}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (isSelectable) {
+            onToggleDomain(selectableSubs, course);
+          }
+        }}
+        className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-all ${
+          !isSelectable
+            ? "border-slate-300 dark:border-white/10 cursor-not-allowed"
+            : isDomainSelected
+              ? "bg-[#2FD9C4] border-[#2FD9C4] text-[#08111F] ring-1 ring-[#08111F]/20 cursor-pointer"
+              : someSelected
+                ? "bg-[#2FD9C4]/40 border-[#2FD9C4] cursor-pointer"
+                : "border-slate-400 dark:border-white/30 hover:border-slate-600 dark:hover:border-white/50 cursor-pointer"
+        }`}
+      >
+        {isDomainSelected && <Check className="w-2.5 h-2.5 stroke-[3] text-[#08111F]" />}
+        {someSelected && !isDomainSelected && <div className="w-1.5 h-0.5 bg-[#08111F]" />}
+      </button>
+
+      {/* Domain Title & Stats */}
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm sm:text-base font-bold truncate leading-tight ${isDomainSelected ? "text-slate-900 dark:text-white" : "text-slate-900 dark:text-[var(--text-color)]"}`}>
+          {course.title}
+        </p>
+        <p className="text-xs text-slate-500 dark:text-[var(--text-color)]/60 font-medium truncate mt-0.5">
+          {domainExams > 0 ? `${domainExams} ${domainExams === 1 ? "Exam" : "Exams"} · ` : ""}Used {domainUsed} of {domainTotal}
+        </p>
+      </div>
+
+      {/* Question / Exam Count Badge */}
+      <span className={`text-xs sm:text-[13px] font-bold px-2.5 py-1 rounded-full shrink-0 border ${
+        isDomainSelected
+          ? "bg-[#0891b2]/20 dark:bg-[#2FD9C4]/20 text-[#0891b2] dark:text-[#2FD9C4] border-[#0891b2]/30 dark:border-[#2FD9C4]/40"
+          : "bg-[#0891b2]/10 dark:bg-[#2FD9C4]/15 text-[#0891b2] dark:text-[#2FD9C4] border-[#0891b2]/20 dark:border-[#2FD9C4]/30"
+      }`}>
+        {isExamMode ? `${domainExams} ${domainExams === 1 ? "Exam" : "Exams"}` : `${domainQs} Qs`}
+      </span>
+
+      {/* Dropdown Chevron Toggle Button */}
+      {hasSubs && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(true);
+          }}
+          className="p-1 -mr-1 rounded-lg hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-600 dark:text-white/70 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
+          title="Show exams"
+          aria-label="Show exams"
+        >
+          <ChevronDown className="w-4 h-4 text-slate-700 dark:text-white/80" />
+        </button>
       )}
     </div>
   );
@@ -450,7 +653,6 @@ export function NclexCustomTestPopup({
     const categoryCourses = filtered.filter((c) => c.category === activeCategory);
     const resolvedList = categoryCourses.length > 0 ? categoryCourses : filtered;
 
-    // Only show subjects to select: do not spread to show sub-categories/exams
     return resolvedList.map((c) => ({
       ...c,
       questionCount:
@@ -458,7 +660,7 @@ export function NclexCustomTestPopup({
         (c.subCategories && c.subCategories.length > 0
           ? c.subCategories.reduce((s, sc) => s + (sc.questionCount || 0), 0)
           : 0),
-      subCategories: [],
+      subCategories: c.subCategories || [],
     }));
   }, [customCourses, rawCourses, activeCategory]);
 
@@ -471,11 +673,7 @@ export function NclexCustomTestPopup({
     const idsToFetch: string[] = [];
     for (const c of courses) {
       for (const sc of c.subCategories || []) {
-        if (
-          sc.id &&
-          !breakdownMap[sc.id] &&
-          (sc.easyCount === undefined || sc.mediumCount === undefined)
-        ) {
+        if (sc.id && !breakdownMap[sc.id]) {
           idsToFetch.push(sc.id);
         }
       }
@@ -536,15 +734,6 @@ export function NclexCustomTestPopup({
         }
       }
     }
-    if (typeof window !== "undefined") {
-      try {
-        const stored = JSON.parse(localStorage.getItem("rhenis_answered_questions") || "[]");
-        for (const id of stored) {
-          set.add(id);
-          set.add(String(id));
-        }
-      } catch {}
-    }
     return set;
   }, [allResults]);
 
@@ -560,15 +749,6 @@ export function NclexCustomTestPopup({
           }
         }
       }
-    }
-    if (typeof window !== "undefined") {
-      try {
-        const stored = JSON.parse(localStorage.getItem("rhenis_bookmarked_questions") || "[]");
-        for (const id of stored) {
-          set.add(id);
-          set.add(String(id));
-        }
-      } catch {}
     }
     return set;
   }, [allResults]);
@@ -586,27 +766,19 @@ export function NclexCustomTestPopup({
         if (count > (map.get(k) || 0)) map.set(k, count);
       }
     }
-    if (typeof window !== "undefined") {
-      for (const c of courses) {
-        for (const sc of c.subCategories || []) {
-          const scId = String(sc.id);
-          try {
-            const stored = JSON.parse(localStorage.getItem(`rhenis_exam_answered_${scId}`) || "[]");
-            if (stored.length > (map.get(scId) || 0)) {
-              map.set(scId, stored.length);
+    for (const c of courses) {
+      for (const sc of c.subCategories || []) {
+        const scId = String(sc.id);
+        const bd = breakdownMap[sc.id];
+        if (bd?.questionIds && bd.questionIds.length > 0 && answeredQuestionIds) {
+          let answeredCount = 0;
+          for (const qid of bd.questionIds) {
+            if (answeredQuestionIds.has(qid) || answeredQuestionIds.has(String(qid))) {
+              answeredCount++;
             }
-          } catch {}
-          const bd = breakdownMap[sc.id];
-          if (bd?.questionIds && bd.questionIds.length > 0 && answeredQuestionIds) {
-            let answeredCount = 0;
-            for (const qid of bd.questionIds) {
-              if (answeredQuestionIds.has(qid) || answeredQuestionIds.has(String(qid))) {
-                answeredCount++;
-              }
-            }
-            if (answeredCount > (map.get(scId) || 0)) {
-              map.set(scId, answeredCount);
-            }
+          }
+          if (answeredCount > (map.get(scId) || 0)) {
+            map.set(scId, answeredCount);
           }
         }
       }
@@ -632,27 +804,19 @@ export function NclexCustomTestPopup({
         if (count > (map.get(k) || 0)) map.set(k, count);
       }
     }
-    if (typeof window !== "undefined") {
-      for (const c of courses) {
-        for (const sc of c.subCategories || []) {
-          const scId = String(sc.id);
-          try {
-            const stored = JSON.parse(localStorage.getItem(`rhenis_exam_bookmarked_${scId}`) || "[]");
-            if (stored.length > (map.get(scId) || 0)) {
-              map.set(scId, stored.length);
+    for (const c of courses) {
+      for (const sc of c.subCategories || []) {
+        const scId = String(sc.id);
+        const bd = breakdownMap[sc.id];
+        if (bd?.questionIds && bd.questionIds.length > 0 && bookmarkedQuestionIds) {
+          let bmkCount = 0;
+          for (const qid of bd.questionIds) {
+            if (bookmarkedQuestionIds.has(qid) || bookmarkedQuestionIds.has(String(qid))) {
+              bmkCount++;
             }
-          } catch {}
-          const bd = breakdownMap[sc.id];
-          if (bd?.questionIds && bd.questionIds.length > 0 && bookmarkedQuestionIds) {
-            let bmkCount = 0;
-            for (const qid of bd.questionIds) {
-              if (bookmarkedQuestionIds.has(qid) || bookmarkedQuestionIds.has(String(qid))) {
-                bmkCount++;
-              }
-            }
-            if (bmkCount > (map.get(scId) || 0)) {
-              map.set(scId, bmkCount);
-            }
+          }
+          if (bmkCount > (map.get(scId) || 0)) {
+            map.set(scId, bmkCount);
           }
         }
       }
@@ -661,6 +825,7 @@ export function NclexCustomTestPopup({
   }, [allResults, courses, breakdownMap, bookmarkedQuestionIds]);
 
   const isExamMode = builderMode === "exams";
+  const isSingleSubject = Boolean(customCourses && customCourses.length === 1);
 
   const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set());
   const [questionCount, setQuestionCount] = useState(50);
@@ -708,6 +873,7 @@ export function NclexCustomTestPopup({
     bookmarkedQuestionIds,
     answeredExamMap,
     bookmarkedExamMap,
+    breakdownMap,
   ]);
 
   // ─── Selection Logic ──────────────────────────────────────────────────────────────────
@@ -735,17 +901,41 @@ export function NclexCustomTestPopup({
   }, []);
 
   const toggleDomain = useCallback(
-    (subs: DashboardSubCategory[], courseId?: string) => {
+    (subs: DashboardSubCategory[], course?: DashboardCourse | string) => {
       setSelectedSubs((prev) => {
         const next = new Set(prev);
-        if (subs && subs.length > 0) {
-          const allSelected = subs.every(
-            (sc) => next.has(String(sc.id)) || ((sc as any).guidId && next.has(String((sc as any).guidId))) || next.has(sc.id as any)
+        const hasSubs = subs && subs.length > 0;
+
+        // Collect all possible keys for this course/domain
+        const domainKeys: string[] = [];
+        if (course) {
+          if (typeof course === "string") {
+            domainKeys.push(course);
+          } else {
+            if (course.id !== undefined && course.id !== null) domainKeys.push(String(course.id));
+            if (course.guidId) domainKeys.push(String(course.guidId));
+            if ((course as any).backendSubjectGuid) domainKeys.push(String((course as any).backendSubjectGuid));
+          }
+        }
+
+        const isDomainChecked = domainKeys.some((k) => next.has(k));
+        const allSubsSelected =
+          hasSubs &&
+          subs.every(
+            (sc) =>
+              next.has(String(sc.id)) ||
+              ((sc as any).guidId && next.has(String((sc as any).guidId))) ||
+              next.has(sc.id as any)
           );
+
+        // If all subs are selected OR the domain is checked, clicking should DESELECT everything for this domain
+        const shouldDeselect = hasSubs ? allSubsSelected || isDomainChecked : isDomainChecked;
+
+        if (hasSubs) {
           for (const sc of subs) {
             const key = String(sc.id);
             const guidKey = (sc as any).guidId ? String((sc as any).guidId) : null;
-            if (allSelected) {
+            if (shouldDeselect) {
               next.delete(key);
               next.delete(sc.id as any);
               if (guidKey) next.delete(guidKey);
@@ -753,11 +943,16 @@ export function NclexCustomTestPopup({
               next.add(key);
             }
           }
-        } else if (courseId) {
-          const key = String(courseId);
-          if (next.has(key)) next.delete(key);
-          else next.add(key);
         }
+
+        for (const dk of domainKeys) {
+          if (shouldDeselect) {
+            next.delete(dk);
+          } else {
+            next.add(dk);
+          }
+        }
+
         return next;
       });
     },
@@ -790,9 +985,18 @@ export function NclexCustomTestPopup({
   const selectedQs = useMemo(() => {
     let total = 0;
     for (const c of activeCourses) {
+      const isDomainChecked =
+        selectedSubs.has(String(c.id)) ||
+        selectedSubs.has(c.id as any) ||
+        (c.guidId ? selectedSubs.has(String(c.guidId)) : false) ||
+        (c.backendSubjectGuid ? selectedSubs.has(String(c.backendSubjectGuid)) : false);
+
       if (c.subCategories && c.subCategories.length > 0) {
+        let subsTotal = 0;
+        let anySubSelected = false;
         for (const sc of c.subCategories) {
-          if (isIdSelected(sc.id, (sc as any).guidId)) {
+          if (isIdSelected(sc.id, (sc as any).guidId) || isDomainChecked) {
+            anySubSelected = true;
             const counts = getSubCategoryCounts(
               sc,
               c,
@@ -804,11 +1008,14 @@ export function NclexCustomTestPopup({
               bookmarkedExamMap,
               breakdownMap[sc.id]
             );
-            total += counts.available;
+            subsTotal += counts.available;
           }
         }
+        if (anySubSelected) {
+          total += subsTotal;
+        }
       } else {
-        if (isIdSelected(c.id, c.guidId || (c as any).backendSubjectGuid)) {
+        if (isDomainChecked || isIdSelected(c.id, c.guidId || (c as any).backendSubjectGuid)) {
           total += c.questionCount || 0;
         }
       }
@@ -816,6 +1023,7 @@ export function NclexCustomTestPopup({
     return total;
   }, [
     activeCourses,
+    selectedSubs,
     isIdSelected,
     difficultyFilter,
     statusFilter,
@@ -829,7 +1037,10 @@ export function NclexCustomTestPopup({
   const totalSelectedExams = useMemo(() => {
     let total = 0;
     for (const c of activeCourses) {
-      const match = selectedSubs.has(String(c.id)) || (c.guidId && selectedSubs.has(c.guidId));
+      const match =
+        selectedSubs.has(String(c.id)) ||
+        (c.guidId && selectedSubs.has(c.guidId)) ||
+        ((c as any).backendSubjectGuid && selectedSubs.has((c as any).backendSubjectGuid));
       if (match) {
         total += c.examCount || (c.subCategories.length > 0 ? c.subCategories.length : 0);
       }
@@ -859,20 +1070,31 @@ export function NclexCustomTestPopup({
   const activeSelectedCount = useMemo(() => {
     let count = 0;
     for (const c of activeCourses) {
+      const isDomainChecked =
+        selectedSubs.has(String(c.id)) ||
+        selectedSubs.has(c.id as any) ||
+        (c.guidId ? selectedSubs.has(String(c.guidId)) : false) ||
+        (c.backendSubjectGuid ? selectedSubs.has(String(c.backendSubjectGuid)) : false);
+
       if (c.subCategories && c.subCategories.length > 0) {
+        let anySub = false;
         for (const sc of c.subCategories) {
-          if (isIdSelected(sc.id, (sc as any).guidId)) {
+          if (isIdSelected(sc.id, (sc as any).guidId) || isDomainChecked) {
+            anySub = true;
             count++;
           }
         }
+        if (!anySub && isDomainChecked) {
+          count++;
+        }
       } else {
-        if (isIdSelected(c.id, c.guidId || (c as any).backendSubjectGuid)) {
+        if (isDomainChecked || isIdSelected(c.id, c.guidId || (c as any).backendSubjectGuid)) {
           count++;
         }
       }
     }
     return count;
-  }, [activeCourses, isIdSelected]);
+  }, [activeCourses, selectedSubs, isIdSelected]);
 
   const hasSelection = activeSelectedCount > 0;
 
@@ -882,14 +1104,20 @@ export function NclexCustomTestPopup({
     let examCount = 0;
 
     for (const c of activeCourses) {
+      const isDomainChecked =
+        selectedSubs.has(String(c.id)) ||
+        selectedSubs.has(c.id as any) ||
+        (c.guidId ? selectedSubs.has(String(c.guidId)) : false) ||
+        (c.backendSubjectGuid ? selectedSubs.has(String(c.backendSubjectGuid)) : false);
+
       if (c.subCategories && c.subCategories.length > 0) {
         const selectedSubsInDomain = c.subCategories.filter((sc) => isIdSelected(sc.id, (sc as any).guidId));
-        examCount += selectedSubsInDomain.length;
-        if (selectedSubsInDomain.length > 0) {
+        if (selectedSubsInDomain.length > 0 || isDomainChecked) {
           domainCount += 1;
+          examCount += selectedSubsInDomain.length > 0 ? selectedSubsInDomain.length : c.subCategories.length;
         }
       } else {
-        if (isIdSelected(c.id, c.guidId || (c as any).backendSubjectGuid)) {
+        if (isDomainChecked || isIdSelected(c.id, c.guidId || (c as any).backendSubjectGuid)) {
           domainCount += 1;
           examCount += c.examCount || 1;
         }
@@ -897,14 +1125,50 @@ export function NclexCustomTestPopup({
     }
 
     return { selectedDomainsCount: domainCount, selectedExamsCount: examCount };
-  }, [activeCourses, isIdSelected]);
+  }, [activeCourses, selectedSubs, isIdSelected]);
 
 
   // ─── Start ────────────────────────────────────────────────────────────────────────────
   const handleStart = () => {
     if (!hasSelection) return;
-    const subIds = Array.from(selectedSubs).join(",");
-    const firstId = Array.from(selectedSubs)[0];
+
+    // Resolve any selected domains/subjects/exams to their underlying real exam IDs
+    const resolvedExamIds: string[] = [];
+    for (const c of activeCourses) {
+      const isDomainSelected =
+        selectedSubs.has(String(c.id)) ||
+        selectedSubs.has(c.id as any) ||
+        (c.guidId ? selectedSubs.has(String(c.guidId)) : false) ||
+        (c.backendSubjectGuid ? selectedSubs.has(String(c.backendSubjectGuid)) : false);
+
+      if (c.subCategories && c.subCategories.length > 0) {
+        if (isDomainSelected) {
+          const domainExamIds = c.subCategories.map((ue) => String((ue as any).guidId || ue.id));
+          for (const eid of domainExamIds) {
+            if (!resolvedExamIds.includes(eid)) resolvedExamIds.push(eid);
+          }
+        } else {
+          for (const sc of c.subCategories) {
+            if (isIdSelected(sc.id, (sc as any).guidId)) {
+              const eid = String((sc as any).guidId || sc.id);
+              if (!resolvedExamIds.includes(eid)) resolvedExamIds.push(eid);
+            }
+          }
+        }
+      } else {
+        if (isDomainSelected || isIdSelected(c.id, c.guidId || (c as any).backendSubjectGuid)) {
+          const cid = String(c.guidId || (c as any).backendSubjectGuid || c.id);
+          if (!resolvedExamIds.includes(cid)) resolvedExamIds.push(cid);
+        }
+      }
+    }
+
+    const subIds = resolvedExamIds.length > 0
+      ? resolvedExamIds.join(",")
+      : Array.from(selectedSubs).join(",");
+    const firstId = resolvedExamIds.length > 0
+      ? resolvedExamIds[0]
+      : Array.from(selectedSubs)[0];
 
     // Helper to strip redundant program suffix when joining domain titles
     const cleanDomain = (raw: string) =>
@@ -1153,25 +1417,36 @@ export function NclexCustomTestPopup({
         </div>
 
         {/* ─── Scrollable Domain List ─── */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 space-y-2 min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 min-h-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {visibleCourses.length === 0 ? null : (
-            visibleCourses.map((course) => (
-              <DomainRow
-                key={course.id}
-                course={course}
-                selectedSubs={selectedSubs}
-                onToggleSub={toggleSub}
-                onToggleDomain={toggleDomain}
-                isExamMode={isExamMode}
-                difficultyFilter={difficultyFilter}
-                statusFilter={statusFilter}
-                answeredExamIds={answeredQuestionIds}
-                bookmarkedExamIds={bookmarkedQuestionIds}
-                answeredExamMap={answeredExamMap}
-                bookmarkedExamMap={bookmarkedExamMap}
-                breakdownMap={breakdownMap}
-              />
-            ))
+            <div
+              className={
+                isSingleSubject
+                  ? "space-y-2"
+                  : visibleCourses.length <= 4
+                    ? "grid grid-cols-1 sm:grid-cols-2 gap-2"
+                    : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
+              }
+            >
+              {visibleCourses.map((course) => (
+                <DomainRow
+                  key={course.id}
+                  course={course}
+                  selectedSubs={selectedSubs}
+                  onToggleSub={toggleSub}
+                  onToggleDomain={toggleDomain}
+                  showExams={isSingleSubject}
+                  isExamMode={isExamMode}
+                  difficultyFilter={difficultyFilter}
+                  statusFilter={statusFilter}
+                  answeredExamIds={answeredQuestionIds}
+                  bookmarkedExamIds={bookmarkedQuestionIds}
+                  answeredExamMap={answeredExamMap}
+                  bookmarkedExamMap={bookmarkedExamMap}
+                  breakdownMap={breakdownMap}
+                />
+              ))}
+            </div>
           )}
         </div>
 
@@ -1522,26 +1797,26 @@ export function NclexStudyByCourseBanner({
           </p>
         </div>
 
-        <div className="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-[#0e1726] border border-white/10 p-1 shrink-0 shadow-2xs">
+        <div className="w-full sm:w-auto sm:min-w-[460px] md:min-w-[520px] lg:min-w-[580px] inline-flex items-center justify-between rounded-xl bg-[#0e1726] border border-white/10 p-1 shrink-0 shadow-2xs">
           <button
             onClick={() => onViewChange("subject")}
-            className={`flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 ${
+            className={`flex-1 min-w-[220px] sm:min-w-[280px] md:min-w-[340px] px-5 sm:px-7 md:px-9 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-200 ${
               view === "subject"
                 ? "border border-blue-500/80 text-blue-300 bg-blue-500/20 shadow-2xs"
                 : "border border-transparent text-slate-300 hover:text-white hover:bg-white/5"
             }`}
           >
-            <span>📖</span> Study Course / Subject
+            <span className="text-sm">📖</span> Study Course / Subject
           </button>
           <button
             onClick={() => onViewChange("clientNeed")}
-            className={`flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 ${
+            className={`px-4 sm:px-6 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-all duration-200 shrink-0 ${
               view === "clientNeed"
                 ? "border border-blue-500/80 text-blue-300 bg-blue-500/20 shadow-2xs"
                 : "border border-transparent text-slate-300 hover:text-white hover:bg-white/5"
             }`}
           >
-            <span>👥</span> Client Need
+            <span className="text-sm">👥</span> Client Need
           </button>
         </div>
       </div>
@@ -1619,6 +1894,12 @@ const CourseCard = ({
         </button>
       </div>
 
+      {course.description && (
+        <p className="text-[11px] sm:text-xs text-slate-500 dark:text-[var(--text-color)]/60 line-clamp-1 leading-normal">
+          {course.description}
+        </p>
+      )}
+
       <div className="flex flex-wrap items-center gap-1 text-[10.5px] sm:text-[11.5px] font-semibold">
         <span className="px-1.5 py-[1px] rounded bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-[#0891b2] dark:text-[#2FD9C4]">
           {course.questionCount.toLocaleString()} Qs
@@ -1626,6 +1907,11 @@ const CourseCard = ({
         <span className="px-1.5 py-[1px] rounded bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-[#ea580c] dark:text-[#FF9A80]">
           {course.examCount} Exams
         </span>
+        {course.coursesCount !== undefined && course.coursesCount > 0 && (
+          <span className="px-1.5 py-[1px] rounded bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-purple-700 dark:text-purple-300">
+            {course.coursesCount} Courses
+          </span>
+        )}
         <span className="px-1.5 py-[1px] rounded bg-white/80 dark:bg-[var(--text-color)]/5 border border-[#CBDCF8] dark:border-transparent text-slate-700 dark:text-[var(--text-color)]/60">
           {course.doneCount} Done
         </span>
@@ -1695,14 +1981,6 @@ export function NclexCourseGrid({
           totalAnswered += r.totalAnswered ?? r.answers?.length ?? 0;
         }
       }
-      if (typeof window !== "undefined") {
-        for (const sc of c.subCategories || []) {
-          try {
-            const stored = JSON.parse(localStorage.getItem(`rhenis_exam_answered_${sc.id}`) || "[]");
-            totalAnswered = Math.max(totalAnswered, stored.length);
-          } catch {}
-        }
-      }
       map.set(c.id, totalAnswered);
     }
     return map;
@@ -1714,10 +1992,12 @@ export function NclexCourseGrid({
         ? courses.filter((c) => c.category === "clientNeed")
         : courses.filter((c) => c.category !== "clientNeed");
 
-    return list.map((c) => ({
-      ...c,
-      doneCount: courseDoneCounts.get(c.id) ?? c.doneCount,
-    }));
+    return list
+      .map((c) => ({
+        ...c,
+        doneCount: courseDoneCounts.get(c.id) ?? c.doneCount,
+      }))
+      .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
   }, [courses, view, courseDoneCounts]);
 
   if (status === "loading") {

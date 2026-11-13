@@ -9,9 +9,55 @@ import {
   UserSubscriptionPackage,
 } from "./dicreate/useDiscreteDominionSubscriptionPackages";
 
+// Guid fields on an exam that a package's terminal cluster can point at
+type ExamGuidField =
+  | "programGuidId"
+  | "courseGuidId"
+  | "subjectGuidId"
+  | "unitGuidId"
+  | "lessonGuidId"
+  | "topicGuidId"
+  | "conceptGuidId"
+  | "factGuidId";
+
+// The only exam fields this hook reads (StrataSessionExam satisfies this)
+export interface ExamAccessShape {
+  programGuidId?: string | null;
+  courseGuidId?: string | null;
+  subjectGuidId?: string | null;
+  unitGuidId?: string | null;
+  lessonGuidId?: string | null;
+  topicGuidId?: string | null;
+  conceptGuidId?: string | null;
+  factGuidId?: string | null;
+  programName?: string | null;
+  courseName?: string | null;
+  subjectName?: string | null;
+  title?: string | null;
+}
+
+// The only fields read from a payment-provider subscription record
+// (Stripe, Paystack, PayPal, Flutterwave, IntaSend, Apple, M-Pesa)
+interface ProviderSubscriptionLike {
+  status?: string | null;
+  subscriptionStatus?: string | null;
+  providerStatus?: string | null;
+  validFrom?: string | null;
+  currentPeriodStart?: string | null;
+  startTime?: string | null;
+  purchaseDate?: string | null;
+  validUntil?: string | null;
+  currentPeriodEnd?: string | null;
+  nextPaymentDate?: string | null;
+  nextDueDate?: string | null;
+  nextBillingTime?: string | null;
+  nextBillingOrPeriodEnd?: string | null;
+  expiresDate?: string | null;
+}
+
 // Maps a package's terminalClusterTableName to the matching guid field on the exam
 // (Matches origin-repo/main access control hierarchy exactly)
-export const TABLE_TO_EXAM_GUID_FIELD: Record<string, string> = {
+export const TABLE_TO_EXAM_GUID_FIELD: Record<string, ExamGuidField> = {
   strata_programs: "programGuidId",
   programs: "programGuidId",
   program: "programGuidId",
@@ -169,7 +215,7 @@ export function packageMatchesExamSlug(
  */
 export function packageMatchesExam(
   pkg: DiscreteSubscriptionPackage,
-  exam: any | null | undefined,
+  exam: ExamAccessShape | null | undefined,
   programSlug: string = ""
 ): boolean {
   if (isUniversalPackage(pkg)) return true;
@@ -277,7 +323,7 @@ export function subscriptionIsActive(sub: UserSubscriptionPackage): boolean {
 /**
  * Checks if a specific Provider subscription record (Stripe, Paystack, etc.) is active and unexpired
  */
-function isProviderSubscriptionActive(pSub: any): boolean {
+function isProviderSubscriptionActive(pSub: ProviderSubscriptionLike | null | undefined): boolean {
   if (!pSub) return false;
   const status = String(
     pSub.status || pSub.subscriptionStatus || pSub.providerStatus || ""
@@ -375,7 +421,7 @@ export function useExamSubscriptionAccess({
   user: SystemUser | null;
   isGuest: boolean;
   programSlug: string;
-  exam?: any | null;
+  exam?: ExamAccessShape | null;
 }) {
   const {
     filteredSubscriptionPackages,
@@ -396,59 +442,7 @@ export function useExamSubscriptionAccess({
     [programSlug]
   );
 
-  // Persistent Cross-Tab & Cross-Slug Cache (LocalStorage + SessionStorage)
-  // Guarantees that once a user is verified as subscribed, network hiccups,
-  // tab changes, or backend JWT expirations NEVER demote them to 30% paywall.
-  const persistentCached = useMemo(() => {
-    if (typeof window === "undefined" || !username || isGuest) return false;
-    try {
-      const slugLower = (programSlug || "").toLowerCase().trim();
-      const directKey = `user_sub_${username}_${slugLower}`;
-      const familyKey = `user_sub_family_${username}_${programFamily}`;
-      const universalKey = `user_sub_universal_${username}`;
 
-      // 1. Check universal platform access
-      if (
-        localStorage.getItem(universalKey) === "true" ||
-        sessionStorage.getItem(universalKey) === "true"
-      ) {
-        return true;
-      }
-
-      // 2. Check direct program slug (e.g. rn-nursing)
-      if (
-        localStorage.getItem(directKey) === "true" ||
-        sessionStorage.getItem(directKey) === "true"
-      ) {
-        return true;
-      }
-
-      // 3. Check program family (e.g. rn covers both nclex-rn and rn-nursing; pn covers nclex-pn and lpn-nursing)
-      if (
-        localStorage.getItem(familyKey) === "true" ||
-        sessionStorage.getItem(familyKey) === "true"
-      ) {
-        return true;
-      }
-
-      // 4. Check active subscription detail with unexpired validUntil
-      const detailRaw =
-        localStorage.getItem(`user_sub_detail_${username}_${programFamily}`) ||
-        sessionStorage.getItem(`user_sub_detail_${username}_${programFamily}`);
-      if (detailRaw) {
-        try {
-          const parsed = JSON.parse(detailRaw);
-          if (parsed?.subscribed && !isDateExpired(parsed.validUntil)) {
-            return true;
-          }
-        } catch {}
-      }
-
-      return false;
-    } catch {
-      return false;
-    }
-  }, [username, programSlug, programFamily, isGuest]);
 
   const hasDatabaseSubscription = useMemo(() => {
     // If explicitly marked as guest or packages haven't loaded yet, not subscribed
@@ -470,71 +464,8 @@ export function useExamSubscriptionAccess({
 
   const isSubscribed = useMemo(() => {
     if (isGuest) return false;
-    // 1. If database currently confirms active subscription, user is subscribed
-    if (hasDatabaseSubscription) return true;
-    // 2. If user already proved active subscription in this browser, keep access permanently active!
-    // Background token expiration or empty API responses will NEVER revoke access mid-exam!
-    if (persistentCached) return true;
-    // 3. Otherwise, if query is still loading and we have no prior proof, wait
-    if (subscriptionsLoading) return false;
-    return false;
-  }, [isGuest, hasDatabaseSubscription, persistentCached, subscriptionsLoading]);
-
-  // Cache confirmed subscriptions in both localStorage (permanent) and sessionStorage
-  useEffect(() => {
-    if (typeof window === "undefined" || !username || isGuest) return;
-
-    if (hasDatabaseSubscription) {
-      try {
-        const slugLower = (programSlug || "").toLowerCase().trim();
-        const directKey = `user_sub_${username}_${slugLower}`;
-        const familyKey = `user_sub_family_${username}_${programFamily}`;
-        const universalKey = `user_sub_universal_${username}`;
-
-        localStorage.setItem(directKey, "true");
-        localStorage.setItem(familyKey, "true");
-        sessionStorage.setItem(directKey, "true");
-        sessionStorage.setItem(familyKey, "true");
-
-        // Cache any active subscription expiry date
-        const activeSub = filteredSubscriptionPackages
-          ?.filter(
-            (pkg) =>
-              isPackageActiveAndPaid(pkg) &&
-              packageMatchesExam(pkg, exam, programSlug)
-          )
-          ?.flatMap((pkg) => pkg.userSubscriptions || [])
-          ?.find(subscriptionIsActive);
-
-        if (activeSub) {
-          localStorage.setItem(
-            `user_sub_detail_${username}_${programFamily}`,
-            JSON.stringify({
-              subscribed: true,
-              validUntil: activeSub.validUntil || null,
-              cachedAt: Date.now(),
-            })
-          );
-        }
-
-        const hasUniversal = filteredSubscriptionPackages?.some(
-          (pkg) => isUniversalPackage(pkg) && isPackageActiveAndPaid(pkg)
-        );
-        if (hasUniversal) {
-          localStorage.setItem(universalKey, "true");
-          sessionStorage.setItem(universalKey, "true");
-        }
-      } catch {}
-    }
-  }, [
-    hasDatabaseSubscription,
-    filteredSubscriptionPackages,
-    username,
-    programSlug,
-    programFamily,
-    exam,
-    isGuest,
-  ]);
+    return hasDatabaseSubscription;
+  }, [isGuest, hasDatabaseSubscription]);
 
   // Automatically revalidate subscriptions when user returns to tab (e.g. after subscribing in another tab)
   useEffect(() => {
@@ -571,7 +502,7 @@ export function useExamSubscriptionAccess({
             if (k && (k.startsWith("user_sub_") || k.startsWith("skew_blanc_"))) sessionKeys.push(k);
           }
           sessionKeys.forEach((k) => sessionStorage.removeItem(k));
-        } catch {}
+        } catch { }
       }
     };
 

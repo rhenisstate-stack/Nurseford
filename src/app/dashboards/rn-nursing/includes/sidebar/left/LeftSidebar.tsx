@@ -234,9 +234,9 @@ export default function LeftSidebar() {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("leftSidebarActiveDropdown_rn");
       if (saved) return saved;
-      if (window.location.pathname.includes("/exit-")) return "RN Exit Exams";
+      if (window.location.pathname.includes("/exit-")) return "RN Programs";
     }
-    return "RN Nursing Exams";
+    return "RN Programs";
   });
 
   const [openSubDropdowns, setOpenSubDropdowns] = useState<Record<string, boolean>>(() => {
@@ -360,7 +360,7 @@ export default function LeftSidebar() {
           transition-all duration-300 ease-in-out
           shadow-md border-r border-[var(--text-color)]/10`}
         style={{
-          backgroundColor: "var(--leftSidebar-bg, #000f25)",
+          backgroundColor: "var(--leftSidebar-bg, #171C27)",
           color: "var(--text-color)",
         }}
       >
@@ -392,7 +392,7 @@ export default function LeftSidebar() {
         )}
       </div>
 
-      <nav className={`flex-1 overflow-y-auto space-y-1 p-2 left-sidebar-scroll ${isMobile ? "text-xs" : ""}`}>
+      <nav className={`flex-1 overflow-y-auto space-y-1 p-2 pb-16 left-sidebar-scroll ${isMobile ? "text-xs" : ""}`}>
 
         <Link href={`/dashboards/${DASHBOARD_NAME}`} onClick={handleItemClick}>
           <div
@@ -434,48 +434,56 @@ export default function LeftSidebar() {
           </div>
         </Link>
 
-        {/* ─── RN Nursing Exams ─── */}
+        {/* ─── RN Programs ─── */}
         <AccordionGroup
-          id="RN Nursing Exams"
+          id="RN Programs"
           icon={ClipboardCheck}
-          label="RN Nursing Exams"
-          isActive={activeDropdown === "RN Nursing Exams"}
+          label="RN Programs"
+          isActive={activeDropdown === "RN Programs"}
           onToggle={toggleDropdown}
           {...sharedNavProps}
         >
-          <NavItem href="/dashboards/rn-nursing/exams/ati-exams-rn/34" label="ATI Exam (RN)" {...sharedNavProps} />
-          <NavItem href="/dashboards/rn-nursing/exams/examplify-practice-rn/35" label="EXAMPLIFY Practice" {...sharedNavProps} />
-          <NavItem href="/dashboards/rn-nursing/exams/exit-ati-exams-rn/36" label="EXIT ATI Exam-RN" {...sharedNavProps} />
-          <NavItem href="/dashboards/rn-nursing/exams/exit-hesi-exams-rn/37" label="EXIT HESI Exam-RN" {...sharedNavProps} />
-          <NavItem href="/dashboards/rn-nursing/exams/general-exams/38" label="GENERAL Exams" {...sharedNavProps} />
-          <NavItem href="/dashboards/rn-nursing/exams/hesi-exams-rn/39" label="HESI EXAM (RN)" {...sharedNavProps} />
+          {/* RN Nursing Exams Sub-Accordion */}
+          <SubAccordionGroup
+            id="rn-nursing-exams"
+            label="RN Nursing Exams"
+            isOpen={!!openSubDropdowns["rn-nursing-exams"]}
+            onToggle={toggleSubDropdown}
+            isOpened={isOpened}
+            isMobile={isMobile}
+          >
+            <NavItem href="/dashboards/rn-nursing" label="All RN Nursing Exams" exact {...sharedNavProps} />
+            <NavItem href="/dashboards/rn-nursing/exams/ati-exams-rn/34" label="ATI Exam (RN)" {...sharedNavProps} />
+            <NavItem href="/dashboards/rn-nursing/exams/examplify-practice-rn/35" label="EXAMPLIFY Practice" {...sharedNavProps} />
+            <NavItem href="/dashboards/rn-nursing/exams/exit-ati-exams-rn/36" label="EXIT ATI Exam-RN" {...sharedNavProps} />
+            <NavItem href="/dashboards/rn-nursing/exams/exit-hesi-exams-rn/37" label="EXIT HESI Exam-RN" {...sharedNavProps} />
+            <NavItem href="/dashboards/rn-nursing/exams/general-exams/38" label="GENERAL Exams" {...sharedNavProps} />
+            <NavItem href="/dashboards/rn-nursing/exams/hesi-exams-rn/39" label="HESI EXAM (RN)" {...sharedNavProps} />
+          </SubAccordionGroup>
+
+          {/* RN Exit Exams Sub-Accordion */}
+          <SubAccordionGroup
+            id="rn-exit-exams"
+            label="RN Exit Exams"
+            isOpen={!!openSubDropdowns["rn-exit-exams"]}
+            onToggle={toggleSubDropdown}
+            isOpened={isOpened}
+            isMobile={isMobile}
+          >
+            <NavItem href="/dashboards/rn-nursing/exams/exit-ati-exams-rn/36" label="EXIT ATI Exams-RN" {...sharedNavProps} />
+            <NavItem href="/dashboards/rn-nursing/exams/exit-hesi-exams-rn/37" label="EXIT HESI Exams-RN" {...sharedNavProps} />
+          </SubAccordionGroup>
         </AccordionGroup>
 
-        {/* ─── RN Exit Exams ─── */}
+        {/* ─── LPN Programs ─── */}
         <AccordionGroup
-          id="RN Exit Exams"
-          icon={ClipboardCheck}
-          label="RN Exit Exams"
-          isActive={activeDropdown === "RN Exit Exams"}
-          onToggle={toggleDropdown}
-          {...sharedNavProps}
-        >
-          <NavItem href="/dashboards/rn-nursing/exams/exit-ati-exams-rn/36" label="EXIT ATI Exams-RN" {...sharedNavProps} />
-          <NavItem href="/dashboards/rn-nursing/exams/exit-hesi-exams-rn/37" label="EXIT HESI Exams-RN" {...sharedNavProps} />
-        </AccordionGroup>
-
-        {/* ─── Explore More Products ─── */}
-        <AccordionGroup
-          id="Explore More Products"
+          id="LPN Programs"
           icon={Sparkles}
-          label="Explore More Products"
-          isActive={activeDropdown === "Explore More Products"}
+          label="LPN Programs"
+          isActive={activeDropdown === "LPN Programs"}
           onToggle={toggleDropdown}
           {...sharedNavProps}
         >
-          <NavItem href="/dashboards/ati-teas" label="TEAS 7 Prep" {...sharedNavProps} />
-          <NavItem href="/dashboards/hesi-a2" label="HESI A2" {...sharedNavProps} />
-
           {/* LPN Nursing Exams Sub-Accordion */}
           <SubAccordionGroup
             id="explore-lpn-nursing"
@@ -504,9 +512,6 @@ export default function LeftSidebar() {
             <NavItem href="/dashboards/lpn-nursing/exams/exit-ati-exams-lpn/23" label="EXIT ATI Exams-LPN" {...sharedNavProps} />
             <NavItem href="/dashboards/lpn-nursing/exams/exit-hesi-exams-lpn/24" label="EXIT HESI Exams-LPN" {...sharedNavProps} />
           </SubAccordionGroup>
-
-          <NavItem href="/dashboards/nclex-rn" label="NCLEX-RN" {...sharedNavProps} />
-          <NavItem href="/dashboards/nclex-pn" label="NCLEX-PN" {...sharedNavProps} />
         </AccordionGroup>
 
         <div className="my-2 border-t border-[var(--text-color)]/10" />

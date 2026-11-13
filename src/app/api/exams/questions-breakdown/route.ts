@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 import {
   fetchExamBreakdown,
   fetchMultipleExamsBreakdown,
-  getGuestPreviewToken,
   type ExamQuestionBreakdown,
 } from "@/lib/services/exams/questionsBreakdownService";
 
@@ -28,14 +31,6 @@ async function resolveSessionHeaders(req: NextRequest): Promise<Record<string, s
           castoLine = rawLine;
         }
       }
-    }
-  }
-
-  if (!castoLine) {
-    const guestAuth = await getGuestPreviewToken();
-    if (guestAuth) {
-      castoLine = guestAuth.line;
-      if (!castoBadge) castoBadge = guestAuth.badge;
     }
   }
 
@@ -71,7 +66,7 @@ export async function GET(req: NextRequest) {
 
   for (const b of breakdowns) {
     examsRecord[b.examId] = b;
-    const anyB = b as any;
+    const anyB = b as ExamQuestionBreakdown & { guidId?: string; numericId?: number | string };
     if (anyB.guidId) examsRecord[anyB.guidId] = b;
     if (anyB.numericId) examsRecord[String(anyB.numericId)] = b;
     totalAll += b.total;

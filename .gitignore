@@ -42,6 +42,11 @@ nul
 # vercel
 .vercel
 
+# .net build artifacts
+/backend/
+bin/
+obj/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

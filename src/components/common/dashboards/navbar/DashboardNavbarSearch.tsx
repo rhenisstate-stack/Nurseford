@@ -176,8 +176,8 @@ export default function DashboardNavbarSearch() {
         if (Array.isArray(data?.results)) {
           setDynamicResults(data.results);
         }
-      } catch (err: any) {
-        if (err?.name !== "AbortError") {
+      } catch (err: unknown) {
+        if (!(err instanceof DOMException && err.name === "AbortError")) {
           console.warn("[DashboardNavbarSearch] Dynamic search error:", err);
         }
       } finally {
@@ -218,15 +218,6 @@ export default function DashboardNavbarSearch() {
   const handleSelect = (entry: SearchEntry) => {
     setIsOpen(false);
     setQuery("");
-
-    // If selecting an exam, pre-store title in session storage for live exam player
-    if (entry.category === "Exam" && entry.id) {
-      const cleanId = entry.id.replace(/^exam-/, "");
-      try {
-        localStorage.setItem(`exam_title_${cleanId}`, entry.title);
-        sessionStorage.setItem(`exam_title_${cleanId}`, entry.title);
-      } catch {}
-    }
 
     router.push(entry.href);
   };

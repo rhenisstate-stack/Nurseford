@@ -1,4 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 import {
   toSlug,
   VALID_EXAM_TYPES,
@@ -8,7 +12,6 @@ import type { DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
 import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
-import { getGuestPreviewToken } from "@/lib/services/exams/questionsBreakdownService";
 import {
   COURSE_ID_ALIASES,
 } from "@/lib/data/php-exam-counts";
@@ -27,7 +30,15 @@ const EXAM_SEGMENTS: Record<string, string> = {
   "certification": "CERTIFICATION",
 };
 
-function extractExamQuestionCount(e: any): number {
+function toNumber(val: unknown, fallback = 0): number {
+  if (typeof val === "number" && !isNaN(val)) return val;
+  const parsed = Number(val);
+  return !isNaN(parsed) ? parsed : fallback;
+}
+
+type LooseRecord = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+function extractExamQuestionCount(e: LooseRecord): number {
   if (typeof e.questionsCount === "number" && e.questionsCount > 0) return e.questionsCount;
   if (typeof e.questionCount === "number" && e.questionCount > 0) return e.questionCount;
   if (typeof e.totalQuestions === "number" && e.totalQuestions > 0) return e.totalQuestions;
@@ -39,7 +50,7 @@ function extractExamQuestionCount(e: any): number {
       const parsed = typeof resField === "string" ? JSON.parse(resField) : resField;
       const count = Number(parsed?.question_count ?? parsed?.questionCount ?? parsed?.QuestionCount ?? 0);
       if (count > 0) return count;
-    } catch {}
+    } catch { }
   }
   const tqField = e.targetQuestions || e.TargetQuestions;
   if (tqField) {
@@ -47,7 +58,7 @@ function extractExamQuestionCount(e: any): number {
       const parsed = typeof tqField === "string" ? JSON.parse(tqField) : tqField;
       if (typeof parsed?.total === "number" && parsed.total > 0) return parsed.total;
       if (Array.isArray(parsed?.ids) && parsed.ids.length > 0) return parsed.ids.length;
-    } catch {}
+    } catch { }
   }
   return 0;
 }
@@ -61,8 +72,23 @@ interface BackendSubjectItem {
   name?: string;
   description?: string;
   segment?: string;
+  coursesCount?: number;
   unitsCount?: number;
   examsCount?: number;
+  order?: number | string;
+  rank?: number | string;
+  position?: number | string;
+  sortOrder?: number | string;
+  displayOrder?: number | string;
+}
+
+function parseOrder(value: unknown, fallbackIndex: number): number {
+  if (typeof value === "number" && !isNaN(value)) return value;
+  if (typeof value === "string") {
+    const parsed = parseInt(value, 10);
+    if (!isNaN(parsed)) return parsed;
+  }
+  return 10000 + fallbackIndex;
 }
 
 interface CourseSubjectsResponseData {
@@ -81,7 +107,7 @@ export async function GET(
 ) {
   const { examType, courseId } = await params;
 
-  if (!VALID_EXAM_TYPES.includes(examType as any)) {
+  if (!(VALID_EXAM_TYPES as readonly string[]).includes(examType)) {
     return NextResponse.json(
       {
         error: `Unknown exam type '${examType}'. Valid types: ${VALID_EXAM_TYPES.join(
@@ -128,14 +154,6 @@ export async function GET(
           castoLine = rawLine;
         }
       }
-    }
-  }
-
-  if (!castoLine) {
-    const guestAuth = await getGuestPreviewToken();
-    if (guestAuth) {
-      castoLine = guestAuth.line;
-      castoBadge = guestAuth.badge;
     }
   }
 
@@ -230,8 +248,16 @@ export async function GET(
       return true;
     });
 
-    // Sort chronologically if subjects contain years (2023, 2024, 2025, 2026); otherwise preserve backend arrangement
+    // Dynamic sorting by backend order/rank/position; if explicit order is present, respect it; otherwise sort chronologically if subjects contain years
     items.sort((a, b) => {
+      const hasOrderA = (a.order !== undefined && a.order !== null) || (a.position !== undefined && a.position !== null) || (a.rank !== undefined && a.rank !== null);
+      const hasOrderB = (b.order !== undefined && b.order !== null) || (b.position !== undefined && b.position !== null) || (b.rank !== undefined && b.rank !== null);
+      if (hasOrderA || hasOrderB) {
+        const oa = parseOrder(a.order ?? a.position ?? a.rank ?? a.sortOrder ?? a.displayOrder, 0);
+        const ob = parseOrder(b.order ?? b.position ?? b.rank ?? b.sortOrder ?? b.displayOrder, 0);
+        if (oa !== ob) return oa - ob;
+      }
+
       const ya = Number(a.name?.match(/\b(202\d)\b/)?.[1] ?? 0);
       const yb = Number(b.name?.match(/\b(202\d)\b/)?.[1] ?? 0);
       if (ya && yb && ya !== yb) return ya - yb;
@@ -265,7 +291,7 @@ export async function GET(
     // Fetch true live exams and question count per subject directly from backend nominal endpoint
     const liveSubjectData = await Promise.all(
       items.map(async (c) => {
-        const subGuid = c.guidId || ((c as any).GuidId) || (typeof c.id === "string" && c.id.includes("-") ? c.id : "");
+        const subGuid = c.guidId || (c as { GuidId?: string }).GuidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : "");
         const subId = subGuid || c.id;
         if (!subId) return { examCount: 0, questionCount: 0, subCategories: [] };
         try {
@@ -273,8 +299,8 @@ export async function GET(
           const res = await fetch(nominalUrl, { headers, cache: "no-store" });
           if (res.ok) {
             const rawData = await res.json();
-            const convertedData = convertBackendKeysToCamel(rawData) as any;
-            const rawItems: any[] = convertedData?.data?.items || rawData?.data?.items || rawData?.Data?.Items || [];
+            const convertedData = convertBackendKeysToCamel(rawData) as LooseRecord;
+            const rawItems: LooseRecord[] = convertedData?.data?.items || rawData?.data?.items || rawData?.Data?.Items || [];
             const examCount = convertedData?.data?.skewTotal ?? rawData?.data?.skewTotal ?? rawItems.length;
 
             const subCategories: DashboardSubCategory[] = rawItems.map((e, index) => {
@@ -317,11 +343,15 @@ export async function GET(
         name,
         slug: toSlug(name),
         description: c.description,
+        coursesCount: toNumber(c.coursesCount, 0),
+        order: parseOrder(c.order ?? c.position ?? c.rank ?? c.sortOrder ?? c.displayOrder, i + 1),
         examCount: live.examCount,
         questionCount: live.questionCount,
         subCategories: live.subCategories,
       };
     });
+
+    subjects.sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
 
     // Return all subjects assigned to this course, with dynamic exam counts attached
     const finalSubjects = subjects.length > 0 ? subjects : [];

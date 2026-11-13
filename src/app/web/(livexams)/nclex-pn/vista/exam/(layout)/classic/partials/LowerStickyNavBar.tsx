@@ -57,19 +57,17 @@ function Modal({ open, onClose, title, children }: {
 // ─────────────────────────────────────────────────────────────────────────────
 // SCRATCH PAD
 // ─────────────────────────────────────────────────────────────────────────────
-function ScratchPad() {
-    const STORAGE_KEY = "exam_scratchpad";
-    const [notes, setNotes] = useState("");
-    const [charCount, setCharCount] = useState(0);
+let sessionScratchpadNotes = "";
+let sessionConfidenceLevel: number | null = null;
 
-    useEffect(() => {
-        try { const saved = localStorage.getItem(STORAGE_KEY); if (saved) { setNotes(saved); setCharCount(saved.length); } } catch { }
-    }, []);
+function ScratchPad() {
+    const [notes, setNotes] = useState(() => sessionScratchpadNotes);
+    const [charCount, setCharCount] = useState(() => sessionScratchpadNotes.length);
 
     const save = (val: string) => {
+        sessionScratchpadNotes = val;
         setNotes(val);
         setCharCount(val.length);
-        try { localStorage.setItem(STORAGE_KEY, val); } catch { }
     };
 
     return (
@@ -236,7 +234,7 @@ function FontModalContent() {
 // CONFIDENCE MODAL
 // ─────────────────────────────────────────────────────────────────────────────
 function ConfidenceModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-    const [level, setLevel] = useState<number | null>(null);
+    const [level, setLevel] = useState<number | null>(() => sessionConfidenceLevel);
     const levels = [
         { v: 1, label: "Guessing", desc: "You are mostly unsure", color: "bg-red-500", emoji: "🤔" },
         { v: 2, label: "Unsure", desc: "Some confidence but doubtful", color: "bg-orange-500", emoji: "😐" },
@@ -245,8 +243,8 @@ function ConfidenceModal({ open, onClose }: { open: boolean; onClose: () => void
     ];
 
     const handleSelect = (v: number) => {
+        sessionConfidenceLevel = v;
         setLevel(v);
-        try { localStorage.setItem("exam_confidence_level", String(v)); } catch { }
         setTimeout(() => onClose(), 300);
     };
 

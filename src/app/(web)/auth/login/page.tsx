@@ -16,7 +16,6 @@ import { DEFAULT_USER_ROLE } from '@/lib/constants/roles'
 import { useSearchParams } from 'next/navigation'
 import { redirectToSocialProvider } from '@/lib/services/auth/socialService'
 import { EXAM_OPTIONS, examDashboardHref } from '@/lib/constants/dashboards/examOptions'
-import { getStoredSelectedExam, setStoredSelectedExam } from '@/lib/constants/dashboards/examSelectionStorage'
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -84,10 +83,7 @@ export default function WebLoginPage() {
     })
   }
 
-  const [selectedExam, setSelectedExam] = useState<string>(() => {
-    const stored = getStoredSelectedExam()
-    return EXAM_OPTIONS.some((opt) => opt.value === stored) ? stored : ""
-  })
+  const [selectedExam, setSelectedExam] = useState<string>("")
 
   const handleRegisteredRedirect = useCallback((email: string, message: string) => {
     setForm(prev => ({ ...prev, email }));
@@ -96,7 +92,6 @@ export default function WebLoginPage() {
 
   const handleDashboardRedirect = useCallback((slug: string) => {
     setSelectedExam(slug);
-    setStoredSelectedExam(slug);
   }, []);
 
   // Check if user is already authenticated for him to avoid login again
@@ -396,9 +391,7 @@ export default function WebLoginPage() {
                   name="selectedExam"
                   value={selectedExam}
                   onChange={(e) => {
-                    const value = e.target.value
-                    setSelectedExam(value)
-                    setStoredSelectedExam(value)
+                    setSelectedExam(e.target.value)
                   }}
                   className="w-full bg-paper-dim border border-border rounded-lg px-2.5 py-1.5 text-xs text-navy focus:outline-none focus:ring-2 focus:ring-coral"
                 >

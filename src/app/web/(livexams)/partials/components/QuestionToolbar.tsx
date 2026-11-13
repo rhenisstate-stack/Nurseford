@@ -568,45 +568,6 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
     const handleBookmark = useCallback(async () => {
         const next = !bookmarked;
         setBookmarked(next);
-        if (typeof window !== "undefined") {
-            try {
-                const stored = new Set<string | number>(JSON.parse(localStorage.getItem("rhenis_bookmarked_questions") || "[]"));
-                const qIds = [q.id, q.guidId].filter(Boolean);
-                if (next) {
-                    for (const qid of qIds) {
-                        stored.add(qid);
-                        stored.add(String(qid));
-                    }
-                } else {
-                    for (const qid of qIds) {
-                        stored.delete(qid);
-                        stored.delete(String(qid));
-                        if (typeof qid === "number") stored.delete(qid);
-                        else if (!isNaN(Number(qid))) stored.delete(Number(qid));
-                    }
-                }
-                localStorage.setItem("rhenis_bookmarked_questions", JSON.stringify(Array.from(stored)));
-
-                const examKeys = [examId, examGuidId].filter(Boolean);
-                for (const ek of examKeys) {
-                    const examStored = new Set<string | number>(JSON.parse(localStorage.getItem(`rhenis_exam_bookmarked_${ek}`) || "[]"));
-                    if (next) {
-                        for (const qid of qIds) {
-                            examStored.add(qid);
-                            examStored.add(String(qid));
-                        }
-                    } else {
-                        for (const qid of qIds) {
-                            examStored.delete(qid);
-                            examStored.delete(String(qid));
-                            if (typeof qid === "number") examStored.delete(qid);
-                            else if (!isNaN(Number(qid))) examStored.delete(Number(qid));
-                        }
-                    }
-                    localStorage.setItem(`rhenis_exam_bookmarked_${ek}`, JSON.stringify(Array.from(examStored)));
-                }
-            } catch {}
-        }
         await submitTool("ActionQuestionBookmark", {
             examId, examGuidId, sectionId, sectionGuidId,
             questionId: q.id, questionGuidId: q.guidId,
@@ -678,13 +639,17 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
         };
     }, [handleStar, handlePin, handleBookmark]);
 
-    // Track whether this is the final question / exam limit
+    // Track whether this is the first / last question
+    const [isFirstQuestion, setIsFirstQuestion] = useState(true);
     const [isLastQuestion, setIsLastQuestion] = useState(false);
 
     useEffect(() => {
         const onState = (e: Event) => {
             const detail = (e as CustomEvent<{ currentIndex?: number; total?: number; isLast?: boolean }>).detail;
             if (detail) {
+                if (typeof detail.currentIndex === "number") {
+                    setIsFirstQuestion(detail.currentIndex <= 0);
+                }
                 if (detail.isLast !== undefined) {
                     setIsLastQuestion(Boolean(detail.isLast));
                 } else if (typeof detail.currentIndex === "number" && typeof detail.total === "number" && detail.total > 0) {
@@ -707,13 +672,17 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
             {/* ROW: action buttons */}
             <div data-no-font-scale className="flex items-center justify-between min-h-[38px] gap-1 sm:gap-2 pt-1 w-full flex-nowrap sm:flex-wrap">
                 {/* 1. Left: Previous */}
-                <button
-                    type="button"
-                    onClick={() => window.dispatchEvent(new CustomEvent("exam:prev"))}
-                    className="order-1 px-2.5 sm:px-4 py-1.5 rounded-md border border-[#800000]/60 dark:border-rose-500/60 text-[#800000] dark:text-rose-300 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 font-semibold text-xs sm:text-sm transition flex items-center gap-1 cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
-                >
-                    ← Previous
-                </button>
+                {!isFirstQuestion ? (
+                    <button
+                        type="button"
+                        onClick={() => window.dispatchEvent(new CustomEvent("exam:prev"))}
+                        className="order-1 px-2.5 sm:px-4 py-1.5 rounded-md border border-[#800000]/60 dark:border-rose-500/60 text-[#800000] dark:text-rose-300 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 font-semibold text-xs sm:text-sm transition flex items-center gap-1 cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
+                    >
+                        ← Previous
+                    </button>
+                ) : (
+                    <div className="order-1" />
+                )}
 
                 {/* 2. Middle: Hint, Show Correct Answer, and (on sm+ only) Star, Pin, Bookmark, Flag */}
                 <div className="order-2 flex items-center justify-center gap-1 sm:gap-2 flex-nowrap sm:flex-wrap sm:mx-auto">

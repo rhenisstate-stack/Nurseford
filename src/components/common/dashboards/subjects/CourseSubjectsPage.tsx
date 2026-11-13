@@ -119,7 +119,8 @@ export function CourseSubjectsPage({
         mediumPct: matched?.mediumPct || 34,
         hardPct: matched?.hardPct || 33,
         order: index + 1,
-        subCategories: [], // Strictly subjects only — do not spread to show exams
+        subCategories: subs, // Preserve real subcategories/exams so when clicking a subject card, its exams appear in the popup
+        examList: subs, // Preserve real underlying exams for custom exam builder launch
       };
     });
   }, [subjects, panelSlug, dashboardCourses]);
@@ -128,7 +129,7 @@ export function CourseSubjectsPage({
     if (!selectedBuilderSubject) return customCoursesForBuilder;
     const match = customCoursesForBuilder.find(
       (c) => String(c.backendSubjectGuid || c.guidId || c.id) === String(selectedBuilderSubject.guidId || selectedBuilderSubject.id) ||
-             cleanSubjectStr(c.title) === cleanSubjectStr(selectedBuilderSubject.name)
+        cleanSubjectStr(c.title) === cleanSubjectStr(selectedBuilderSubject.name)
     );
     return match ? [match] : customCoursesForBuilder;
   }, [selectedBuilderSubject, customCoursesForBuilder]);
@@ -162,10 +163,12 @@ export function CourseSubjectsPage({
             setDynamicCourseName(resolvedCourseName);
           }
           const list = Array.isArray(data?.subjects) ? data.subjects : [];
-          const mapped = (list as BackendSubject[]).map((s) => ({
-            ...s,
-            slug: s.slug || toSlug(s.name),
-          }));
+          const mapped = (list as BackendSubject[])
+            .map((s) => ({
+              ...s,
+              slug: s.slug || toSlug(s.name),
+            }))
+            .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
 
           courseSubjectsClientCache.set(cacheKey, {
             subjects: mapped,
@@ -190,7 +193,7 @@ export function CourseSubjectsPage({
     return () => {
       cancelled = true;
     };
-  }, [panelSlug, courseId, cacheKey, cached?.courseName]);
+  }, [panelSlug, courseSlug, courseId, cacheKey, cached?.courseName]);
 
   const courseName =
     dynamicCourseName ||
@@ -334,10 +337,19 @@ export function CourseSubjectsPage({
                   <span className="text-xs sm:text-sm md:text-[15px] font-semibold text-slate-900 dark:text-white line-clamp-2 leading-tight">
                     {card.name}
                   </span>
-                  <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md bg-[#d1fae5] text-[#065f46] dark:bg-[#10b981]/20 dark:text-[#34d399] text-[10px] sm:text-[11px] md:text-xs font-semibold shrink-0">
-                    Exams: {card.examCount ?? 0}
-                  </span>
+                  {card.coursesCount !== undefined && card.coursesCount > 0 && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-[10px] sm:text-[11px] md:text-xs font-semibold">
+                        Courses: {card.coursesCount}
+                      </span>
+                    </div>
+                  )}
                 </div>
+                {card.description && (
+                  <p className="text-[10.5px] sm:text-xs text-slate-500 dark:text-white/60 line-clamp-1 mt-0.5">
+                    {card.description}
+                  </p>
+                )}
                 <div className="flex-1 min-h-[3px] sm:min-h-[6px]" />
                 <span className="w-full select-none inline-flex items-center justify-center gap-1 sm:gap-1.5 py-1 sm:py-1.5 md:py-1.5 rounded-md sm:rounded-lg text-xs sm:text-[13px] md:text-sm font-semibold border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 group-hover:bg-teal-500/35 dark:group-hover:bg-teal-500/40 text-teal-800 dark:text-teal-300 active:scale-[0.99] transition-all duration-200 shadow-2xs">
                   <Play className="w-3 sm:w-3.5 h-3 sm:h-3.5 fill-current" />

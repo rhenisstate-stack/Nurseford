@@ -9,6 +9,7 @@ import type {
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { isValidExamText } from "@/lib/utils/exams/cleanExamText";
 
 interface Props {
   q: StrataSessionQuestionFull;
@@ -202,7 +203,7 @@ export const OrderingItemQuestion = ({
   };
 
   return (
-    <div className="pt-1 space-y-2">
+    <div className="pt-0.5 space-y-1">
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
@@ -229,7 +230,7 @@ export const OrderingItemQuestion = ({
         Drag the items into the correct order. Item 1 is first.
       </p>
 
-      <div className="space-y-2">
+      <div className="space-y-1">
         {items.map((opt, index) => {
           const state = getState(opt, index);
           return (
@@ -242,7 +243,7 @@ export const OrderingItemQuestion = ({
               onDragOver={(e) => e.preventDefault()}
               onTouchStart={(e) => onTouchStart(index, e)}
               onTouchEnd={onTouchEnd}
-              className={`flex items-center gap-3 border rounded-md px-3 py-2 cursor-grab active:cursor-grabbing transition select-none
+              className={`flex items-center gap-3 border rounded-md px-2 py-1 cursor-grab active:cursor-grabbing transition select-none
                 ${state === "correct" ? "border-emerald-400 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-300" : ""}
                 ${state === "wrong" ? "border-red-400 bg-red-50 text-red-700 ring-1 ring-red-300" : ""}
                 ${state === "idle" ? "border-gray-200 bg-gray-50 hover:border-indigo-200 hover:bg-indigo-50" : ""}
@@ -255,8 +256,8 @@ export const OrderingItemQuestion = ({
               <GripVertical size={16} className="shrink-0 text-gray-400" />
               <span className="flex-1 text-sm">
                 {opt.answerContent || opt.option}
-                {opt.description && (
-                  <span className="ml-1 text-xs text-gray-500"> - - ({opt.description})</span>
+                {isValidExamText(opt.description) && (
+                  <span className="ml-1 text-xs text-gray-500"> - - ({opt.description.trim()})</span>
                 )}
               </span>
               {state === "correct" && <span className="text-xs font-bold text-emerald-600 shrink-0">✓</span>}

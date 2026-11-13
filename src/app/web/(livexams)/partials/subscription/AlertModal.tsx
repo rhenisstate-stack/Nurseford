@@ -1,38 +1,31 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FiX } from "react-icons/fi";
 
 // ─────────────────────────────────────────────────────────────────────────
-// LOCAL STORAGE — Subscription Alert Suppression
+// IN-MEMORY — Subscription Alert Suppression (session-only, in-memory)
 // ─────────────────────────────────────────────────────────────────────────
 
-const SUBSCRIPTION_ALERT_FOREVER_KEY = "exam_subscription_alert_dismiss_forever";
+let dismissSubscriptionAlertForever = false;
+const dismissedSubscriptionExamIds = new Set<string>();
 
 export function shouldSuppressSubscriptionAlert(examGuidId?: string | null): boolean {
     if (typeof window === "undefined") return true;
-    try {
-        if (localStorage.getItem(SUBSCRIPTION_ALERT_FOREVER_KEY) === "true") return true;
-        if (examGuidId && localStorage.getItem(`${SUBSCRIPTION_ALERT_FOREVER_KEY}_${examGuidId}`) === "true") {
-            return true;
-        }
-    } catch {
-        // localStorage unavailable (SSR / privacy mode) — fail open, show the alert
+    if (dismissSubscriptionAlertForever) return true;
+    if (examGuidId && dismissedSubscriptionExamIds.has(examGuidId)) {
+        return true;
     }
     return false;
 }
 
 export function suppressSubscriptionAlertForever(examGuidId?: string | null) {
     if (typeof window === "undefined") return;
-    try {
-        if (examGuidId) {
-            localStorage.setItem(`${SUBSCRIPTION_ALERT_FOREVER_KEY}_${examGuidId}`, "true");
-        } else {
-            localStorage.setItem(SUBSCRIPTION_ALERT_FOREVER_KEY, "true");
-        }
-    } catch {
-        // ignore
+    if (examGuidId) {
+        dismissedSubscriptionExamIds.add(examGuidId);
+    } else {
+        dismissSubscriptionAlertForever = true;
     }
 }
 
@@ -51,6 +44,7 @@ export default function SubscriptionAlertModal({
     onClose: (dontShowAgain: boolean) => void;
 }) {
     const router = useRouter();
+    const pathname = usePathname();
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
     useEffect(() => {
@@ -60,7 +54,8 @@ export default function SubscriptionAlertModal({
     if (!open) return null;
 
     const handleOpenSubscriptions = () => {
-        router.push("/dashboards/ati-teas/vista/subscriptions/items");
+        const panel = pathname?.includes("/lpn-nursing") ? "lpn-nursing" : "rn-nursing";
+        router.push(`/dashboards/${panel}/vista/subscriptions/items`);
     };
 
     return (

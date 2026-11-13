@@ -1,48 +1,20 @@
-import { Library, HeartPulse, Award, DoorOpen } from "lucide-react";
+import { HeartPulse, DoorOpen } from "lucide-react";
 import Link from "next/link";
 import FeatureCard from "./FeatureCard";
 
 const tracks = [
-  {
-    icon: Library,
-    image: "/images/cards/teas-hesi.png",
-    eyebrow: "Entrance Exams",
-    title: "TEAS 7 & HESI A2 Prep",
-    description:
-      "Get into your nursing program with focused prep for the two most common entrance exams. Covers reading, math, science, and English language & usage.",
-    tags: ["Reading", "Math", "Science", "English"],
-    accent: "coral" as const,
-    links: [
-      { label: "TEAS 7 PREP", href: "/pages/exams/ati-teas" },
-      { label: "HESI A2 PREP", href: "/pages/exams/hesi-a2" },
-    ],
-  },
   {
     icon: HeartPulse,
     image: "/images/RNLPN.png",
     eyebrow: "Nursing Core Q-Bank",
     title: "RN & LPN Practice",
     description:
-      "Thousands of NCLEX-style questions organized by specialty — med-surg, pediatrics, OB, mental health, and fundamentals — with detailed rationales for every answer.",
+      "Thousands of nursing-style questions organized by specialty — med-surg, pediatrics, OB, mental health, and fundamentals — with detailed rationales for every answer.",
     tags: ["Med-Surg", "Peds", "OB", "Mental Health"],
     accent: "teal" as const,
     links: [
-      { label: "RN Nursing", href: "/pages/exams/rn-nursing" },
-      { label: "LPN Nursing", href: "/pages/exams/lpn-nursing" },
-    ],
-  },
-  {
-    icon: Award,
-    image: "/images/cards/nclex-rn.png",
-    eyebrow: "Licensure Exams",
-    title: "NCLEX-RN & NCLEX-PN",
-    description:
-      "Adaptive question banks that mirror the real CAT format. Build test-taking stamina with timed practice exams and track your readiness score.",
-    tags: ["CAT Format", "Adaptive", "Readiness Score"],
-    accent: "blue" as const,
-    links: [
-      { label: "NCLEX-RN", href: "/pages/exams/nclex-rn" },
-      { label: "NCLEX-PN", href: "/pages/exams/nclex-pn" },
+      { label: "RN Nursing", href: "/dashboards/rn-nursing" },
+      { label: "LPN Nursing", href: "/dashboards/lpn-nursing" },
     ],
   },
   {
@@ -51,12 +23,12 @@ const tracks = [
     eyebrow: "Exit Exams",
     title: "RN & PN Exit Exam",
     description:
-      "Comprehensive review covering advanced nursing concepts with clinical application. Practice critical-thinking with real-world cases. Focused PN curriculum review with scenario-based clinical skills drills for confident licensure transition.",
-    tags: ["Comprehensive Content Review", "Critical-Thinking Scenarios", "Focused PN Curriculum", "Clinical Skills Practice", "Licensure Readiness", "Exam-Day Confidence"],
+      "Comprehensive review covering advanced nursing concepts with clinical application. Practice critical-thinking with real-world cases. Focused curriculum review with scenario-based clinical skills drills for confident transition.",
+    tags: ["Comprehensive Content Review", "Critical-Thinking Scenarios", "Focused Curriculum", "Clinical Skills Practice", "Readiness", "Exam-Day Confidence"],
     accent: "blue" as const,
     links: [
-      { label: "RN Nursing", href: "/pages/exams/rn-nursing" },
-      { label: "LPN Nursing", href: "/pages/exams/lpn-nursing" },
+      { label: "RN Exit Exams", href: "/dashboards/rn-nursing" },
+      { label: "LPN Exit Exams", href: "/dashboards/lpn-nursing" },
     ],
   },
 ];
@@ -70,15 +42,16 @@ export default function ExamTracks() {
             Exam Tracks
           </span>
           <h2 className="font-serif text-3xl md:text-4xl font-semibold text-navy tracking-tight">
-            One Platform, Every Nursing Exam
+            Targeted Practice for Every Stage
           </h2>
           <p className="mt-4 text-navy/60 leading-relaxed">
-            Whether you are preparing for your first entrance exam or studying
-            for licensure, we have a dedicated track for every stage.
+            From comprehensive nursing school Q-Banks to exit exam preparations, each
+            track includes hundreds of practice questions, timed test modes, and
+            deep-dive rationales.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {tracks.map((track) => (
             <FeatureCard
               key={track.title}
@@ -94,7 +67,7 @@ export default function ExamTracks() {
                 <div className="flex flex-wrap gap-2 mt-4">
                   {track.links.map((link) => (
                     <Link
-                      key={link.href}
+                      key={link.href + link.label}
                       href={link.href}
                       className="inline-flex items-center justify-center px-4 py-2 rounded-full text-xs font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] transition-all duration-200 shadow-2xs active:scale-[0.98] cursor-pointer"
                     >

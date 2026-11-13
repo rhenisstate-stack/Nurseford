@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { strataService } from "@/lib/services/nexus/strata/strataService";
+import { isAllowedNursingProgram } from "@/lib/utils/exams/nursingProgramScope";
 
 export interface StrataItem {
   id: number;
@@ -87,7 +88,9 @@ export const useRelativeStrataPrograms = () => {
         throw new Error(result.error);
       }
 
-      const data = result?.data ?? [];
+      const data = (result?.data ?? []).filter((program) =>
+        isAllowedNursingProgram(program, "all")
+      );
 
       setPrograms(data);
       setFilteredPrograms(data.slice(0, 20));

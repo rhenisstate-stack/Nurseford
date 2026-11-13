@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { assessmentService } from "@/lib/services/nexus/strata/assessmentService";
+import {
+  isAllowedNursingResult,
+  type NursingProgramScope,
+} from "@/lib/utils/exams/nursingProgramScope";
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
 // EXAM RESULTS + PER-USER 
@@ -189,11 +193,13 @@ export const useAbsoluteStrataAssessmentResults = ({
   perPage = 20,
   sortColumn = null,
   sortDirection = "asc",
+  programScope = "all",
 }: {
   page?: number;
   perPage?: number;
   sortColumn?: keyof StrataExamResultItem | null;
   sortDirection?: "asc" | "desc";
+  programScope?: NursingProgramScope;
 }) => {
   const [examresults, setExams] = useState<StrataExamResultItem[]>([]);
   const [filteredExamResults, setFilteredExams] = useState<StrataExamResultItem[]>([]);
@@ -246,8 +252,17 @@ export const useAbsoluteStrataAssessmentResults = ({
         // Flatten every user's results into a single array so the page can
         // separate "my attempts" from "everyone else's" locally, without a
         // second request. Each row already carries its own userId.
-        const flattened: StrataExamResultItem[] = userGroups.flatMap((u) =>
-          (u.results ?? []).map((r) => ({
+        const filteredGroups = userGroups
+          .map((u) => ({
+            ...u,
+            results: (u.results ?? []).filter((r) =>
+              isAllowedNursingResult(r, programScope)
+            ),
+          }))
+          .filter((u) => u.results.length > 0);
+
+        const flattened: StrataExamResultItem[] = filteredGroups.flatMap((u) =>
+          u.results.map((r) => ({
             ...r,
             userId: r.userId ?? u.userId,
             // Carried purely so the UI can render a masked/blurred label in the
@@ -258,8 +273,12 @@ export const useAbsoluteStrataAssessmentResults = ({
 
         setExams(flattened);
         setFilteredExams(flattened);
-        setSkewTotal(totalUsers);
-        setSkewTotalPages(totalPages);
+        setSkewTotal(
+          page === 1 && userGroups.length < perPage ? filteredGroups.length : totalUsers
+        );
+        setSkewTotalPages(
+          page === 1 && userGroups.length < perPage ? 1 : totalPages
+        );
 
       } catch (err) {
         console.error(
@@ -270,7 +289,7 @@ export const useAbsoluteStrataAssessmentResults = ({
     };
 
     fetchExams();
-  }, [examResultSearch, page, perPage, sortColumn, sortDirection]);
+  }, [examResultSearch, page, perPage, sortColumn, sortDirection, programScope]);
 
   // Pass Exams when search changes [ Frontend is just to display !]
   useEffect(() => {

@@ -4,37 +4,28 @@ import { useEffect, useState } from "react";
 import { FiX } from "react-icons/fi";
 
 // ─────────────────────────────────────────────────────────────────────────
-// LOCAL STORAGE — Auth Alert Suppression
+// IN-MEMORY — Auth Alert Suppression (session-only, in-memory)
 // ─────────────────────────────────────────────────────────────────────────
 
-const AUTH_ALERT_FOREVER_KEY = "exam_auth_alert_dismiss_forever";
-const AUTH_ALERT_COOLDOWN_KEY = "exam_auth_alert_dismiss_until";
 const AUTH_ALERT_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+let dismissAuthAlertForever = false;
+let dismissAuthAlertUntil = 0;
 
 export function shouldSuppressAuthAlert(): boolean {
     if (typeof window === "undefined") return true;
-    try {
-        if (localStorage.getItem(AUTH_ALERT_FOREVER_KEY) === "true") return true;
-        const until = localStorage.getItem(AUTH_ALERT_COOLDOWN_KEY);
-        if (until && Date.now() < parseInt(until, 10)) return true;
-    } catch {
-        // localStorage unavailable (SSR / privacy mode) — fail open, show the alert
-    }
+    if (dismissAuthAlertForever) return true;
+    if (dismissAuthAlertUntil && Date.now() < dismissAuthAlertUntil) return true;
     return false;
 }
 
 export function suppressAuthAlertTemporarily() {
     if (typeof window === "undefined") return;
-    try {
-        localStorage.setItem(AUTH_ALERT_COOLDOWN_KEY, String(Date.now() + AUTH_ALERT_COOLDOWN_MS));
-    } catch { /* ignore */ }
+    dismissAuthAlertUntil = Date.now() + AUTH_ALERT_COOLDOWN_MS;
 }
 
 export function suppressAuthAlertForever() {
     if (typeof window === "undefined") return;
-    try {
-        localStorage.setItem(AUTH_ALERT_FOREVER_KEY, "true");
-    } catch { /* ignore */ }
+    dismissAuthAlertForever = true;
 }
 
 // ─────────────────────────────────────────────────────────────────────────

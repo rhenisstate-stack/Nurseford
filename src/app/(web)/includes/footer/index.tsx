@@ -12,6 +12,7 @@ const quickLinks = [
 ];
 
 const resourceLinks = [
+  { href: '/pages/sample-questions', label: 'Sample Questions' },
   { href: '/pages/resources', label: 'Resources' },
   { href: '/pages/contact-us', label: 'Contact Us' },
   { href: '/pages/terms', label: 'Terms of Service' },
@@ -31,11 +32,11 @@ export default function Footer() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/logo/logo.webp"
-                  alt="Rhenis Nursing"
+                  alt="Nurseford"
                   className="w-7 h-7 shrink-0 object-contain"
                 />
                 <span className="font-serif text-lg font-semibold text-sage">
-                  Rhenis Nursing
+                  Nurseford
                 </span>
               </Link>
               <p className="text-sm leading-relaxed max-w-xs">
@@ -107,10 +108,10 @@ export default function Footer() {
                 </li>
                 <li>
                   <a
-                    href="mailto:support@rhenisnursing.com"
+                    href="mailto:support@nurseford.com"
                     className="hover:text-navy transition-colors break-words"
                   >
-                    support@rhenisnursing.com
+                    support@nurseford.com
                   </a>
                 </li>
               </ul>

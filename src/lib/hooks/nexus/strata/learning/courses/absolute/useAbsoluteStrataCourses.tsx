@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { strataService } from "@/lib/services/nexus/strata/strataService";
+import {
+  isAllowedNursingCourse,
+  type NursingProgramScope,
+} from "@/lib/utils/exams/nursingProgramScope";
 
 export interface StrataItem {
   id: number;
@@ -56,11 +60,13 @@ export const useAbsoluteStrataCourses = ({
   perPage = 20,
   sortColumn = null,
   sortDirection = "asc",
+  programScope = "all",
 }: {
   page?: number;
   perPage?: number;
   sortColumn?: keyof StrataItem | null;
   sortDirection?: "asc" | "desc";
+  programScope?: NursingProgramScope;
 }) => {
   const [courses, setCourses] = useState<StrataItem[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<StrataItem[]>([]);
@@ -72,15 +78,7 @@ export const useAbsoluteStrataCourses = ({
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        console.log("🚀 [useAbsoluteStrataCourses] Fetching Courses ... 🪝");
-        console.log("🧪 [Hook Params]", {
-          courseSearch,
-          page,
-          perPage,
-          sortColumn,
-          sortDirection,
-        });
-
+        const fetchPerPage = Math.max(perPage, 100);
         const result = await strataService<{
           items: StrataItem[];
           skewPage: number;
@@ -94,30 +92,31 @@ export const useAbsoluteStrataCourses = ({
           "Course",
           FETCH_TYPE,
           {
-            dynamicPage: page,
-            dynamicPerPage: perPage,
+            dynamicPage: 1,
+            dynamicPerPage: fetchPerPage,
             dynamicSearch: courseSearch || "",
             dynamicSortColumn: sortColumn,
             dynamicSortDirection: sortDirection,
           }
         );
 
-        console.log("📥 Raw result:", result);
-        console.log("📦 result.data:", result?.data);
-
         if (result?.error) {
           throw new Error(result.error);
         }
 
-        const items = result?.data?.items ?? [];
-        const totalItems = result?.data?.skewTotal ?? 0;
-        const totalPages = result?.data?.skewTotalPages ?? 1;
+        const rawItems = result?.data?.items ?? [];
+        const allowed = rawItems.filter((c) =>
+          isAllowedNursingCourse(c, programScope)
+        );
+        const totalItems = allowed.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / Math.max(1, perPage)));
+        const start = (Math.max(1, page) - 1) * Math.max(1, perPage);
+        const items = allowed.slice(start, start + Math.max(1, perPage));
 
         setCourses(items);
         setFilteredCourses(items);
         setSkewTotal(totalItems);
         setSkewTotalPages(totalPages);
-
       } catch (err) {
         console.error(
           "❌ [useAbsoluteStrataCourses] Failed to fetch Courses:",
@@ -127,7 +126,7 @@ export const useAbsoluteStrataCourses = ({
     };
 
     fetchCourses();
-  }, [courseSearch, page, perPage, sortColumn, sortDirection]);
+  }, [courseSearch, page, perPage, sortColumn, sortDirection, programScope]);
 
   // Pass Courses when search changes [ Frontend is just to display !]
   useEffect(() => {

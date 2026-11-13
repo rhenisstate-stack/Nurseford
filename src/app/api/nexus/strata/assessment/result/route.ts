@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
+
 type BackendResponseBody = Record<string, unknown> & {
   success?: boolean;
   message?: string;
@@ -98,6 +101,22 @@ async function forwardToBackend(
       body: method !== "GET" ? JSON.stringify(body) : undefined,
     });
 
+    // Graceful fallback for relative results when unauthenticated or backend fails (e.g. 500 error)
+    if (!backendResponse.ok && (fetchtype === "relative" || backendPath.includes("results/list/relative"))) {
+      console.warn(`⚠️ [${STRATA_NAME} Route] Backend failed status=${backendResponse.status}, returning empty results fallback`);
+      return NextResponse.json({
+        success: true,
+        message: "No results available",
+        data: {
+          items: [],
+          skewTotal: 0,
+          skewTotalPages: 0,
+          skewPage: 1,
+          skewPerPage: 200,
+        },
+      }, { status: 200 });
+    }
+
     const rawText = await backendResponse.text();
     let responseBody: BackendResponseBody;
     try {
@@ -122,6 +141,7 @@ async function forwardToBackend(
 }
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 
 
 
@@ -165,6 +185,7 @@ export async function GET(req: NextRequest) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 
 
 

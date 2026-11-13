@@ -101,6 +101,7 @@ export interface StrataSessionQuestionOption {
   label?: string;
   order?: string;
   explanation?: string;
+  difficulty?: string;
 }
 
 export interface StrataSessionQuestionContent {
@@ -192,6 +193,7 @@ export interface StrataSessionQuestionAction {
   status?: string;
   description?: string;
   createdAt: string;
+  submissionType?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -251,6 +253,16 @@ export interface StrataSessionQuestionFull {
   instructions?: string;
   isFeatured: boolean;
 
+  // Optional runtime flags / aliases some endpoints attach
+  isAnswered?: boolean;
+  userAnswerData?: string | null;
+  bookmarked?: boolean;
+  isBookmarked?: boolean;
+  difficultyLevel?: string | number;
+  difficulty_level?: string | number;
+  grade?: string | number;
+  difficultyLevelName?: string | number;
+
   // Partials
   questionOptions: StrataSessionQuestionOption[];
   questionContents: StrataSessionQuestionContent[];
@@ -274,6 +286,29 @@ export interface StrataSessionSection {
   status?: string;
   questions: StrataSessionQuestionFull[];
 }
+
+// Question tagged with its real exam/section while building custom exams
+type StrataTaggedQuestion = StrataSessionQuestionFull & {
+  _realExamId?: number;
+  _realExamGuidId?: string;
+  _realSectionId?: number;
+  _realSectionGuidId?: string;
+};
+
+// Shape of the Result "RelativeFetch" payload (only the parts we read)
+interface StrataResultQuestionRef {
+  questionId?: number | string;
+}
+
+interface StrataResultItem {
+  answers?: StrataResultQuestionRef[];
+  wrongQuestionRefs?: StrataResultQuestionRef[];
+  sections?: { questions?: StrataSessionQuestionFull[] }[];
+}
+
+type StrataResultsPayload =
+  | StrataResultItem[]
+  | { items?: StrataResultItem[]; results?: StrataResultItem[] };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EXAM CORE (DynamicStrataSessionExamDto)
@@ -493,12 +528,61 @@ function sampleRandomItems<T>(items: T[], count: number): T[] {
 // HOOK
 // ═══════════════════════════════════════════════════════════════════════════════
 
+export function isAuthError(msg?: string | null): boolean {
+  if (!msg) return false;
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes("access denied") ||
+    lower.includes("kindly log in") ||
+    lower.includes("log in") ||
+    lower.includes("login") ||
+    lower.includes("unauthorized") ||
+    lower.includes("unauthenticated") ||
+    lower.includes("invalid or expired") ||
+    lower.includes("expired") ||
+    lower.includes("session") ||
+    lower.includes("401")
+  );
+}
+
 export function normalizeDifficulty(val?: string | number | null): "easy" | "medium" | "hard" | "other" {
   if (val === null || val === undefined) return "other";
   const v = String(val).toLowerCase().trim();
-  if (v === "easy" || v === "beginner" || v === "1") return "easy";
-  if (v === "medium" || v === "moderate" || v === "intermediate" || v === "2") return "medium";
-  if (v === "hard" || v === "difficult" || v === "advanced" || v === "3") return "hard";
+  if (
+    v === "easy" ||
+    v === "beginner" ||
+    v === "foundation" ||
+    v === "novice" ||
+    v === "1" ||
+    v.includes("easy") ||
+    v.includes("beginner") ||
+    v.includes("foundation")
+  ) {
+    return "easy";
+  }
+  if (
+    v === "medium" ||
+    v === "moderate" ||
+    v === "intermediate" ||
+    v === "2" ||
+    v.includes("medium") ||
+    v.includes("intermediate") ||
+    v.includes("moderate")
+  ) {
+    return "medium";
+  }
+  if (
+    v === "hard" ||
+    v === "difficult" ||
+    v === "advanced" ||
+    v === "expert" ||
+    v === "3" ||
+    v.includes("hard") ||
+    v.includes("advanced") ||
+    v.includes("difficult")
+  ) {
+    return "hard";
+  }
   return "other";
 }
 
@@ -513,7 +597,9 @@ export function matchesDifficulty(val?: string | number | null, target?: string 
   return String(val).toLowerCase().trim() === targetNorm;
 }
 
-export function extractQuestionDifficulty(q: any): string | undefined {
+export function extractQuestionDifficulty(
+  q: StrataSessionQuestionFull | null | undefined
+): string | number | undefined {
   if (!q) return undefined;
   return (
     q.difficulty ||
@@ -522,7 +608,7 @@ export function extractQuestionDifficulty(q: any): string | undefined {
     q.level ||
     q.grade ||
     q.difficultyLevelName ||
-    (q.questionOptions && q.questionOptions[0]?.difficulty)
+    q.questionOptions?.[0]?.difficulty
   );
 }
 
@@ -536,8 +622,8 @@ export function isQuestionAnswered(q: StrataSessionQuestionFull, answeredSet?: S
     if (q.savedUserAnswer.id != null) return true;
     if (q.savedUserAnswer.attemptNumber != null) return true;
   }
-  if ((q as any).isAnswered === true) return true;
-  if ((q as any).userAnswerData != null) return true;
+  if (q.isAnswered === true) return true;
+  if (q.userAnswerData != null) return true;
   return false;
 }
 
@@ -546,15 +632,15 @@ export function isQuestionBookmarked(q: StrataSessionQuestionFull, bookmarkedSet
     if (bookmarkedSet.has(q.id) || bookmarkedSet.has(String(q.id))) return true;
     if (q.guidId && (bookmarkedSet.has(q.guidId) || bookmarkedSet.has(String(q.guidId)))) return true;
   }
-  if ((q as any).bookmarked === true || (q as any).isBookmarked === true) return true;
+  if (q.bookmarked === true || q.isBookmarked === true) return true;
   if (!q.questionActions || q.questionActions.length === 0) return false;
   return q.questionActions.some((a) => {
     const actVal = (a.actionValue || "").toString().toLowerCase();
-    const subType = (a as any).submissionType || "";
+    const subType = a.submissionType ?? "";
     if (subType === "ActionQuestionBookmark" && actVal !== "false") return true;
     if (actVal === "bookmark" || actVal === "bookmarked") return true;
     try {
-      const parsed = JSON.parse(a.actionContent || "{}");
+      const parsed = JSON.parse(a.actionContent || "{}") as { Bookmark?: boolean };
       if (parsed.Bookmark !== undefined) return Boolean(parsed.Bookmark);
     } catch {
       // ignore
@@ -661,32 +747,15 @@ export const useLiveStrataExam = ({
         const answeredQuestionIds = new Set<string | number>();
         const bookmarkedQuestionIds = new Set<string | number>();
 
-        if (typeof window !== "undefined") {
-          try {
-            const localAns = JSON.parse(localStorage.getItem("rhenis_answered_questions") || "[]");
-            for (const id of localAns) {
-              answeredQuestionIds.add(id);
-              answeredQuestionIds.add(String(id));
-              answeredQuestionIds.add(Number(id));
-            }
-          } catch {}
-          try {
-            const localBmk = JSON.parse(localStorage.getItem("rhenis_bookmarked_questions") || "[]");
-            for (const id of localBmk) {
-              bookmarkedQuestionIds.add(id);
-              bookmarkedQuestionIds.add(String(id));
-              bookmarkedQuestionIds.add(Number(id));
-            }
-          } catch {}
-        }
+
 
         try {
-          const resultsRes = await assessmentService<any>("Result", "RelativeFetch", {
+          const resultsRes = await assessmentService<StrataResultsPayload>("Result", "RelativeFetch", {
             dynamicPage: 1,
             dynamicPerPage: 100,
           });
           const rawResults = resultsRes?.data;
-          const items: any[] = Array.isArray(rawResults)
+          const items: StrataResultItem[] = Array.isArray(rawResults)
             ? rawResults
             : (rawResults?.items || rawResults?.results || []);
           for (const r of items) {
@@ -793,6 +862,9 @@ export const useLiveStrataExam = ({
             throw new Error("No exams could be selected from chosen subjects");
           }
 
+          let detectedAuthError: string | null = null;
+          let lastErrorMessage: string | null = null;
+
           // Fetch live session for each chosen exam in parallel
           const liveSessions = await Promise.all(
             chosenExamIds.map(async ({ id }) => {
@@ -808,9 +880,20 @@ export const useLiveStrataExam = ({
                     dynamicPerPage: 500,
                   }
                 );
+                if (res?.error) {
+                  lastErrorMessage = res.error;
+                  if (isAuthError(res.error)) {
+                    detectedAuthError = res.error;
+                  }
+                }
                 const session = res?.data?.exam ? res.data : (res as unknown as StrataExamSessionResponse)?.exam ? (res as unknown as StrataExamSessionResponse) : null;
                 return session;
               } catch (e) {
+                const msg = e instanceof Error ? e.message : String(e);
+                lastErrorMessage = msg;
+                if (isAuthError(msg)) {
+                  detectedAuthError = msg;
+                }
                 console.warn(`[useLiveStrataExam] Failed to fetch live exam ${id}:`, e);
                 return null;
               }
@@ -822,7 +905,10 @@ export const useLiveStrataExam = ({
           );
 
           if (validSessions.length === 0) {
-            throw new Error("Failed to load custom exams");
+            if (detectedAuthError) {
+              throw new Error(detectedAuthError);
+            }
+            throw new Error(lastErrorMessage || "Failed to load custom exams");
           }
 
           const firstSession = validSessions[0];
@@ -881,6 +967,9 @@ export const useLiveStrataExam = ({
           .filter(Boolean);
 
         if (builderMode === "questions" || (examIds.length > 1 && !builderMode)) {
+          let detectedAuthError: string | null = null;
+          let lastErrorMessage: string | null = null;
+
           // Fetch all exams in parallel with resilient subject-to-exam fallback
           const liveSessionsNested = await Promise.all(
             examIds.map(async (id): Promise<StrataExamSessionResponse[]> => {
@@ -901,10 +990,24 @@ export const useLiveStrataExam = ({
                   return [res as unknown as StrataExamSessionResponse];
                 }
                 if (res?.error) {
+                  lastErrorMessage = res.error;
+                  if (isAuthError(res.error)) {
+                    detectedAuthError = res.error;
+                  }
                   console.warn(`[useLiveStrataExam] Live exam fetch error for ${id}:`, res.error);
                 }
               } catch (e) {
+                const msg = e instanceof Error ? e.message : String(e);
+                lastErrorMessage = msg;
+                if (isAuthError(msg)) {
+                  detectedAuthError = msg;
+                }
                 console.warn(`[useLiveStrataExam] Failed to fetch live exam ${id}:`, e);
+              }
+
+              // Do not run nominal fallback if unauthenticated / access denied
+              if (detectedAuthError) {
+                return [];
               }
 
               // Fallback: If identifier is a subject ID/GUID instead of an exam ID, resolve nominal exams under it
@@ -917,8 +1020,16 @@ export const useLiveStrataExam = ({
                     dynamicLearningStrataName: "subject",
                     dynamicPage: 1,
                     dynamicPerPage: 50,
+                    dynamicSortColumn: "updatedAt",
+                    dynamicSortDirection: "desc",
                   }
                 );
+                if (nomRes?.error) {
+                  lastErrorMessage = nomRes.error;
+                  if (isAuthError(nomRes.error)) {
+                    detectedAuthError = nomRes.error;
+                  }
+                }
                 const rawItems = (nomRes?.data as { items?: StrataItem[] })?.items || (nomRes as unknown as { items?: StrataItem[] })?.items || [];
                 if (rawItems.length > 0) {
                   // Determine how many exams to load based on requested question count (e.g. 5, 50, or 85 questions)
@@ -945,7 +1056,19 @@ export const useLiveStrataExam = ({
                         if ((retryRes as unknown as StrataExamSessionResponse)?.exam) {
                           return retryRes as unknown as StrataExamSessionResponse;
                         }
-                      } catch {}
+                        if (retryRes?.error) {
+                          lastErrorMessage = retryRes.error;
+                          if (isAuthError(retryRes.error)) {
+                            detectedAuthError = retryRes.error;
+                          }
+                        }
+                      } catch (subErr) {
+                        const msg = subErr instanceof Error ? subErr.message : String(subErr);
+                        lastErrorMessage = msg;
+                        if (isAuthError(msg)) {
+                          detectedAuthError = msg;
+                        }
+                      }
                       return null;
                     })
                   );
@@ -965,7 +1088,13 @@ export const useLiveStrataExam = ({
           );
 
           if (validSessions.length === 0) {
-            throw new Error("Failed to load selected exams");
+            if (detectedAuthError) {
+              throw new Error(detectedAuthError);
+            }
+            if (isAuthError(lastErrorMessage)) {
+              throw new Error(lastErrorMessage!);
+            }
+            throw new Error(lastErrorMessage || "Failed to load selected exams");
           }
 
           const firstSession = validSessions[0];
@@ -973,7 +1102,7 @@ export const useLiveStrataExam = ({
           // Collect question pools for each exam
           const examPools = validSessions.map((session, idx) => {
             const allQ = (session.sections ?? []).flatMap((sec) =>
-              (sec.questions ?? []).map((q: any) => ({
+              (sec.questions ?? []).map((q): StrataTaggedQuestion => ({
                 ...q,
                 _realExamId: session.exam.id,
                 _realExamGuidId: session.exam.guidId,
@@ -983,13 +1112,12 @@ export const useLiveStrataExam = ({
             );
             let candidateQ = allQ;
             if (difficulty && difficulty.toLowerCase() !== "all") {
-              candidateQ = candidateQ.filter((q: any) => {
-                const val = extractQuestionDifficulty(q);
-                return matchesDifficulty(val, difficulty);
-              });
+              candidateQ = candidateQ.filter((q) =>
+                matchesDifficulty(extractQuestionDifficulty(q), difficulty)
+              );
             }
             if (status && status.toLowerCase() !== "all") {
-              candidateQ = candidateQ.filter((q: any) =>
+              candidateQ = candidateQ.filter((q) =>
                 matchesStatus(q, status, answeredQuestionIds, bookmarkedQuestionIds)
               );
             }
@@ -1030,8 +1158,8 @@ export const useLiveStrataExam = ({
           // If due to rounding totalSampled is slightly less than targetQuestions, top up from available candidate questions
           if (totalSampled < targetQuestions && sections.length > 0) {
             const needed = targetQuestions - totalSampled;
-            const chosenQIds = new Set(sections.flatMap((s) => (s.questions ?? []).map((q: any) => q.id)));
-            const remainingCandidates = examPools.flatMap((p) => p.questions).filter((q: any) => !chosenQIds.has(q.id));
+            const chosenQIds = new Set(sections.flatMap((s) => (s.questions ?? []).map((q) => q.id)));
+            const remainingCandidates = examPools.flatMap((p) => p.questions).filter((q) => !chosenQIds.has(q.id));
             if (remainingCandidates.length > 0) {
               const extraSampled = sampleRandomItems(remainingCandidates, needed);
               sections[0].questions = [...(sections[0].questions || []), ...extraSampled];

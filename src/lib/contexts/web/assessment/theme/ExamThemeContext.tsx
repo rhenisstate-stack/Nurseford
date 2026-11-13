@@ -134,7 +134,7 @@ function applyCSS(
         if (typeof document !== "undefined" && document.body) {
             document.body.dataset.theme = "dark";
         }
-        root.style.setProperty("--content-bg", "#000f25");
+        root.style.setProperty("--content-bg", "#171C27");
         root.style.setProperty("--text-color", "#e2e8f0");
     } else {
         root.classList.remove("dark");
@@ -281,10 +281,10 @@ export const ExamThemeProvider = ({ children }: { children: ReactNode }) => {
                     document.body.dataset.theme = effective;
                 }
                 if (effective === "dark") {
-                    root.style.setProperty("--card-bg", "#15273e");
+                    root.style.setProperty("--card-bg", "#2C3749");
                     root.style.setProperty("--card-border", "rgba(255, 255, 255, 0.1)");
-                    root.style.setProperty("--content-bg", "#000f25");
-                    root.style.setProperty("--navbar-bg", "#000f25");
+                    root.style.setProperty("--content-bg", "#171C27");
+                    root.style.setProperty("--navbar-bg", "#171C27");
                     root.style.setProperty("--text-color", "#e2e8f0");
                 } else {
                     root.style.setProperty("--card-bg", "#EEF3FE");

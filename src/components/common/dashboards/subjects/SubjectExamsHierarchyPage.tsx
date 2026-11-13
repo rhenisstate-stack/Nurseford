@@ -7,12 +7,18 @@ import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClas
 import { strataService } from "@/lib/services/nexus/strata/strataService";
 import { renderSystemSessionHeaders } from "@/lib/services/partial/helper/systemSessionHeaders";
 import { useNominalStrataExams, type StrataItem } from "@/lib/hooks/nexus/strata/assessment/learning/exams/nominal/useNominalStrataExams";
-import { ArrowLeft, Calendar, Check, ChevronLeft, ChevronRight, FileQuestion, Loader2, Play, Search, X } from "lucide-react";
+import { ArrowLeft, Calendar, Check, ChevronLeft, ChevronRight, FileQuestion, Loader2, Lock, Play, Search, X } from "lucide-react";
+import { useRelativeStrataPrograms } from "@/lib/hooks/nexus/strata/learning/programs/relative/useRelativeStrataPrograms";
+import {
+  useDiscreteDominionSubscriptionPackages,
+  type DiscreteSubscriptionPackage,
+} from "@/lib/hooks/nexus/subscription/packages/dicreate/useDiscreteDominionSubscriptionPackages";
 import { NclexCustomTestPopup } from "@/components/common/dashboards/nclex/NclexDashboardSections";
 import { useRelativeStrataAssessmentResults } from "@/lib/hooks/nexus/strata/assessment/results/relative/useRelativeStrataAssessmentResults";
 import { useExamCourses, type DashboardCourse, type DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
+import { resolveExamSchool } from "@/lib/utils/exams/resolveExamSchool";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
 import { registerSearchExams } from "@/lib/services/search/searchRegistry";
 
@@ -35,9 +41,31 @@ interface SubjectExamsHierarchyCacheItem {
   showCustomTestButton?: boolean;
   hideSeason?: boolean;
 }
+type SubCategoryExtras = DashboardSubCategory & {
+  examCount?: number;
+  subCategories?: DashboardSubCategory[];
+};
+
+type ExamWithParentNames = StrataItem & {
+  subjectName?: string;
+  courseName?: string;
+  school?: string | null;
+  schoolName?: string | null;
+  institution?: string | null;
+  institutionName?: string | null;
+};
+
+interface ExamQuestionCountSource {
+  questionsCount?: number | null;
+  questionCount?: number | null;
+  totalQuestions?: number | null;
+  targetQuestions?: unknown;
+  resources?: unknown;
+}
+
 const subjectExamsHierarchyClientCache = new Map<string, SubjectExamsHierarchyCacheItem>();
 
-function extractExamQuestionCount(e: any): number {
+function extractExamQuestionCount(e: ExamQuestionCountSource): number {
   if (typeof e.questionsCount === "number" && e.questionsCount > 0) return e.questionsCount;
   if (typeof e.questionCount === "number" && e.questionCount > 0) return e.questionCount;
   if (typeof e.totalQuestions === "number" && e.totalQuestions > 0) return e.totalQuestions;
@@ -46,19 +74,28 @@ function extractExamQuestionCount(e: any): number {
       const parsed = typeof e.targetQuestions === "string" ? JSON.parse(e.targetQuestions) : e.targetQuestions;
       if (typeof parsed?.total === "number" && parsed.total > 0) return parsed.total;
       if (Array.isArray(parsed?.ids) && parsed.ids.length > 0) return parsed.ids.length;
-    } catch {}
+    } catch { }
   }
   if (e.resources) {
     try {
       const parsed = typeof e.resources === "string" ? JSON.parse(e.resources) : e.resources;
       if (typeof parsed?.question_count === "number" && parsed.question_count > 0) return parsed.question_count;
       if (typeof parsed?.questionCount === "number" && parsed.questionCount > 0) return parsed.questionCount;
-    } catch {}
+    } catch { }
   }
   return 0;
 }
 
 const cleanSubjectStr = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const NEW_BADGE_DAYS = 14;
+const isNewExam = (createdAt?: string | Date | null) => {
+  if (!createdAt) return false;
+  const t = new Date(createdAt).getTime();
+  if (isNaN(t)) return false;
+  const age = Date.now() - t;
+  return age >= 0 && age <= NEW_BADGE_DAYS * 24 * 60 * 60 * 1000;
+};
 
 export function SubjectExamsHierarchyPage({
   panelSlug,
@@ -96,6 +133,7 @@ export function SubjectExamsHierarchyPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedSeason, setSelectedSeason] = useState<string>("all");
+  const [selectedSchool, setSelectedSchool] = useState<string>("all");
 
   const normalizedExamType =
     panelSlug === "hesi-a2"
@@ -111,6 +149,51 @@ export function SubjectExamsHierarchyPage({
               : "nclex-rn";
 
   const { courses: dashboardCourses } = useExamCourses(normalizedExamType);
+
+  // ─── Subscription gate ───
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+  const subscriptionsHref = `/dashboards/${panelSlug}/vista/subscriptions/items`;
+  const panelSegment = panelSlug.toUpperCase().replace(/-/g, "_");
+
+  const { programs } = useRelativeStrataPrograms();
+  const { filteredSubscriptionPackages: mySubscriptionPackages } = useDiscreteDominionSubscriptionPackages({
+    page: 1,
+    perPage: 100,
+    sortColumn: null,
+    sortDirection: "asc",
+  });
+
+  const hasActiveSubscription = useMemo(() => {
+    type PackageWithCluster = DiscreteSubscriptionPackage & {
+      terminalClusterTableName?: string;
+      terminalClusterGuidId?: string;
+    };
+    const panelProgramGuids = new Set(
+      programs.filter((p) => p.segment === panelSegment).map((p) => p.guidId)
+    );
+    if (panelProgramGuids.size === 0) return false;
+
+    return mySubscriptionPackages.some((pkg) => {
+      const p = pkg as PackageWithCluster;
+      const belongsToPanel =
+        p.terminalClusterTableName === "strata_programs" &&
+        !!p.terminalClusterGuidId &&
+        panelProgramGuids.has(p.terminalClusterGuidId);
+      if (!belongsToPanel) return false;
+      return (pkg.userSubscriptions ?? []).some((sub) => sub.subscriptionStatus === "Active");
+    });
+  }, [programs, panelSegment, mySubscriptionPackages]);
+
+  // Only enforce once programs have loaded (avoids a false "not subscribed" flash)
+  const needsSubscription = programs.length > 0 && !hasActiveSubscription;
+
+  // Builder opened without a subscription → show subscribe modal instead
+  useEffect(() => {
+    if (isBuilderOpen && needsSubscription) {
+      setIsBuilderOpen(false);
+      setShowSubscribeModal(true);
+    }
+  }, [isBuilderOpen, needsSubscription]);
 
   const matchingDashboardCourse = useMemo(() => {
     if (!dashboardCourses || dashboardCourses.length === 0) return null;
@@ -147,13 +230,13 @@ export function SubjectExamsHierarchyPage({
             title: sc.title,
             category: c.category,
             questionCount: sc.questionCount,
-            examCount: (sc as any).examCount ?? 0,
+            examCount: (sc as SubCategoryExtras).examCount ?? 0,
             doneCount: sc.usedCount ?? 0,
             easyPct: c.easyPct,
             mediumPct: c.mediumPct,
             hardPct: c.hardPct,
             order: sc.order,
-            subCategories: (sc as any).subCategories || [],
+            subCategories: (sc as SubCategoryExtras).subCategories || [],
           };
         }
       }
@@ -252,6 +335,7 @@ export function SubjectExamsHierarchyPage({
     setSearchQuery("");
     setSelectedYear("all");
     setSelectedSeason("all");
+    setSelectedSchool("all");
 
     const loadExams = async () => {
       try {
@@ -313,8 +397,9 @@ export function SubjectExamsHierarchyPage({
         });
 
         const currentCached = subjectExamsHierarchyClientCache.get(cacheKey);
-        const resolvedSubName = (rawItems[0] as any)?.subjectName || currentCached?.subjectName || subjectName;
-        const resolvedCourseName = (rawItems[0] as any)?.courseName || currentCached?.courseName || "";
+        const firstItem = rawItems[0] as ExamWithParentNames | undefined;
+        const resolvedSubName = firstItem?.subjectName || currentCached?.subjectName || subjectName;
+        const resolvedCourseName = firstItem?.courseName || currentCached?.courseName || "";
 
         const sortedExams = [...uniqueItems].sort((a, b) => {
           const yrB = extractExamYear(b.title, resolvedSubName, b.year, b.createdAt) ?? 0;
@@ -340,18 +425,6 @@ export function SubjectExamsHierarchyPage({
         if (resolvedCourseName) setDynamicCourseName(resolvedCourseName);
         setExams(sortedExams);
         registerSearchExams(panelSlug, subjectId, resolvedSubName, sortedExams);
-        try {
-          sortedExams.forEach((e) => {
-            if (e.guidId && e.title) {
-              localStorage.setItem(`exam_title_${e.guidId}`, e.title);
-              sessionStorage.setItem(`exam_title_${e.guidId}`, e.title);
-            }
-            if (e.id && e.title) {
-              localStorage.setItem(`exam_title_${e.id}`, e.title);
-              sessionStorage.setItem(`exam_title_${e.id}`, e.title);
-            }
-          });
-        } catch {}
         setStatus("ready");
       } catch (err) {
         console.error("[SubjectExamsHierarchyPage] Failed to load exams:", err);
@@ -367,37 +440,16 @@ export function SubjectExamsHierarchyPage({
   }, [panelSlug, courseId, subjectId, subjectName, cacheKey]);
 
   const startExam = (examTarget: (StrataItem & { modes?: string[] }) | string, mode: string) => {
-    let idToUse = "";
-    try {
-      if (typeof window !== "undefined") {
-        let targetObj: StrataItem | undefined;
-        if (typeof examTarget === "string") {
-          idToUse = examTarget;
-          targetObj = exams.find((e) => e.guidId === examTarget || String(e.id) === examTarget);
-        } else {
-          targetObj = examTarget;
-          idToUse = examTarget.guidId ?? String(examTarget.id);
-        }
-
-        const title = targetObj?.title;
-
-        const storeKeys = [
-          idToUse,
-          targetObj?.guidId,
-          targetObj?.id ? String(targetObj.id) : undefined,
-        ].filter(Boolean) as string[];
-
-        storeKeys.forEach((key) => {
-          if (title) {
-            localStorage.setItem(`exam_title_${key}`, title);
-            sessionStorage.setItem(`exam_title_${key}`, title);
-          }
-        });
-      }
-    } catch {}
-    if (!idToUse) {
-      idToUse = typeof examTarget === "string" ? examTarget : (examTarget.guidId ?? String(examTarget.id));
+    const gateTarget =
+      typeof examTarget === "string"
+        ? exams.find((e) => e.guidId === examTarget || String(e.id) === examTarget)
+        : examTarget;
+    if (needsSubscription && gateTarget?.accessType !== "Public") {
+      setShowSubscribeModal(true);
+      return;
     }
+
+    const idToUse = typeof examTarget === "string" ? examTarget : (examTarget.guidId ?? String(examTarget.id));
     router.push(`/web/${livePanelSlug}/vista/exam/generic?mode=${mode}&identifier=${idToUse}`);
   };
 
@@ -536,24 +588,38 @@ export function SubjectExamsHierarchyPage({
     });
   }, [exams]);
 
+  const availableSchools = useMemo(() => {
+    const schools = new Set<string>();
+    exams.forEach((e) => {
+      const resolved = resolveExamSchool(e as ExamWithParentNames);
+      if (resolved) schools.add(resolved);
+    });
+    return Array.from(schools).sort((a, b) => a.localeCompare(b));
+  }, [exams]);
+
   // Filtered exams
   const filteredExams = useMemo(() => {
     return exams.filter((exam) => {
       const yrNum = extractExamYear(exam.title, currentSubjectTitle, exam.year);
       const examYr = yrNum ? String(yrNum) : "";
       const examSeason = resolveExamSeason(exam.season, exam.title, exam.description) || exam.season;
+      const examSchool = resolveExamSchool(exam as ExamWithParentNames);
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchTitle = exam.title?.toLowerCase().includes(q);
         const matchYear = examYr ? examYr.includes(q) : false;
         const matchSeason = examSeason ? examSeason.toLowerCase().includes(q) : false;
-        if (!matchTitle && !matchYear && !matchSeason) return false;
+        const matchSchool = examSchool ? examSchool.toLowerCase().includes(q) : false;
+        if (!matchTitle && !matchYear && !matchSeason && !matchSchool) return false;
       }
       if (selectedYear !== "all") {
         if (examYr !== selectedYear) return false;
       }
       if (selectedSeason !== "all") {
         if (!examSeason || examSeason.toLowerCase() !== selectedSeason.toLowerCase()) return false;
+      }
+      if (selectedSchool !== "all") {
+        if (!examSchool || examSchool.toLowerCase() !== selectedSchool.toLowerCase()) return false;
       }
       return true;
     }).sort((a, b) => {
@@ -567,14 +633,14 @@ export function SubjectExamsHierarchyPage({
 
       return (Number(b.id) || 0) - (Number(a.id) || 0);
     });
-  }, [exams, searchQuery, selectedYear, selectedSeason, currentSubjectTitle]);
+  }, [exams, searchQuery, selectedYear, selectedSeason, selectedSchool, currentSubjectTitle]);
 
   const [perPage, setPerPage] = useState<number>(100);
 
   // Reset pagination to page 1 on filter or search change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedYear, selectedSeason, perPage]);
+  }, [searchQuery, selectedYear, selectedSeason, selectedSchool, perPage]);
 
   const totalPages = Math.max(1, Math.ceil(filteredExams.length / perPage));
   const safePage = Math.min(Math.max(1, currentPage), totalPages);
@@ -685,7 +751,7 @@ export function SubjectExamsHierarchyPage({
           <button
             type="button"
             onClick={() => setIsBuilderOpen(true)}
-            className="group relative overflow-hidden rounded-xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 hover:border-[#8B5CF6]/60 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] p-3 sm:p-3.5 md:p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
+            className="group relative overflow-hidden rounded-xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 hover:border-[#8B5CF6]/60 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] p-3 sm:p-3.5 md:p-4 shadow-xs hover:shadow-md transition-all duration-200 hidden sm:flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
           >
             <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
               <div className="min-w-0">
@@ -709,9 +775,9 @@ export function SubjectExamsHierarchyPage({
         </div>
 
         {/* Reference-style Filter Bar & Create Custom Test */}
-        <div className="grid grid-cols-2 md:grid-cols-3 items-start md:items-center gap-4 sm:gap-6 p-3.5 sm:p-4 md:p-5 rounded-xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] shadow-xs">
+        <div className="grid grid-cols-2 md:grid-cols-12 items-start md:items-center gap-4 sm:gap-5 p-3.5 sm:p-4 md:p-5 rounded-xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] shadow-xs">
           {/* 1. Left: Years Column */}
-          <div className="col-span-1 flex flex-col gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 justify-self-start">
+          <div className="col-span-1 md:col-span-3 flex flex-col gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 justify-self-start">
             <label className="inline-flex items-center gap-2 cursor-pointer text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               <input
                 type="checkbox"
@@ -743,8 +809,8 @@ export function SubjectExamsHierarchyPage({
             </div>
           </div>
 
-          {/* 2. Center: Seasons Column (Centered in computer mode, pushed right on phone mode opposite to All Years) */}
-          <div className="col-span-1 flex flex-col gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 justify-self-end md:justify-self-center">
+          {/* 2. Center-Left: Seasons Column (Centered/left-aligned on desktop, pushed right on phone opposite to All Years) */}
+          <div className="col-span-1 md:col-span-2 flex flex-col gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 justify-self-end md:justify-self-start">
             <label className="inline-flex items-center gap-2 cursor-pointer text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               <input
                 type="checkbox"
@@ -771,8 +837,34 @@ export function SubjectExamsHierarchyPage({
               ))}
           </div>
 
-          {/* 3. Right: Search Box + Exams last updated (Side by side on phone mode, stacked on desktop) */}
-          <div className="col-span-2 md:col-span-1 flex flex-col gap-2 w-full md:w-64 md:justify-self-end">
+          {/* 3. Select School Dropdown */}
+          <div className="col-span-2 md:col-span-3 flex flex-col gap-1.5 w-full">
+            <label
+              htmlFor="exam-school-filter"
+              className="text-xs font-bold text-slate-900 dark:text-white"
+            >
+              Select School
+            </label>
+            <select
+              id="exam-school-filter"
+              aria-label="Select School"
+              value={selectedSchool}
+              onChange={(e) => setSelectedSchool(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg text-xs font-medium bg-slate-50 dark:bg-black/20 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:bg-white dark:focus:bg-[#1e293b] focus:border-blue-500 transition-colors shadow-2xs cursor-pointer"
+            >
+              <option value="all" className="bg-white text-slate-900 dark:bg-[#2C3749] dark:text-white">
+                All Schools
+              </option>
+              {availableSchools.map((school) => (
+                <option key={school} value={school} className="bg-white text-slate-900 dark:bg-[#2C3749] dark:text-white">
+                  {school}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4. Right: Search Box + Exams last updated (Side by side on phone mode, stacked on desktop) */}
+          <div className="col-span-2 md:col-span-4 flex flex-col gap-2 w-full md:max-w-[260px] md:justify-self-end">
             <div className="flex flex-row items-center gap-2 w-full">
               {/* Search bar (left on phone mode, full width on desktop) */}
               <div className="relative flex-1 min-w-0 sm:w-full">
@@ -878,124 +970,130 @@ export function SubjectExamsHierarchyPage({
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
               {paginatedExams.map((exam) => {
-              const examId = exam.guidId ?? String(exam.id);
-              const hasFreeAccess = exam.accessType === "Free";
-              const allowedModes = exam.modes || ["Practice", "Review", "Exam"];
+                const examId = exam.guidId ?? String(exam.id);
+                const hasFreeAccess = exam.accessType === "Free";
+                const allowedModes = exam.modes || ["Practice", "Review", "Exam"];
 
-              const examIdStr = String(exam.id ?? "");
-              const examGuid = exam.guidId ? String(exam.guidId) : "";
-              const examTitleKey = exam.title ? exam.title.trim().toLowerCase() : "";
+                const examIdStr = String(exam.id ?? "");
+                const examGuid = exam.guidId ? String(exam.guidId) : "";
+                const examTitleKey = exam.title ? exam.title.trim().toLowerCase() : "";
 
-              const nominalMatch = nominalExams.find(
-                (ne) =>
-                  (examGuid && (ne.guidId === examGuid || String(ne.id) === examGuid)) ||
-                  (examIdStr && (String(ne.id) === examIdStr || ne.guidId === examIdStr)) ||
-                  (examTitleKey && ne.title && ne.title.trim().toLowerCase() === examTitleKey)
-              );
+                const nominalMatch = nominalExams.find(
+                  (ne) =>
+                    (examGuid && (ne.guidId === examGuid || String(ne.id) === examGuid)) ||
+                    (examIdStr && (String(ne.id) === examIdStr || ne.guidId === examIdStr)) ||
+                    (examTitleKey && ne.title && ne.title.trim().toLowerCase() === examTitleKey)
+                );
 
-              const actions = exam.examActions?.length
-                ? exam.examActions
-                : (nominalMatch?.examActions ?? []);
-              const hasCompletedAction = actions.some((a) => a.status === "Completed" || a.status === "Finished");
-              const hasResultCompleted =
-                (examGuid ? completedExamIds.has(examGuid) : false) ||
-                (examIdStr ? completedExamIds.has(examIdStr) : false) ||
-                (examId ? completedExamIds.has(String(examId)) : false) ||
-                exam.status === "Completed";
-              const isCompleted = hasCompletedAction || hasResultCompleted;
+                const actions = exam.examActions?.length
+                  ? exam.examActions
+                  : (nominalMatch?.examActions ?? []);
+                const hasCompletedAction = actions.some((a) => a.status === "Completed" || a.status === "Finished");
+                const hasResultCompleted =
+                  (examGuid ? completedExamIds.has(examGuid) : false) ||
+                  (examIdStr ? completedExamIds.has(examIdStr) : false) ||
+                  (examId ? completedExamIds.has(String(examId)) : false) ||
+                  exam.status === "Completed";
+                const isCompleted = hasCompletedAction || hasResultCompleted;
+                const showNew = isNewExam(exam.createdAt);
 
-              const matchingSub = matchingDashboardCourse?.subCategories?.find(
-                (sc: any) =>
-                  sc.id === examGuid ||
-                  sc.id === examIdStr ||
-                  sc.id === examId ||
-                  cleanSubjectStr(sc.title) === cleanSubjectStr(exam.title)
-              );
-              const resolvedQCount =
-                exam.questionsCount && exam.questionsCount > 0
-                  ? exam.questionsCount
-                  : matchingSub?.questionCount && matchingSub.questionCount > 0
-                    ? matchingSub.questionCount
-                    : extractExamQuestionCount(exam);
+                const matchingSub = matchingDashboardCourse?.subCategories?.find(
+                  (sc) =>
+                    sc.id === examGuid ||
+                    sc.id === examIdStr ||
+                    sc.id === examId ||
+                    cleanSubjectStr(sc.title) === cleanSubjectStr(exam.title)
+                );
+                const resolvedQCount =
+                  exam.questionsCount && exam.questionsCount > 0
+                    ? exam.questionsCount
+                    : matchingSub?.questionCount && matchingSub.questionCount > 0
+                      ? matchingSub.questionCount
+                      : extractExamQuestionCount(exam);
 
-              return (
-                <div
-                  key={examId}
-                  className="rounded-xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] px-3.5 py-3 sm:px-4 sm:py-3 flex flex-col justify-between shadow-xs hover:shadow-md transition-all duration-200"
-                >
-                  {/* Top: Title + Status Badge */}
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <h3 className="text-[13px] sm:text-[14px] font-medium text-slate-900 dark:text-white leading-snug line-clamp-2">
-                      {exam.title}
-                    </h3>
-                    {isCompleted ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-xs shrink-0">
-                        <Check className="w-2.5 h-2.5" />
-                        Completed
+                return (
+                  <div
+                    key={examId}
+                    className="relative rounded-xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] px-3.5 py-3 sm:px-4 sm:py-3 flex flex-col justify-between shadow-xs hover:shadow-md transition-all duration-200"
+                  >
+                    {showNew && (
+                      <span className="absolute -top-2 right-3 z-10 inline-flex items-center rounded-full bg-red-800 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm">
+                        New
                       </span>
-                    ) : hasFreeAccess ? (
-                      <span className="bg-[#1877F2] text-white text-[10.5px] font-medium px-1.5 py-0.5 rounded shadow-xs shrink-0">
-                        Free
-                      </span>
-                    ) : null}
-                  </div>
-
-                  {/* Middle: Meta pills */}
-                  <div className="relative flex items-center justify-between gap-1.5 my-1.5 min-h-[22px]">
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-normal text-emerald-800 dark:text-emerald-400 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 shadow-xs shrink-0 whitespace-nowrap">
-                      Total Questions : {resolvedQCount ?? 0}
-                    </span>
-
-                    {!hideSeason && (resolveExamSeason(exam.season, exam.title, exam.description) || exam.season) && (
-                      <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-normal text-orange-800 dark:text-orange-400 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 shadow-xs uppercase pointer-events-auto whitespace-nowrap">
-                          {resolveExamSeason(exam.season, exam.title, exam.description) || exam.season}
-                        </span>
-                      </div>
                     )}
-
-                    <div className="flex items-center gap-1.5 ml-auto shrink-0">
-                      {extractExamYear(exam.title, currentSubjectTitle, exam.year) && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-normal text-emerald-800 dark:text-emerald-400 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 shadow-xs whitespace-nowrap">
-                          Year : {extractExamYear(exam.title, currentSubjectTitle, exam.year)}
+                    {/* Top: Title + Status Badge */}
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <h3 className="text-[13px] sm:text-[14px] font-medium text-slate-900 dark:text-white leading-snug line-clamp-2">
+                        {exam.title}
+                      </h3>
+                      {isCompleted ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-xs shrink-0">
+                          <Check className="w-2.5 h-2.5" />
+                          Completed
                         </span>
+                      ) : hasFreeAccess ? (
+                        <span className="bg-[#1877F2] text-white text-[10.5px] font-medium px-1.5 py-0.5 rounded shadow-xs shrink-0">
+                          Free
+                        </span>
+                      ) : null}
+                    </div>
+
+                    {/* Middle: Meta pills */}
+                    <div className="relative flex items-center justify-between gap-1.5 my-1.5 min-h-[22px]">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-normal text-emerald-800 dark:text-emerald-400 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 shadow-xs shrink-0 whitespace-nowrap">
+                        Total Questions : {resolvedQCount ?? 0}
+                      </span>
+
+                      {!hideSeason && (resolveExamSeason(exam.season, exam.title, exam.description) || exam.season) && (
+                        <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-normal text-orange-800 dark:text-orange-400 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 shadow-xs uppercase pointer-events-auto whitespace-nowrap">
+                            {resolveExamSeason(exam.season, exam.title, exam.description) || exam.season}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                        {extractExamYear(exam.title, currentSubjectTitle, exam.year) && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-normal text-emerald-800 dark:text-emerald-400 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 shadow-xs whitespace-nowrap">
+                            Year : {extractExamYear(exam.title, currentSubjectTitle, exam.year)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bottom: Mode Buttons */}
+                    <div className="flex items-center gap-1.5 mt-2 pt-1">
+                      {allowedModes.includes("Practice") && (
+                        <button
+                          type="button"
+                          onClick={() => startExam(exam, "Practice")}
+                          className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-slate-950 dark:text-slate-950 bg-[#00D0FF] hover:bg-[#00BCE6] transition-colors shadow-xs text-center border border-white/70 dark:border-white/30 truncate"
+                        >
+                          Practice Mode
+                        </button>
+                      )}
+                      {allowedModes.includes("Review") && (
+                        <button
+                          type="button"
+                          onClick={() => startExam(exam, "Review")}
+                          className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-white bg-[#212529] hover:bg-[#15181B] transition-colors shadow-xs text-center border border-white/50 dark:border-white/30 truncate"
+                        >
+                          Review Mode
+                        </button>
+                      )}
+                      {allowedModes.includes("Exam") && (
+                        <button
+                          type="button"
+                          onClick={() => startExam(exam, "Exam")}
+                          className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-white bg-[#782828] hover:bg-[#682020] transition-colors shadow-xs text-center border border-white/50 dark:border-white/30 truncate"
+                        >
+                          Exam Mode
+                        </button>
                       )}
                     </div>
                   </div>
-
-                  {/* Bottom: Mode Buttons */}
-                  <div className="flex items-center gap-1.5 mt-2 pt-1">
-                    {allowedModes.includes("Practice") && (
-                      <button
-                        type="button"
-                        onClick={() => startExam(exam, "Practice")}
-                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-slate-950 dark:text-slate-950 bg-[#00D0FF] hover:bg-[#00BCE6] transition-colors shadow-xs text-center border border-white/70 dark:border-white/30 truncate"
-                      >
-                        Practice Mode
-                      </button>
-                    )}
-                    {allowedModes.includes("Review") && (
-                      <button
-                        type="button"
-                        onClick={() => startExam(exam, "Review")}
-                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-white bg-[#212529] hover:bg-[#15181B] transition-colors shadow-xs text-center border border-white/50 dark:border-white/30 truncate"
-                      >
-                        Review Mode
-                      </button>
-                    )}
-                    {allowedModes.includes("Exam") && (
-                      <button
-                        type="button"
-                        onClick={() => startExam(exam, "Exam")}
-                        className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-white bg-[#782828] hover:bg-[#682020] transition-colors shadow-xs text-center border border-white/50 dark:border-white/30 truncate"
-                      >
-                        Exam Mode
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
             </div>
 
             {/* Bottom Pagination Controls */}
@@ -1027,11 +1125,10 @@ export function SubjectExamsHierarchyPage({
                           key={p}
                           type="button"
                           onClick={() => handlePageChange(p)}
-                          className={`min-w-8 h-8 px-2 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-[0.96] ${
-                            p === currentPage
-                              ? "border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 text-teal-800 dark:text-teal-300 shadow-2xs"
-                              : "border border-slate-300/80 dark:border-white/15 bg-white/60 dark:bg-white/5 text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10"
-                          }`}
+                          className={`min-w-8 h-8 px-2 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-[0.96] ${p === currentPage
+                            ? "border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 text-teal-800 dark:text-teal-300 shadow-2xs"
+                            : "border border-slate-300/80 dark:border-white/15 bg-white/60 dark:bg-white/5 text-slate-700 dark:text-white/80 hover:bg-slate-100 dark:hover:bg-white/10"
+                            }`}
                         >
                           {p}
                         </button>
@@ -1054,6 +1151,51 @@ export function SubjectExamsHierarchyPage({
           </>
         )}
       </div>
+
+      {showSubscribeModal && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setShowSubscribeModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm rounded-2xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 bg-white dark:bg-[var(--card-bg,#15273e)] p-6 text-center shadow-2xl"
+          >
+            <button
+              type="button"
+              onClick={() => setShowSubscribeModal(false)}
+              aria-label="Close"
+              className="absolute right-3 top-3 text-slate-400 hover:text-slate-700 dark:hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/15">
+              <Lock className="w-6 h-6 text-purple-600 dark:text-purple-300" />
+            </div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">Subscription Required</h2>
+            <p className="mt-1.5 text-sm text-slate-600 dark:text-white/70">
+              Subscribe to unlock all {panelLabel} exams and the custom exam builder.
+            </p>
+            <div className="mt-5 flex flex-col gap-2">
+              <Link
+                href={subscriptionsHref}
+                className="inline-flex items-center justify-center rounded-lg border border-teal-500/80 bg-teal-500/25 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:bg-teal-500/35 transition-colors"
+              >
+                View Subscription Plans
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowSubscribeModal(false)}
+                className="rounded-lg px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-white/60 dark:hover:text-white transition-colors"
+              >
+                Maybe later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <NclexCustomTestPopup
         isOpen={isBuilderOpen}

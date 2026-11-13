@@ -1,111 +1,103 @@
 export interface SampleQuestion {
-  title: string;
+  id: string;
+  track: "RN Nursing" | "LPN Nursing" | "Exit Exam";
+  subject: string;
   question: string;
-  options: string[];
+  options: [string, string, string, string];
+  correctIndex: number;
+  rationale: string;
 }
 
-export const ATI_TEAS_SAMPLES: Record<string, SampleQuestion> = {
-  science: {
-    title: "TEAS 7 PREP SCIENCE SAMPLE",
+export const SAMPLE_QUESTIONS: SampleQuestion[] = [
+  {
+    id: "rn-medsurg-1",
+    track: "RN Nursing",
+    subject: "Medical-Surgical",
     question:
-      "Which of the following structures in the nephron is responsible for reabsorbing ions, water and nutrients?",
-    options: ["Distal tubule", "Proximal tubule", "Glomerulus", "Loop of Henle"],
-  },
-  english: {
-    title: "TEAS 7 PREP ENGLISH SAMPLE",
-    question: "Which of the following is an example of accidental plagiarism?",
+      "A nurse is caring for a client 4 hours post-thyroidectomy who reports numbness and tingling around the lips and fingertips. Which laboratory finding should the nurse anticipate?",
     options: [
-      "Summarizing information without including a source credit",
-      "Submitting a paper that was written by a friend",
-      "Forgetting to include an in-text citation for information",
-      "Copying information from a source and identifying it as your own",
+      "Serum potassium 5.4 mEq/L",
+      "Serum calcium 7.4 mg/dL",
+      "Serum sodium 129 mEq/L",
+      "Serum magnesium 2.8 mg/dL",
     ],
+    correctIndex: 1,
+    rationale:
+      "Circumoral paresthesia and tingling in the fingertips are early signs of hypocalcemia (< 8.5 mg/dL) caused by accidental parathyroid injury or removal during thyroidectomy. Prepare IV calcium gluconate and monitor for Trousseau or Chvostek signs.",
   },
-  math: {
-    title: "TEAS 7 PREP MATH SAMPLE",
+  {
+    id: "rn-pediatrics-1",
+    track: "RN Nursing",
+    subject: "Pediatrics",
     question:
-      "The length of a rectangular room is 2 feet greater than its width. Which of the following equations represents the area (A) of the room?",
-    options: ["A = 2x", "A = 2x + 2(x + 2)", "A = x + (x + 2)", "A = x(x + 2)"],
-  },
-};
-
-export const HESI_A2_SAMPLES: Record<string, SampleQuestion> = {
-  biology: {
-    title: "HESI A2 BIOLOGY SAMPLE",
-    question:
-      "The cellular membrane consists of a bilayer of which substances?",
-    options: ["Carbohydrates", "Phospholipids", "Proteins", "Nucleic acids"],
-  },
-  math: {
-    title: "HESI A2 MATH Sample",
-    question: "Convert the military time 0056 to 12-hour time.",
-    options: ["12:56 P.M.", "1:56 P.M.", "1:56 A.M.", "12:56 A.M."],
-  },
-  vocabulary: {
-    title: "HESI A2 Vocabulary Sample",
-    question: "Which word pertains to motion or movement?",
-    options: ["Kilocalorie", "Keratosis", "Kinetic", "Kilogram"],
-  },
-};
-
-export const RN_NURSING_SAMPLES: Record<string, SampleQuestion> = {
-  fundamentals: {
-    title: "RN FUNDAMENTALS SAMPLE",
-    question:
-      "A nurse is caring for a client with a chronic wound. Which of the following is a potential complication of a chronic wound?",
+      "A 6-month-old infant diagnosed with acute bronchiolitis (RSV) has nasal flaring, subcostal retractions, and a respiratory rate of 64/min. Which nursing action takes highest priority before feeding?",
     options: [
-      "Electrolyte abnormalities",
-      "Altered hemoglobin ATC",
-      "Psychological distress",
-      "Fluid volume overload",
+      "Offer small, frequent oral feedings every 2 hours",
+      "Administer blow-by humidified oxygen via face mask only during sleep",
+      "Suction the nasopharynx with a bulb syringe and assess oxygen saturation",
+      "Place the infant in a prone position to drain secretions",
     ],
+    correctIndex: 2,
+    rationale:
+      "Infants are obligate nose breathers, and copious nasal secretions in RSV bronchiolitis rapidly impair oxygenation and increase aspiration risk during feeding. Clearing the nasal airway and verifying oxygenation comes first.",
   },
-  pediatrics: {
-    title: "RN PEDIATRICS SAMPLE",
+  {
+    id: "lpn-pharm-1",
+    track: "LPN Nursing",
+    subject: "Pharmacology",
     question:
-      "The nurse is conducting Intake Interviews of children at a city clinic. Which child is most susceptible to contracting lead poisoning?",
+      "A client prescribed furosemide 40 mg PO daily also takes digoxin 0.125 mg daily. Which clinical finding requires immediate reporting to the provider?",
     options: [
-      "A 2-year-old who plays on aging outdoor playground equipment.",
-      "A 10-year-old who has Type 1 diabetes mellitus.",
-      "An 8-year-old who lives in a housing project.",
-      "An adolescent who works part-time in a paint factory.",
+      "Urine output of 45 mL/hr",
+      "Serum potassium level of 2.9 mEq/L",
+      "Blood pressure of 118/74 mm Hg",
+      "Weight loss of 0.5 kg over 24 hours",
     ],
+    correctIndex: 1,
+    rationale:
+      "Loop diuretics such as furosemide cause potassium wasting. Hypokalemia (< 3.5 mEq/L) markedly increases sensitivity to digoxin and predisposes the client to life-threatening digoxin toxicity and dysrhythmias.",
   },
-  medSurg: {
-    title: "RN MED-SURG SAMPLE",
+  {
+    id: "lpn-dosage-1",
+    track: "LPN Nursing",
+    subject: "Dosage Calculation",
     question:
-      "Which complication should the nurse monitor for while caring for a client post gastrectomy?",
+      "A provider orders cefazolin 750 mg IV every 8 hours. The pharmacy supplies a vial labeled 1 g/10 mL after reconstitution. How many mL should the nurse administer per dose?",
+    options: ["0.75 mL", "5.0 mL", "7.5 mL", "13.3 mL"],
+    correctIndex: 2,
+    rationale:
+      "Convert 1 g to 1,000 mg. Using Dose Ordered / Dose on Hand × Volume: (750 mg / 1,000 mg) × 10 mL = 7.5 mL per dose.",
+  },
+  {
+    id: "exit-priority-1",
+    track: "Exit Exam",
+    subject: "Priority Setting & Safety",
+    question:
+      "After receiving shift report on four clients, which client should the nurse assess first?",
     options: [
-      "Umbilical hernia",
-      "Gallstones",
-      "Peptic ulcer",
-      "Dumping syndrome",
+      "A client with COPD whose SpO2 is 90% on 2 L/min nasal cannula",
+      "A post-op hip arthroplasty client reporting incisional pain rated 6/10",
+      "A client with acute pancreatitis exhibiting new-onset inspiratory stridor",
+      "A client with heart failure who gained 0.4 kg since yesterday",
     ],
+    correctIndex: 2,
+    rationale:
+      "Using the ABC (Airway, Breathing, Circulation) priority framework, new-onset stridor indicates upper airway compromise and requires immediate assessment. An SpO2 of 90% is expected for many clients with COPD, and 6/10 pain is secondary to airway threats.",
   },
-};
-
-export const LPN_NURSING_SAMPLES: Record<string, SampleQuestion> = {
-  maternalNewborn: {
-    title: "PN Maternal & Newborn Sample",
+  {
+    id: "exit-maternal-1",
+    track: "Exit Exam",
+    subject: "Maternal & Newborn",
     question:
-      "The nurse is educating a class of expectant parents about fetal development. What is considered fetal age of viability?",
-    options: ["8", "24", "20", "14"],
-  },
-  pharmacology: {
-    title: "PN Pharmacology Sample",
-    question:
-      "Before administering an antibiotic that can cause nephrotoxicity, which laboratory value is most important for the practical nurse (PN) to review?",
+      "A client 2 hours postpartum has a boggy uterus displaced 2 cm above and to the right of the umbilicus with heavy lochia rubra. What is the nurse's initial intervention?",
     options: [
-      "White blood cell count (WBC).",
-      "Serum creatinine.",
-      "Hemoglobin and Hematocrit.",
-      "Serum calcium",
+      "Increase the IV maintenance fluid rate",
+      "Massage the uterine fundus firmly until it becomes boggy-free",
+      "Assist the client to void and reassess fundal height and tone",
+      "Notify the provider immediately to prepare for blood transfusion",
     ],
+    correctIndex: 2,
+    rationale:
+      "A fundus displaced upward and to the right indicates a distended bladder preventing effective uterine contraction (uterine atony). Assisting the client to empty the bladder (or catheterizing if unable to void) allows the uterus to contract cleanly in the midline alongside fundal massage.",
   },
-  mediSurg: {
-    title: "Medi-Surg Sample",
-    question:
-      "A nurse has taken on the care of a client who had a coronary artery stent placed yesterday. When reviewing the client's daily medication administration record, the nurse should anticipate administering what drug?",
-    options: ["Clopidogrel", "Dipyridamole", "Ibuprofen", "Acetaminophen"],
-  },
-};
+];

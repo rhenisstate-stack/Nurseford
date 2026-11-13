@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { strataService } from "@/lib/services/nexus/strata/strataService";
+import { isAllowedNursingCourse } from "@/lib/utils/exams/nursingProgramScope";
 
 export interface StrataItem {
   id: number;
@@ -87,7 +88,17 @@ export const useRelativeStrataSubjects = () => {
         throw new Error(result.error);
       }
 
-      const data = result?.data ?? [];
+      const data = (result?.data ?? []).filter((s) => {
+        const extra = s as StrataItem & { courseName?: string; programName?: string };
+        return isAllowedNursingCourse(
+          {
+            name: extra.courseName || s.name,
+            programName: extra.programName,
+            segment: s.segment,
+          },
+          "all"
+        );
+      });
 
       setSubjects(data);
       setFilteredSubjects(data.slice(0, 20));

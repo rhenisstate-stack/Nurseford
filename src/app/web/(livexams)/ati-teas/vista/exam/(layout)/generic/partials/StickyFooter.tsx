@@ -264,6 +264,7 @@ export default function Footer() {
 
           {/* LEFT */}
           <div className="flex items-center gap-1 min-w-0">
+            {!isFirst && (
             <div className="relative group">
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-50 pointer-events-none">
                 <div className="bg-gray-800 text-white text-[10px] font-medium px-2 py-1 rounded whitespace-nowrap">Previous Question</div>
@@ -278,6 +279,7 @@ export default function Footer() {
                 Previous
               </button>
             </div>
+            )}
 
             <button
               onClick={() => setChooseExamOpen(true)}

@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
-import { getStoredSelectedExam } from "@/lib/constants/dashboards/examSelectionStorage";
 import { EXAM_OPTION_MAP } from "@/lib/constants/dashboards/examOptions";
 
 export default function DashboardsIndexPage() {
@@ -27,14 +26,7 @@ export default function DashboardsIndexPage() {
       return;
     }
 
-    // 2. Check stored user selection preference
-    const stored = getStoredSelectedExam();
-    if (stored && EXAM_OPTION_MAP[stored]) {
-      router.replace(`/dashboards/${stored}`);
-      return;
-    }
-
-    // 3. Default to entrance tracks selector
+    // 2. Default to entrance tracks selector
     router.replace("/pages/entrance");
   }, [user, loading, router]);
 

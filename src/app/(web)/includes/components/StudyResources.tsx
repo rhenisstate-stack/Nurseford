@@ -9,7 +9,7 @@ const features = [
     title: "Fundamentals of Nursing",
     description:
       "Master core nursing concepts, skills, and patient care basics with comprehensive study guides and practice materials.",
-    href: "/pages/exams/ati-teas",
+    href: "/dashboards/rn-nursing",
     accent: "coral" as const,
   },
   {
@@ -19,7 +19,7 @@ const features = [
     title: "Pharmacology & Med-Surg Mastery",
     description:
       "Master the complexities of Pharmacology and Medical-Surgical Nursing with detailed study materials and expert notes.",
-    href: "/pages/exams/rn-nursing",
+    href: "/dashboards/rn-nursing",
     accent: "teal" as const,
   },
   {
@@ -29,7 +29,7 @@ const features = [
     image: "/images/cards/pediatrics-child-health.png",
     description:
       "Explore study materials covering pediatric nursing and child health, including developmental stages and common conditions.",
-    href: "/pages/exams/hesi-a2",
+    href: "/dashboards/lpn-nursing",
     accent: "coral" as const,
   },
   {
@@ -39,7 +39,7 @@ const features = [
     title: "Mental Health & Maternal and Newborn Care",
     description:
       "Prepare for Mental Health and Maternal-Newborn Nursing exams with structured study guides and expert support.",
-    href: "/pages/exams/lpn-nursing",
+    href: "/dashboards/lpn-nursing",
     accent: "purple" as const,
   },
   {
@@ -49,7 +49,7 @@ const features = [
     title: "Free Practice Tests & CATs",
     description:
       "Test your knowledge with free practice exams and Clinical Assessment Tests that simulate real exam conditions.",
-    href: "/dashboards",
+    href: "/dashboards/rn-nursing",
     accent: "green" as const,
   },
 ];
@@ -60,7 +60,7 @@ export default function StudyResources() {
       <div className="mx-auto w-full max-w-[1600px] px-4 md:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="inline-block font-mono text-xs tracking-widest uppercase text-sage mb-3">
-            Rhenis Study Resources
+            Nurseford Study Resources
           </span>
           <h2 className="font-serif text-3xl md:text-4xl font-semibold text-navy tracking-tight">
             Study Materials for Every Learner

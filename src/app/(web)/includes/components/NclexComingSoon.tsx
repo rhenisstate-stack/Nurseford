@@ -5,16 +5,16 @@ const features = [
   {
     icon: ClipboardCheck,
     eyebrow: "Standalone Questions",
-    title: "NCLEX Create Tests",
+    title: "Custom Q-Bank Tests",
     description:
-      "Prepare with unlimited NCLEX Create Tests that replicate the real test environment. Even better, our experts are developing new features — and includes all subjects e.g Adult Health, Child Health, Pharmacology, Nutrition, Mental Health, Maternal & Newborn etc — to give you an even closer simulation of the actual NCLEX.",
+      "Prepare with unlimited custom practice tests that replicate the real test environment across Adult Health, Child Health, Pharmacology, Nutrition, Mental Health, Maternal & Newborn, and more — giving you a realistic simulation for RN, LPN, and Exit Exams.",
   },
   {
     icon: FileQuestion,
     eyebrow: "Practice Tests",
     title: "Personalized Practice Tests",
     description:
-      "Craft personalized practice tests from a bank of 4,000+ NCLEX-style questions, each with detailed answer rationales for complete clarity, Review Mode and Videos. And this is just the beginning — our team of experts is currently expanding the question bank with even more practice sets and live tutoring so you'll always have fresh material to master.",
+      "Craft personalized practice tests from a bank of 4,000+ nursing exam questions, each with detailed answer rationales for complete clarity, Review Mode and Videos. Our team of educators continuously expands the question bank with fresh material to master.",
   },
   {
     icon: ShieldCheck,
@@ -32,12 +32,12 @@ export default function NclexComingSoon() {
         <div className="text-center max-w-2xl mx-auto mb-12">
           
           <h2 className="font-serif text-3xl md:text-4xl font-semibold text-navy tracking-tight">
-            NCLEX RN &amp; PN
+            RN, LPN &amp; Exit Exams
           </h2>
           <p className="mt-4 text-navy/60 leading-relaxed">
-            With Rhenis, you&apos;ll access tailored NCLEX questions and illustrative
+            With Nurseford, you&apos;ll access tailored nursing practice questions and illustrative
             videos designed by a team of experts to ensure you study smarter and
-            achieve success with confidence and become a licensed nurse.
+            achieve success with confidence.
           </p>
         </div>
 

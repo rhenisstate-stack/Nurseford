@@ -3,29 +3,29 @@ const steps = [
     number: "01",
     title: "Assess Your Needs",
     description:
-      "We begin by understanding your specific goals and knowledge level, tailoring resources for TEAS/ HESI, RN/LPN, Exit Exams or NCLEX.",
+      "We begin by understanding your specific goals and knowledge level, tailoring resources for RN Nursing, LPN Nursing, and RN/LPN Exit Exams.",
     link: undefined,
   },
   {
     number: "02",
     title: "Choose the Right Materials",
     description:
-      "Select from our extensive library of practice exams, study notes, and guides. We cover ATI/ HESI, Examplify, capstone with wide coverage in Medsurge, pediatrics, Pharmacology, and much more.",
-    link: { label: "View Subscription Plans", href: "#exams" },
+      "Select from our extensive library of practice exams, study notes, and guides covering RN & LPN core courses, Exit Exams, and Capstone reviews across Med-Surg, Pediatrics, Pharmacology, and much more.",
+    link: { label: "View Subscription Plans", href: "/dashboards/rn-nursing/vista/subscriptions/items" },
   },
   {
     number: "03",
     title: "Practice and Review",
     description:
       "Test yourself with our realistic practice exams, and review detailed explanations to improve and gain confidence.",
-    link: { label: "Take a Free Practice Test", href: "/dashboards" },
+    link: { label: "Take a Free Practice Test", href: "/dashboards/rn-nursing" },
   },
   {
     number: "04",
     title: "Track Your Progress",
     description:
       "Monitor improvements with performance tracking, helping you know when you're ready for the actual exams.",
-    link: { label: "Access Your Dashboard", href: "/dashboards" },
+    link: { label: "Access Your Dashboard", href: "/dashboards/rn-nursing" },
   },
   {
     number: "05",
@@ -45,7 +45,7 @@ export default function HowItWorks() {
             How We Help You Succeed
           </span>
           <h2 className="font-serif text-3xl md:text-4xl font-semibold text-navy tracking-tight">
-            From Entrance to NCLEX
+            From Fundamentals to Exit Exams
           </h2>
           <p className="mt-4 text-navy/60 leading-relaxed">
             A proven five-step path that takes you from baseline to exam day

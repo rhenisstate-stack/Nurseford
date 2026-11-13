@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   FiLogIn,
@@ -19,8 +20,13 @@ import {
 
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
 import { dynamicLogoutService } from "@/lib/services/auth/logoutService";
-import { userService } from "@/lib/services/users/user/userService";
+import { destroyAccountService } from "@/lib/services/auth/destroyService";
+import VerifyEmailModal from "@/components/common/modals/VerifyEmailModal";
+import DeleteAccountModal from "@/components/common/modals/DeleteAccountModal";
+import { isPrimaryEmailUnverified } from "@/lib/utils/users/isPrimaryEmailUnverified";
 import { clearAuthSessionCookies, deleteUsernameCookie } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
+
+
 interface UserAccountDropdownProps {
   currentDashboard?: string;
   align?: "right" | "left" | "center";
@@ -108,7 +114,6 @@ export default function UserAccountDropdown({
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
         setLogoutOptionsOpen(false);
-        setShowDeleteConfirm(false);
       }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -129,7 +134,7 @@ export default function UserAccountDropdown({
   }, []);
 
   const VALID_DASHBOARDS = useMemo(
-    () => new Set(["ati-teas", "hesi-a2", "lpn-nursing", "nclex-pn", "nclex-rn", "rn-nursing"]),
+    () => new Set(["lpn-nursing", "rn-nursing"]),
     []
   );
 
@@ -169,7 +174,7 @@ export default function UserAccountDropdown({
     if (typeof window !== "undefined") {
       try {
         sessionStorage.clear();
-      } catch {}
+      } catch { }
       window.dispatchEvent(new CustomEvent("session:logout"));
     }
 
@@ -193,42 +198,65 @@ export default function UserAccountDropdown({
     }
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async (reason: string) => {
+    if (!user?.guidId || !user?.email) {
+      setDeleteError("Unable to identify your account. Please sign in again.");
+      return;
+    }
+
     setIsDeleting(true);
     setDeleteError(null);
-    try {
-      const res = await userService("Delete", {
-        id: user?.id,
-        guidId: user?.guidId,
-        userName: user?.userName,
-        email: user?.email,
-      });
 
-      if (res?.error && !res?.data && !res?.message) {
-        setDeleteError(res.error);
-        setIsDeleting(false);
-        return;
-      }
+    const res = await destroyAccountService({
+      guidId: user.guidId,
+      email: user.email,
+      reason: reason.trim() || undefined,
+    });
 
-      clearAuthSessionCookies();
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("session:logout"));
-      }
-
-      const msg = encodeURIComponent(
-        res?.message || "Your account has been deleted and deactivated successfully ⚓"
+    if (!res.success) {
+      // Session stays intact so the user can retry
+      setDeleteError(
+        res.error || res.message || "Could not delete your account. Please try again."
       );
-      window.location.href = `/auth/login?msg=${msg}`;
-    } catch (err: unknown) {
-      clearAuthSessionCookies();
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("session:logout"));
-      }
-      const errMsg = err instanceof Error ? err.message : "Account deleted.";
-      window.location.href = `/auth/login?msg=${encodeURIComponent(errMsg)}`;
-    } finally {
       setIsDeleting(false);
+      return;
     }
+
+    // Success: now it is safe to wipe the session
+    clearAuthSessionCookies();
+    deleteUsernameCookie();
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.clear();
+      } catch { }
+      window.dispatchEvent(new CustomEvent("session:logout"));
+    }
+
+    const msg = encodeURIComponent(
+      res.message || "Your account has been deleted and deactivated successfully ⚓"
+    );
+    window.location.href = `/auth/login?msg=${msg}`;
+  };
+
+  /* Verify-email prompt (hooks must stay above the early returns) */
+  const pathname = usePathname();
+  const [verifyPromptOpen, setVerifyPromptOpen] = useState(false);
+  const emailUnverified = isPrimaryEmailUnverified(user);
+  const onVerifyPage = pathname?.includes("/auth/account/verify/email") ?? false;
+  const verifyPromptKey = `verify_email_prompt_dismissed:${user?.guidId ?? ""}`;
+
+  useEffect(() => {
+    if (loading || !emailUnverified || onVerifyPage) {
+      setVerifyPromptOpen(false);
+      return;
+    }
+    if (sessionStorage.getItem(verifyPromptKey) === "1") return;
+    setVerifyPromptOpen(true);
+  }, [loading, emailUnverified, onVerifyPage, verifyPromptKey]);
+
+  const closeVerifyPrompt = () => {
+    sessionStorage.setItem(verifyPromptKey, "1");
+    setVerifyPromptOpen(false);
   };
 
   if (loading && !user) {
@@ -256,13 +284,12 @@ export default function UserAccountDropdown({
           })}
           {isOpen && (
             <div
-              className={`absolute mt-3 w-[260px] rounded-2xl border border-[#85AEEA] dark:border-white/20 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] shadow-2xl z-50 p-2 space-y-1 ${
-                align === "left"
-                  ? "left-0"
-                  : align === "center"
+              className={`absolute mt-3 w-[260px] rounded-2xl border border-[#85AEEA] dark:border-white/20 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] shadow-2xl z-50 p-2 space-y-1 ${align === "left"
+                ? "left-0"
+                : align === "center"
                   ? "left-1/2 -translate-x-1/2"
                   : "right-0"
-              }`}
+                }`}
             >
               <Link
                 href={`/dashboards/${targetDashboard}/auth/login`}
@@ -306,13 +333,12 @@ export default function UserAccountDropdown({
 
         {isOpen && (
           <div
-            className={`absolute mt-3 w-[260px] rounded-2xl border border-[#85AEEA] dark:border-white/20 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] shadow-2xl z-50 p-2 space-y-1 ${
-              align === "left"
-                ? "left-0"
-                : align === "center"
+            className={`absolute mt-3 w-[260px] rounded-2xl border border-[#85AEEA] dark:border-white/20 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] shadow-2xl z-50 p-2 space-y-1 ${align === "left"
+              ? "left-0"
+              : align === "center"
                 ? "left-1/2 -translate-x-1/2"
                 : "right-0"
-            }`}
+              }`}
           >
             <Link
               href={`/dashboards/${targetDashboard}/auth/login`}
@@ -364,10 +390,7 @@ export default function UserAccountDropdown({
     !avatarBroken && user.profile?.profilePicture ? user.profile.profilePicture : null;
 
   const access = user.accesses?.[0];
-  const primaryEmail = user.emails?.find((e) => e.isPrimary);
-  const isEmailVerified = Boolean(
-    primaryEmail?.isVerified ?? user.emailConfirmed ?? false
-  );
+  const isEmailVerified = !emailUnverified;
   const userName = user?.userName?.trim() || "";
   const userInitial = userName ? userName[0].toUpperCase() : "?";
   const role =
@@ -379,8 +402,8 @@ export default function UserAccountDropdown({
     align === "left"
       ? "left-0"
       : align === "center"
-      ? "left-1/2 -translate-x-1/2"
-      : "right-0";
+        ? "left-1/2 -translate-x-1/2"
+        : "right-0";
 
   return (
     <div
@@ -405,11 +428,10 @@ export default function UserAccountDropdown({
       ) : (
         <button
           onClick={() => setIsOpen((v) => !v)}
-          className={`group flex items-center gap-2 rounded-full transition-all duration-300 hover:bg-white/40 dark:hover:bg-white/10 hover:shadow-lg hover:ring-1 hover:ring-emerald-300/40 ${
-            hideAvatar
-              ? "px-4 py-2 bg-white/30 dark:bg-white/5 border border-slate-300/60 dark:border-white/10"
-              : "px-2 py-1"
-          }`}
+          className={`group flex items-center gap-2 rounded-full transition-all duration-300 hover:bg-white/40 dark:hover:bg-white/10 hover:shadow-lg hover:ring-1 hover:ring-emerald-300/40 ${hideAvatar
+            ? "px-4 py-2 bg-white/30 dark:bg-white/5 border border-slate-300/60 dark:border-white/10"
+            : "px-2 py-1"
+            }`}
           aria-expanded={isOpen}
           aria-haspopup="true"
         >
@@ -436,9 +458,8 @@ export default function UserAccountDropdown({
           </span>
           {hideAvatar && (
             <FiChevronDown
-              className={`w-3.5 h-3.5 text-navy/60 dark:text-white/60 transition-transform ${
-                isOpen ? "rotate-180" : ""
-              }`}
+              className={`w-3.5 h-3.5 text-navy/60 dark:text-white/60 transition-transform ${isOpen ? "rotate-180" : ""
+                }`}
             />
           )}
         </button>
@@ -561,7 +582,12 @@ export default function UserAccountDropdown({
                   <div className="bg-red-50/50 dark:bg-red-950/20">
                     <button
                       type="button"
-                      onClick={() => setShowDeleteConfirm((v) => !v)}
+                      onClick={() => {
+                        setDeleteError(null);
+                        setIsOpen(false);
+                        setLogoutOptionsOpen(false);
+                        setShowDeleteConfirm(true);
+                      }}
                       className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-red-100/70 dark:hover:bg-red-950/50 transition cursor-pointer"
                     >
                       <FiTrash2 className="text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
@@ -575,42 +601,6 @@ export default function UserAccountDropdown({
                       </div>
                     </button>
 
-                    {/* Inline Soft Delete Confirmation */}
-                    {showDeleteConfirm && (
-                      <div className="p-3 mx-3 mb-3 bg-red-100 dark:bg-red-950/80 border border-red-300 dark:border-red-800 rounded-xl space-y-2 animate-in fade-in duration-150">
-                        <div className="flex items-start gap-2 text-xs font-semibold text-red-900 dark:text-red-200">
-                          <FiAlertTriangle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
-                          <span>
-                            Are you sure you want to delete your account? This will deactivate your access.
-                          </span>
-                        </div>
-
-                        {deleteError && (
-                          <p className="text-[11px] text-red-700 dark:text-red-300">
-                            {deleteError}
-                          </p>
-                        )}
-
-                        <div className="flex items-center gap-2 pt-1">
-                          <button
-                            type="button"
-                            onClick={handleDeleteAccount}
-                            disabled={isDeleting}
-                            className="flex-1 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
-                          >
-                            {isDeleting ? "Deleting..." : "Yes, Delete Account"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setShowDeleteConfirm(false)}
-                            disabled={isDeleting}
-                            className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 text-xs font-medium rounded-lg transition cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
@@ -619,6 +609,21 @@ export default function UserAccountDropdown({
           </div>
         </div>
       )}
+
+      <VerifyEmailModal
+        isOpen={verifyPromptOpen}
+        onClose={closeVerifyPrompt}
+        verifyHref={`/dashboards/${targetDashboard}/auth/account/verify/email`}
+        email={user.email}
+      />
+
+      <DeleteAccountModal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDeleteAccount}
+        isDeleting={isDeleting}
+        error={deleteError}
+      />
     </div>
   );
 }

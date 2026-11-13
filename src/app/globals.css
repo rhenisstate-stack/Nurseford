@@ -20,14 +20,14 @@ html:not(.light) .show-on-dark {
 }
 
 :root {
-  --background: #000f25;
+  --background: 	#176B87;
   --foreground: #ffffff;
-  --content-bg: #000f25;
+  --content-bg: #176B87;
   --text-color: #ffffff;
-  --navbar-bg: #000f25;
-  --leftSidebar-bg: #000f25;
-  --rightSidebar-bg: #000f25;
-  --footer-bg: #000f25;
+  --navbar-bg: #176B87;
+  --leftSidebar-bg: #176B87;
+  --rightSidebar-bg: #176B87;
+  --footer-bg: #176B87;
   --card-bg: #15273e;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -48,9 +48,9 @@ html.light {
 }
 
 html.dark {
-  --background: #000f25;
-  --foreground: #ffffff;
-  --content-bg: #000f25;
+  --background: 	#176B87;
+  --foreground: 	#EAF4FA;
+  --content-bg: #176B87;
   --text-color: #ffffff;
   --navbar-bg: #000f25;
   --leftSidebar-bg: #000f25;
@@ -63,8 +63,10 @@ html.dark {
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-serif: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 
   --color-navy: var(--text-color);
   --color-navy-light: var(--text-color);
@@ -87,7 +89,7 @@ html.dark {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #000f25;
+    --background: #176B87;
     --foreground: #ffffff;
   }
 }
@@ -95,26 +97,32 @@ html.dark {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-plus-jakarta), var(--font-inter), sans-serif;
+  }
+}
+
 /* ── Live Exam Mode: Dark & Light Scoped Enhancements ── */
 html.dark [data-exam-page] {
-  background-color: #071321 !important;
+  background-color: #EAF4FA !important;
   color: #f1f5f9 !important;
 }
 html.dark [data-exam-page] .bg-white {
-  background-color: #0c1b2f !important;
+  background-color: #1c5bae !important;
   color: #f1f5f9 !important;
 }
 html.dark [data-exam-page] .bg-slate-50 {
-  background-color: #071321 !important;
+  background-color: #EAF4FA !important;
 }
 html.dark [data-exam-page] .bg-slate-100 {
-  background-color: #112238 !important;
+  background-color: #CBD5E1 !important;
 }
 html.dark [data-exam-page] .text-slate-900 {
   color: #f8fafc !important;

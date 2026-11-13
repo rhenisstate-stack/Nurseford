@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { strataService } from "@/lib/services/nexus/strata/strataService";
+import type { NursingProgramScope } from "@/lib/utils/exams/nursingProgramScope";
+import { fetchScopedNominalExams } from "@/lib/utils/exams/scopedExamFetch";
 
 export interface StrataItem {
   id: number;
@@ -56,78 +57,37 @@ export const useAbsoluteStrataExams = ({
   perPage = 20,
   sortColumn = "id",
   sortDirection = "desc",
+  programScope = "all",
 }: {
   page?: number;
   perPage?: number;
   sortColumn?: keyof StrataItem | null;
   sortDirection?: "asc" | "desc";
+  programScope?: NursingProgramScope;
 }) => {
   const [exams, setExams] = useState<StrataItem[]>([]);
   const [filteredExams, setFilteredExams] = useState<StrataItem[]>([]);
   const [examSearch, setExamSearch] = useState("");
   const [skewTotal, setSkewTotal] = useState<number>(0);
   const [skewTotalPages, setSkewTotalPages] = useState<number>(1);
-  const FETCH_TYPE = 'AbsoluteFetch';
 
   useEffect(() => {
     const fetchExams = async () => {
       try {
-        console.log("🚀 [useAbsoluteStrataExams] Fetching Exams ... 🪝");
-        console.log("🧪 [Hook Params]", {
-          examSearch,
+        const scoped = await fetchScopedNominalExams<StrataItem>({
+          scope: programScope,
           page,
           perPage,
+          search: examSearch,
           sortColumn,
           sortDirection,
+          sliceMerged: true,
         });
 
-        const result = await strataService<{
-          items: StrataItem[];
-          skewPage: number;
-          skewPerPage: number;
-          skewTotal: number;
-          skewTotalPages: number;
-          skewSearch?: string | null;
-          skewSort?: string | null;
-          skewColumnSort?: string | null;
-        }>(
-          "Exam",
-          FETCH_TYPE,
-          {
-            dynamicPage: page,
-            dynamicPerPage: perPage,
-            dynamicSearch: examSearch || "",
-            dynamicSortColumn: sortColumn ?? "id",
-            dynamicSortDirection: sortDirection ?? "desc",
-          }
-        );
-
-        console.log("📥 Raw result:", result);
-        console.log("📦 result.data:", result?.data);
-
-        if (result?.error) {
-          throw new Error(result.error);
-        }
-
-        const rawItems = result?.data?.items ?? [];
-        const items = [...rawItems].sort((a, b) => {
-          const effectiveCol = sortColumn ?? "id";
-          const effectiveDir = sortDirection ?? "desc";
-          if (effectiveCol === "id") {
-            const idA = Number(a.id) || 0;
-            const idB = Number(b.id) || 0;
-            return effectiveDir === "asc" ? idA - idB : idB - idA;
-          }
-          return 0;
-        });
-        const totalItems = result?.data?.skewTotal ?? 0;
-        const totalPages = result?.data?.skewTotalPages ?? 1;
-
-        setExams(items);
-        setFilteredExams(items);
-        setSkewTotal(totalItems);
-        setSkewTotalPages(totalPages);
-
+        setExams(scoped.items);
+        setFilteredExams(scoped.items);
+        setSkewTotal(scoped.totalItems);
+        setSkewTotalPages(scoped.totalPages);
       } catch (err) {
         console.error(
           "❌ [useAbsoluteStrataExams] Failed to fetch Exams:",
@@ -137,7 +97,7 @@ export const useAbsoluteStrataExams = ({
     };
 
     fetchExams();
-  }, [examSearch, page, perPage, sortColumn, sortDirection]);
+  }, [examSearch, page, perPage, sortColumn, sortDirection, programScope]);
 
   // Pass Exams when search changes [ Frontend is just to display !]
   useEffect(() => {

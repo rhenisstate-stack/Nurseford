@@ -95,6 +95,21 @@ const nextConfig: NextConfig = {
         destination: "/auth/login",
         permanent: true,
       },
+      {
+        source: "/pages/exams/rn-nursing",
+        destination: "/dashboards/rn-nursing",
+        permanent: true,
+      },
+      {
+        source: "/pages/exams/lpn-nursing",
+        destination: "/dashboards/lpn-nursing",
+        permanent: true,
+      },
+      {
+        source: "/pages/exams/:path*",
+        destination: "/",
+        permanent: true,
+      },
     ];
   },
   async rewrites() {

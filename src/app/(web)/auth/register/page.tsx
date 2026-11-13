@@ -15,7 +15,6 @@ import { registerUser } from '@/lib/services/auth/registerService'
 import { session } from '@/lib/services/auth/sessionService'
 import { DEFAULT_USER_ROLE } from '@/lib/constants/roles'
 import { EXAM_OPTIONS } from '@/lib/constants/dashboards/examOptions'
-import { getStoredSelectedExam, setStoredSelectedExam } from '@/lib/constants/dashboards/examSelectionStorage'
 import { setUsernameCookie } from '@/lib/utils/sessions/generateSystemUserSessionCookies'
 const role = DEFAULT_USER_ROLE;
 const LOGIN_PATH = "/auth/login";
@@ -61,10 +60,7 @@ export default function RegisterPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const router = useRouter()
   const [selectedProvider, setSelectedProvider] = useState<'email' | 'google' | null>(null)
-  const [selectedExam, setSelectedExam] = useState<string>(() => {
-    const stored = getStoredSelectedExam()
-    return EXAM_OPTIONS.some((opt) => opt.value === stored) ? stored : ""
-  })
+  const [selectedExam, setSelectedExam] = useState<string>("")
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -601,9 +597,7 @@ export default function RegisterPage() {
                   name="selectedExam"
                   value={selectedExam}
                   onChange={(e) => {
-                    const value = e.target.value
-                    setSelectedExam(value)
-                    setStoredSelectedExam(value)
+                    setSelectedExam(e.target.value)
                   }}
                   className="w-full bg-paper-dim border border-border rounded-lg px-2.5 py-1.5 text-xs text-navy focus:outline-none focus:ring-2 focus:ring-coral"
                 >

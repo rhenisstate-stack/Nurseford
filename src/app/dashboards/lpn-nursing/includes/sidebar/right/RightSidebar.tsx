@@ -24,7 +24,7 @@ import { APP_TITLE, APP_ACRONYM } from "@/lib/config/config";
 
 export default function RightSidebar() {
 
-  const DASHBOARD_NAME = "Ati-Teas";
+  const DASHBOARD_NAME = "lpn-nursing";
   const PROGRAM_PANEL = "lpn-nursing";
 
   const { state, open, close } = useRightSidebar();

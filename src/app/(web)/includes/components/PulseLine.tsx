@@ -9,12 +9,6 @@ export default function PulseLine({
   showWaypoints = false,
   variant = "hero",
 }: PulseLineProps) {
-  const waypoints = [
-    { label: "TEAS 7/HESI A2", x: 90, y: -18 },
-    { label: "RN/LPN Exams", x: 430, y: -18 },
-    { label: "NCLEX RN/LPN", x: 840, y: -18 },
-  ];
-
   if (variant === "divider") {
     return (
       <div className={`w-full overflow-hidden ${className}`} aria-hidden="true">
@@ -37,47 +31,103 @@ export default function PulseLine({
   }
 
   return (
-    <div className={`w-full flex justify-center ${className}`} aria-hidden="true">
+    <div className={`w-full flex items-center justify-center ${className}`}>
+      {/* Left ECG pulse trace */}
       <svg
-        viewBox="0 0 1000 80"
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full h-20 md:h-28"
+        viewBox="0 0 360 80"
+        preserveAspectRatio="none"
+        className="flex-1 h-16 md:h-20 min-w-0"
         fill="none"
+        aria-hidden="true"
       >
+        <defs>
+          <linearGradient id="pulseLeftGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="transparent" />
+            <stop offset="45%" stopColor="#e5573f" />
+            <stop offset="100%" stopColor="#e5573f" />
+          </linearGradient>
+        </defs>
         <path
-          d="M0 40 L160 40 L180 40 L195 18 L210 62 L225 5 L240 75 L255 25 L270 50 L280 40 L420 40 L440 40 L580 40 L595 18 L610 62 L625 5 L640 75 L655 25 L670 50 L680 40 L1000 40"
-          stroke="url(#pulseGradient)"
+          d="M0 40 L110 40 L130 40 L145 18 L160 62 L175 5 L190 75 L205 25 L220 50 L230 40 L360 40"
+          stroke="url(#pulseLeftGradient)"
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
         />
+      </svg>
+
+      {/* Center Heart with RN / LPN Exit & Nursing Exams */}
+      {showWaypoints && (
+        <div className="relative shrink-0 w-[190px] h-[160px] sm:w-[220px] sm:h-[184px] flex items-center justify-center -mx-2">
+          <svg
+            viewBox="0 0 220 190"
+            className="absolute inset-0 w-full h-full drop-shadow-sm"
+            fill="none"
+            aria-hidden="true"
+          >
+            <defs>
+              <linearGradient id="heartStrokeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#e5573f" />
+                <stop offset="55%" stopColor="#ff6b35" />
+                <stop offset="100%" stopColor="#5ba8d9" />
+              </linearGradient>
+              <linearGradient id="heartFillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#e5573f" stopOpacity="0.16" />
+                <stop offset="55%" stopColor="#ff6b35" stopOpacity="0.12" />
+                <stop offset="100%" stopColor="#5ba8d9" stopOpacity="0.18" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M110 46 C110 24, 82 10, 56 14 C24 19, 10 49, 14 78 C20 116, 62 146, 110 176 C158 146, 200 116, 206 78 C210 49, 196 19, 164 14 C138 10, 110 24, 110 46 Z"
+              fill="var(--content-bg, #ffffff)"
+            />
+            <path
+              d="M110 46 C110 24, 82 10, 56 14 C24 19, 10 49, 14 78 C20 116, 62 146, 110 176 C158 146, 200 116, 206 78 C210 49, 196 19, 164 14 C138 10, 110 24, 110 46 Z"
+              fill="url(#heartFillGrad)"
+              stroke="url(#heartStrokeGrad)"
+              strokeWidth="3"
+              strokeLinejoin="round"
+            />
+          </svg>
+
+          <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 -mt-3 leading-tight">
+            <span className="font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-coral mb-0.5">
+              RN / LPN
+            </span>
+            <span className="font-serif text-xs sm:text-sm font-bold text-navy dark:text-white">
+              Nursing &amp; Exit
+            </span>
+            <span className="font-serif text-xs sm:text-sm font-bold text-navy dark:text-white">
+              Exams
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Right ECG pulse trace */}
+      <svg
+        viewBox="0 0 360 80"
+        preserveAspectRatio="none"
+        className="flex-1 h-16 md:h-20 min-w-0"
+        fill="none"
+        aria-hidden="true"
+      >
         <defs>
-          <linearGradient id="pulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="transparent" />
-            <stop offset="25%" stopColor="#e5573f" />
-            <stop offset="50%" stopColor="#e5573f" />
-            <stop offset="75%" stopColor="#5ba8d9" />
+          <linearGradient id="pulseRightGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#5ba8d9" />
+            <stop offset="55%" stopColor="#5ba8d9" />
             <stop offset="100%" stopColor="transparent" />
           </linearGradient>
         </defs>
-        {showWaypoints &&
-          waypoints.map((wp) => (
-            <g key={wp.label}>
-              <circle cx={wp.x} cy={40} r="5" fill="#e5573f" />
-              <circle cx={wp.x} cy={40} r="9" fill="#e5573f" opacity="0.2" />
-              <text
-                x={wp.x}
-                y={40 + wp.y}
-                textAnchor="middle"
-                className="fill-navy"
-                fontSize="13"
-                fontWeight="600"
-                fontFamily="var(--font-mono), monospace"
-              >
-                {wp.label}
-              </text>
-            </g>
-          ))}
+        <path
+          d="M0 40 L130 40 L140 50 L155 25 L170 75 L185 5 L200 62 L215 18 L235 40 L250 40 L360 40"
+          stroke="url(#pulseRightGradient)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
       </svg>
     </div>
   );

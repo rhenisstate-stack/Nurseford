@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { strataService } from "@/lib/services/nexus/strata/strataService";
+import { isAllowedNursingAssessment } from "@/lib/utils/exams/nursingProgramScope";
 
 export interface StrataItem {
   id: number;
@@ -87,7 +88,9 @@ export const useRelativeStrataAssessments = () => {
         throw new Error(result.error);
       }
 
-      const data = result?.data ?? [];
+      const data = (result?.data ?? []).filter((a) =>
+        isAllowedNursingAssessment(a, "all")
+      );
 
       setAssessments(data);
       setFilteredAssessments(data.slice(0, 20));

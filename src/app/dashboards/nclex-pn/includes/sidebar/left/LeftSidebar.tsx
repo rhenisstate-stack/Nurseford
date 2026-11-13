@@ -361,7 +361,7 @@ export default function LeftSidebar() {
           transition-all duration-300 ease-in-out
           shadow-md border-r border-[var(--text-color)]/10`}
         style={{
-          backgroundColor: "var(--leftSidebar-bg, #000f25)",
+          backgroundColor: "var(--leftSidebar-bg, #171C27)",
           color: "var(--text-color)",
         }}
       >
@@ -464,14 +464,11 @@ export default function LeftSidebar() {
           <AccordionGroup
             id="Explore More Products"
             icon={Sparkles}
-            label="Explore More Products"
+            label="Nursing Programs"
             isActive={activeDropdown === "Explore More Products"}
             onToggle={toggleDropdown}
             {...sharedNavProps}
           >
-            <NavItem href="/dashboards/ati-teas" label="TEAS 7 Prep" {...sharedNavProps} />
-            <NavItem href="/dashboards/hesi-a2" label="HESI A2" {...sharedNavProps} />
-
             {/* RN Nursing Exams Sub-Accordion */}
             <SubAccordionGroup
               id="explore-rn-nursing"
@@ -530,8 +527,7 @@ export default function LeftSidebar() {
               <NavItem href="/dashboards/lpn-nursing/exams/exit-hesi-exams-lpn/24" label="EXIT HESI Exams-LPN" {...sharedNavProps} />
             </SubAccordionGroup>
 
-            <NavItem href="/dashboards/nclex-rn" label="NCLEX-RN" {...sharedNavProps} />
-          </AccordionGroup>
+            </AccordionGroup>
 
           <div className="my-2 border-t border-[var(--text-color)]/10" />
 

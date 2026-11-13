@@ -1,4 +1,4 @@
-// src/app/web/(livexams)/hesi-a2/vista/exam/(layout)/generic/page.tsx
+// src/app/web/(livexams)/ati-teas/vista/exam/(layout)/generic/page.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
@@ -8,15 +8,15 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useLiveStrataExamContext } from "@/lib/contexts/panel/assessment/LiveStrataExamContext";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
-import UserAccountDropdown from "@/components/common/user/UserAccountDropdown";
-import { FiChevronDown } from "react-icons/fi";
 import { getUsernameCookie } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
 import { QuestionTypes } from "../../../../../partials/dispatcher/QuestionTypes";
-
 import { CustomMiniCalculator } from "@/components/panel/exam/tools/CustomMiniCalculator";
 import ImpelUserAuthetication from "@/components/auth/modal/ImpelUserAuthetication";
-import { ExamSubscriptionPaywallModal } from "@/components/panel/exam/modals/ExamSubscriptionPaywallModal";
-import { useGlobalExamAccessGate } from "@/lib/hooks/nexus/subscription/packages/useGlobalExamAccessGate";
+import { useMyActiveSubscription } from "@/app/(web)/includes/components/exams/ActiveSubscriptionCard";
+import { useExamSubscriptionAccess } from "@/lib/hooks/nexus/subscription/packages/useExamSubscriptionAccess";
+import UserAccountDropdown from "@/components/common/user/UserAccountDropdown";
+import HeedMessageBellDropdown from "@/components/common/notifications/HeedMessageBellDropdown";
+import { FiChevronDown } from "react-icons/fi";
 import {
   ArrowLeft,
   ArrowRight,
@@ -39,6 +39,10 @@ import {
   Star,
   Bookmark,
   Pin,
+  Crown,
+  Sparkles,
+  UserCheck,
+  Lock,
 } from "lucide-react";
 import { useExamFontSize } from "@/lib/contexts/web/assessment/theme/ExamFontSizeContext";
 import { useExamTheme } from "@/lib/contexts/web/assessment/theme/ExamThemeContext";
@@ -61,6 +65,14 @@ interface FlatQuestion {
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
+type RealIds = {
+  _realSectionId?: number;
+  _realSectionGuidId?: string;
+  _realExamId?: number;
+  _realExamGuidId?: string;
+};
+const realIds = (q: unknown): RealIds => q as RealIds;
+
 function flattenQuestions(
   sections: NonNullable<
     ReturnType<typeof useLiveStrataExamContext>["examSession"]
@@ -73,8 +85,8 @@ function flattenQuestions(
       flat.push({
         question: q,
         sectionName: section.name,
-        sectionId: (q as any)._realSectionId ?? section.id,
-        sectionGuidId: (q as any)._realSectionGuidId ?? section.guidId,
+        sectionId: realIds(q)._realSectionId ?? section.id,
+        sectionGuidId: realIds(q)._realSectionGuidId ?? section.guidId,
       });
     }
   }
@@ -794,9 +806,10 @@ function QuestionNavigatorModal({
   onSelect,
   answeredMap,
   allowedMaxIndex,
+  isGuest,
+  isSubscribed,
   onRequireLogin,
   onRequireSubscribe,
-  isGuest,
 }: {
   open: boolean;
   onClose: () => void;
@@ -805,9 +818,10 @@ function QuestionNavigatorModal({
   onSelect: (index: number) => void;
   answeredMap: Record<number, boolean>;
   allowedMaxIndex?: number;
+  isGuest?: boolean;
+  isSubscribed?: boolean;
   onRequireLogin?: () => void;
   onRequireSubscribe?: () => void;
-  isGuest?: boolean;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -884,15 +898,14 @@ function QuestionNavigatorModal({
                   key={i}
                   onClick={handleClick}
                   title={isLocked ? (isGuest ? "Login required" : "Subscription required") : `Question ${i + 1}`}
-                  className={`h-9 rounded-lg text-xs font-bold transition flex items-center justify-center cursor-pointer shadow-2xs relative ${
-                    isCurrent
-                      ? "bg-blue-600 text-white ring-2 ring-blue-400 ring-offset-1"
-                      : isLocked
-                        ? "bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 opacity-60 hover:opacity-100"
-                        : isAnswered
-                          ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                          : "border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  }`}
+                  className={`h-9 rounded-lg text-xs font-bold transition flex items-center justify-center cursor-pointer shadow-2xs relative ${isCurrent
+                    ? "bg-blue-600 text-white ring-2 ring-blue-400 ring-offset-1"
+                    : isLocked
+                      ? "bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 opacity-60 hover:opacity-100"
+                      : isAnswered
+                        ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                        : "border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
                 >
                   <span>{i + 1}</span>
                   {isLocked && <span className="text-[10px] ml-0.5">🔒</span>}
@@ -921,7 +934,45 @@ export default function LiveExamPage() {
     : null;
 
   const [currentIndex, setCurrentIndex] = useState(0); // 0-based
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [attemptsBlocked, setAttemptsBlocked] = useState(false);
+  const [navigatingPackages, setNavigatingPackages] = useState(false);
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const programSlug = useMemo(() => {
+    const match = pathname?.match(/\/(rn-nursing|lpn-nursing|nclex-rn|nclex-pn|ati-teas|hesi-a2|cna|ged|pre-nursing|certification)/);
+    return match?.[1] || "hesi-a2";
+  }, [pathname]);
+
+  const isGuest = useMemo(() => {
+    if (user?.userName && user.userName.toLowerCase() !== "guest") {
+      return false;
+    }
+    const cookieUser = getUsernameCookie();
+    if (cookieUser && cookieUser.toLowerCase() !== "guest") {
+      return false;
+    }
+    return !user;
+  }, [user]);
+
+  const { isSubscribed: hookSubscribed, subscriptionsLoading } = useExamSubscriptionAccess({
+    user,
+    isGuest,
+    programSlug,
+    exam: examSession?.exam,
+  });
+
+  // Same check used on the landing/subjects pages (active sub for this program segment)
+  const parentName = programSlug.toUpperCase().replace(/-/g, "_");
+  const myActiveSubscription = useMyActiveSubscription(parentName);
+  const isSubscribed = hookSubscribed || Boolean(myActiveSubscription);
+  const packagesHref = `/dashboards/${programSlug}/vista/subscriptions/items`;
+
+  useEffect(() => {
+    if (showSubscriptionModal) router.prefetch(packagesHref);
+  }, [showSubscriptionModal, packagesHref, router]);
 
   // Modals
   const [calcOpen, setCalcOpen] = useState(false);
@@ -1021,28 +1072,16 @@ export default function LiveExamPage() {
   }, [examSession]);
   const flatTotal = flat.length;
 
-  const pathname = usePathname();
-  const programSlug = useMemo(() => {
-    const match = pathname?.match(/\/(rn-nursing|lpn-nursing|ati-teas|hesi-a2|cna|ged|pre-nursing|certification)/);
-    return match?.[1] || "hesi-a2";
-  }, [pathname]);
+  // Access is 100% dynamic and governed by ASP.NET backend
+  const allowedMaxIndex = useMemo(() => {
+    return flatTotal > 0 ? flatTotal - 1 : 0;
+  }, [flatTotal]);
 
-  const {
-    isGuest,
-    isSubscribed,
-    allowedMaxIndex,
-    registeredLimitCount,
-    showLoginModal,
-    setShowLoginModal,
-    showSubscriptionModal,
-    setShowSubscriptionModal,
-    checkCanAccessIndex,
-  } = useGlobalExamAccessGate({
-    user,
-    exam: examSession?.exam,
-    programSlug,
-    flatTotal,
-  });
+  const registeredLimitCount = useMemo(() => {
+    return flatTotal;
+  }, [flatTotal]);
+
+
 
   const answeredMap = useMemo(() => {
     const map: Record<number, boolean> = {};
@@ -1144,7 +1183,7 @@ export default function LiveExamPage() {
   useEffect(() => {
     if (totalSeconds <= 0) return;
     if (timeUp) return;
-    if (examPaused || isCancelled) return;
+    if (examPaused) return;
 
     const warningThreshold = Math.floor(totalSeconds * 0.2);
 
@@ -1162,7 +1201,7 @@ export default function LiveExamPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [totalSeconds, timeUp, setSecondsLeft, examPaused, isCancelled]);
+  }, [totalSeconds, timeUp, setSecondsLeft, examPaused]);
 
   // Strict mode time-up auto submit
   useEffect(() => {
@@ -1251,32 +1290,20 @@ export default function LiveExamPage() {
   const handlePrev = useCallback(() => {
     if (isBlockedRef.current) {
       window.dispatchEvent(new CustomEvent("exam:paused:intercept"));
-      return;
+      if (!examSession?.exam) return;
     }
     setCurrentIndex((i) => Math.max(0, i - 1));
-  }, []);
+  }, [examSession?.exam]);
 
   const handleNext = useCallback((total?: number) => {
     if (isBlockedRef.current) {
       window.dispatchEvent(new CustomEvent("exam:paused:intercept"));
-      return;
+      if (!examSession?.exam) return;
     }
     const maxTotal = typeof total === "number" && total > 0 ? total : flatTotal;
 
-    // Check paywall gating before moving forward
-    if (currentIndex >= allowedMaxIndex) {
-      if (isGuest) {
-        setShowLoginModal(true);
-        return;
-      }
-      if (!isSubscribed) {
-        setShowSubscriptionModal(true);
-        return;
-      }
-    }
-
     setCurrentIndex((i) => Math.min(maxTotal - 1, i + 1));
-  }, [flatTotal, currentIndex, allowedMaxIndex, isGuest, isSubscribed, setShowLoginModal, setShowSubscriptionModal]);
+  }, [flatTotal, examSession?.exam]);
 
   // Listen for navigation window events
   useEffect(() => {
@@ -1287,17 +1314,9 @@ export default function LiveExamPage() {
     const onJump = (e: Event) => {
       if (isBlockedRef.current) {
         window.dispatchEvent(new CustomEvent("exam:paused:intercept"));
-        return;
+        if (!examSession?.exam) return;
       }
       const idx = (e as CustomEvent<{ index: number }>).detail.index;
-      if (idx > allowedMaxIndex) {
-        if (isGuest) {
-          setShowLoginModal(true);
-        } else if (!isSubscribed) {
-          setShowSubscriptionModal(true);
-        }
-        return;
-      }
       setCurrentIndex(Math.min(Math.max(0, idx), flatTotal - 1));
     };
 
@@ -1310,7 +1329,7 @@ export default function LiveExamPage() {
       window.removeEventListener("exam:next", onNext as EventListener);
       window.removeEventListener("exam:jump", onJump as EventListener);
     };
-  }, [handlePrev, handleNext, flatTotal, allowedMaxIndex, isGuest, isSubscribed, setShowLoginModal, setShowSubscriptionModal]);
+  }, [handlePrev, handleNext, flatTotal, examSession?.exam]);
 
   // Broadcast exam state to toolbars and footers
   useEffect(() => {
@@ -1356,15 +1375,13 @@ export default function LiveExamPage() {
     const neverKey = `${storageKey}_never_ask`;
     const defaultKey = `${storageKey}_default`;
 
-    const clampedIdx = Math.min(idx, allowedMaxIndex);
-
     if (sessionStorage.getItem(neverKey) === "true") return;
     if (sessionStorage.getItem(defaultKey) === "always") {
-      setCurrentIndex(clampedIdx);
-      return;
+      setCurrentIndex(idx);
+      if (!examSession?.exam) return;
     }
-    setResumeToast({ savedIndex: clampedIdx });
-  }, [flatTotal, storageKey, allowedMaxIndex]);
+    setResumeToast({ savedIndex: idx });
+  }, [flatTotal, storageKey, examSession?.exam]);
 
   // Persist current position
   useEffect(() => {
@@ -1377,19 +1394,21 @@ export default function LiveExamPage() {
     const onSubmitRequest = () => {
       if (isBlockedRef.current) {
         window.dispatchEvent(new CustomEvent("exam:paused:intercept"));
-        return;
+        if (!examSession?.exam) return;
       }
       setShowSubmitConfirm(true);
     };
     window.addEventListener("exam:submit", onSubmitRequest as EventListener);
     return () => window.removeEventListener("exam:submit", onSubmitRequest as EventListener);
-  }, []);
+  }, [examSession?.exam]);
 
   // Submit confirmation handler
   const handleConfirmedSubmit = useCallback(async () => {
     if (!examSession?.exam?.id || !examSession?.exam?.guidId) return;
     const key = `dynamic_live_exam_current_question_position_${examSession.exam.guidId}`;
-    sessionStorage.removeItem(key);
+    try {
+      sessionStorage.removeItem(key);
+    } catch { }
     setShowSubmitConfirm(false);
 
     const result = await submitExam({
@@ -1474,21 +1493,70 @@ export default function LiveExamPage() {
   if (loading) return <StatusBox>Loading Live Exam...</StatusBox>;
 
   if (error) {
-    if (error.includes("Access Denied")) {
+    const errLower = error.toLowerCase();
+    if (
+      errLower.includes("access denied") ||
+      errLower.includes("log in") ||
+      errLower.includes("login") ||
+      errLower.includes("unauthorized") ||
+      errLower.includes("unauthenticated") ||
+      errLower.includes("invalid or expired") ||
+      errLower.includes("session") ||
+      errLower.includes("expired") ||
+      errLower.includes("401")
+    ) {
+      const isLoggedIn = Boolean(user?.id || user?.email || getUsernameCookie());
       return (
         <>
           <StatusBox>
-            <div className="flex flex-col items-center gap-4">
-              <span>{error}</span>
+            <div className="flex flex-col items-center gap-3 py-1">
+              <span className="text-base font-bold text-slate-800">{error}</span>
+              {isLoggedIn ? (
+                <>
+                  <p className="text-xs text-slate-500 max-w-sm">
+                    You are currently signed in as <span className="font-semibold text-slate-700">{userName}</span>. If this exam requires an active subscription or your session needs to be refreshed:
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-2 mt-2">
+                    <Link
+                      href={packagesHref}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition"
+                    >
+                      Subscription Packages
+                    </Link>
+                    <button
+                      onClick={() => setShowLoginModal(true)}
+                      className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition"
+                    >
+                      Re-Authenticate / Switch Account
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-xs text-slate-500">
+                    Kindly log in to your account to access this exam.
+                  </p>
+                  <button
+                    onClick={() => setShowLoginModal(true)}
+                    className="mt-1 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
+                  >
+                    Log In
+                  </button>
+                </>
+              )}
               <button
-                onClick={() => setShowLoginModal(true)}
-                className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
+                onClick={() => window.history.back()}
+                className="text-xs text-slate-400 hover:text-slate-600 underline mt-2"
               >
-                Log In
+                Go Back
               </button>
             </div>
           </StatusBox>
-          <ImpelUserAuthetication open={showLoginModal} onClose={() => setShowLoginModal(false)} />
+          <ImpelUserAuthetication
+            open={showLoginModal}
+            onClose={() => setShowLoginModal(false)}
+            onSuccess={() => window.location.reload()}
+          />
         </>
       );
     }
@@ -1528,7 +1596,7 @@ export default function LiveExamPage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 1. TOP HEADER (ROW 1: BRAND, TITLE, STATS, CALCULATOR) */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <header className="relative z-50 w-full bg-[#EBF1FA] dark:bg-[#071321] text-slate-900 dark:text-slate-100 px-3 sm:px-6 py-2 border-b border-blue-200/60 dark:border-white/10 transition-colors">
+      <header className="relative z-50 w-full bg-[#EBF1FA] dark:bg-[#071321] text-slate-900 dark:text-slate-100 px-6 sm:px-10 py-3 border-b border-blue-200/60 dark:border-white/10 transition-colors">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Left: Brand Logo, Exam Title, Total Questions */}
           <div className="min-w-0 flex-1 space-y-0.5">
@@ -1540,13 +1608,13 @@ export default function LiveExamPage() {
               <div className="relative w-6 h-6 sm:w-7 sm:h-7 shrink-0 group-hover:scale-105 transition-transform">
                 <Image
                   src="/logo/logo.png"
-                  alt="Rhenis Nursing"
+                  alt="Nurseford"
                   fill
                   className="object-contain"
                 />
               </div>
               <span className="font-bold text-sm sm:text-base text-[#1E3A8A] dark:text-[#60A5FA] tracking-tight group-hover:underline">
-                Rhenis Nursing
+                Nurseford
               </span>
             </Link>
 
@@ -1565,8 +1633,13 @@ export default function LiveExamPage() {
               })()}
             </div>
 
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
-              Total Questions : <span>{flatTotal}</span>
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span>Total Questions : <span>{flatTotal}</span></span>
+              {isSubscribed && (
+                <span className="hidden sm:inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                  Full Access
+                </span>
+              )}
             </div>
           </div>
 
@@ -1601,13 +1674,17 @@ export default function LiveExamPage() {
                       {uName || userName}
                     </span>
                     <FiChevronDown
-                      className={`w-3.5 h-3.5 text-blue-600 dark:text-blue-400 transition-transform duration-200 ${
-                        isOpen ? "rotate-180" : ""
-                      }`}
+                      className={`w-3.5 h-3.5 text-blue-600 dark:text-blue-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
                 )}
               />
+              {isSubscribed && (
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                  Pro
+                </span>
+              )}
             </div>
 
             <div className="text-xs font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
@@ -1627,7 +1704,7 @@ export default function LiveExamPage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 2. ACTION BAR (ROW 2: NAVIGATOR, CALCULATOR, THEME TOGGLE, SETTINGS, PAUSE, END) */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <div className="w-full bg-[#C5D5F6] dark:bg-[#0C1A30] border-b border-blue-200/80 dark:border-white/10 px-3 sm:px-6 py-1.5 transition-colors">
+      <div className="w-full bg-[#C5D5F6] dark:bg-[#0C1A30] border-b border-blue-200/80 dark:border-white/10 px-6 sm:px-10 py-2 transition-colors">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-3">
           {/* Left: Question Navigator, Settings, Calculator */}
           <div className="flex items-center gap-2">
@@ -1702,66 +1779,70 @@ export default function LiveExamPage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       <main
         id="exam-question-viewport"
-        className="flex-1 max-w-[1440px] mx-auto w-full px-4 sm:px-8 py-5 pb-28"
+        className="flex-1 max-w-[1440px] mx-auto w-full px-6 sm:px-10 py-6 pb-28"
         style={{
-          ["--exam-font-desktop-base" as string]: `${(fontSizes?.content?.base ?? 16) - 3}px`,
-          ["--exam-font-desktop-sm" as string]: `${Math.max(9, (fontSizes?.content?.sm ?? 13) - 3)}px`,
-          ["--exam-font-desktop-lg" as string]: `${(fontSizes?.content?.lg ?? 20) - 3}px`,
-          ["--exam-font-desktop-xl" as string]: `${(fontSizes?.content?.xl ?? 24) - 3}px`,
+          ["--exam-font-desktop-base" as string]: `${fontSizes?.content?.base ?? 16}px`,
+          ["--exam-font-desktop-sm" as string]: `${fontSizes?.content?.sm ?? 13}px`,
+          ["--exam-font-desktop-lg" as string]: `${fontSizes?.content?.lg ?? 20}px`,
+          ["--exam-font-desktop-xl" as string]: `${fontSizes?.content?.xl ?? 24}px`,
 
-          ["--exam-font-mobile-base" as string]: `${(fontSizes?.content?.base ?? 16) - 4}px`,
-          ["--exam-font-mobile-sm" as string]: `${Math.max(9, (fontSizes?.content?.sm ?? 13) - 4)}px`,
-          ["--exam-font-mobile-lg" as string]: `${(fontSizes?.content?.lg ?? 20) - 4}px`,
-          ["--exam-font-mobile-xl" as string]: `${(fontSizes?.content?.xl ?? 24) - 4}px`,
+          ["--exam-font-mobile-base" as string]: `${Math.max(14, (fontSizes?.content?.base ?? 16) - 1)}px`,
+          ["--exam-font-mobile-sm" as string]: `${Math.max(12, (fontSizes?.content?.sm ?? 13) - 1)}px`,
+          ["--exam-font-mobile-lg" as string]: `${(fontSizes?.content?.lg ?? 20) - 1}px`,
+          ["--exam-font-mobile-xl" as string]: `${(fontSizes?.content?.xl ?? 24) - 1}px`,
         }}
       >
         <style>{`
-          /* Default Phone Mode (< 640px) - reduced by 4 times A- (-4px) */
+          /* Default Phone Mode (< 640px) */
           #exam-question-viewport {
-            font-size: var(--exam-font-mobile-base, 12px);
+            font-size: var(--exam-font-mobile-base, 15px);
           }
           #exam-question-viewport .text-xs {
-            font-size: var(--exam-font-mobile-sm, 9px) !important;
+            font-size: var(--exam-font-mobile-sm, 12px) !important;
           }
-          #exam-question-viewport .text-sm,
+          #exam-question-viewport .text-sm {
+            font-size: calc(var(--exam-font-mobile-base, 15px) - 1px) !important;
+          }
           #exam-question-viewport .text-base {
-            font-size: var(--exam-font-mobile-base, 12px) !important;
+            font-size: var(--exam-font-mobile-base, 15px) !important;
           }
           #exam-question-viewport .text-lg {
-            font-size: var(--exam-font-mobile-lg, 16px) !important;
+            font-size: var(--exam-font-mobile-lg, 19px) !important;
           }
           #exam-question-viewport .text-xl {
-            font-size: var(--exam-font-mobile-xl, 20px) !important;
+            font-size: var(--exam-font-mobile-xl, 23px) !important;
           }
           #exam-question-viewport .exhibit-content-body {
-            font-size: var(--exam-font-mobile-base, 12px) !important;
+            font-size: var(--exam-font-mobile-base, 15px) !important;
           }
 
-          /* Computer & Tablet Mode (>= 640px) - reduced by 3 times A- (-3px) */
+          /* Computer & Tablet Mode (>= 640px) */
           @media (min-width: 640px) {
             #exam-question-viewport {
-              font-size: var(--exam-font-desktop-base, 13px);
+              font-size: var(--exam-font-desktop-base, 16px);
             }
             #exam-question-viewport .text-xs,
             #exam-question-viewport .sm\\:text-xs {
-              font-size: var(--exam-font-desktop-sm, 10px) !important;
+              font-size: var(--exam-font-desktop-sm, 13px) !important;
             }
             #exam-question-viewport .text-sm,
-            #exam-question-viewport .sm\\:text-sm,
+            #exam-question-viewport .sm\\:text-sm {
+              font-size: calc(var(--exam-font-desktop-base, 16px) - 1.5px) !important;
+            }
             #exam-question-viewport .text-base,
             #exam-question-viewport .sm\\:text-base {
-              font-size: var(--exam-font-desktop-base, 13px) !important;
+              font-size: var(--exam-font-desktop-base, 16px) !important;
             }
             #exam-question-viewport .text-lg,
             #exam-question-viewport .sm\\:text-lg {
-              font-size: var(--exam-font-desktop-lg, 17px) !important;
+              font-size: var(--exam-font-desktop-lg, 20px) !important;
             }
             #exam-question-viewport .text-xl,
             #exam-question-viewport .sm\\:text-xl {
-              font-size: var(--exam-font-desktop-xl, 21px) !important;
+              font-size: var(--exam-font-desktop-xl, 24px) !important;
             }
             #exam-question-viewport .exhibit-content-body {
-              font-size: calc(var(--exam-font-desktop-base, 13px) + 1px) !important;
+              font-size: var(--exam-font-desktop-base, 16px) !important;
             }
           }
 
@@ -1861,8 +1942,8 @@ export default function LiveExamPage() {
               current.globalIndex,
               examSession.exam.selectedMode,
               {
-                examId: (current.question as any)._realExamId ?? examSession.exam.id ?? 0,
-                examGuidId: (current.question as any)._realExamGuidId ?? examSession.exam.guidId ?? "",
+                examId: realIds(current.question)._realExamId ?? examSession.exam.id ?? 0,
+                examGuidId: realIds(current.question)._realExamGuidId ?? examSession.exam.guidId ?? "",
                 sectionId: current.sectionId,
                 sectionGuidId: current.sectionGuidId,
               }
@@ -1879,13 +1960,15 @@ export default function LiveExamPage() {
         <div className="hidden sm:flex max-w-[1440px] mx-auto items-center justify-between gap-2 sm:gap-4">
           {/* Left: Previous */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <button
+            {currentIndex > 0 && (
+              <button
               type="button"
               onClick={handlePrev}
               className="px-3.5 sm:px-4 py-1.5 rounded border border-[#800000]/60 dark:border-rose-500/60 text-[#800000] dark:text-rose-300 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 font-semibold text-xs sm:text-sm transition cursor-pointer shadow-2xs shrink-0 active:scale-[0.98]"
             >
               ← Previous
             </button>
+            )}
           </div>
 
           {/* Center: Choose Different Exam & Font Resizing Controls */}
@@ -1935,6 +2018,14 @@ export default function LiveExamPage() {
               <span>Submit Exam</span>
               <CheckCircle2 size={16} />
             </button>
+          ) : false ? (
+            <button
+              type="button"
+              onClick={() => handleNext(flatTotal)}
+              className="shrink-0 flex items-center gap-1.5 px-4 sm:px-5 py-1.5 rounded bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs sm:text-sm shadow-sm transition cursor-pointer active:scale-[0.98]"
+            >
+              <span>{isGuest ? "Next (Sign in to Continue) 🔒" : "Unlock Full Exam 👑"}</span>
+            </button>
           ) : (
             <button
               type="button"
@@ -1983,11 +2074,10 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("exam:star"))}
                 title="Star"
-                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${
-                  mobileToolbarState.starred
-                    ? "bg-amber-400 border-amber-400 text-white"
-                    : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
-                }`}
+                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${mobileToolbarState.starred
+                  ? "bg-amber-400 border-amber-400 text-white"
+                  : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
+                  }`}
               >
                 <Star size={14} className={mobileToolbarState.starred ? "fill-current" : ""} />
               </button>
@@ -1997,11 +2087,10 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("exam:bookmark"))}
                 title="Bookmark"
-                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${
-                  mobileToolbarState.bookmarked
-                    ? "bg-blue-600 border-blue-600 text-white"
-                    : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
-                }`}
+                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${mobileToolbarState.bookmarked
+                  ? "bg-blue-600 border-blue-600 text-white"
+                  : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
+                  }`}
               >
                 <Bookmark size={14} className={mobileToolbarState.bookmarked ? "fill-current" : ""} />
               </button>
@@ -2011,11 +2100,10 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("exam:pin"))}
                 title="Pin"
-                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${
-                  mobileToolbarState.pinned
-                    ? "bg-green-600 border-green-600 text-white"
-                    : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
-                }`}
+                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${mobileToolbarState.pinned
+                  ? "bg-green-600 border-green-600 text-white"
+                  : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
+                  }`}
               >
                 <Pin size={14} className={mobileToolbarState.pinned ? "fill-current" : ""} />
               </button>
@@ -2026,11 +2114,10 @@ export default function LiveExamPage() {
                   type="button"
                   onClick={() => window.dispatchEvent(new CustomEvent("exam:flag"))}
                   title="Flag"
-                  className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${
-                    mobileToolbarState.flagged
-                      ? "bg-red-600 border-red-600 text-white"
-                      : "border-red-300 dark:border-red-500/60 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 bg-white/80 dark:bg-white/5"
-                  }`}
+                  className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${mobileToolbarState.flagged
+                    ? "bg-red-600 border-red-600 text-white"
+                    : "border-red-300 dark:border-red-500/60 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 bg-white/80 dark:bg-white/5"
+                    }`}
                 >
                   <Flag size={14} className={mobileToolbarState.flagged ? "fill-current" : ""} />
                 </button>
@@ -2040,13 +2127,17 @@ export default function LiveExamPage() {
 
           {/* Lower row: Left (Previous) ... Middle (Choose Different Exam) ... Right (Next / Submit) */}
           <div className="flex items-center justify-between gap-1.5 w-full">
-            <button
+            {currentIndex > 0 ? (
+              <button
               type="button"
               onClick={handlePrev}
               className="px-3 py-1.5 rounded border border-[#800000]/60 dark:border-rose-500/60 text-[#800000] dark:text-rose-300 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 font-semibold text-xs transition cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
             >
               ← Previous
             </button>
+            ) : (
+              <div className="w-[72px]" />
+            )}
 
             <button
               type="button"
@@ -2065,7 +2156,7 @@ export default function LiveExamPage() {
                 <span>Submit</span>
                 <CheckCircle2 size={14} />
               </button>
-            ) : currentIndex >= allowedMaxIndex ? (
+            ) : false ? (
               <button
                 type="button"
                 onClick={() => handleNext(flatTotal)}
@@ -2102,6 +2193,7 @@ export default function LiveExamPage() {
         onRequireLogin={() => setShowLoginModal(true)}
         onRequireSubscribe={() => setShowSubscriptionModal(true)}
         isGuest={isGuest}
+        isSubscribed={isSubscribed}
       />
 
       {examPaused && (
@@ -2208,14 +2300,51 @@ export default function LiveExamPage() {
         }}
       />
 
-      <ExamSubscriptionPaywallModal
-        open={showSubscriptionModal}
-        onClose={() => setShowSubscriptionModal(false)}
-        examTitle={examSession?.exam?.title ?? "Exam Practice Session"}
-        totalQuestions={flatTotal}
-        allowedQuestions={registeredLimitCount}
-        programSlug={programSlug}
-      />
+      {showSubscriptionModal && (
+        <div
+          className="fixed inset-0 z-[10010] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowSubscriptionModal(false);
+              setNavigatingPackages(false);
+            }
+          }}
+        >
+          <div className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-[#0c1929] p-6 text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <button
+              type="button"
+              onClick={() => {
+                setShowSubscriptionModal(false);
+                setNavigatingPackages(false);
+              }}
+              aria-label="Close"
+              className="absolute top-3 right-3 text-slate-500 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#ff6b35]/15 text-[#ea580c]">
+              <Lock size={22} />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
+              Upgrade To Unlock Full Access
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300 mb-5">
+              You need an active subscription to unlock all {flatTotal} questions in this exam.
+            </p>
+            <button
+              type="button"
+              disabled={navigatingPackages}
+              onClick={() => {
+                setNavigatingPackages(true);
+                router.push(packagesHref);
+              }}
+              className="inline-flex w-full items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold bg-[#ff6b35] hover:bg-[#ea580c] text-white transition disabled:opacity-70 cursor-pointer"
+            >
+              {navigatingPackages ? "Opening . . ." : "View Packages"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

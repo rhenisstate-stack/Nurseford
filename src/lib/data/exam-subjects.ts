@@ -16,6 +16,8 @@ export interface BackendSubject {
   name: string;
   slug: string;
   description?: string;
+  order?: number;
+  coursesCount?: number;
   examCount?: number;
   questionCount?: number;
   subCategories?: DashboardSubCategory[];
@@ -35,6 +37,8 @@ export const VALID_EXAM_TYPES = [
   "nclex-pn",
   "rn-nursing",
   "lpn-nursing",
+  "rn-exit",
+  "lpn-exit",
   "cna",
   "ged",
   "pre-nursing",

@@ -27,6 +27,14 @@ interface FlatQuestion {
 // HELPERS
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+type RealIds = {
+  _realSectionId?: number;
+  _realSectionGuidId?: string;
+  _realExamId?: number;
+  _realExamGuidId?: string;
+};
+const realIds = (q: unknown): RealIds => q as RealIds;
+
 function flattenQuestions(
   sections: NonNullable<
     ReturnType<typeof useLiveStrataExamContext>["examSession"]
@@ -975,7 +983,7 @@ export default function LiveExamPage() {
     };
     window.addEventListener("exam:submit", onSubmitRequest as EventListener);
     return () => window.removeEventListener("exam:submit", onSubmitRequest as EventListener);
-  }, []);
+  }, [examSession?.exam]);
 
   const handleConfirmedSubmit = useCallback(async () => {
     if (!examSession?.exam?.id || !examSession?.exam?.guidId) return;

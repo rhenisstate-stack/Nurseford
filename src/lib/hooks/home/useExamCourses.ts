@@ -21,6 +21,8 @@ export interface DashboardCourse {
   backendSubjectGuid?: string;
   examType: string;
   title: string;
+  description?: string;
+  coursesCount?: number;
   category: "subject" | "clientNeed";
   questionCount: number;
   examCount: number;
@@ -33,6 +35,7 @@ export interface DashboardCourse {
   hardCount?: number;
   order: number;
   subCategories: DashboardSubCategory[];
+  examList?: DashboardSubCategory[];
 }
 
 export interface ExamBuilderStats {

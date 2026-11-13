@@ -8,32 +8,20 @@ import { useRelativeStrataPrograms } from "@/lib/hooks/nexus/strata/learning/pro
 import { usePathname } from "next/navigation";
 
 const SEGMENT_ORDER = [
-  "ATI_TEAS",
-  "HESI_A2",
-  "PRE_NURSING",
   "RN_NURSING",
+  "RN_EXIT",
   "LPN_NURSING",
-  "GED",
-  "CNA",
-  "CERTIFICATION",
+  "LPN_EXIT",
 ] as const;
 
 const SEGMENT_DASHBOARD_MAP: Record<string, string> = {
-  ATI_TEAS: "ati-teas",
-  HESI_A2: "hesi-a2",
-  PRE_NURSING: "pre-nursing",
   RN_NURSING: "rn-nursing",
+  RN_EXIT: "rn-nursing",
   LPN_NURSING: "lpn-nursing",
-  GED: "ged",
-  CNA: "cna",
-  CERTIFICATION: "certification",
+  LPN_EXIT: "lpn-nursing",
 };
 
-// Segment that has a dedicated distinct-courses overview page wired up so far.
-// Extend this map as more segments get their own overview page built.
-const SEGMENT_DISTINCT_COURSES_ROUTE: Record<string, string> = {
-  ATI_TEAS: "/dashboards/ati-teas/vista/learning/courses/distinct/overview",
-};
+const SEGMENT_DISTINCT_COURSES_ROUTE: Record<string, string> = {};
 
 interface Props {
   isOpened: boolean;

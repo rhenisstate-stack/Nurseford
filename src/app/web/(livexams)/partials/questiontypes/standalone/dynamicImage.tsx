@@ -9,6 +9,7 @@ import type {
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { isValidExamText } from "@/lib/utils/exams/cleanExamText";
 
 interface Props {
   q: StrataSessionQuestionFull;
@@ -114,7 +115,7 @@ export const DynamicImageQuestion = ({
   };
 
   return (
-    <div className="pt-1 space-y-2">
+    <div className="pt-0.5 space-y-1">
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
@@ -177,7 +178,7 @@ export const DynamicImageQuestion = ({
               />
               <span className="flex-1">
                 {opt.answerContent}
-                {opt.description && (
+                {isValidExamText(opt.description) && (
                   <span className="ml-1 text-xs text-gray-500">— {opt.description}</span>
                 )}
               </span>

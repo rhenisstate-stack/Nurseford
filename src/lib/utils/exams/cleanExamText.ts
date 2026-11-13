@@ -2,7 +2,7 @@
  * Utility to sanitize text strings from database records where values like
  * "NULL", "(NULL)", "undefined", or empty strings might inadvertently leak into UI labels.
  */
-export function isValidExamText(val?: string | null): boolean {
+export function isValidExamText(val?: string | null): val is string {
   if (!val) return false;
   const trimmed = val.trim();
   const lower = trimmed.toLowerCase();
@@ -44,6 +44,65 @@ export function stripHtmlTags(val?: string | null): string {
 export function cleanExamText(val?: string | null): string {
   if (!isValidExamText(val)) return "";
   return val!.trim();
+}
+
+/**
+ * Sanitizes rich text / Word HTML from question stems and metadata prompts to guarantee
+ * uniform typography across all question pages:
+ * - Strips Word/editor comments, <style>, and <script> blocks.
+ * - Strips static dummy <table> markup.
+ * - Strips obsolete <font> tags while preserving inner content.
+ * - Strips all intrusive inline `style="..."` attributes (removes hardcoded font-size, font-family, font-weight, color, etc.).
+ * - Strips all `class="..."` attributes (removes MsoNormal, MsoBodyText, etc.).
+ * - Strips empty spans and empty formatting tags.
+ * - Unwraps single outer wrapping <p>, <div>, or <span> tags so the stem flows naturally inline next to the question number.
+ * - Strips leading duplicate question numbering (e.g. "1: ", "1. ", "Question 1: ", or inside leading tag).
+ * - Strips trailing empty paragraphs or line breaks.
+ */
+export function cleanPromptHtml(html?: string | null, stripLeadingNum: boolean = true): string {
+  if (!html) return "";
+  let s = String(html).trim();
+
+  // 1. Remove Word/editor comments, scripts, styles, and static dummy tables
+  s = s.replace(/<!--[\s\S]*?-->/gi, "");
+  s = s.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
+  s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+  s = s.replace(/<table\b[\s\S]*?<\/table>/gi, "");
+
+  // 2. Remove obsolete <font> tags while preserving inner content
+  s = s.replace(/<\/?font\b[^>]*>/gi, "");
+
+  // 3. Remove all inline style and class attributes (Word MsoNormal, inline font-size, font-weight, color, etc.)
+  s = s.replace(/\s*(?:style|class)=(["'])[\s\S]*?\1/gi, "");
+
+  // 4. Strip empty formatting tags repeatedly
+  let prev = "";
+  while (prev !== s) {
+    prev = s;
+    s = s.replace(/<(?:span|strong|b|em|i|u)\s*>\s*<\/(?:span|strong|b|em|i|u)>/gi, "");
+  }
+
+  // 5. Unwrap single outer wrapping <p>, <div>, or <span> tags if wrapping the whole text
+  let prevUnwrap = "";
+  while (prevUnwrap !== s) {
+    prevUnwrap = s;
+    s = s.replace(/^\s*<(?:p|div|span)\b[^>]*>([\s\S]*?)<\/(?:p|div|span)>\s*$/i, "$1").trim();
+  }
+
+  if (stripLeadingNum) {
+    // 6. Strip duplicate leading question numbers (e.g. "1: ", "1. ", "1) ", "Question 1: ", or inside leading tag)
+    s = s.replace(/^(?:question\s*)?\d+[\.\:\)]\s*/i, "");
+    s = s.replace(/^((?:<[a-z0-9]+[^>]*>\s*)+)(?:question\s*)?\d+[\.\:\)]\s*/i, "$1");
+  }
+
+  // 7. Strip empty tags again in case unwrapping or number stripping emptied one
+  s = s.replace(/<(?:span|strong|b|em|i|u)\s*>\s*<\/(?:span|strong|b|em|i|u)>/gi, "");
+
+  // 8. Strip trailing empty paragraphs or line breaks
+  s = s.replace(/(?:<p[^>]*>\s*(?:<br\s*\/?>|&nbsp;)?\s*<\/p>\s*)+$/gi, "");
+  s = s.replace(/(?:<br\s*\/?>\s*)+$/gi, "");
+
+  return s.trim();
 }
 
 /**

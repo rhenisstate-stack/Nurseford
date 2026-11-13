@@ -4,11 +4,11 @@
 import { useState, useMemo, useCallback } from "react";
 import { SystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
 import { getUsernameCookie } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
-import { useExamSubscriptionAccess } from "./useExamSubscriptionAccess";
+import { useExamSubscriptionAccess, type ExamAccessShape } from "./useExamSubscriptionAccess";
 
 export interface UseGlobalExamAccessGateOptions {
   user: SystemUser | null;
-  exam?: any | null;
+  exam?: ExamAccessShape | null;
   programSlug: string;
   flatTotal: number;
 }
@@ -36,38 +36,18 @@ export function useGlobalExamAccessGate({
     exam,
   });
 
-  // Progressive Paywall Limits:
-  // - Guest (not logged in): First 10 questions (indices 0 to 9)
-  // - Registered user: 30% of total questions (first 10 count inside this 30%)
-  // - Subscribed user: 100% of questions (unlimited)
-  const GUEST_LIMIT = 10;
-  const REGISTERED_PERCENT = 0.30;
-
+  // All questions returned by the backend are fully accessible (logic handled by ASP.NET backend)
   const allowedMaxIndex = useMemo(() => {
-    if (flatTotal === 0) return 0;
-    if (isSubscribed) return flatTotal - 1;
-    if (isGuest) return Math.min(flatTotal - 1, GUEST_LIMIT - 1);
-    const regLimit = Math.max(GUEST_LIMIT, Math.floor(flatTotal * REGISTERED_PERCENT));
-    return Math.min(flatTotal - 1, regLimit - 1);
-  }, [flatTotal, isSubscribed, isGuest]);
-
-  const registeredLimitCount = useMemo(() => {
-    return Math.max(GUEST_LIMIT, Math.floor(flatTotal * REGISTERED_PERCENT));
+    return flatTotal > 0 ? flatTotal - 1 : 0;
   }, [flatTotal]);
 
+  const registeredLimitCount = flatTotal;
+
   const checkCanAccessIndex = useCallback(
-    (targetIndex: number): boolean => {
-      if (targetIndex > allowedMaxIndex) {
-        if (isGuest) {
-          setShowLoginModal(true);
-        } else if (!isSubscribed) {
-          setShowSubscriptionModal(true);
-        }
-        return false;
-      }
+    (_targetIndex: number): boolean => {
       return true;
     },
-    [allowedMaxIndex, isGuest, isSubscribed]
+    []
   );
 
   return {

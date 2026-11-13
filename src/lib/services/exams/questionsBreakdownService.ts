@@ -39,9 +39,45 @@ interface CacheEntry {
 const breakdownCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-// Guest Preview Auth Token Cache (Allows unauthenticated guests to preview the questions)
-const cachedGuestBadge: string | null = "B536816D72FA09B200042157A4140BB5ADF8F2CA9D1BF7FEA592AB1A759D33C29696C0D09522571C8081FA69512A97AA";
-let cachedGuestLine: string | null = null;
+type DifficultyValue = string | number | null | undefined;
+
+// The only fields read from a question in the breakdown payloads
+interface BreakdownQuestionLike {
+  id?: number | string;
+  guidId?: string;
+  difficulty?: DifficultyValue;
+  difficultyLevel?: DifficultyValue;
+  difficulty_level?: DifficultyValue;
+  difficultyLevelName?: DifficultyValue;
+  level?: DifficultyValue;
+  grade?: DifficultyValue;
+  questionOptions?: { difficulty?: DifficultyValue }[];
+}
+
+interface BreakdownSectionLike {
+  questions?: BreakdownQuestionLike[];
+  items?: BreakdownQuestionLike[];
+}
+
+// Covers both the live-exam payload and the questions/list/distinct payload
+interface BreakdownPayload {
+  items?: BreakdownQuestionLike[];
+  questions?: BreakdownQuestionLike[];
+  sections?: BreakdownSectionLike[];
+  exam?: { sections?: BreakdownSectionLike[] };
+  data?: {
+    items?: BreakdownQuestionLike[];
+    questions?: BreakdownQuestionLike[];
+    sections?: BreakdownSectionLike[];
+    exam?: { sections?: BreakdownSectionLike[] };
+  };
+}
+
+// Server-side fallback session token so unauthenticated guests can also preview real question breakdown
+const cachedGuestBadge: string | null =
+  "F4DE69A8298A79F5E879B9C263B2234988E2585175FCBB41556FB29D8F918272E3FD63B7F72C9DA13B8E2DF9C9A08651";
+let cachedGuestLine: string | null =
+  "344EC969CE01E11DFB887695733B603796E128B49293C08048711DB305F20AD8B5BF70607741606198DC23ED3C01BB9D7D8D2B8A0FDBEDD5D008E4F0264B8ABB";
 let guestTokenPromise: Promise<{ line: string; badge: string } | null> | null = null;
 
 export async function getGuestPreviewToken(): Promise<{ line: string; badge: string } | null> {
@@ -75,8 +111,10 @@ export async function getGuestPreviewToken(): Promise<{ line: string; badge: str
       });
 
       let loginData = await loginRes.json().catch(() => null);
+      console.log("🔑 [questions-breakdown] Login attempt response:", loginData);
       if (!loginData?.user?.castoLine) {
         const regUrl = `${backendBaseUrl}/api/castoline/auth/register`;
+        console.log("🔑 [questions-breakdown] Registering guest at:", regUrl);
         const regRes = await fetch(regUrl, {
           method: "POST",
           headers: {
@@ -96,9 +134,16 @@ export async function getGuestPreviewToken(): Promise<{ line: string; badge: str
             provider: "email",
             challenge: "learner.register.skew8lancasto",
           }),
-        }).catch(() => null);
-        if (regRes && regRes.ok) {
-          loginData = await regRes.json().catch(() => null);
+        }).catch((err) => {
+          console.error("🔑 [questions-breakdown] Registration fetch error:", err);
+          return null;
+        });
+        if (regRes) {
+          const regJson = await regRes.json().catch(() => null);
+          console.log(`🔑 [questions-breakdown] Registration response (HTTP ${regRes.status}):`, regJson);
+          if (regJson?.user?.castoLine) {
+            loginData = regJson;
+          }
         }
       }
 
@@ -106,7 +151,10 @@ export async function getGuestPreviewToken(): Promise<{ line: string; badge: str
         const line = String(loginData.user.castoLine);
         const badge = String(loginData.user.castoBadge || cachedGuestBadge);
         cachedGuestLine = line;
+        console.log("🔑 [questions-breakdown] Successfully acquired guest preview token for live questions breakdown!");
         return { line, badge };
+      } else {
+        console.warn("⚠️ [questions-breakdown] Guest login/registration response lacked castoLine:", loginData);
       }
     } catch (e) {
       console.error("Failed to acquire guest preview token:", e);
@@ -122,9 +170,41 @@ export async function getGuestPreviewToken(): Promise<{ line: string; badge: str
 function normalizeDiff(val: unknown): "easy" | "medium" | "hard" | null {
   if (val === null || val === undefined) return null;
   const s = String(val).toLowerCase().trim();
-  if (s === "easy" || s === "beginner" || s === "1" || s === "foundation") return "easy";
-  if (s === "medium" || s === "moderate" || s === "intermediate" || s === "2") return "medium";
-  if (s === "hard" || s === "difficult" || s === "advanced" || s === "3") return "hard";
+  if (
+    s === "easy" ||
+    s === "beginner" ||
+    s === "foundation" ||
+    s === "novice" ||
+    s === "1" ||
+    s.includes("easy") ||
+    s.includes("beginner") ||
+    s.includes("foundation")
+  ) {
+    return "easy";
+  }
+  if (
+    s === "medium" ||
+    s === "moderate" ||
+    s === "intermediate" ||
+    s === "2" ||
+    s.includes("medium") ||
+    s.includes("intermediate") ||
+    s.includes("moderate")
+  ) {
+    return "medium";
+  }
+  if (
+    s === "hard" ||
+    s === "difficult" ||
+    s === "advanced" ||
+    s === "expert" ||
+    s === "3" ||
+    s.includes("hard") ||
+    s.includes("advanced") ||
+    s.includes("difficult")
+  ) {
+    return "hard";
+  }
   return null;
 }
 
@@ -147,7 +227,7 @@ export async function fetchExamBreakdown(
 
   const url = `${backendBaseUrl}/api/castoline/strata/assessment/exams/list/live?${query.toString()}`;
 
-  let headersToUse = { ...sessionHeaders };
+  const headersToUse = { ...sessionHeaders };
   if (!headersToUse["x-casto-line"]) {
     const guestAuth = await getGuestPreviewToken();
     if (guestAuth) {
@@ -178,25 +258,64 @@ export async function fetchExamBreakdown(
       }
     }
 
-    if (res && res.status === 401) {
-      console.warn(`[questions-breakdown] 401 Unauthorized for exam ${examId}. Retrying with guest preview token...`);
-      const guestAuth = await getGuestPreviewToken();
-      if (guestAuth) {
-        res = await fetch(url, {
+
+
+    if (!res || !res.ok) {
+      console.warn(`[questions-breakdown] /exams/list/live for ${examId} returned HTTP ${res?.status}. Trying questions list endpoints...`);
+
+      // Fallback 1: Try /api/castoline/strata/assessment/questions/list/distinct with examId
+      try {
+        const qDistinctUrl = `${backendBaseUrl}/api/castoline/strata/assessment/questions/list/distinct?identifier=${examId}&fetchtype=distinct&dynamicPage=1&dynamicPerPage=500`;
+        const qDistRes = await fetch(qDistinctUrl, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             ...(await getSiteHeaders()),
-            "x-casto-line": guestAuth.line,
-            "x-casto-badge": guestAuth.badge,
           },
           cache: "no-store",
         });
+        console.log(`[questions-breakdown] questions/list/distinct ${examId}: HTTP ${qDistRes.status}`);
+        if (qDistRes.ok) {
+          const qDistData = (await qDistRes.json()) as BreakdownPayload;
+          const qItems: BreakdownQuestionLike[] = qDistData?.data?.items || qDistData?.items || [];
+          if (qItems.length > 0) {
+            let eC = 0, mC = 0, hC = 0;
+            const qIds: (number | string)[] = [];
+            const eIds: (number | string)[] = [];
+            const mIds: (number | string)[] = [];
+            const hIds: (number | string)[] = [];
+            for (const q of qItems) {
+              const qId = q.id ?? q.guidId;
+              if (qId) qIds.push(qId);
+              const diff = normalizeDiff(q.difficulty ?? q.level ?? q.difficultyLevel);
+              if (diff === "easy") { eC++; if (qId) eIds.push(qId); }
+              else if (diff === "medium") { mC++; if (qId) mIds.push(qId); }
+              else if (diff === "hard") { hC++; if (qId) hIds.push(qId); }
+            }
+            const cat = eC + mC + hC;
+            const bd: ExamQuestionBreakdown = {
+              examId,
+              total: qItems.length,
+              easy: eC,
+              medium: mC,
+              hard: hC,
+              uncategorized: qItems.length - cat,
+              easyPct: cat > 0 ? Math.round((eC / cat) * 100) : 0,
+              mediumPct: cat > 0 ? Math.round((mC / cat) * 100) : 0,
+              hardPct: cat > 0 ? Math.round((hC / cat) * 100) : 0,
+              questionIds: qIds,
+              easyQuestionIds: eIds,
+              mediumQuestionIds: mIds,
+              hardQuestionIds: hIds,
+            };
+            breakdownCache.set(examId, { breakdown: bd, timestamp: Date.now() });
+            return bd;
+          }
+        }
+      } catch (err) {
+        console.warn(`[questions-breakdown] questions/list/distinct probe failed:`, err);
       }
-    }
 
-    if (!res || !res.ok) {
-      console.warn(`[questions-breakdown] Failed to fetch live exam ${examId}: HTTP ${res?.status}`);
       return {
         examId,
         total: 0,
@@ -212,14 +331,14 @@ export async function fetchExamBreakdown(
     }
 
     const raw = (await res.json()) as Record<string, unknown>;
-    const converted = convertBackendKeysToCamel(raw) as any;
-    const sections: any[] =
+    const converted = convertBackendKeysToCamel(raw) as BreakdownPayload;
+    const sections: BreakdownSectionLike[] =
       converted?.data?.sections ||
       converted?.sections ||
       converted?.data?.exam?.sections ||
       converted?.exam?.sections ||
       [];
-    const questions: any[] = sections.length > 0
+    const questions: BreakdownQuestionLike[] = sections.length > 0
       ? sections.flatMap((sec) => sec.questions || sec.items || [])
       : (converted?.data?.questions || converted?.questions || []);
 
@@ -250,8 +369,10 @@ export async function fetchExamBreakdown(
         q.difficulty ??
         q.difficultyLevel ??
         q.difficulty_level ??
+        q.difficultyLevelName ??
         q.level ??
-        q.grade;
+        q.grade ??
+        (q.questionOptions && q.questionOptions[0]?.difficulty);
 
       const norm = normalizeDiff(rawDiff);
       if (norm === "easy") {

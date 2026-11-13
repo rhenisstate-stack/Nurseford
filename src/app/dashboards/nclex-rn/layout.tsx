@@ -29,7 +29,7 @@ export default function DashboardLayout({
       <div
         className="flex min-h-screen transition-colors duration-300"
         style={{
-          backgroundColor: "var(--content-bg, #000f25)",
+          backgroundColor: "var(--content-bg, #171C27)",
           color: "var(--text-color)",
         }}
       >
@@ -39,7 +39,7 @@ export default function DashboardLayout({
           <main
             className="flex-1 overflow-y-auto transition-colors duration-300 flex flex-col"
             style={{
-              backgroundColor: "var(--content-bg, #000f25)",
+              backgroundColor: "var(--content-bg, #171C27)",
               color: "var(--text-color)",
             }}
           >

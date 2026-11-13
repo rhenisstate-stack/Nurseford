@@ -2,14 +2,9 @@
 
 import Link from "next/link";
 import {
-    ClipboardList,
-    Stethoscope,
     HeartPulse,
-    GraduationCap,
     Award,
-    BookOpen,
     Syringe,
-    School,
     ArrowRight,
     Layers,
     LucideIcon,
@@ -27,14 +22,10 @@ interface SegmentPresentation {
 }
 
 const SEGMENT_PRESENTATION: Record<string, SegmentPresentation> = {
-    ATI_TEAS: { icon: ClipboardList, accent: "from-indigo-500 to-indigo-700", ring: "hover:ring-indigo-400" },
-    HESI_A2: { icon: Stethoscope, accent: "from-sky-500 to-sky-700", ring: "hover:ring-sky-400" },
     RN_NURSING: { icon: HeartPulse, accent: "from-rose-500 to-rose-700", ring: "hover:ring-rose-400" },
+    RN_EXIT: { icon: Award, accent: "from-teal-500 to-teal-700", ring: "hover:ring-teal-400" },
     LPN_NURSING: { icon: Syringe, accent: "from-emerald-500 to-emerald-700", ring: "hover:ring-emerald-400" },
-    PRE_NURSING: { icon: School, accent: "from-amber-500 to-amber-700", ring: "hover:ring-amber-400" },
-    CERTIFICATION: { icon: Award, accent: "from-purple-500 to-purple-700", ring: "hover:ring-purple-400" },
-    GED: { icon: GraduationCap, accent: "from-teal-500 to-teal-700", ring: "hover:ring-teal-400" },
-    CNA: { icon: BookOpen, accent: "from-orange-500 to-orange-700", ring: "hover:ring-orange-400" },
+    LPN_EXIT: { icon: Award, accent: "from-sky-500 to-sky-700", ring: "hover:ring-sky-400" },
 };
 
 const DEFAULT_PRESENTATION: SegmentPresentation = {
@@ -44,25 +35,17 @@ const DEFAULT_PRESENTATION: SegmentPresentation = {
 };
 
 const SEGMENT_DASHBOARD_MAP: Record<string, string> = {
-    ATI_TEAS: "ati-teas",
-    HESI_A2: "hesi-a2",
-    PRE_NURSING: "pre-nursing",
     RN_NURSING: "rn-nursing",
+    RN_EXIT: "rn-nursing",
     LPN_NURSING: "lpn-nursing",
-    GED: "ged",
-    CNA: "cna",
-    CERTIFICATION: "certification",
+    LPN_EXIT: "lpn-nursing",
 };
 
 const SEGMENT_ORDER = [
-    "ATI_TEAS",
-    "HESI_A2",
-    "PRE_NURSING",
     "RN_NURSING",
+    "RN_EXIT",
     "LPN_NURSING",
-    "GED",
-    "CNA",
-    "CERTIFICATION",
+    "LPN_EXIT",
 ] as const;
 
 export default function EntrancePage() {
@@ -107,9 +90,7 @@ export default function EntrancePage() {
                         if (!dashboardSlug) return null;
 
                         const accessHref = `/dashboards/${dashboardSlug}`;
-                        const subscriptionsHref = `/pages/subscription/items?parentTableName=program&parentName=${encodeURIComponent(
-                            program.name
-                        )}`;
+                        const subscriptionsHref = `/dashboards/${dashboardSlug}/vista/subscriptions/items`;
 
                         return (
                             <div

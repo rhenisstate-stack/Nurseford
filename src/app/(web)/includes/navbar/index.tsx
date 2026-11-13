@@ -3,47 +3,48 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, User } from 'lucide-react';
 import SearchBar from './search';
 import ThemeModeToggle from '@/components/common/theme/ThemeModeToggle';
 import { useCurrentSystemUser } from '@/lib/hooks/users/account/current/useCurrentSystemUser';
 import UserAccountDropdown from '@/components/common/user/UserAccountDropdown';
 import HeedMessageBell from './HeedMessageBell';
 
-const examLinks = [
-  { label: 'TEAS 7 PREP', href: '/pages/exams/ati-teas' },
-  { label: 'HESI A2 PREP', href: '/pages/exams/hesi-a2' },
-];
-
 const nursingSchoolLinks = [
   {
     label: 'RN Nursing Test Bank',
     description: 'Registered Nurse prep',
-    href: '/pages/exams/rn-nursing',
+    href: '/dashboards/rn-nursing',
   },
   {
     label: 'LPN Nursing Test Bank',
     description: 'Licensed Practical Nurse prep',
-    href: '/pages/exams/lpn-nursing',
+    href: '/dashboards/lpn-nursing',
   },
 ];
 
-const moreLinks = [
+const exitExamLinks = [
+  {
+    label: 'RN Exit Exams',
+    description: 'Registered Nurse exit exam simulations',
+    href: '/dashboards/rn-nursing',
+  },
+  {
+    label: 'LPN Exit Exams',
+    description: 'Practical Nurse exit exam simulations',
+    href: '/dashboards/lpn-nursing',
+  },
+];
+
+const resourceLinks = [
+  { label: 'Sample Questions', href: '/pages/sample-questions' },
+  { label: 'Subscriptions', href: '/dashboards/rn-nursing/vista/subscriptions/items' },
+  { label: 'Study Resources', href: '/pages/resources' },
   { label: 'About Us', href: '/pages/about' },
-  { label: 'Entrance', href: '/pages/entrance' },
-  { label: 'Resources', href: '/pages/resources' },
   { label: 'Contact Us', href: '/pages/contact-us' },
   { label: 'Terms of Service', href: '/pages/terms' },
   { label: 'Privacy Policy', href: '/pages/privacy-policy' },
 ];
-
-const excludedMobileMoreLinks = new Set([
-  'about us',
-  'entrance',
-  'resources',
-  'contact us',
-  'privacy policy',
-]);
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -51,7 +52,8 @@ export default function Navbar() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const nursingRef = useRef<HTMLDivElement>(null);
-  const moreRef = useRef<HTMLDivElement>(null);
+  const exitRef = useRef<HTMLDivElement>(null);
+  const resourceRef = useRef<HTMLDivElement>(null);
 
   const { user, authenticated, loading } = useCurrentSystemUser();
   const signedIn = !loading && authenticated && !!user;
@@ -74,7 +76,8 @@ export default function Navbar() {
       const target = e.target as Node;
       if (
         (openDropdown === 'nursing' && nursingRef.current && !nursingRef.current.contains(target)) ||
-        (openDropdown === 'more' && moreRef.current && !moreRef.current.contains(target))
+        (openDropdown === 'exit' && exitRef.current && !exitRef.current.contains(target)) ||
+        (openDropdown === 'resources' && resourceRef.current && !resourceRef.current.contains(target))
       ) {
         setOpenDropdown(null);
       }
@@ -97,14 +100,14 @@ export default function Navbar() {
     };
   }, [openDropdown]);
 
-  const toggleDropdown = (name: string) =>
+  const toggleDropdown = (name: string) => {
     setOpenDropdown((prev) => (prev === name ? null : name));
-
+  };
 
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-border ${
-        scrolled ? 'bg-[var(--navbar-bg)]/95 backdrop-blur-md py-2 shadow-lg' : 'bg-[var(--navbar-bg)] py-4'
+        scrolled ? 'bg-[var(--navbar-bg)]/95 backdrop-blur-md py-2.5 shadow-sm' : 'bg-[var(--navbar-bg)] py-3.5'
       }`}
     >
       <div className="mx-auto w-full max-w-[1600px] px-4 md:px-6 lg:px-8 flex items-center justify-between">
@@ -112,58 +115,47 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2 group" onClick={() => setOpenDropdown(null)}>
           <Image
             src="/logo/logo.webp"
-            alt="Rhenis Nursing"
-            width={28}
-            height={28}
+            alt="Nurseford"
+            width={32}
+            height={32}
             priority
-            className="w-7 h-7 object-contain"
+            className="w-8 h-8 object-contain"
           />
-          <span className="font-serif text-lg font-semibold text-sage group-hover:text-coral transition-colors">
-            Rhenis Nursing
+          <span className="font-serif text-xl font-bold text-navy dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            Nurseford
           </span>
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-7">
-          {examLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium text-navy/70 hover:text-navy transition-colors"
-              onClick={() => setOpenDropdown(null)}
-            >
-              {link.label}
-            </Link>
-          ))}
-
-          {/* Nursing Q-Bank dropdown */}
+        <nav className="hidden lg:flex items-center gap-8">
+          {/* Nursing School dropdown */}
           <div className="relative" ref={nursingRef}>
             <button
               type="button"
               onClick={() => toggleDropdown('nursing')}
-              className={`flex items-center gap-1 text-sm font-medium transition-colors ${
-                openDropdown === 'nursing' ? 'text-coral' : 'text-navy/70 hover:text-navy'
+              className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                openDropdown === 'nursing' ? 'text-blue-600 dark:text-blue-400' : 'text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white'
               }`}
               aria-expanded={openDropdown === 'nursing'}
               aria-haspopup="true"
             >
-              Nursing Q-Bank
+              Nursing School
               <ChevronDown
                 className={`w-4 h-4 transition-transform ${openDropdown === 'nursing' ? 'rotate-180' : ''}`}
               />
             </button>
             {openDropdown === 'nursing' && (
               <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
-                <div className="w-72 rounded-2xl border border-border bg-paper p-3 shadow-2xl">
+                <div className="w-72 rounded-2xl border border-border bg-white dark:bg-[#1E293B] p-3 shadow-2xl">
                   {nursingSchoolLinks.map((item) => (
                     <Link
-                      key={item.href}
+                      key={item.href + item.label}
                       href={item.href}
                       onClick={() => setOpenDropdown(null)}
-                      className="flex flex-col gap-0.5 rounded-xl px-4 py-3 hover:bg-paper-dim transition-colors"
+                      className="flex flex-col gap-0.5 rounded-xl px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
                     >
-                      <span className="font-serif text-sm font-semibold text-navy">{item.label}</span>
-                      <span className="text-xs text-navy/50">{item.description}</span>
+                      <span className="font-serif text-sm font-semibold text-navy dark:text-white">{item.label}</span>
+                      <span className="text-xs text-navy/50 dark:text-white/50">{item.description}</span>
                     </Link>
                   ))}
                 </div>
@@ -171,31 +163,66 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* More dropdown */}
-          <div className="relative" ref={moreRef}>
+          {/* Exit Exams dropdown */}
+          <div className="relative" ref={exitRef}>
             <button
               type="button"
-              onClick={() => toggleDropdown('more')}
-              className={`flex items-center gap-1 text-sm font-medium transition-colors ${
-                openDropdown === 'more' ? 'text-coral' : 'text-navy/70 hover:text-navy'
+              onClick={() => toggleDropdown('exit')}
+              className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                openDropdown === 'exit' ? 'text-blue-600 dark:text-blue-400' : 'text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white'
               }`}
-              aria-expanded={openDropdown === 'more'}
+              aria-expanded={openDropdown === 'exit'}
               aria-haspopup="true"
             >
-              More
+              Exit Exams
               <ChevronDown
-                className={`w-4 h-4 transition-transform ${openDropdown === 'more' ? 'rotate-180' : ''}`}
+                className={`w-4 h-4 transition-transform ${openDropdown === 'exit' ? 'rotate-180' : ''}`}
               />
             </button>
-            {openDropdown === 'more' && (
+            {openDropdown === 'exit' && (
               <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
-                <div className="w-72 rounded-2xl border border-border bg-paper p-3 shadow-2xl">
-                  {moreLinks.map((item) => (
+                <div className="w-72 rounded-2xl border border-border bg-white dark:bg-[#1E293B] p-3 shadow-2xl">
+                  {exitExamLinks.map((item) => (
                     <Link
-                      key={item.href}
+                      key={item.href + item.label}
                       href={item.href}
                       onClick={() => setOpenDropdown(null)}
-                      className="block rounded-xl px-4 py-2.5 text-sm font-medium text-navy/70 hover:bg-paper-dim hover:text-navy transition-colors"
+                      className="flex flex-col gap-0.5 rounded-xl px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+                    >
+                      <span className="font-serif text-sm font-semibold text-navy dark:text-white">{item.label}</span>
+                      <span className="text-xs text-navy/50 dark:text-white/50">{item.description}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Resources dropdown */}
+          <div className="relative" ref={resourceRef}>
+            <button
+              type="button"
+              onClick={() => toggleDropdown('resources')}
+              className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                openDropdown === 'resources' ? 'text-blue-600 dark:text-blue-400' : 'text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white'
+              }`}
+              aria-expanded={openDropdown === 'resources'}
+              aria-haspopup="true"
+            >
+              Resources
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${openDropdown === 'resources' ? 'rotate-180' : ''}`}
+              />
+            </button>
+            {openDropdown === 'resources' && (
+              <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
+                <div className="w-64 rounded-2xl border border-border bg-white dark:bg-[#1E293B] p-3 shadow-2xl">
+                  {resourceLinks.map((item) => (
+                    <Link
+                      key={item.href + item.label}
+                      href={item.href}
+                      onClick={() => setOpenDropdown(null)}
+                      className="block rounded-xl px-4 py-2.5 text-sm font-medium text-navy/80 dark:text-white/80 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                     >
                       {item.label}
                     </Link>
@@ -206,47 +233,45 @@ export default function Navbar() {
           </div>
         </nav>
 
-        {/* Desktop search */}
-        <div className="hidden lg:block">
+        {/* Desktop search + Actions */}
+        <div className="hidden lg:flex items-center gap-4">
           <SearchBar />
-        </div>
 
-        {/* Auth buttons */}
-        <div className="hidden lg:flex items-center gap-3">
+          <div className="h-5 w-px bg-slate-200 dark:bg-white/10" />
+
           <ThemeModeToggle />
           {!loading && signedIn && <HeedMessageBell />}
+
           {loading ? (
-            <>
-              <div className="h-10 w-24 rounded-full bg-paper-dim animate-pulse" />
-              <div className="h-10 w-28 rounded-full bg-coral/40 animate-pulse" />
-            </>
+            <div className="h-9 w-24 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse" />
           ) : signedIn ? (
             <>
-              {/* User Account Dropdown (shows account card) */}
               <UserAccountDropdown currentDashboard="rn-nursing" />
-
               <Link
                 href="/dashboards/rn-nursing"
-                className="px-5 py-2 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] transition-all duration-200 shadow-2xs active:scale-[0.98]"
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#0A2540] hover:bg-[#071829] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white transition-all duration-200 shadow-2xs active:scale-[0.98]"
               >
-                Dive In
+                Dashboard
               </Link>
             </>
           ) : (
-            <>
+            <div className="flex items-center gap-3">
               <Link
                 href="/auth/login"
-                className="px-5 py-2 rounded-full text-sm font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 transition-all duration-200 shadow-2xs active:scale-[0.98]"
+                className="flex items-center gap-1.5 text-sm font-semibold text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white transition-colors"
               >
-                Sign In
+                <span className="w-7 h-7 rounded-full border border-navy/30 dark:border-white/30 flex items-center justify-center">
+                  <User className="w-4 h-4 text-navy/70 dark:text-white/70" />
+                </span>
+                <span>Sign In</span>
               </Link>
               <Link
                 href="/auth/register"
-                className="px-5 py-2 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] transition-all duration-200 shadow-2xs active:scale-[0.98]"
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#0A2540] hover:bg-[#071829] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white shadow-2xs transition-all duration-200 active:scale-[0.98]"
               >
                 Register
               </Link>
-            </>
+            </div>
           )}
         </div>
 
@@ -256,58 +281,64 @@ export default function Navbar() {
           <ThemeModeToggle />
           {!loading && signedIn && <HeedMessageBell />}
           <button
-            className="text-navy p-1"
+            className="text-navy dark:text-white p-1"
             onClick={() => setMobileOpen((prev) => !prev)}
             aria-label="Toggle menu"
           >
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile menu dropdown */}
       {mobileOpen && (
         <div className="lg:hidden bg-[var(--navbar-bg)] border-t border-border px-5 pb-6 pt-2 max-h-[calc(100vh-70px)] overflow-y-auto">
           <div className="flex flex-col gap-1 py-2">
-            <Link href="/" onClick={() => setMobileOpen(false)} className="py-2.5 text-sm font-medium text-navy hover:text-coral transition-colors">
+            <Link href="/" onClick={() => setMobileOpen(false)} className="py-2.5 text-sm font-semibold text-navy dark:text-white hover:text-blue-600 transition-colors">
               Home
             </Link>
-            {examLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="py-2.5 text-sm font-medium text-navy hover:text-coral transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
+            <div className="pt-2 pb-1 text-xs font-bold uppercase tracking-wider text-navy/40 dark:text-white/40">
+              Nursing School
+            </div>
             {nursingSchoolLinks.map((item) => (
               <Link
-                key={item.href}
+                key={item.href + item.label}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className="py-2.5 text-sm font-medium text-navy hover:text-coral transition-colors"
+                className="py-2 text-sm font-medium text-navy/80 dark:text-white/80 hover:text-blue-600 transition-colors pl-2"
               >
                 {item.label}
               </Link>
             ))}
-            {moreLinks
-              .filter(
-                (item) => !excludedMobileMoreLinks.has(item.label.toLowerCase())
-              )
-              .map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="py-2.5 text-sm font-medium text-navy/70 hover:text-coral transition-colors"
-                >
-                  {item.label}
-                </Link>
-              ))}
+            <div className="pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-navy/40 dark:text-white/40">
+              Exit Exams
+            </div>
+            {exitExamLinks.map((item) => (
+              <Link
+                key={item.href + item.label}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className="py-2 text-sm font-medium text-navy/80 dark:text-white/80 hover:text-blue-600 transition-colors pl-2"
+              >
+                {item.label}
+              </Link>
+            ))}
+            <div className="pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-navy/40 dark:text-white/40">
+              Resources
+            </div>
+            {resourceLinks.map((item) => (
+              <Link
+                key={item.href + item.label}
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className="py-2 text-sm font-medium text-navy/80 dark:text-white/80 hover:text-blue-600 transition-colors pl-2"
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
-          <div className="flex flex-col gap-3 pt-4 border-t border-border mt-2">
+
+          <div className="flex flex-col gap-2.5 pt-4 border-t border-border mt-3">
             {!loading &&
               (signedIn ? (
                 <>
@@ -317,9 +348,9 @@ export default function Navbar() {
                   <Link
                     href="/dashboards/rn-nursing"
                     onClick={() => setMobileOpen(false)}
-                    className="px-5 py-2.5 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] text-center shadow-2xs transition-all duration-200 active:scale-[0.98]"
+                    className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-[#0A2540] dark:bg-[#1E3A8A] text-white text-center shadow-2xs transition-all duration-200 active:scale-[0.98]"
                   >
-                    Dive In
+                    Dashboard
                   </Link>
                 </>
               ) : (
@@ -327,14 +358,15 @@ export default function Navbar() {
                   <Link
                     href="/auth/login"
                     onClick={() => setMobileOpen(false)}
-                    className="px-5 py-2.5 rounded-full text-sm font-semibold border border-blue-500/80 dark:border-blue-400/60 bg-blue-500/15 dark:bg-blue-500/20 hover:bg-blue-500/25 dark:hover:bg-blue-500/30 text-blue-700 dark:text-blue-300 text-center shadow-2xs transition-all duration-200 active:scale-[0.98]"
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold border border-slate-300 dark:border-white/20 bg-white dark:bg-white/5 text-navy dark:text-white text-center shadow-2xs transition-all duration-200 active:scale-[0.98]"
                   >
-                    Sign In
+                    <User className="w-4 h-4" />
+                    <span>Sign In</span>
                   </Link>
                   <Link
                     href="/auth/register"
                     onClick={() => setMobileOpen(false)}
-                    className="px-5 py-2.5 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] text-center shadow-2xs transition-all duration-200 active:scale-[0.98]"
+                    className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-[#0A2540] dark:bg-[#1E3A8A] text-white text-center shadow-2xs transition-all duration-200 active:scale-[0.98]"
                   >
                     Register
                   </Link>

@@ -255,67 +255,6 @@ export function LiveExamActionProvider({
 
       const result = await hookSubmitAnswer(entry.submissionType as never, payload);
 
-      if (typeof window !== "undefined") {
-        try {
-          if (entry.examGuidId) {
-            const existing = localStorage.getItem(`exam_in_progress_${entry.examGuidId}`);
-            if (!existing || !existing.startsWith("{")) {
-              const knownTitle =
-                localStorage.getItem(`exam_title_${entry.examGuidId}`) ||
-                sessionStorage.getItem(`exam_title_${entry.examGuidId}`) ||
-                undefined;
-              const payloadStr = JSON.stringify({
-                id: entry.examId,
-                guidId: entry.examGuidId,
-                title: knownTitle,
-                updatedAt: new Date().toISOString(),
-              });
-              localStorage.setItem(`exam_in_progress_${entry.examGuidId}`, payloadStr);
-              sessionStorage.setItem(`exam_in_progress_${entry.examGuidId}`, payloadStr);
-            }
-          }
-          if (entry.examId) {
-            const existing = localStorage.getItem(`exam_in_progress_${entry.examId}`);
-            if (!existing || !existing.startsWith("{")) {
-              const knownTitle =
-                localStorage.getItem(`exam_title_${entry.examId}`) ||
-                sessionStorage.getItem(`exam_title_${entry.examId}`) ||
-                undefined;
-              const payloadStr = JSON.stringify({
-                id: entry.examId,
-                guidId: entry.examGuidId,
-                title: knownTitle,
-                updatedAt: new Date().toISOString(),
-              });
-              localStorage.setItem(`exam_in_progress_${entry.examId}`, payloadStr);
-              sessionStorage.setItem(`exam_in_progress_${entry.examId}`, payloadStr);
-            }
-          }
-          const qIds = [entry.questionId, entry.questionGuidId].filter(Boolean);
-          if (qIds.length > 0) {
-            try {
-              const answeredStored = new Set(JSON.parse(localStorage.getItem("rhenis_answered_questions") || "[]"));
-              for (const qid of qIds) {
-                answeredStored.add(qid);
-                answeredStored.add(String(qid));
-              }
-              localStorage.setItem("rhenis_answered_questions", JSON.stringify(Array.from(answeredStored)));
-            } catch {}
-          }
-          const examKeys = [entry.examId, entry.examGuidId].filter(Boolean);
-          for (const ek of examKeys) {
-            try {
-              const examStored = new Set(JSON.parse(localStorage.getItem(`rhenis_exam_answered_${ek}`) || "[]"));
-              for (const qid of qIds) {
-                examStored.add(qid);
-                examStored.add(String(qid));
-              }
-              localStorage.setItem(`rhenis_exam_answered_${ek}`, JSON.stringify(Array.from(examStored)));
-            } catch {}
-          }
-        } catch {}
-      }
-
       if (result?.error) {
         dispatch({ type: "MARK_ERROR", questionId: entry.questionId, error: result.error });
         triggerToast("error", result.error);
@@ -340,30 +279,6 @@ export function LiveExamActionProvider({
     ) => {
       const full: Omit<AnswerEntry, "dirty" | "saving"> = { ...entry, submissionType };
       dispatch({ type: "SET_ANSWER", payload: full });
-
-      if (typeof window !== "undefined") {
-        try {
-          const qIds = [entry.questionId, entry.questionGuidId].filter(Boolean);
-          if (qIds.length > 0) {
-            const answeredStored = new Set(JSON.parse(localStorage.getItem("rhenis_answered_questions") || "[]"));
-            for (const qid of qIds) {
-              answeredStored.add(qid);
-              answeredStored.add(String(qid));
-            }
-            localStorage.setItem("rhenis_answered_questions", JSON.stringify(Array.from(answeredStored)));
-          }
-
-          const examKeys = [entry.examId, entry.examGuidId].filter(Boolean);
-          for (const ek of examKeys) {
-            const examStored = new Set(JSON.parse(localStorage.getItem(`rhenis_exam_answered_${ek}`) || "[]"));
-            for (const qid of qIds) {
-              examStored.add(qid);
-              examStored.add(String(qid));
-            }
-            localStorage.setItem(`rhenis_exam_answered_${ek}`, JSON.stringify(Array.from(examStored)));
-          }
-        } catch {}
-      }
 
       if (timers.current[entry.questionId]) clearTimeout(timers.current[entry.questionId]);
       timers.current[entry.questionId] = setTimeout(() => {
@@ -455,13 +370,7 @@ export function LiveExamActionProvider({
         if (typeof window !== "undefined") {
           try {
             if (payload.examGuidId) {
-              localStorage.removeItem(`exam_in_progress_${payload.examGuidId}`);
-              sessionStorage.removeItem(`exam_in_progress_${payload.examGuidId}`);
               sessionStorage.removeItem(`dynamic_live_exam_current_question_position_${payload.examGuidId}`);
-            }
-            if (payload.examId) {
-              localStorage.removeItem(`exam_in_progress_${payload.examId}`);
-              sessionStorage.removeItem(`exam_in_progress_${payload.examId}`);
             }
           } catch {}
         }

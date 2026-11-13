@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { strataService, type StrataAction } from "@/lib/services/nexus/strata/strataService";
+import { strataService } from "@/lib/services/nexus/strata/strataService";
+import type { NursingProgramScope } from "@/lib/utils/exams/nursingProgramScope";
+import { fetchScopedNominalExams } from "@/lib/utils/exams/scopedExamFetch";
 
 export interface StrataItem {
   id: number;
@@ -121,6 +123,8 @@ export const useNominalStrataExams = ({
   sortDirection = "desc",
   dynamicLearningStrataName = null,
   allowEmptyParent = true,
+  programScope = "all",
+  sliceMerged = true,
 }: {
   parentIdentifier?: string | null;
   page?: number | string;
@@ -129,6 +133,8 @@ export const useNominalStrataExams = ({
   sortDirection?: "asc" | "desc";
   dynamicLearningStrataName?: LearningStrata | null;
   allowEmptyParent?: boolean;
+  programScope?: NursingProgramScope;
+  sliceMerged?: boolean;
 }) => {
   const [exams, setExams] = useState<StrataItem[]>([]);
   const [filteredExams, setFilteredExams] = useState<StrataItem[]>([]);
@@ -186,10 +192,26 @@ export const useNominalStrataExams = ({
           isParentEmpty,
         });
 
-        // Use AbsoluteFetch when no parent filter is specified, otherwise NominalFetch
-        const fetchType: StrataAction = isParentEmpty ? "AbsoluteFetch" : "NominalFetch";
+        // When no specific parent identifier is provided, scale the fetch strictly
+        // to RN Nursing, LPN Nursing, and Exit Exam programs via NominalFetch.
+        if (isParentEmpty) {
+          const scoped = await fetchScopedNominalExams<StrataItem>({
+            scope: programScope,
+            page: cleanPage,
+            perPage: cleanPerPage,
+            search: examSearch,
+            sortColumn,
+            sortDirection,
+            sliceMerged,
+          });
+          setExams(scoped.items);
+          setFilteredExams(scoped.items);
+          setSkewTotal(scoped.totalItems);
+          setSkewTotalPages(scoped.totalPages);
+          return;
+        }
 
-        let result = await strataService<{
+        const result = await strataService<{
           items?: StrataItem[];
           results?: StrataItem[];
           skewPage?: number;
@@ -201,9 +223,9 @@ export const useNominalStrataExams = ({
           skewColumnSort?: string | null;
         }>(
           "Exam",
-          fetchType,
+          "NominalFetch",
           {
-            ...(isParentEmpty ? {} : { identifier: cleanIdentifier }),
+            identifier: cleanIdentifier,
             dynamicPage: cleanPage,
             dynamicPerPage: cleanPerPage,
             dynamicSearch: examSearch || "",
@@ -212,38 +234,6 @@ export const useNominalStrataExams = ({
             dynamicLearningStrataName: dynamicLearningStrataName ?? "",
           }
         );
-
-        // Fallback: If AbsoluteFetch returned no items or error when parent is empty, try NominalFetch
-        const checkItems = extractItems(result);
-        if (isParentEmpty && (checkItems.length === 0 || result?.error)) {
-          try {
-            const nominalFallback = await strataService<{
-              items?: StrataItem[];
-              results?: StrataItem[];
-              skewPage?: number;
-              skewPerPage?: number;
-              skewTotal?: number;
-              skewTotalPages?: number;
-            }>(
-              "Exam",
-              "NominalFetch",
-              {
-                identifier: "",
-                dynamicPage: cleanPage,
-                dynamicPerPage: cleanPerPage,
-                dynamicSearch: examSearch || "",
-                dynamicSortColumn: sortColumn ?? "id",
-                dynamicSortDirection: sortDirection ?? "desc",
-                dynamicLearningStrataName: dynamicLearningStrataName ?? "",
-              }
-            );
-            if (extractItems(nominalFallback).length > 0) {
-              result = nominalFallback;
-            }
-          } catch {
-            // ignore fallback error
-          }
-        }
 
         console.log("📥 Raw result:", result);
         console.log("📦 result.data:", result?.data);
@@ -304,6 +294,8 @@ export const useNominalStrataExams = ({
     sortDirection,
     dynamicLearningStrataName,
     allowEmptyParent,
+    programScope,
+    sliceMerged,
     refreshKey,
   ]);
 

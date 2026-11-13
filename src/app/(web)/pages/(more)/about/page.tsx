@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 const stats = [
     { value: "50K+", label: "Students" },
     { value: "25K+", label: "Practice Questions" },
-    { value: "96%", label: "NCLEX Pass Rate" },
+    { value: "96%", label: "Exam Pass Rate" },
     { value: "24/7", label: "Study Access" },
 ];
 

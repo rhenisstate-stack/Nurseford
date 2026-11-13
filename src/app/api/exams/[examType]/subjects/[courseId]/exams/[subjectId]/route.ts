@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
@@ -26,6 +29,8 @@ interface BackendExam {
   updated_at?: string;
   createdAt?: string;
   created_at?: string;
+  examActions?: unknown[];
+  actions?: unknown[];
 }
 
 const subjectExamsResponseCache = new Map<string, { data: unknown; timestamp: number }>();
@@ -228,8 +233,9 @@ export async function GET(
       accessType: e.accessType ?? "Restricted",
       status: e.status ?? "Active",
       modes: e.modes || ["Practice", "Review", "Exam"],
-      examActions: (e as any).examActions || (e as any).actions || [],
+      examActions: e.examActions || e.actions || [],
       updatedAt: e.updatedAt || e.updated_at || e.createdAt || e.created_at || null,
+      createdAt: e.createdAt || e.created_at || null,
     }));
 
     // Sort exams dynamically: newest exam year first (e.g. 2026 before 2019), then by last updated timestamp
@@ -238,8 +244,8 @@ export async function GET(
       const yrA = (a.year ?? extractExamYear(a.title, resolvedSubjectName)) ?? 0;
       if (yrB !== yrA) return yrB - yrA;
 
-      const timeB = new Date(b.updatedAt || (b as any).createdAt || 0).getTime();
-      const timeA = new Date(a.updatedAt || (a as any).createdAt || 0).getTime();
+      const timeB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+      const timeA = new Date(a.updatedAt || a.createdAt || 0).getTime();
       if (timeB !== timeA) return timeB - timeA;
 
       return (Number(b.id) || 0) - (Number(a.id) || 0);

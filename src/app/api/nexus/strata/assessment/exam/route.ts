@@ -2,7 +2,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
-import { getGuestPreviewToken } from "@/lib/services/exams/questionsBreakdownService";
+
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
 export interface DynamicStrataResponse<T = unknown> {
   message?: string;
@@ -79,9 +81,9 @@ async function forwardToBackend(
       }
     }
 
-    // Fallback: If unauthenticated guest is previewing live exam questions (e.g. first 10 questions free)
-    const isLiveExamPath = backendPath.includes("list/live") || backendPath.includes("list/nominal") || fetchtype === "live" || fetchtype === "nominal";
+    const isLiveExamPath = backendPath.includes("list/live") || backendPath.includes("list/current");
     if (!castoLine && isLiveExamPath) {
+      const { getGuestPreviewToken } = await import("@/lib/services/exams/questionsBreakdownService");
       const guestAuth = await getGuestPreviewToken();
       if (guestAuth) {
         castoLine = guestAuth.line;
@@ -97,25 +99,11 @@ async function forwardToBackend(
     if (castoLine) headers["x-casto-line"] = castoLine;
     if (castoBadge) headers["x-casto-badge"] = castoBadge;
 
-    let backendResponse = await fetch(url, {
+    const backendResponse = await fetch(url, {
       method,
       headers,
       body: method !== "GET" ? JSON.stringify(body) : undefined,
     });
-
-    // If guest preview token expired (401), refresh token and retry once
-    if (backendResponse.status === 401 && !req.headers.get("x-casto-line") && isLiveExamPath) {
-      const freshGuestAuth = await getGuestPreviewToken();
-      if (freshGuestAuth) {
-        headers["x-casto-line"] = freshGuestAuth.line;
-        headers["x-casto-badge"] = freshGuestAuth.badge;
-        backendResponse = await fetch(url, {
-          method,
-          headers,
-          body: method !== "GET" ? JSON.stringify(body) : undefined,
-        });
-      }
-    }
 
     const responseBody: DynamicStrataResponse = await backendResponse.json().catch(() => ({
       error: "Failed to Parse Backend Response ⚓",
@@ -136,6 +124,7 @@ async function forwardToBackend(
 }
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 
 
 
@@ -194,6 +183,7 @@ export async function GET(req: NextRequest) {
 }
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
 
 
 
