@@ -8,8 +8,10 @@ export interface ExamOption {
 }
 
 export const EXAM_OPTIONS: ExamOption[] = [
-  { value: "rn-nursing", label: "RN Nursing & Exit Exams", segment: "RN_NURSING" },
-  { value: "lpn-nursing", label: "LPN Nursing & Exit Exams", segment: "LPN_NURSING" },
+  { value: "rn-nursing", label: "RN Nursing Exams", segment: "RN_NURSING" },
+  { value: "rn-exit", label: "RN Exit Exams", segment: "RN_EXIT" },
+  { value: "lpn-nursing", label: "LPN Nursing Exams", segment: "LPN_NURSING" },
+  { value: "lpn-exit", label: "LPN Exit Exams", segment: "LPN_EXIT" },
 ];
 
 export const EXAM_OPTION_MAP: Record<string, ExamOption> = Object.fromEntries(
@@ -18,5 +20,10 @@ export const EXAM_OPTION_MAP: Record<string, ExamOption> = Object.fromEntries(
 
 export function examDashboardHref(slug: string | null | undefined): string {
   const safe = slug && EXAM_OPTION_MAP[slug] ? slug : "";
-  return safe ? `/dashboards/${safe}` : "/pages/entrance";
+  if (!safe) return "/pages/entrance";
+  if (safe === "rn-nursing") return "/dashboards/rn-nursing?track=nursing";
+  if (safe === "rn-exit") return "/dashboards/rn-nursing?track=exit";
+  if (safe === "lpn-nursing") return "/dashboards/lpn-nursing?track=nursing";
+  if (safe === "lpn-exit") return "/dashboards/lpn-nursing?track=exit";
+  return `/dashboards/${safe}`;
 }

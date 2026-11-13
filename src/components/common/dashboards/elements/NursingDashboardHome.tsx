@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClasp";
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
 import { VISTA_QUOTES } from "@/lib/constants/dashboards/nexus/vista/quotes";
@@ -16,13 +17,28 @@ export interface NursingDashboardHomeProps {
   heading: string;
 }
 
-/**
- * Shared overview page for the RN Nursing and LPN Nursing dashboards.
- */
-export default function NursingDashboardHome({
+function NursingDashboardHomeContent({
   programScope,
   heading,
 }: NursingDashboardHomeProps) {
+  const searchParams = useSearchParams();
+  const track = searchParams?.get("track")?.toLowerCase();
+
+  const isRN = programScope === "rn-nursing";
+  const displayHeading =
+    track === "exit"
+      ? (isRN ? "RN Exit Exams" : "LPN Exit Exams")
+      : track === "nursing"
+      ? (isRN ? "RN Nursing Exams" : "LPN Nursing Exams")
+      : heading;
+
+  const filteredExamTypes =
+    track === "exit"
+      ? [isRN ? "rn-exit" : "lpn-exit"]
+      : track === "nursing"
+      ? [programScope]
+      : undefined;
+
   const { leftWidth } = useFlexPageClasp();
 
   const { user, loading: isUserLoading } = useCurrentSystemUser();
@@ -133,7 +149,7 @@ export default function NursingDashboardHome({
         <section>
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 mb-3">
             <h2 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {heading}
+              {displayHeading}
             </h2>
             <p className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 dark:text-slate-300/80 font-medium">
               <Calendar className="w-3.5 h-3.5 text-teal-600 dark:text-[#2FD9C4] shrink-0" />
@@ -150,10 +166,22 @@ export default function NursingDashboardHome({
           <SubjectPlaceholderGrid
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
             examType={programScope}
+            examTypes={filteredExamTypes}
             showStartNow
           />
         </section>
       </div>
     </main>
+  );
+}
+
+/**
+ * Shared overview page for the RN Nursing and LPN Nursing dashboards.
+ */
+export default function NursingDashboardHome(props: NursingDashboardHomeProps) {
+  return (
+    <Suspense fallback={null}>
+      <NursingDashboardHomeContent {...props} />
+    </Suspense>
   );
 }
