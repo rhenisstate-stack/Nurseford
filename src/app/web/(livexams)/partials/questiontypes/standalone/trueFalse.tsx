@@ -111,8 +111,10 @@ export const TrueFalseQuestion = ({
   };
 
   const getState = (optId: number): "correct" | "wrong" | "idle" => {
-    if (!showFeedback || picked !== optId) return "idle";
-    return correctIds.includes(optId) ? "correct" : "wrong";
+    if (!showFeedback) return "idle";
+    if (correctIds.includes(optId)) return "correct";
+    if (picked === optId) return "wrong";
+    return "idle";
   };
 
   return (

@@ -230,37 +230,37 @@ export function CourseSubjectsPage({
         {showExamBuilder ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
             {/* Card 1: Course Overview Card */}
-            <div className="group relative overflow-hidden rounded-xl bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] border border-[var(--card-border,#CBDCF8)] dark:border-white/10 hover:border-[#3B82F6]/60 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] p-3 sm:p-3.5 md:p-4 transition-all duration-200 shadow-xs hover:shadow-md text-left">
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] p-3.5 sm:p-4 md:p-4.5 transition-all duration-200 shadow-xs text-left">
               <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
                 <div className="min-w-0">
-                  <h1 className="text-sm sm:text-base md:text-lg font-bold text-[#2563EB] dark:text-[#60A5FA] truncate leading-tight">
+                  <h1 className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy dark:text-white truncate leading-tight">
                     {courseName}
                   </h1>
-                  <p className="text-xs sm:text-sm md:text-base text-slate-700 dark:text-white/80 font-semibold truncate mt-1">
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
                     {isLoading
                       ? "Loading subjects..."
                       : `${subjects.length} Subject${subjects.length === 1 ? "" : "s"} under this course`}
                   </p>
                 </div>
                 <div className="flex flex-col items-end shrink-0">
-                  <span suppressHydrationWarning className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm md:text-base font-bold shrink-0">
-                    <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-600 dark:text-[#2FD9C4]" />
+                  <span suppressHydrationWarning className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 text-xs font-semibold shrink-0">
+                    <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     {formattedUpdateDate}
                   </span>
-                  <p className="text-xs sm:text-sm md:text-base text-slate-700 dark:text-white/70 font-semibold pt-1 text-right whitespace-nowrap">
-                    Exams last updated on{" "}
-                    <span suppressHydrationWarning className="text-emerald-700 dark:text-emerald-400 font-bold">
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium pt-1 text-right whitespace-nowrap">
+                    Last updated:{" "}
+                    <span suppressHydrationWarning className="text-emerald-700 dark:text-emerald-400 font-semibold">
                       {formattedUpdateDate}
                     </span>
                   </p>
                 </div>
               </div>
-              <div className="flex-1 min-h-[6px] sm:min-h-[8px]" />
+              <div className="flex-1 min-h-[8px]" />
               <Link
                 href={backHref}
-                className="w-full select-none inline-flex items-center justify-center gap-1.5 py-1.5 sm:py-2 md:py-2.5 rounded-lg text-xs sm:text-sm font-semibold border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 hover:bg-teal-500/35 dark:hover:bg-teal-500/40 text-teal-800 dark:text-teal-300 active:scale-[0.99] transition-all duration-200 shadow-2xs"
+                className="w-full select-none inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/90 hover:bg-slate-100 dark:hover:bg-slate-700 text-navy dark:text-white transition-all duration-200 shadow-2xs"
               >
-                <ArrowLeft className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+                <ArrowLeft className="w-3.5 h-3.5" />
                 Back to {panelSlug.toUpperCase()} Dashboard
               </Link>
             </div>
@@ -269,45 +269,48 @@ export function CourseSubjectsPage({
             <button
               type="button"
               onClick={() => setShowBuilder(true)}
-              className="group relative overflow-hidden rounded-xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 hover:border-[#8B5CF6]/60 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] p-3 sm:p-3.5 md:p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
+              className="group relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-teal-500/60 bg-white dark:bg-[#1E293B] p-3.5 sm:p-4 md:p-4.5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
             >
               <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
                 <div className="min-w-0">
-                  <span className="text-sm sm:text-base md:text-lg font-medium text-slate-900 dark:text-white block leading-tight">
+                  <span className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy dark:text-white block leading-tight">
                     Build Your Own Exam
                   </span>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
+                    Select custom question count, topics & test modes
+                  </p>
                 </div>
-                <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-md bg-[#8B5CF6]/15 text-[#8B5CF6] dark:text-[#A78BFA] border border-[#8B5CF6]/30 text-xs sm:text-sm font-medium shrink-0">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800/60 text-xs font-bold shrink-0">
                   Custom
                 </span>
               </div>
-              <div className="flex-1 min-h-[6px] sm:min-h-[8px]" />
-              <span className="w-full select-none inline-flex items-center justify-center gap-1.5 py-1.5 sm:py-2 md:py-2.5 rounded-lg text-xs sm:text-sm font-semibold border border-purple-500/80 dark:border-purple-400/60 bg-purple-500/25 dark:bg-purple-500/30 group-hover:bg-purple-500/35 dark:group-hover:bg-purple-500/40 text-purple-700 dark:text-purple-300 active:scale-[0.99] transition-all duration-200 shadow-2xs">
-                <Play className="w-3 sm:w-3.5 h-3 sm:h-3.5 fill-current" />
+              <div className="flex-1 min-h-[8px]" />
+              <span className="w-full select-none inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-[#0A2540] hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white transition-all duration-200 shadow-2xs">
+                <Play className="w-3.5 h-3.5 fill-current" />
                 Create Exam
               </span>
             </button>
           </div>
         ) : (
           /* Fallback header when exam builder is disabled for this panel */
-          <div className="rounded-2xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] p-4 md:p-6 shadow-xs text-center space-y-2">
+          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-5 md:p-6 shadow-xs text-center space-y-2.5">
             <Link
               href={backHref}
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-slate-600 dark:text-white/60 hover:text-[#2FD9C4] transition-colors mb-0.5 font-medium"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors mb-0.5 font-semibold"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               Back to {panelSlug.toUpperCase()} Dashboard
             </Link>
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-[#2563EB] dark:text-[#60A5FA]">
+            <h1 className="font-serif text-xl md:text-2xl lg:text-3xl font-bold text-navy dark:text-white">
               {courseName}
             </h1>
-            <p className="text-sm md:text-base text-slate-700 dark:text-white/80 font-semibold">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
               {isLoading
                 ? "Loading subjects..."
                 : `${subjects.length} Subject${subjects.length === 1 ? "" : "s"} under this course`}
             </p>
-            <p className="flex items-center justify-center gap-1.5 text-xs sm:text-sm md:text-base text-slate-700 dark:text-white/70 font-semibold pt-0.5">
-              <Calendar className="w-4 h-4 text-teal-600 dark:text-[#2FD9C4]" />
+            <p className="inline-flex items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium pt-0.5">
+              <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               Exams last updated on{" "}
               <span suppressHydrationWarning className="text-emerald-700 dark:text-emerald-400 font-bold">
                 {formattedUpdateDate}
@@ -317,11 +320,11 @@ export function CourseSubjectsPage({
         )}
 
         {/* ─── Subjects Grid ─── */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2 sm:gap-2.5 md:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2.5 sm:gap-3 md:gap-4">
           {subjects.length === 0 ? (
-            <div className="col-span-full rounded-2xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] px-5 py-12 text-center">
-              <Command className="w-8 h-8 text-[var(--text-color)]/20 mx-auto mb-3" />
-              <p className="text-sm font-semibold text-[var(--text-color)]/50">
+            <div className="col-span-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] px-5 py-12 text-center shadow-xs">
+              <Command className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                 No subjects available for this course yet — check back soon.
               </p>
             </div>
@@ -331,30 +334,24 @@ export function CourseSubjectsPage({
                 key={`${card.id}-${card.slug}`}
                 type="button"
                 onClick={() => openSubjectExams(card)}
-                className="group relative overflow-hidden rounded-xl bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] border border-[var(--card-border,#CBDCF8)] dark:border-white/10 hover:border-[#3B82F6]/60 flex flex-col justify-between min-h-[60px] sm:min-h-[68px] md:min-h-[85px] p-2 sm:p-2.5 md:p-3 transition-all duration-200 shadow-xs hover:shadow-md text-left cursor-pointer"
+                className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 hover:border-teal-500/60 hover:shadow-md flex flex-col justify-between min-h-[90px] sm:min-h-[105px] md:min-h-[115px] p-3.5 sm:p-4 transition-all duration-200 shadow-2xs text-left cursor-pointer"
               >
-                <div className="flex items-start justify-between gap-1 sm:gap-2 w-full">
-                  <span className="text-xs sm:text-sm md:text-[15px] font-semibold text-slate-900 dark:text-white line-clamp-2 leading-tight">
+                <div className="min-w-0 w-full">
+                  <span className="font-serif text-xs sm:text-sm md:text-[15px] font-bold text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors line-clamp-2 leading-snug">
                     {card.name}
                   </span>
-                  {card.coursesCount !== undefined && card.coursesCount > 0 && (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 text-[10px] sm:text-[11px] md:text-xs font-semibold">
-                        Courses: {card.coursesCount}
-                      </span>
-                    </div>
+                  {card.description && (
+                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                      {card.description}
+                    </p>
                   )}
                 </div>
-                {card.description && (
-                  <p className="text-[10.5px] sm:text-xs text-slate-500 dark:text-white/60 line-clamp-1 mt-0.5">
-                    {card.description}
-                  </p>
-                )}
-                <div className="flex-1 min-h-[3px] sm:min-h-[6px]" />
-                <span className="w-full select-none inline-flex items-center justify-center gap-1 sm:gap-1.5 py-1 sm:py-1.5 md:py-1.5 rounded-md sm:rounded-lg text-xs sm:text-[13px] md:text-sm font-semibold border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 group-hover:bg-teal-500/35 dark:group-hover:bg-teal-500/40 text-teal-800 dark:text-teal-300 active:scale-[0.99] transition-all duration-200 shadow-2xs">
-                  <Play className="w-3 sm:w-3.5 h-3 sm:h-3.5 fill-current" />
-                  Access Now
-                </span>
+                <div className="w-full pt-3 mt-auto flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 text-xs font-semibold text-teal-700 dark:text-teal-400">
+                  <span className="group-hover:text-teal-800 dark:group-hover:text-teal-300 transition-colors">
+                    Access Exams
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-1 transition-all duration-200" />
+                </div>
               </button>
             ))
           )}

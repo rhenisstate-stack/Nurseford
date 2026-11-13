@@ -55,29 +55,29 @@ function InfoRow({
   actionHref?: string;
 }) {
   return (
-    <div className="group flex items-center justify-between text-xs py-1.5 px-2 rounded-lg transition-all duration-200 hover:bg-white/90 dark:hover:bg-white/10">
-      <span className="text-black dark:text-gray-200 font-semibold">{label}</span>
+    <div className="flex items-center justify-between text-xs py-1 px-2 rounded-lg transition-colors hover:bg-slate-100/70 dark:hover:bg-slate-700/50">
+      <span className="text-navy/70 dark:text-white/70 font-medium">{label}</span>
 
       {typeof status === "boolean" ? (
         status ? (
-          <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-            Verified
+          <span className="inline-flex items-center gap-1 font-semibold text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 px-2 py-0.5 rounded-md">
+            Verified ✓
           </span>
         ) : actionHref ? (
           <Link
             href={actionHref}
-            className="font-semibold text-red-600 dark:text-red-400 hover:underline cursor-pointer"
+            className="inline-flex items-center gap-1 font-semibold text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 px-2 py-0.5 rounded-md hover:underline cursor-pointer"
             title="Click to verify email"
           >
-            Unverified
+            Verify Email
           </Link>
         ) : (
-          <span className="font-semibold text-red-600 dark:text-red-400">
+          <span className="inline-flex items-center gap-1 font-semibold text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 px-2 py-0.5 rounded-md">
             Unverified
           </span>
         )
       ) : (
-        <span className="font-medium text-gray-800 dark:text-gray-300 truncate max-w-[170px]">
+        <span className="font-semibold text-navy dark:text-white truncate max-w-[170px]">
           {value ?? "—"}
         </span>
       )}
@@ -284,7 +284,7 @@ export default function UserAccountDropdown({
           })}
           {isOpen && (
             <div
-              className={`absolute mt-3 w-[260px] rounded-2xl border border-[#85AEEA] dark:border-white/20 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] shadow-2xl z-50 p-2 space-y-1 ${align === "left"
+              className={`absolute mt-2 w-[240px] rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-xl z-50 p-2 space-y-1 ${align === "left"
                 ? "left-0"
                 : align === "center"
                   ? "left-1/2 -translate-x-1/2"
@@ -294,17 +294,17 @@ export default function UserAccountDropdown({
               <Link
                 href={`/dashboards/${targetDashboard}/auth/login`}
                 onClick={() => setIsOpen(false)}
-                className="group flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-navy dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition"
+                className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-navy dark:text-white hover:bg-slate-50 dark:hover:bg-slate-850 transition"
               >
-                <FiLogIn className="text-indigo-600 transition-transform group-hover:translate-x-0.5" />
+                <FiLogIn className="text-blue-600 transition-transform group-hover:translate-x-0.5" />
                 <span>Login</span>
               </Link>
               <Link
                 href={`/dashboards/${targetDashboard}/auth/register`}
                 onClick={() => setIsOpen(false)}
-                className="group flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-navy dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition"
+                className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-navy dark:text-white hover:bg-slate-50 dark:hover:bg-slate-850 transition"
               >
-                <FiUserPlus className="text-emerald-600 transition-transform group-hover:translate-x-0.5" />
+                <FiUserPlus className="text-teal-600 transition-transform group-hover:translate-x-0.5" />
                 <span>Create account</span>
               </Link>
             </div>
@@ -326,14 +326,14 @@ export default function UserAccountDropdown({
       >
         <button
           onClick={() => setIsOpen((v) => !v)}
-          className="group relative flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-white/70 dark:bg-white/10 backdrop-blur border border-indigo-200 dark:border-indigo-800 shadow-sm hover:shadow-lg transition-all"
+          className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-navy dark:text-white bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-2xs hover:bg-slate-200/70 dark:hover:bg-slate-700 transition cursor-pointer"
         >
           <span>Login / Register</span>
         </button>
 
         {isOpen && (
           <div
-            className={`absolute mt-3 w-[260px] rounded-2xl border border-[#85AEEA] dark:border-white/20 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] shadow-2xl z-50 p-2 space-y-1 ${align === "left"
+            className={`absolute mt-2 w-[240px] rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-xl z-50 p-2 space-y-1 ${align === "left"
               ? "left-0"
               : align === "center"
                 ? "left-1/2 -translate-x-1/2"
@@ -343,38 +343,38 @@ export default function UserAccountDropdown({
             <Link
               href={`/dashboards/${targetDashboard}/auth/login`}
               onClick={() => setIsOpen(false)}
-              className="group flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-navy dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition"
+              className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-navy dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition"
             >
-              <FiLogIn className="text-indigo-600 transition-transform group-hover:translate-x-0.5" />
+              <FiLogIn className="text-blue-600 transition-transform group-hover:translate-x-0.5" />
               <span>Login</span>
             </Link>
 
             <Link
               href={`/dashboards/${targetDashboard}/auth/register`}
               onClick={() => setIsOpen(false)}
-              className="group flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-navy dark:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition"
+              className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-navy dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition"
             >
-              <FiUserPlus className="text-emerald-600 transition-transform group-hover:translate-x-0.5" />
+              <FiUserPlus className="text-teal-600 transition-transform group-hover:translate-x-0.5" />
               <span>Create account</span>
             </Link>
 
-            <div className="my-1 h-px bg-slate-300/80 dark:bg-white/15" />
+            <div className="my-1 h-px bg-slate-200 dark:bg-slate-800" />
 
             <Link
               href={`/dashboards/${targetDashboard}/vista/pages/support`}
               onClick={() => setIsOpen(false)}
-              className="group flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-navy/70 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 transition"
+              className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-navy/70 dark:text-white/70 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
             >
-              <FiHelpCircle className="text-indigo-500" />
+              <FiHelpCircle className="text-blue-500" />
               <span>Help Center</span>
             </Link>
 
             <Link
               href={`/dashboards/${targetDashboard}/vista/pages/contact-us`}
               onClick={() => setIsOpen(false)}
-              className="group flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-navy/70 dark:text-white/70 hover:bg-slate-100 dark:hover:bg-white/10 transition"
+              className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-navy/70 dark:text-white/70 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
             >
-              <FiMail className="text-purple-500" />
+              <FiMail className="text-teal-500" />
               <span>Contact Support</span>
             </Link>
           </div>
@@ -428,83 +428,79 @@ export default function UserAccountDropdown({
       ) : (
         <button
           onClick={() => setIsOpen((v) => !v)}
-          className={`group flex items-center gap-2 rounded-full transition-all duration-300 hover:bg-white/40 dark:hover:bg-white/10 hover:shadow-lg hover:ring-1 hover:ring-emerald-300/40 ${hideAvatar
-            ? "px-4 py-2 bg-white/30 dark:bg-white/5 border border-slate-300/60 dark:border-white/10"
-            : "px-2 py-1"
-            }`}
+          className="group flex items-center gap-2 rounded-xl px-2 py-1 transition-all duration-200 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200/80 dark:hover:border-slate-700 cursor-pointer"
           aria-expanded={isOpen}
           aria-haspopup="true"
         >
           {!hideAvatar && (
-            <span className="h-10 w-10 rounded-full overflow-hidden flex items-center justify-center bg-gradient-to-br from-emerald-200 via-indigo-200 to-cyan-200 dark:from-emerald-900 dark:via-indigo-950 dark:to-cyan-900 transition-all duration-300 group-hover:scale-105 group-hover:shadow-md shrink-0">
+            <span className="h-8 w-8 rounded-lg overflow-hidden flex items-center justify-center bg-blue-100 text-blue-700 font-bold dark:bg-blue-900/60 dark:text-blue-200 border border-blue-200/60 dark:border-blue-800/60 transition-transform group-hover:scale-105 shrink-0 text-xs shadow-2xs">
               {avatarSrc ? (
                 <Image
                   src={avatarSrc}
                   alt={userName}
-                  width={40}
-                  height={40}
+                  width={32}
+                  height={32}
                   className="object-cover w-full h-full"
                   onError={() => setAvatarBroken(true)}
                 />
               ) : (
-                <span className="font-semibold text-gray-700 dark:text-gray-200">
-                  {userInitial}
-                </span>
+                <span>{userInitial}</span>
               )}
             </span>
           )}
-          <span className="text-sm font-medium transition-colors text-navy dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400 max-w-[140px] truncate">
+          <span className="text-xs font-semibold text-navy dark:text-white max-w-[120px] truncate">
             {userName}
           </span>
-          {hideAvatar && (
-            <FiChevronDown
-              className={`w-3.5 h-3.5 text-navy/60 dark:text-white/60 transition-transform ${isOpen ? "rotate-180" : ""
-                }`}
-            />
-          )}
+          <FiChevronDown
+            className={`w-3.5 h-3.5 text-navy/50 dark:text-white/50 transition-transform duration-200 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+          />
         </button>
       )}
 
       {/* Dropdown Card */}
       {isOpen && (
         <div
-          className={`absolute mt-3 w-[340px] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-[#85AEEA] dark:border-white/20 bg-[#EEF3FE] dark:bg-[var(--card-bg,#15273e)] shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150 overflow-hidden ${alignmentClass}`}
+          className={`absolute mt-2 w-[320px] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150 overflow-hidden ${alignmentClass}`}
         >
           {/* Header */}
-          <div className="px-6 py-4 text-center border-b border-slate-300/80 dark:border-white/15">
-            {!hideAvatar && (
-              <div className="mx-auto mb-2 h-14 w-14 rounded-full overflow-hidden bg-gray-200 dark:bg-slate-700 flex items-center justify-center shadow-inner">
-                {avatarSrc ? (
-                  <Image
-                    src={avatarSrc}
-                    alt={userName}
-                    width={56}
-                    height={56}
-                    className="object-cover w-full h-full"
-                    onError={() => setAvatarBroken(true)}
-                  />
-                ) : (
-                  <span className="text-xl font-medium text-gray-600 dark:text-gray-200">
-                    {userInitial}
-                  </span>
-                )}
+          <div className="p-4 border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
+            <div className="flex items-center gap-3">
+              {!hideAvatar && (
+                <div className="h-11 w-11 shrink-0 rounded-xl overflow-hidden bg-blue-100 text-blue-700 font-bold dark:bg-blue-900/60 dark:text-blue-200 border border-blue-200/60 dark:border-blue-800/60 flex items-center justify-center text-sm shadow-2xs">
+                  {avatarSrc ? (
+                    <Image
+                      src={avatarSrc}
+                      alt={userName}
+                      width={44}
+                      height={44}
+                      className="object-cover w-full h-full"
+                      onError={() => setAvatarBroken(true)}
+                    />
+                  ) : (
+                    <span>{userInitial}</span>
+                  )}
+                </div>
+              )}
+
+              <div className="min-w-0 flex-1">
+                <div className="font-bold text-sm text-navy dark:text-white truncate">
+                  {userName}
+                </div>
+                <div className="text-xs text-navy/55 dark:text-white/50 truncate">
+                  {user.email}
+                </div>
+                <div className="mt-1 inline-flex items-center gap-1.5 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>{access?.isActive !== false ? "Active Account" : "Inactive Account"}</span>
+                </div>
               </div>
-            )}
-
-            <div className="font-medium text-gray-900 dark:text-white text-base">
-              {userName}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-              {user.email}
-            </div>
-
-            <div className="mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-              {access?.isActive !== false ? "Active Account" : "Inactive Account"}
             </div>
           </div>
 
-          {/* Account Information rows - always visible without expanding */}
-          <div className="px-5 py-2.5 space-y-1 mx-3 my-2.5 rounded-xl bg-white/50 dark:bg-white/5 border border-[#85AEEA] dark:border-white/15 transition-all">
+          {/* Account Information Summary */}
+          <div className="p-2 mx-3 my-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 space-y-0.5">
             <InfoRow label="Role" value={role} />
             <InfoRow
               label="Email Verification"
@@ -514,98 +510,90 @@ export default function UserAccountDropdown({
           </div>
 
           {/* Menu Actions */}
-          <div className="border-t border-slate-300/80 dark:border-white/15 px-4 py-2 space-y-1">
+          <div className="border-t border-slate-200/80 dark:border-slate-800 px-3 py-2 space-y-0.5">
             <Link
               href={`/dashboards/${targetDashboard}/auth/account/show`}
               onClick={() => setIsOpen(false)}
-              className="group flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-navy dark:text-white transition-all hover:bg-indigo-500/10 dark:hover:bg-white/10"
+              className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-navy/85 dark:text-white/85 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400"
             >
-              <FiUser className="text-indigo-600 dark:text-indigo-400 group-hover:translate-x-0.5 transition" />
-              <span>My profile Account</span>
+              <FiUser className="h-4 w-4 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
+              <span>Profile &amp; Overview</span>
             </Link>
 
             <Link
               href={`/dashboards/${targetDashboard}/auth/account/edit`}
               onClick={() => setIsOpen(false)}
-              className="group flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-navy dark:text-white transition-all hover:bg-emerald-500/10 dark:hover:bg-white/10"
+              className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-navy/85 dark:text-white/85 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400"
             >
-              <FiSettings className="text-emerald-600 dark:text-emerald-400 group-hover:rotate-6 transition" />
-              <span>Update My Profile</span>
+              <FiSettings className="h-4 w-4 text-teal-600 dark:text-teal-400 group-hover:rotate-45 transition-transform" />
+              <span>Account Settings</span>
             </Link>
 
             {/* Logout & Delete Actions */}
-            <div className="relative pt-1 space-y-2">
-              {/* PRIMARY: Sign Out */}
-              <div className="flex items-center gap-2">
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleLogout("distinct")}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-rose-900 dark:text-rose-200 border border-rose-300 dark:border-rose-900/60 bg-gradient-to-r from-rose-100 to-red-100 dark:from-rose-950/60 dark:to-red-950/60 hover:from-rose-200 hover:to-red-200 dark:hover:from-rose-900 dark:hover:to-red-900 transition cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/60 bg-rose-50/70 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/60 transition cursor-pointer"
                 >
-                  <FiLogIn className="h-4 w-4" />
+                  <FiLogIn className="h-3.5 w-3.5" />
                   <span>Sign Out</span>
                 </button>
 
-                {/* Secondary Toggle (Advanced options) */}
                 <button
                   type="button"
                   onClick={() => setLogoutOptionsOpen((v) => !v)}
-                  className="p-2.5 rounded-xl border border-gray-300 dark:border-white/20 bg-white dark:bg-white/10 hover:bg-gray-100 dark:hover:bg-white/20 text-gray-700 dark:text-gray-200 transition cursor-pointer"
-                  title="Advanced account options"
+                  className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-navy/60 dark:text-white/60 transition cursor-pointer"
+                  title="More account options"
                   aria-expanded={logoutOptionsOpen}
                 >
-                  {logoutOptionsOpen ? <FiChevronUp /> : <FiChevronDown />}
+                  {logoutOptionsOpen ? <FiChevronUp className="h-3.5 w-3.5" /> : <FiChevronDown className="h-3.5 w-3.5" />}
                 </button>
               </div>
 
-              {/* ADVANCED DROPDOWN: Log out all devices & Delete my account */}
+              {/* Advanced options */}
               {logoutOptionsOpen && (
-                <div className="mt-2 w-full rounded-xl border border-[#85AEEA] dark:border-white/20 bg-white dark:bg-[#112338] shadow-xl overflow-hidden divide-y divide-gray-100 dark:divide-white/10">
-                  {/* Log out of all Devices */}
+                <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 overflow-hidden divide-y divide-slate-200/60 dark:divide-slate-700/60">
                   <button
                     type="button"
                     onClick={() => handleLogout("relative")}
-                    className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
                   >
-                    <FiShield className="text-rose-600 dark:text-rose-400 mt-0.5 shrink-0" />
+                    <FiShield className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                     <div>
-                      <div className="text-sm font-bold text-rose-800 dark:text-rose-300">
-                        Log out of all Devices
+                      <div className="text-xs font-bold text-rose-700 dark:text-rose-300">
+                        Sign Out All Devices
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        Sign out from all Active Sessions ⚓
+                      <div className="text-[10px] text-navy/45 dark:text-white/40">
+                        Terminate all active browser sessions
                       </div>
                     </div>
                   </button>
 
-                  {/* UNDER (Log out all devices): Delete my account btn for soft delete */}
-                  <div className="bg-red-50/50 dark:bg-red-950/20">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDeleteError(null);
-                        setIsOpen(false);
-                        setLogoutOptionsOpen(false);
-                        setShowDeleteConfirm(true);
-                      }}
-                      className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-red-100/70 dark:hover:bg-red-950/50 transition cursor-pointer"
-                    >
-                      <FiTrash2 className="text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-sm font-bold text-red-700 dark:text-red-400">
-                          Delete my account
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          Deactivate and delete account ⚓
-                        </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteError(null);
+                      setIsOpen(false);
+                      setLogoutOptionsOpen(false);
+                      setShowDeleteConfirm(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                  >
+                    <FiTrash2 className="h-3.5 w-3.5 text-red-600 dark:text-red-400 shrink-0" />
+                    <div>
+                      <div className="text-xs font-bold text-red-600 dark:text-red-400">
+                        Delete Account
                       </div>
-                    </button>
-
-                  </div>
+                      <div className="text-[10px] text-navy/45 dark:text-white/40">
+                        Deactivate and permanently delete data
+                      </div>
+                    </div>
+                  </button>
                 </div>
               )}
             </div>
-
           </div>
         </div>
       )}

@@ -24,11 +24,13 @@ const FILTERS: { key: Filter; label: string; icon: React.ReactNode }[] = [
 
 function StatusBadge({ status }: { status?: string | null }) {
   const classes =
-    status === "Resolved" ? "bg-green-100 text-green-800"
-    : status === "Responded" ? "bg-blue-100 text-blue-800"
-    : "bg-yellow-100 text-yellow-800";
+    status === "Resolved"
+      ? "bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60"
+      : status === "Responded"
+      ? "bg-blue-50 text-blue-700 border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60"
+      : "bg-amber-50 text-amber-700 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60";
   return (
-    <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-bold ${classes}`}>
+    <span className={`whitespace-nowrap rounded-md border px-2 py-0.5 text-[10px] font-bold ${classes}`}>
       {status || "—"}
     </span>
   );
@@ -103,20 +105,28 @@ export default function RelativeHeedMessagesPage() {
   };
 
   const iconBtn =
-    "flex h-8 w-8 items-center justify-center rounded-full border transition hover:scale-110 hover:bg-[var(--text-color)]/10 active:scale-95 disabled:opacity-40";
+    "flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200/80 dark:border-slate-700 bg-white dark:bg-slate-800 text-navy/70 dark:text-white/70 shadow-2xs transition hover:border-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 disabled:opacity-40 cursor-pointer";
 
   return (
-    <main className="min-h-screen bg-[var(--content-bg)] px-3 pb-10 pt-20 text-[var(--text-color)]">
+    <main className="min-h-screen bg-[var(--content-bg)] px-4 pb-14 pt-24 text-[var(--text-color)]">
       <div className="mx-auto max-w-4xl space-y-4">
         {/* Header */}
-        <div className="rounded-2xl border border-[var(--text-color)]/40 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 px-5 py-4 text-center shadow-sm">
-          <h1 className="text-2xl font-extrabold md:text-3xl">Your Inbox</h1>
-          <p className="text-sm opacity-70">Conversations with our support team ⚓</p>
-          {unreadIds.length > 0 && (
-            <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-red-600 px-3 py-0.5 text-xs font-bold text-white">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
-              {unreadIds.length} new repl{unreadIds.length === 1 ? "y" : "ies"}
+        <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-6 text-center shadow-xs">
+          <div className="inline-flex items-center gap-2 mb-2">
+            <span className="w-6 h-[2px] bg-teal-600/70 dark:bg-teal-400/70" />
+            <span className="font-mono text-xs font-bold tracking-widest uppercase text-teal-700 dark:text-teal-300">
+              STUDENT SUPPORT &amp; COMMUNICATIONS
             </span>
+            <span className="w-6 h-[2px] bg-teal-600/70 dark:bg-teal-400/70" />
+          </div>
+          <h1 className="font-serif text-2xl md:text-3xl font-bold tracking-tight text-navy dark:text-white mb-1.5">
+            Support Inbox
+          </h1>
+          {unreadIds.length > 0 && (
+            <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-900/40 border border-blue-200/80 dark:border-blue-800 px-3.5 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
+              <span className="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
+              {unreadIds.length} new repl{unreadIds.length === 1 ? "y" : "ies"}
+            </div>
           )}
         </div>
 
@@ -124,8 +134,8 @@ export default function RelativeHeedMessagesPage() {
         <HeedReplyBox />
 
         {/* Filters + search */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex rounded-full border bg-[var(--text-color)]/5 p-1">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="flex rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-800/80 p-1">
             {FILTERS.map((f) => (
               <button
                 key={f.key}
@@ -134,10 +144,10 @@ export default function RelativeHeedMessagesPage() {
                   setCurrentPage(1);
                   setSelected([]);
                 }}
-                className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                className={`flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs font-bold transition cursor-pointer ${
                   statusFilter === f.key
-                    ? "bg-blue-600 text-white shadow"
-                    : "opacity-70 hover:bg-[var(--text-color)]/10 hover:opacity-100"
+                    ? "bg-white dark:bg-[#1E293B] text-navy dark:text-white shadow-xs"
+                    : "text-navy/60 dark:text-white/60 hover:text-navy dark:hover:text-white"
                 }`}
               >
                 {f.icon}
@@ -149,19 +159,20 @@ export default function RelativeHeedMessagesPage() {
           <SearchBar
             value={searchInput}
             onChange={setSearchInput}
-            placeholder="Search conversations . . . 🏌️‍♂️"
+            placeholder="Search conversations..."
           />
         </div>
 
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 px-4 py-2 text-xs">
           <div className="flex flex-wrap items-center gap-3">
-            <label className="flex cursor-pointer items-center gap-2 text-xs font-bold">
+            <label className="flex cursor-pointer items-center gap-2 font-bold text-navy dark:text-white">
               <input
                 type="checkbox"
                 checked={allPageSelected}
                 onChange={togglePageSelection}
                 disabled={pageItems.length === 0}
+                className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
               Select page
             </label>
@@ -174,7 +185,7 @@ export default function RelativeHeedMessagesPage() {
               }}
             />
 
-            <span className="text-xs font-bold opacity-70">
+            <span className="font-semibold text-navy/55 dark:text-white/50">
               {pageItems.length} of {total}
             </span>
           </div>
@@ -184,16 +195,16 @@ export default function RelativeHeedMessagesPage() {
               <button
                 onClick={() => apply(unreadIds, "Read")}
                 disabled={isUpdating}
-                className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition hover:bg-[var(--text-color)]/10 disabled:opacity-40"
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 font-bold text-navy/80 dark:text-white/80 shadow-2xs transition hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 cursor-pointer"
               >
-                <CheckCheck className="h-3.5 w-3.5" />
+                <CheckCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                 Mark all read
               </button>
             )}
             <button
               onClick={() => refetch()}
               disabled={isLoading}
-              className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition hover:bg-[var(--text-color)]/10 disabled:opacity-40"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 font-bold text-navy/80 dark:text-white/80 shadow-2xs transition hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 cursor-pointer"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
@@ -203,31 +214,31 @@ export default function RelativeHeedMessagesPage() {
 
         {/* Bulk bar */}
         {selected.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-blue-500/50 bg-blue-500/10 px-4 py-2 text-xs font-bold shadow-sm">
-            <span>{selected.length} selected</span>
-            <button onClick={() => apply(selected, "Read")} disabled={isUpdating} className="flex items-center gap-1 rounded-full border px-3 py-1 hover:bg-[var(--text-color)]/10 disabled:opacity-40"><MailOpen className="h-3 w-3" />Read</button>
-            <button onClick={() => apply(selected, "Unread")} disabled={isUpdating} className="flex items-center gap-1 rounded-full border px-3 py-1 hover:bg-[var(--text-color)]/10 disabled:opacity-40"><Mail className="h-3 w-3" />Unread</button>
-            <button onClick={() => apply(selected, "Later")} disabled={isUpdating} className="flex items-center gap-1 rounded-full border px-3 py-1 hover:bg-[var(--text-color)]/10 disabled:opacity-40"><Clock className="h-3 w-3" />Later</button>
-            <button onClick={() => apply(selected, "Starred")} disabled={isUpdating} className="flex items-center gap-1 rounded-full border px-3 py-1 hover:bg-[var(--text-color)]/10 disabled:opacity-40"><Star className="h-3 w-3" />Star</button>
-            <button onClick={() => setSelected([])} className="ml-auto rounded-full border px-3 py-1 hover:bg-[var(--text-color)]/10">Clear</button>
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50/80 dark:bg-blue-950/40 px-4 py-2 text-xs font-bold shadow-xs">
+            <span className="text-blue-900 dark:text-blue-200">{selected.length} selected</span>
+            <button onClick={() => apply(selected, "Read")} disabled={isUpdating} className="flex items-center gap-1 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-800 px-3 py-1 text-navy dark:text-white hover:bg-blue-50 disabled:opacity-40 cursor-pointer"><MailOpen className="h-3 w-3" />Read</button>
+            <button onClick={() => apply(selected, "Unread")} disabled={isUpdating} className="flex items-center gap-1 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-800 px-3 py-1 text-navy dark:text-white hover:bg-blue-50 disabled:opacity-40 cursor-pointer"><Mail className="h-3 w-3" />Unread</button>
+            <button onClick={() => apply(selected, "Later")} disabled={isUpdating} className="flex items-center gap-1 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-800 px-3 py-1 text-navy dark:text-white hover:bg-blue-50 disabled:opacity-40 cursor-pointer"><Clock className="h-3 w-3" />Later</button>
+            <button onClick={() => apply(selected, "Starred")} disabled={isUpdating} className="flex items-center gap-1 rounded-lg border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-800 px-3 py-1 text-navy dark:text-white hover:bg-blue-50 disabled:opacity-40 cursor-pointer"><Star className="h-3 w-3" />Star</button>
+            <button onClick={() => setSelected([])} className="ml-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1 hover:bg-slate-50 text-navy/70 dark:text-white/70 cursor-pointer">Clear</button>
           </div>
         )}
 
         {(error || updateError) && (
-          <div className="rounded-xl border border-red-500 bg-red-500/10 px-4 py-3 text-sm">
+          <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300">
             {error ?? updateError}
           </div>
         )}
 
         {/* Skeletons */}
         {!error && isLoading && messages.length === 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="flex animate-pulse items-center gap-3 rounded-2xl border p-4">
-                <div className="h-12 w-12 rounded-full bg-[var(--text-color)]/10" />
+              <div key={i} className="flex animate-pulse items-center gap-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-4">
+                <div className="h-11 w-11 rounded-xl bg-slate-200 dark:bg-slate-700" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 w-1/3 rounded bg-[var(--text-color)]/10" />
-                  <div className="h-3 w-2/3 rounded bg-[var(--text-color)]/10" />
+                  <div className="h-3.5 w-1/3 rounded bg-slate-200 dark:bg-slate-700" />
+                  <div className="h-3 w-2/3 rounded bg-slate-200 dark:bg-slate-700" />
                 </div>
               </div>
             ))}
@@ -236,17 +247,21 @@ export default function RelativeHeedMessagesPage() {
 
         {/* Empty */}
         {!error && !isLoading && messages.length === 0 && (
-          <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed px-4 py-14 text-center">
-            <Inbox className="h-10 w-10 opacity-40" />
-            <p className="text-sm font-semibold opacity-80">
-              {statusFilter === "All" ? "No replies yet" : `No ${statusFilter.toLowerCase()} messages`}
+          <div className="flex flex-col items-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1E293B] px-4 py-16 text-center shadow-xs">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800 text-navy/40 dark:text-white/40">
+              <Inbox className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-semibold text-navy dark:text-white">
+              {statusFilter === "All" ? "No messages yet" : `No ${statusFilter.toLowerCase()} messages`}
             </p>
-            <p className="text-xs opacity-50">Start a conversation above and we will get back to you ⚓</p>
+            <p className="text-xs text-navy/55 dark:text-white/50 max-w-sm">
+              Start a conversation above and our clinical support staff will follow up with you.
+            </p>
           </div>
         )}
 
         {/* Conversation cards */}
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {pageItems.map((m) => {
             const isUnread = m.clientReadStatus === "Unread";
             const isStarred = m.clientReadStatus === "Starred";
@@ -256,20 +271,22 @@ export default function RelativeHeedMessagesPage() {
             return (
               <div
                 key={m.guidId}
-                className={`group relative flex items-center gap-3 overflow-hidden rounded-2xl border p-3.5 pl-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
+                className={`group relative flex items-center gap-3.5 overflow-hidden rounded-2xl border p-4 pl-4.5 transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                   isSelected
-                    ? "border-blue-500 bg-blue-500/10"
+                    ? "border-blue-500 bg-blue-50/60 dark:bg-blue-950/30"
                     : isUnread
-                    ? "border-red-500/50 bg-red-500/[0.04]"
-                    : "hover:bg-[var(--text-color)]/[0.04]"
+                    ? "border-blue-300/80 dark:border-blue-700/60 bg-blue-50/[0.2] dark:bg-blue-950/15"
+                    : "border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] hover:border-slate-300 dark:hover:border-slate-700"
                 }`}
               >
                 {/* Unread accent bar */}
-                {isUnread && <span className="absolute inset-y-0 left-0 w-1 bg-red-500" />}
+                {isUnread && (
+                  <span className="absolute inset-y-0 left-0 w-1.5 bg-blue-600 dark:bg-blue-400" />
+                )}
 
                 <input
                   type="checkbox"
-                  className="shrink-0"
+                  className="h-4 w-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
                   checked={isSelected}
                   onChange={() => toggleSelect(m.guidId)}
                   aria-label="Select conversation"
@@ -277,36 +294,39 @@ export default function RelativeHeedMessagesPage() {
 
                 <Link
                   href={`/pages/heed/current?id=${m.guidId}`}
-                  className="flex min-w-0 flex-1 items-center gap-3"
+                  className="flex min-w-0 flex-1 items-center gap-3.5"
                 >
                   {/* Avatar */}
                   <div className="relative shrink-0">
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-full text-lg font-extrabold text-white shadow ${categoryTone(m.category)}`}>
-                      {(m.title?.[0] ?? "?").toUpperCase()}
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50 font-bold text-sm shadow-2xs">
+                      {m.response ? (
+                        <Headset className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      ) : (
+                        <span>{(m.title?.[0] ?? "S").toUpperCase()}</span>
+                      )}
                     </div>
                     {isUnread && (
-                      <span className="absolute -right-0.5 -top-0.5 h-3.5 w-3.5 animate-pulse rounded-full border-2 border-[var(--content-bg)] bg-red-500" />
+                      <span className="absolute -right-1 -top-1 h-3 w-3 animate-pulse rounded-full border-2 border-white dark:border-[#1E293B] bg-blue-600" />
                     )}
                   </div>
 
                   {/* Text */}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <h2 className={`truncate text-sm md:text-base ${isUnread ? "font-extrabold" : "font-semibold"}`}>
+                      <h2 className={`truncate text-sm md:text-base text-navy dark:text-white ${isUnread ? "font-bold" : "font-semibold"}`}>
                         {m.title}
                       </h2>
-                      {isStarred && <Star className="h-3.5 w-3.5 shrink-0 fill-yellow-400 text-yellow-500" />}
+                      {isStarred && <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-500" />}
                       {isLater && <Clock className="h-3.5 w-3.5 shrink-0 text-orange-500" />}
-                      <span className={`ml-auto shrink-0 text-[11px] ${isUnread ? "font-bold text-red-500" : "opacity-60"}`}>
+                      <span className={`ml-auto shrink-0 text-[11px] ${isUnread ? "font-bold text-blue-600 dark:text-blue-400" : "text-navy/45 dark:text-white/40"}`}>
                         {timeAgo(m.respondedAt ?? m.updatedAt ?? m.createdAt)}
                       </span>
                     </div>
 
-                    <p className={`mt-0.5 line-clamp-2 text-xs md:text-sm ${isUnread ? "opacity-90" : "opacity-65"}`}>
+                    <p className={`mt-0.5 line-clamp-2 text-xs md:text-sm ${isUnread ? "text-navy/90 dark:text-white/90" : "text-navy/60 dark:text-white/60"}`}>
                       {m.response ? (
                         <>
-                          <Headset className="mr-1 inline h-3.5 w-3.5 -translate-y-px text-blue-500" />
-                          <span className="font-semibold text-blue-500">Support: </span>
+                          <span className="font-semibold text-blue-600 dark:text-blue-400">Support: </span>
                           {m.response}
                         </>
                       ) : (
@@ -314,9 +334,9 @@ export default function RelativeHeedMessagesPage() {
                       )}
                     </p>
 
-                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
                       <StatusBadge status={m.status} />
-                      <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-bold text-gray-800">
+                      <span className="rounded-md border border-slate-200/70 dark:border-slate-700/60 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-navy/70 dark:text-white/70">
                         {m.category}
                       </span>
                     </div>
@@ -331,7 +351,7 @@ export default function RelativeHeedMessagesPage() {
                     title={isStarred ? "Remove star" : "Star"}
                     className={iconBtn}
                   >
-                    <Star className={`h-4 w-4 ${isStarred ? "fill-yellow-400 text-yellow-500" : ""}`} />
+                    <Star className={`h-4 w-4 ${isStarred ? "fill-amber-400 text-amber-500" : ""}`} />
                   </button>
                   <button
                     onClick={() => apply([m.guidId], isLater ? "Read" : "Later")}
@@ -357,26 +377,26 @@ export default function RelativeHeedMessagesPage() {
 
         {/* Pagination */}
         {total > 0 && (
-          <div className="flex items-center justify-center gap-2 pt-2">
+          <div className="flex items-center justify-center gap-2 pt-3">
             <button
               disabled={safePage === 1}
               onClick={() => setCurrentPage(safePage - 1)}
-              className="rounded-full border px-4 py-1.5 text-sm font-bold transition hover:bg-[var(--text-color)]/10 disabled:opacity-40"
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-1.5 text-xs font-bold text-navy dark:text-white shadow-2xs transition hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 cursor-pointer"
             >
               Prior
             </button>
 
             {getVisiblePages(safePage, totalPages).map((p, i) =>
               p === "ellipsis" ? (
-                <span key={`ellipsis-${i}`} className="select-none px-2 text-sm opacity-60">…</span>
+                <span key={`ellipsis-${i}`} className="select-none px-2 text-sm text-navy/40 dark:text-white/40">…</span>
               ) : (
                 <button
                   key={p}
                   onClick={() => setCurrentPage(p)}
-                  className={`h-9 w-9 rounded-full border text-sm font-bold transition ${
+                  className={`h-8 w-8 rounded-xl border text-xs font-bold transition shadow-2xs cursor-pointer ${
                     p === safePage
-                      ? "border-blue-600 bg-blue-600 text-white shadow"
-                      : "hover:bg-[var(--text-color)]/10"
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-navy dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700"
                   }`}
                 >
                   {p}
@@ -387,7 +407,7 @@ export default function RelativeHeedMessagesPage() {
             <button
               disabled={safePage === totalPages}
               onClick={() => setCurrentPage(safePage + 1)}
-              className="rounded-full border px-4 py-1.5 text-sm font-bold transition hover:bg-[var(--text-color)]/10 disabled:opacity-40"
+              className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-1.5 text-xs font-bold text-navy dark:text-white shadow-2xs transition hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 cursor-pointer"
             >
               Next
             </button>

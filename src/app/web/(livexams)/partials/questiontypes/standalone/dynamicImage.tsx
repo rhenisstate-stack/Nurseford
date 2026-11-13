@@ -110,8 +110,10 @@ export const DynamicImageQuestion = ({
   };
 
   const getState = (optId: number): "correct" | "wrong" | "idle" => {
-    if (!showFeedback || !picked.has(optId)) return "idle";
-    return correctIds.includes(optId) ? "correct" : "wrong";
+    if (!showFeedback) return "idle";
+    if (correctIds.includes(optId)) return "correct";
+    if (picked.has(optId)) return "wrong";
+    return "idle";
   };
 
   return (

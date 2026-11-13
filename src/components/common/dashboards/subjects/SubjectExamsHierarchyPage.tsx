@@ -712,37 +712,37 @@ export function SubjectExamsHierarchyPage({
         {/* ─── Top Row: Build Your Own Exam & Subject Overview Card (Matching Course Level) ─── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
           {/* Card 1: Subject Overview Card */}
-          <div className="group relative overflow-hidden rounded-xl bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] border border-[var(--card-border,#CBDCF8)] dark:border-white/10 hover:border-[#3B82F6]/60 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] p-3 sm:p-3.5 md:p-4 transition-all duration-200 shadow-xs hover:shadow-md text-left">
+          <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] p-3.5 sm:p-4 md:p-4.5 transition-all duration-200 shadow-xs text-left">
             <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
               <div className="min-w-0">
-                <h1 className="text-sm sm:text-base md:text-lg font-bold text-[#2563EB] dark:text-[#60A5FA] truncate leading-tight">
+                <h1 className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy dark:text-white truncate leading-tight">
                   {currentSubjectTitle}
                 </h1>
-                <p className="text-xs sm:text-sm md:text-base text-slate-700 dark:text-white/80 font-semibold truncate mt-1">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
                   {status === "loading"
                     ? "Loading exams..."
                     : `${exams.length} Exam${exams.length === 1 ? "" : "s"} under this subject`}
                 </p>
               </div>
               <div className="flex flex-col items-end shrink-0">
-                <span suppressHydrationWarning className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-xs sm:text-sm md:text-base font-bold shrink-0">
-                  <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-teal-600 dark:text-[#2FD9C4]" />
+                <span suppressHydrationWarning className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 text-xs font-semibold shrink-0">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   {formattedUpdateDate}
                 </span>
-                <p className="text-xs sm:text-sm md:text-base text-slate-700 dark:text-white/70 font-semibold pt-1 text-right whitespace-nowrap">
-                  Exams last updated on{" "}
-                  <span suppressHydrationWarning className="text-emerald-700 dark:text-emerald-400 font-bold">
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium pt-1 text-right whitespace-nowrap">
+                  Last updated:{" "}
+                  <span suppressHydrationWarning className="text-emerald-700 dark:text-emerald-400 font-semibold">
                     {formattedUpdateDate}
                   </span>
                 </p>
               </div>
             </div>
-            <div className="flex-1 min-h-[6px] sm:min-h-[8px]" />
+            <div className="flex-1 min-h-[8px]" />
             <Link
               href={backHref}
-              className="w-full select-none inline-flex items-center justify-center gap-1.5 py-1.5 sm:py-2 md:py-2.5 rounded-lg text-xs sm:text-sm font-semibold border border-teal-500/80 dark:border-teal-400/60 bg-teal-500/25 dark:bg-teal-500/30 hover:bg-teal-500/35 dark:hover:bg-teal-500/40 text-teal-800 dark:text-teal-300 active:scale-[0.99] transition-all duration-200 shadow-2xs"
+              className="w-full select-none inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/90 hover:bg-slate-100 dark:hover:bg-slate-700 text-navy dark:text-white transition-all duration-200 shadow-2xs"
             >
-              <ArrowLeft className="w-3 sm:w-3.5 h-3 sm:h-3.5" />
+              <ArrowLeft className="w-3.5 h-3.5" />
               Back to {courseName}
             </Link>
           </div>
@@ -751,39 +751,39 @@ export function SubjectExamsHierarchyPage({
           <button
             type="button"
             onClick={() => setIsBuilderOpen(true)}
-            className="group relative overflow-hidden rounded-xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 hover:border-[#8B5CF6]/60 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] p-3 sm:p-3.5 md:p-4 shadow-xs hover:shadow-md transition-all duration-200 hidden sm:flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
+            className="group relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-teal-500/60 bg-white dark:bg-[#1E293B] p-3.5 sm:p-4 md:p-4.5 shadow-xs hover:shadow-md transition-all duration-200 hidden sm:flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
           >
             <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
               <div className="min-w-0">
-                <span className="text-sm sm:text-base md:text-lg font-medium text-slate-900 dark:text-white block leading-tight">
+                <span className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy dark:text-white block leading-tight">
                   Build Your Own Exam
                 </span>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-white/60 font-medium truncate mt-1">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
                   Select exams & configure question pool
                 </p>
               </div>
-              <span className="inline-flex items-center px-2 sm:px-2.5 py-0.5 rounded-md bg-[#8B5CF6]/15 text-[#8B5CF6] dark:text-[#A78BFA] border border-[#8B5CF6]/30 text-xs sm:text-sm font-medium shrink-0">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800/60 text-xs font-bold shrink-0">
                 Custom
               </span>
             </div>
-            <div className="flex-1 min-h-[6px] sm:min-h-[8px]" />
-            <span className="w-full select-none inline-flex items-center justify-center gap-1.5 py-1.5 sm:py-2 md:py-2.5 rounded-lg text-xs sm:text-sm font-semibold border border-purple-500/80 dark:border-purple-400/60 bg-purple-500/25 dark:bg-purple-500/30 group-hover:bg-purple-500/35 dark:group-hover:bg-purple-500/40 text-purple-700 dark:text-purple-300 active:scale-[0.99] transition-all duration-200 shadow-2xs">
-              <Play className="w-3 sm:w-3.5 h-3 sm:h-3.5 fill-current" />
+            <div className="flex-1 min-h-[8px]" />
+            <span className="w-full select-none inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-[#0A2540] hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white transition-all duration-200 shadow-2xs">
+              <Play className="w-3.5 h-3.5 fill-current" />
               Create Custom Exam
             </span>
           </button>
         </div>
 
         {/* Reference-style Filter Bar & Create Custom Test */}
-        <div className="grid grid-cols-2 md:grid-cols-12 items-start md:items-center gap-4 sm:gap-5 p-3.5 sm:p-4 md:p-5 rounded-xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] shadow-xs">
+        <div className="grid grid-cols-2 md:grid-cols-12 items-start md:items-center gap-4 sm:gap-5 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-xs">
           {/* 1. Left: Years Column */}
           <div className="col-span-1 md:col-span-3 flex flex-col gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 justify-self-start">
-            <label className="inline-flex items-center gap-2 cursor-pointer text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-navy dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
               <input
                 type="checkbox"
                 checked={selectedYear === "all"}
                 onChange={() => setSelectedYear("all")}
-                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
               />
               <span className="font-bold">All Years</span>
             </label>
@@ -793,13 +793,13 @@ export function SubjectExamsHierarchyPage({
                   {col.map((yr) => (
                     <label
                       key={yr}
-                      className="inline-flex items-center gap-1.5 cursor-pointer text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition-colors"
+                      className="inline-flex items-center gap-1.5 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-navy dark:hover:text-white transition-colors"
                     >
                       <input
                         type="checkbox"
                         checked={selectedYear === yr}
                         onChange={() => setSelectedYear(selectedYear === yr ? "all" : yr)}
-                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
                       />
                       <span>{yr}</span>
                     </label>
@@ -811,12 +811,12 @@ export function SubjectExamsHierarchyPage({
 
           {/* 2. Center-Left: Seasons Column (Centered/left-aligned on desktop, pushed right on phone opposite to All Years) */}
           <div className="col-span-1 md:col-span-2 flex flex-col gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 justify-self-end md:justify-self-start">
-            <label className="inline-flex items-center gap-2 cursor-pointer text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+            <label className="inline-flex items-center gap-2 cursor-pointer text-navy dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
               <input
                 type="checkbox"
                 checked={selectedSeason === "all"}
                 onChange={() => setSelectedSeason("all")}
-                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
               />
               <span className="font-bold">All Seasons</span>
             </label>
@@ -824,13 +824,13 @@ export function SubjectExamsHierarchyPage({
               availableSeasons.map((sn) => (
                 <label
                   key={sn}
-                  className="inline-flex items-center gap-2 cursor-pointer text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white pl-2 transition-colors"
+                  className="inline-flex items-center gap-2 cursor-pointer text-slate-600 dark:text-slate-400 hover:text-navy dark:hover:text-white pl-2 transition-colors"
                 >
                   <input
                     type="checkbox"
                     checked={selectedSeason === sn}
                     onChange={() => setSelectedSeason(selectedSeason === sn ? "all" : sn)}
-                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                    className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
                   />
                   <span>{sn}</span>
                 </label>
@@ -841,7 +841,7 @@ export function SubjectExamsHierarchyPage({
           <div className="col-span-2 md:col-span-3 flex flex-col gap-1.5 w-full">
             <label
               htmlFor="exam-school-filter"
-              className="text-xs font-bold text-slate-900 dark:text-white"
+              className="text-xs font-bold text-navy dark:text-white"
             >
               Select School
             </label>
@@ -850,13 +850,13 @@ export function SubjectExamsHierarchyPage({
               aria-label="Select School"
               value={selectedSchool}
               onChange={(e) => setSelectedSchool(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-xs font-medium bg-slate-50 dark:bg-black/20 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:bg-white dark:focus:bg-[#1e293b] focus:border-blue-500 transition-colors shadow-2xs cursor-pointer"
+              className="w-full px-3 py-2 rounded-xl text-xs font-medium bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-navy dark:text-white focus:outline-none focus:bg-white dark:focus:bg-[#1e293b] focus:border-teal-500 transition-colors shadow-2xs cursor-pointer"
             >
-              <option value="all" className="bg-white text-slate-900 dark:bg-[#2C3749] dark:text-white">
+              <option value="all" className="bg-white text-slate-900 dark:bg-[#1E293B] dark:text-white">
                 All Schools
               </option>
               {availableSchools.map((school) => (
-                <option key={school} value={school} className="bg-white text-slate-900 dark:bg-[#2C3749] dark:text-white">
+                <option key={school} value={school} className="bg-white text-slate-900 dark:bg-[#1E293B] dark:text-white">
                   {school}
                 </option>
               ))}
@@ -873,19 +873,19 @@ export function SubjectExamsHierarchyPage({
                   placeholder="Search by Exams Name ..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-3 pr-8 py-2 rounded-lg text-xs bg-slate-50 dark:bg-black/20 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-white/40 focus:outline-none focus:bg-white focus:border-blue-500 transition-colors shadow-2xs placeholder:truncate"
+                  className="w-full pl-3 pr-8 py-2 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-navy dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:bg-white focus:border-teal-500 transition-colors shadow-2xs placeholder:truncate"
                 />
                 {searchQuery ? (
                   <button
                     type="button"
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-navy dark:hover:text-white cursor-pointer"
                     aria-label="Clear search"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 ) : (
-                  <Search className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-white/40 pointer-events-none" />
+                  <Search className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 pointer-events-none" />
                 )}
               </div>
 
@@ -893,19 +893,19 @@ export function SubjectExamsHierarchyPage({
               <button
                 type="button"
                 onClick={() => setIsBuilderOpen(true)}
-                className="sm:hidden shrink-0 py-2 px-2.5 rounded-lg text-xs font-semibold border border-purple-500/80 dark:border-purple-400/60 bg-purple-500/15 dark:bg-purple-500/20 hover:bg-purple-500/25 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-300 transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-[0.98]"
+                className="sm:hidden shrink-0 py-2 px-3 rounded-xl text-xs font-semibold bg-[#0A2540] hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white transition-all shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-[0.98]"
               >
                 <Play className="w-3.5 h-3.5 fill-current shrink-0" />
-                <span>Build Custom Exam</span>
+                <span>Build Exam</span>
               </button>
             </div>
 
             {/* Exams last updated on (under the search bar inside the box, desktop/tablet only) */}
-            <p className="hidden sm:flex items-center gap-1.5 text-xs text-slate-700 dark:text-white/80 font-semibold px-0.5">
-              <Calendar className="w-3.5 h-3.5 text-teal-600 dark:text-[#2FD9C4] shrink-0" />
+            <p className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium px-0.5">
+              <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>
-                Exams last updated on{" "}
-                <span suppressHydrationWarning className="text-emerald-700 dark:text-emerald-400 font-bold">
+                Exams last updated:{" "}
+                <span suppressHydrationWarning className="text-emerald-700 dark:text-emerald-400 font-semibold">
                   {formattedUpdateDate}
                 </span>
               </span>
@@ -915,7 +915,7 @@ export function SubjectExamsHierarchyPage({
             <button
               type="button"
               onClick={() => setIsBuilderOpen(true)}
-              className="hidden sm:flex w-full py-2 px-3 rounded-lg text-xs font-semibold border border-purple-500/80 dark:border-purple-400/60 bg-purple-500/15 dark:bg-purple-500/20 hover:bg-purple-500/25 dark:hover:bg-purple-500/30 text-purple-700 dark:text-purple-300 transition-all shadow-2xs items-center justify-center gap-1.5 cursor-pointer mt-0.5 active:scale-[0.98]"
+              className="hidden sm:flex w-full py-2 px-3 rounded-xl text-xs font-semibold bg-[#0A2540] hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white transition-all shadow-2xs items-center justify-center gap-1.5 cursor-pointer mt-0.5 active:scale-[0.98]"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               Build Custom Exam
@@ -1014,25 +1014,25 @@ export function SubjectExamsHierarchyPage({
                 return (
                   <div
                     key={examId}
-                    className="relative rounded-xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 bg-[var(--card-bg,#EEF3FE)] dark:bg-[var(--card-bg,#15273e)] px-3.5 py-3 sm:px-4 sm:py-3 flex flex-col justify-between shadow-xs hover:shadow-md transition-all duration-200"
+                    className="relative rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] px-3.5 py-3 sm:px-4 sm:py-3.5 flex flex-col justify-between shadow-2xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200"
                   >
                     {showNew && (
-                      <span className="absolute -top-2 right-3 z-10 inline-flex items-center rounded-full bg-red-800 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm">
+                      <span className="absolute -top-2 right-3 z-10 inline-flex items-center rounded-full bg-blue-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-2xs">
                         New
                       </span>
                     )}
                     {/* Top: Title + Status Badge */}
                     <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h3 className="text-[13px] sm:text-[14px] font-medium text-slate-900 dark:text-white leading-snug line-clamp-2">
+                      <h3 className="font-serif text-[13px] sm:text-[14.5px] font-bold text-navy dark:text-white leading-snug line-clamp-2">
                         {exam.title}
                       </h3>
                       {isCompleted ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10.5px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 shadow-xs shrink-0">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 shadow-2xs shrink-0">
                           <Check className="w-2.5 h-2.5" />
                           Completed
                         </span>
                       ) : hasFreeAccess ? (
-                        <span className="bg-[#1877F2] text-white text-[10.5px] font-medium px-1.5 py-0.5 rounded shadow-xs shrink-0">
+                        <span className="bg-blue-600 text-white text-[10.5px] font-bold px-2 py-0.5 rounded-full shadow-2xs shrink-0">
                           Free
                         </span>
                       ) : null}
@@ -1040,13 +1040,13 @@ export function SubjectExamsHierarchyPage({
 
                     {/* Middle: Meta pills */}
                     <div className="relative flex items-center justify-between gap-1.5 my-1.5 min-h-[22px]">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-normal text-emerald-800 dark:text-emerald-400 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 shadow-xs shrink-0 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs shrink-0 whitespace-nowrap">
                         Total Questions : {resolvedQCount ?? 0}
                       </span>
 
                       {!hideSeason && (resolveExamSeason(exam.season, exam.title, exam.description) || exam.season) && (
                         <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-normal text-orange-800 dark:text-orange-400 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 shadow-xs uppercase pointer-events-auto whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs uppercase pointer-events-auto whitespace-nowrap">
                             {resolveExamSeason(exam.season, exam.title, exam.description) || exam.season}
                           </span>
                         </div>
@@ -1054,7 +1054,7 @@ export function SubjectExamsHierarchyPage({
 
                       <div className="flex items-center gap-1.5 ml-auto shrink-0">
                         {extractExamYear(exam.title, currentSubjectTitle, exam.year) && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10.5px] font-normal text-emerald-800 dark:text-emerald-400 bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/60 shadow-xs whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs whitespace-nowrap">
                             Year : {extractExamYear(exam.title, currentSubjectTitle, exam.year)}
                           </span>
                         )}
@@ -1067,27 +1067,27 @@ export function SubjectExamsHierarchyPage({
                         <button
                           type="button"
                           onClick={() => startExam(exam, "Practice")}
-                          className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-slate-950 dark:text-slate-950 bg-[#00D0FF] hover:bg-[#00BCE6] transition-colors shadow-xs text-center border border-white/70 dark:border-white/30 truncate"
+                          className="flex-1 py-1.5 px-1.5 rounded-xl text-[11px] sm:text-xs font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:text-white border border-teal-200/80 dark:border-teal-800/60 transition-all shadow-2xs text-center truncate cursor-pointer active:scale-95"
                         >
-                          Practice Mode
+                          Practice
                         </button>
                       )}
                       {allowedModes.includes("Review") && (
                         <button
                           type="button"
                           onClick={() => startExam(exam, "Review")}
-                          className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-white bg-[#212529] hover:bg-[#15181B] transition-colors shadow-xs text-center border border-white/50 dark:border-white/30 truncate"
+                          className="flex-1 py-1.5 px-1.5 rounded-xl text-[11px] sm:text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white border border-blue-200/80 dark:border-blue-800/60 transition-all shadow-2xs text-center truncate cursor-pointer active:scale-95"
                         >
-                          Review Mode
+                          Review
                         </button>
                       )}
                       {allowedModes.includes("Exam") && (
                         <button
                           type="button"
                           onClick={() => startExam(exam, "Exam")}
-                          className="flex-1 py-1 px-1.5 rounded-lg text-[11px] sm:text-xs font-medium text-white bg-[#782828] hover:bg-[#682020] transition-colors shadow-xs text-center border border-white/50 dark:border-white/30 truncate"
+                          className="flex-1 py-1.5 px-1.5 rounded-xl text-[11px] sm:text-xs font-semibold text-white bg-[#0A2540] hover:bg-teal-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border dark:border-slate-700 transition-all shadow-2xs text-center truncate cursor-pointer active:scale-95"
                         >
-                          Exam Mode
+                          Exam
                         </button>
                       )}
                     </div>

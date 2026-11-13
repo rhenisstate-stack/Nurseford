@@ -7,7 +7,7 @@ import {
   type BackendSubject,
 } from "@/lib/data/exam-subjects";
 import { renderSystemSessionHeaders } from "@/lib/services/partial/helper/systemSessionHeaders";
-import { Play, ArrowRight, Award, BookOpenCheck } from "lucide-react";
+import { Play, ArrowRight } from "lucide-react";
 
 /**
  * Backend-fed course-card grid shared by the non-NCLEX dashboards.
@@ -156,24 +156,7 @@ export function SubjectPlaceholderGrid({
                 : "hover:border-blue-500/50 dark:hover:border-sky-400/50"
             } flex flex-col shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}
           >
-            <div className="flex-1 flex flex-col items-start text-left px-3.5 pt-2.5 pb-2">
-              <div className="w-full flex items-center justify-between gap-2 mb-1.5">
-                <span
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                    isExitCard
-                      ? "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-500/15 dark:text-teal-300 dark:border-teal-500/30"
-                      : "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30"
-                  }`}
-                >
-                  {isExitCard ? (
-                    <Award className="w-2.5 h-2.5 shrink-0" />
-                  ) : (
-                    <BookOpenCheck className="w-2.5 h-2.5 shrink-0" />
-                  )}
-                  {isExitCard ? "Exit Exam" : "Core Q-Bank"}
-                </span>
-              </div>
-
+            <div className="flex-1 flex flex-col items-start text-left px-3.5 pt-3.5 pb-2">
               <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white group-hover:text-teal-700 dark:group-hover:text-[#2FD9C4] transition-colors line-clamp-1 leading-snug">
                 {card.name}
               </span>

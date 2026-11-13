@@ -7,8 +7,6 @@ import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClas
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import PerPageSelect from "@/lib/utils/data/PerPageSelect";
 import SearchBar from "@/lib/utils/data/SearchBar";
-import { VISTA_QUOTES } from "@/lib/constants/dashboards/nexus/vista/quotes";
-import { useMemo } from "react";  // For Random Quote Memoization
 import parse from "html-react-parser";
 import { useRef } from "react";
 import { FiX } from "react-icons/fi";
@@ -21,9 +19,6 @@ import {
   Layers,
   Calendar,
   History,
-  Sun,
-  Sunrise,
-  Moon,
   Target,
   Star,
   DollarSign,
@@ -35,6 +30,7 @@ import {
   BookOpen,
   Layers3,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import {
   useDistinctStrataAssessmentResults,
@@ -47,6 +43,7 @@ import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurre
 import ImpelModal from "@/app/(web)/auth/modals/Impel";
 import LoginModal from "@/app/(web)/auth/modals/Login";
 import RegisterModal from "@/app/(web)/auth/modals/Register";
+import ExamQuestionsReview from "@/components/common/dashboards/assessment/ExamQuestionsReview";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -75,13 +72,6 @@ function formatCurrency(value?: number, currency?: string) {
   if (value === undefined || value === null) return null;
   if (value === 0) return "Free";
   return `${currency ?? "$"}${value}`;
-}
-
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return { text: "Good morning", icon: Sunrise };
-  if (hour < 18) return { text: "Good afternoon", icon: Sun };
-  return { text: "Good evening", icon: Moon };
 }
 
 function displayValue(value: unknown): string {
@@ -120,7 +110,7 @@ function StatusBox({
 }) {
   return (
     <div
-      className="flex items-start justify-center pt-20 transition-all duration-300 ease-in-out"
+      className="flex items-start justify-center pt-24 transition-all duration-300 ease-in-out"
       style={{
         marginLeft: leftWidth,
         marginRight: rightWidth,
@@ -129,10 +119,8 @@ function StatusBox({
         color: "var(--exam-content-text)",
       }}
     >
-      <div
-        className="px-6 py-4 rounded-lg border bg-gradient-to-br from-purple-300 via-green-200 to-purple-300 shadow-md font-bold animate-pulse"
-        style={{ fontSize: "var(--exam-content-font-lg)" }}
-      >
+      <div className="px-6 py-4 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2.5">
+        <Loader2 className="animate-spin text-teal-600" size={18} />
         {children}
       </div>
     </div>
@@ -146,12 +134,12 @@ function StatusBox({
 function ScoreRing({ percentage, passed }: { percentage: number; passed: boolean }) {
   const clamped = Math.max(0, Math.min(100, percentage));
   return (
-    <div className="relative w-40 h-40 flex-shrink-0">
+    <div className="relative w-36 h-36 flex-shrink-0">
       <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-        <circle cx="18" cy="18" r="16" fill="none" stroke="#e5e7eb" strokeWidth="2.5" />
+        <circle cx="18" cy="18" r="16" fill="none" stroke="#f1f5f9" strokeWidth="2.5" />
         <circle
           cx="18" cy="18" r="15.9" fill="none"
-          stroke={passed ? "#16a34a" : "#dc2626"}
+          stroke={passed ? "#059669" : "#e11d48"}
           strokeWidth="2.5"
           strokeDasharray={`${clamped} ${100 - clamped}`}
           strokeLinecap="round"
@@ -159,8 +147,12 @@ function ScoreRing({ percentage, passed }: { percentage: number; passed: boolean
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-black text-slate-800">{Math.round(clamped)}%</span>
-        <span className={`text-xs font-bold tracking-wide ${passed ? "text-emerald-700" : "text-red-700"}`}>
+        <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{Math.round(clamped)}%</span>
+        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full mt-1 ${
+          passed
+            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+            : "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+        }`}>
           {passed ? "PASSED" : "NOT PASSED"}
         </span>
       </div>
@@ -176,7 +168,7 @@ function StatSlider({
   label,
   value,
   displayValue: dv,
-  gradient = "from-indigo-400 to-indigo-600",
+  gradient = "from-teal-500 to-teal-700",
   markerAt,
 }: {
   label: string;
@@ -190,17 +182,17 @@ function StatSlider({
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-bold text-slate-600 uppercase tracking-wide">{label}</span>
-        <span className="text-xs font-black text-slate-700">{dv}</span>
+        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</span>
+        <span className="text-xs font-black text-slate-800 dark:text-slate-100">{dv}</span>
       </div>
-      <div className="relative h-3 w-full bg-gray-100 rounded-full overflow-hidden">
+      <div className="relative h-2.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
         <div
           className={`h-full bg-gradient-to-r ${gradient} rounded-full transition-all duration-700`}
           style={{ width: `${clamped}%` }}
         />
         {markerAt !== undefined && (
           <div
-            className="absolute top-0 bottom-0 w-0.5 bg-slate-700"
+            className="absolute top-0 bottom-0 w-0.5 bg-slate-700 dark:bg-slate-300"
             style={{ left: `${Math.max(0, Math.min(100, markerAt))}%` }}
             title={`Pass mark: ${markerAt}%`}
           />
@@ -225,22 +217,24 @@ function StatCard({
   value: string;
   tone?: "slate" | "emerald" | "red" | "indigo" | "amber";
 }) {
-  const toneMap: Record<string, string> = {
-    slate: "text-slate-500 bg-slate-300",
-    emerald: "text-emerald-600 bg-emerald-300",
-    red: "text-red-500 bg-red-300",
-    indigo: "text-indigo-600 bg-indigo-300",
-    amber: "text-amber-600 bg-amber-300",
+  const toneMap: Record<string, { bg: string; text: string }> = {
+    slate: { bg: "bg-slate-100 dark:bg-slate-800", text: "text-slate-600 dark:text-slate-300" },
+    emerald: { bg: "bg-emerald-50 dark:bg-emerald-950/50", text: "text-emerald-600 dark:text-emerald-400" },
+    red: { bg: "bg-rose-50 dark:bg-rose-950/50", text: "text-rose-600 dark:text-rose-400" },
+    indigo: { bg: "bg-blue-50 dark:bg-blue-950/50", text: "text-[#0A2540] dark:text-blue-300" },
+    amber: { bg: "bg-amber-50 dark:bg-amber-950/50", text: "text-amber-600 dark:text-amber-400" },
   };
 
+  const style = toneMap[tone] || toneMap.slate;
+
   return (
-    <div className="bg-yellow-100 border border-slate-300 rounded-xl px-4 py-3 shadow-sm flex items-start gap-3">
-      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${toneMap[tone]}`}>
-        <Icon size={16} />
+    <div className="bg-white dark:bg-[#1E293B] border border-slate-200/90 dark:border-slate-800 rounded-xl px-4 py-3.5 shadow-2xs hover:shadow-xs transition flex items-start gap-3">
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${style.bg} ${style.text}`}>
+        <Icon size={17} />
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide truncate">{label}</p>
-        <p className="text-sm font-black text-slate-800 truncate">{value}</p>
+        <p className="text-[11px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider truncate">{label}</p>
+        <p className="text-base font-black text-slate-800 dark:text-slate-100 truncate mt-0.5">{value}</p>
       </div>
     </div>
   );
@@ -265,25 +259,25 @@ function SectionRow({ section }: { section: SectionRowData }) {
     : 0;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 shadow-sm">
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-semibold text-sm text-slate-700">{section.name ?? VOID}</span>
-        <span className="text-xs font-bold text-slate-500">{percentage}%</span>
+    <div className="bg-white dark:bg-[#1E293B] border border-slate-200/90 dark:border-slate-800 rounded-xl px-5 py-4 shadow-2xs space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="font-bold text-sm text-slate-800 dark:text-slate-100">{section.name ?? VOID}</span>
+        <span className="text-xs font-black text-slate-700 dark:text-slate-300">{percentage}%</span>
       </div>
 
-      <div className="h-1.5 w-full bg-gray-100 rounded-full mb-2 overflow-hidden">
+      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-indigo-400 to-indigo-600 rounded-full transition-all"
+          className="h-full bg-gradient-to-r from-teal-500 to-teal-700 rounded-full transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       </div>
 
       <div className="flex items-center gap-4 text-xs flex-wrap">
-        <span className="flex items-center gap-1 text-emerald-600 font-medium">
-          <CheckCircle2 size={12} /> {section.correctCount} Correct
+        <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
+          <CheckCircle2 size={13} /> {section.correctCount} Correct
         </span>
-        <span className="flex items-center gap-1 text-red-500 font-medium">
-          <XCircle size={12} /> {section.incorrectCount} Incorrect
+        <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 font-bold">
+          <XCircle size={13} /> {section.incorrectCount} Incorrect
         </span>
         {section.unansweredCount > 0 && (
           <span className="text-slate-400 font-medium">
@@ -291,7 +285,7 @@ function SectionRow({ section }: { section: SectionRowData }) {
           </span>
         )}
         <span className="text-slate-400 font-medium ml-auto">
-          {section.totalQuestions} total questions
+          {section.totalQuestions} questions
         </span>
       </div>
     </div>
@@ -304,9 +298,9 @@ function SectionRow({ section }: { section: SectionRowData }) {
 
 function WrongQuestionCard({ q }: { q: StrataResultWrongQuestion }) {
   return (
-    <div className="bg-white border border-red-100 rounded-xl px-4 py-3 shadow-sm">
+    <div className="bg-white dark:bg-[#1E293B] border border-rose-200 dark:border-rose-900/60 rounded-xl px-4 py-3.5 shadow-2xs">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-[11px] font-bold uppercase tracking-wide text-red-500">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-400">
           {q.sectionName ?? "Section"}
         </span>
         {q.scoreWeight !== undefined && (
@@ -315,23 +309,28 @@ function WrongQuestionCard({ q }: { q: StrataResultWrongQuestion }) {
           </span>
         )}
       </div>
-      <div className="text-sm text-slate-700 mb-1">{q.questionText ? parse(q.questionText) : "Question unavailable"}</div>
+      <div className="text-sm font-medium text-slate-800 dark:text-slate-100 mb-1">
+        {q.questionText ? parse(q.questionText) : "Question unavailable"}
+      </div>
       {q.userAnswerData && (
-        <p className="text-xs text-slate-400">
-          Your answer: <span className="text-slate-600 font-medium">{(() => {
-            try {
-              const answer = JSON.parse(q.userAnswerData);
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Your answer:{" "}
+          <span className="text-rose-700 dark:text-rose-300 font-bold">
+            {(() => {
+              try {
+                const answer = JSON.parse(q.userAnswerData);
 
-              return (
-                answer.answerContent ??
-                answer.optionText ??
-                answer.value ??
-                q.userAnswerData
-              );
-            } catch {
-              return q.userAnswerData;
-            }
-          })()}</span>
+                return (
+                  answer.answerContent ??
+                  answer.optionText ??
+                  answer.value ??
+                  q.userAnswerData
+                );
+              } catch {
+                return q.userAnswerData;
+              }
+            })()}
+          </span>
         </p>
       )}
     </div>
@@ -353,24 +352,41 @@ function AttemptRow({
 }) {
   return (
     <div
-      className={`flex items-center justify-between rounded-xl px-4 py-2.5 border text-sm ${isCurrent ? "border-indigo-300 bg-indigo-50" : "border-slate-200 bg-white"
-        }`}
+      className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl px-4 py-3 border text-sm transition ${
+        isCurrent
+          ? "border-teal-500/80 bg-teal-50/50 dark:bg-teal-950/20 shadow-2xs"
+          : "border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900/50 hover:bg-slate-50/70 dark:hover:bg-slate-800/50"
+      }`}
     >
-      <div className="flex items-center gap-3 text-yellow-600">
-        <span className="font-bold text-slate-700">Attempt : {(attempt.attemptNumber ?? 0) + 1}</span> as of :
-        <span className="text-blue-800 text-sm">{formatDateTime(attempt.attemptedAt)}</span>
+      <div className="flex items-center gap-2.5 flex-wrap">
+        <span className="font-bold text-slate-800 dark:text-slate-100">
+          Attempt {(attempt.attemptNumber ?? 0) + 1}
+        </span>
+        <span className="text-slate-400 text-xs">·</span>
+        <span className="text-slate-500 dark:text-slate-400 text-xs font-medium">
+          {formatDateTime(attempt.attemptedAt)}
+        </span>
         {isCurrent && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-600 text-white">CURRENT</span>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#0A2540] text-white">
+            CURRENT
+          </span>
         )}
       </div>
-      <div className="flex items-center gap-3">
-        <span className="font-semibold text-slate-600">{attempt.percentageScore ?? 0}%</span>
-        <span className={`text-xs font-bold ${attempt.passed ? "text-emerald-600" : "text-red-500"}`}>
+      <div className="flex items-center gap-3 self-end sm:self-auto">
+        <span className="font-bold text-slate-800 dark:text-slate-100">{attempt.percentageScore ?? 0}%</span>
+        <span
+          className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+            attempt.passed
+              ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+              : "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+          }`}
+        >
           {attempt.passed ? "Passed" : "Not Passed"}
         </span>
         <button
+          type="button"
           onClick={() => onOpenAttempt(attempt)}
-          className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-700 transition"
+          className="rounded-lg bg-[#0A2540] hover:bg-[#081B2E] px-3 py-1.5 text-xs font-bold text-white transition shadow-2xs"
         >
           Open Attempt
         </button>
@@ -449,7 +465,7 @@ export default function DistinctExamResultsPage() {
         ? `&score=${targetAttempt.percentageScore}`
         : "";
 
-  const passedParam =
+    const passedParam =
       targetAttempt?.passed !== undefined && targetAttempt?.passed !== null
         ? `&passed=${targetAttempt.passed}`
         : "";
@@ -515,11 +531,6 @@ export default function DistinctExamResultsPage() {
 
   // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-  // Random Quote Selection (Memoized for Performance)
-  const randomQuote = useMemo(() => {
-    return VISTA_QUOTES[Math.floor(Math.random() * VISTA_QUOTES.length)];
-  }, []);
-
   // ───────────────────────────────────────────────────────────────────────
   // GUARD 1 — session still resolving → always "Loading", never "log in"
   // ───────────────────────────────────────────────────────────────────────
@@ -527,7 +538,7 @@ export default function DistinctExamResultsPage() {
   if (userLoading) {
     return (
       <StatusBox leftWidth={leftWidth} rightWidth={rightWidth} navHeight={navHeight}>
-        Loading Exam Results . . . ⚓
+        Loading Exam Results...
       </StatusBox>
     );
   }
@@ -550,14 +561,16 @@ export default function DistinctExamResultsPage() {
       >
         {/* Fallback prompt — shown only if the person dismisses every modal */}
         {authModalStep === null && (
-          <div className="max-w-md w-full bg-white border border-slate-200 rounded-2xl shadow-lg px-8 py-10 text-center space-y-5">
-            <h1 className="text-lg font-black text-indigo-900">Please Log In to View Your Results ⚓</h1>
-            <p className="text-sm text-slate-500">
+          <div className="max-w-md w-full bg-white dark:bg-[#1E293B] border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-lg px-8 py-10 text-center space-y-5">
+            <h1 className="text-xl font-black text-[#0A2540] dark:text-white">
+              Please Log In to View Your Results
+            </h1>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               You need an account to see this exam&apos;s results.
             </p>
             <button
               onClick={() => setAuthModalStep("impel")}
-              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-md font-bold transition"
+              className="w-full py-3 rounded-xl bg-[#0A2540] hover:bg-[#081B2E] text-white text-sm font-bold transition shadow-sm"
             >
               Click Here to Log In / Register
             </button>
@@ -607,7 +620,7 @@ export default function DistinctExamResultsPage() {
   if (!exam) {
     return (
       <StatusBox leftWidth={leftWidth} rightWidth={rightWidth} navHeight={navHeight}>
-        Loading Exam Results . . . ⚓
+        Loading Exam Results...
       </StatusBox>
     );
   }
@@ -689,10 +702,6 @@ export default function DistinctExamResultsPage() {
 
   const otherAttempts = historyExams.filter((r) => r.guidId !== exam.guidId);
 
-  const greeting = getGreeting();
-  const GreetingIcon = greeting.icon;
-  const userDisplayName = user?.userName || user?.email || "there";
-
   // ───────────────────────────────────────────────────────────────────────
   // RENDER
   // ───────────────────────────────────────────────────────────────────────
@@ -708,111 +717,126 @@ export default function DistinctExamResultsPage() {
         color: "var(--exam-content-text)",
       }}
     >
-      <div className="max-w-[90rem] mx-auto space-y-2">
-
-        {/* GREETING BAR */}
-        <div className="flex items-center gap-3 mt-2 p-3 border border-indigo-300 rounded-2xl">
-          <div className="w-10 h-10 rounded-full border bg-indigo-100 text-indigo-600 flex items-center justify-center flex-shrink-0">
-            <GreetingIcon size={18} />
-          </div>
-
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <p className="text-3xl font-bold text-slate-700">
-                {greeting.text} , {userDisplayName} .
-              </p>
-              <p className="text-xs text-pink-900">
-                Here&apos;s the full breakdown of your exam attempt
-              </p>
-            </div>
-
-            <button
-              onClick={() =>
-                historyRef.current?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "start",
-                })
-              }
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-md font-bold text-white hover:bg-indigo-700 transition"
-            >
-              Explore Prior  [ {otherAttempts.length} ] Attempts
-            </button>
-
-          </div>
-        </div>
+      <div className="max-w-6xl mx-auto space-y-6 pb-28 px-2 sm:px-4">
 
         {/* HEADER / HERO CARD */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden">
-          <div className={`px-6 py-2 grid grid-cols-[1fr_auto_1fr] items-center gap-4 ${passed ? "bg-green-200" : "bg-red-200"}`}>
-            <div />
-
-            <div className="text-center">
-              <h1 className="text-xl font-black text-indigo-900">{displayValue(exam.title)}</h1>
-              <p className="text-sm text-indigo-800 mt-1">{displayValue(exam.description)}</p>
+        <div className={`bg-white dark:bg-[#1E293B] border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden ${
+          passed ? "border-t-4 border-t-emerald-500" : "border-t-4 border-t-rose-500"
+        }`}>
+          <div className="px-6 py-5 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800">
+            <div>
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-2xl font-black text-[#0A2540] dark:text-white tracking-tight">
+                  {displayValue(exam.title)}
+                </h1>
+                <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                  passed
+                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                    : "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300"
+                }`}>
+                  {passed ? "Passed" : "Not Passed"}
+                </span>
+              </div>
+              {exam.description && (
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
+                  {displayValue(exam.description)}
+                </p>
+              )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {otherAttempts.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    historyRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    })
+                  }
+                  className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-bold px-3.5 py-2 transition shadow-2xs"
+                >
+                  Prior Attempts ({otherAttempts.length})
+                </button>
+              )}
               <Link
-                href={`/dashboards/hesi-a2/vista/assessment/exams/progress/absolute?identifier=${exam.examGuidId ?? exam.guidId}`}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition whitespace-nowrap"
+                href={`/dashboards/hesi-a2/vista/stats/progress`}
+                className="rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold px-4 py-2 transition shadow-2xs whitespace-nowrap"
               >
                 View My Progress
               </Link>
             </div>
           </div>
 
-          {/* Meta badges */}
-          <div className="px-6 py-3 flex flex-wrap justify-center items-center gap-2 text-center border-b border-slate-100">
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600"> Season : {displayValue(exam.series)} </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cyan-50 text-cyan-700"> Duration : {exam.duration ? `${exam.duration} min` : VOID} </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700"> Sections : {displayValue(sectionRows.length)} </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700"> Questions : {displayValue(totalQuestions)} </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600"> Status : {displayValue(exam.status)} </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700"> Pass Mark : {displayValue(exam.passMark)}% </span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Series : {displayValue(exam.series)}</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Level : {displayValue(exam.level)}</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">    Year : {displayValue(exam.year)}</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">Difficulty : {displayValue(exam.difficulty)}</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Status : {displayValue(exam.status)}</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Year : {displayValue(exam.year)}</span>
-            {examDetail?.isFeatured && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-600">★ Featured</span>}
+          {/* Clean Meta badges */}
+          <div className="px-6 py-3 flex flex-wrap items-center gap-2 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
+            {exam.duration && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Timer size={13} className="text-teal-600" /> {exam.duration} min
+              </span>
+            )}
+            <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <ListChecks size={13} className="text-teal-600" /> {totalQuestions} Questions
+            </span>
+            {exam.passMark !== undefined && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Target size={13} className="text-teal-600" /> Pass Mark: {exam.passMark}%
+              </span>
+            )}
+            {exam.difficulty && exam.difficulty !== VOID && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Award size={13} className="text-amber-500" /> Difficulty: {displayValue(exam.difficulty)}
+              </span>
+            )}
+            {exam.level && exam.level !== VOID && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
+                Level: {displayValue(exam.level)}
+              </span>
+            )}
+            {exam.year && String(exam.year) !== VOID && (
+              <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400">
+                Year: {displayValue(exam.year)}
+              </span>
+            )}
+            {examDetail?.isFeatured && (
+              <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                ★ Featured
+              </span>
+            )}
           </div>
 
           {/* Ring + core numbers */}
           <div className="px-6 py-6 flex flex-col sm:flex-row items-center gap-8">
-
             <ScoreRing percentage={scorePercentage} passed={passed} />
 
             <div className="flex-1 w-full space-y-4">
               <StatSlider
                 label="Score vs Pass Mark"
                 value={scorePercentage}
-                displayValue={`${scorePercentage}% - [ You Need ${exam.passMark ?? 0}% ]`}
-                gradient={passed
-                  ? "from-green-100 to-emerald-800"
-                  : "from-red-100 to-rose-800"}
+                displayValue={`${scorePercentage}% (Needed: ${exam.passMark ?? 0}%)`}
+                gradient={passed ? "from-emerald-400 to-emerald-600" : "from-rose-400 to-rose-600"}
                 markerAt={exam.passMark ?? 0}
               />
 
               <StatSlider
                 label="Overall GPA"
                 value={gpa}
-                displayValue={`${gpa}% Average Across ${historyExams.length} Attempt${historyExams.length === 1 ? "" : "s"}`}
-                gradient="from-indigo-200 via-purple-500 to-green-800"
+                displayValue={`${gpa}% Average across ${historyExams.length} attempt${historyExams.length === 1 ? "" : "s"}`}
+                gradient="from-teal-400 to-blue-600"
               />
 
               <StatSlider
                 label="Accuracy"
                 value={accuracy}
                 displayValue={`${accuracy}%`}
-                gradient="from-cyan-200 to-blue-600"
+                gradient="from-cyan-400 to-blue-600"
               />
 
               <StatSlider
                 label="Completion"
                 value={completion}
                 displayValue={`Answered ${answeredCount} of ${totalQuestions} Questions`}
-                gradient="from-slate-400 to-slate-700"
+                gradient="from-slate-400 to-slate-600"
               />
             </div>
           </div>
@@ -824,12 +848,12 @@ export default function DistinctExamResultsPage() {
           <StatCard icon={ListChecks} label="Total Questions" value={displayValue(totalQuestions)} tone="slate" />
           <StatCard icon={CheckCircle2} label="Correct Answers" value={displayValue(correctCount)} tone="emerald" />
           <StatCard icon={XCircle} label="Incorrect Answers" value={displayValue(incorrectCount)} tone="red" />
-          <StatCard icon={Layers3} label="Unanswered Questions [ Never ]" value={displayValue(unansweredCount)} tone="slate" />
+          <StatCard icon={Layers3} label="Unanswered Questions" value={displayValue(unansweredCount)} tone="slate" />
           <StatCard icon={GraduationCap} label="Your Grade" value={displayValue(exam.grade)} tone="amber" />
           <StatCard icon={Timer} label="Duration Allowed" value={exam.duration ? `${exam.duration} min` : VOID} tone="slate" />
           <StatCard icon={Calendar} label="Attempted At" value={formatDateTime(exam.attemptedAt)} tone="slate" />
           <StatCard icon={History} label="Attempt Number" value={`${attemptDisplayNumber}${exam.attemptsAllowed ? ` of ${exam.attemptsAllowed}` : ""}`} tone="indigo" />
-          <StatCard icon={Star} label="Eaxm Rating" value={`${displayValue(exam.rating)}%`} tone="amber" />
+          <StatCard icon={Star} label="Exam Rating" value={`${displayValue(exam.rating)}%`} tone="amber" />
           <StatCard icon={Percent} label="Total Score" value={`${displayValue(exam.score)}`} tone="indigo" />
           <StatCard icon={Award} label="Overall GPA" value={`${gpa}%`} tone="emerald" />
           <StatCard icon={Star} label="Highest Score" value={`${highestScore}%`} tone="emerald" />
@@ -931,43 +955,33 @@ export default function DistinctExamResultsPage() {
           </div>
         )}
 
-        {/* WRONG QUESTIONS REVIEW */}
-        {exam.wrongQuestionRefs && exam.wrongQuestionRefs.length > 0 && (
-          <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
-            <h2 className="text-sm font-black text-slate-700 uppercase tracking-wide px-1 flex items-center gap-2">
-              <XCircle size={14} /> Questions to Review
-            </h2>
-            {exam.wrongQuestionRefs.map((q) => (
-              <WrongQuestionCard key={q.questionGuidId} q={q} />
-            ))}
-          </div>
-        )}
+        {/* COMPLETE QUESTIONS REVIEW */}
+        <ExamQuestionsReview
+          examGuidId={exam.examGuidId || identifier || ""}
+          answers={exam.answers}
+          wrongQuestionRefs={exam.wrongQuestionRefs}
+          totalQuestions={totalQuestions}
+          totalCorrect={exam.totalCorrect}
+          totalWrong={exam.totalWrong}
+        />
 
-        <hr className="my-4 h-px border-0 bg-gradient-to-r from-transparent via-blue-800 to-transparent" />
+        <div className="my-6 border-t border-slate-200/80 dark:border-slate-800" />
 
         {/* ATTEMPT HISTORY */}
-        <div ref={historyRef}>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <History size={14} />
-              <h2 className="text-sm font-black text-slate-700 uppercase tracking-wide">
-                Explore Attempt History
-              </h2>
-            </div>
+        <div ref={historyRef} className="space-y-4">
+          <div className="flex items-center gap-2 px-1">
+            <History size={16} className="text-teal-600" />
+            <h2 className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-wide">
+              Attempt History
+            </h2>
+          </div>
 
+          <div className="bg-white dark:bg-[#1E293B] border border-slate-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
             {/* Top Controls */}
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <PerPageSelect
-                  value={resultsPerPage}
-                  onChange={(v) => {
-                    setResultsPerPage(v);
-                    setResultsPage(1);
-                  }}
-                />
-                <span className="text-xs font-bold text-slate-500">
-                  Divulging : <strong>{historyExams.length}</strong>
-                  {" "}of <strong>{skewTotal}</strong>
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs font-semibold text-slate-500">
+                  Showing <strong>{historyExams.length}</strong> of <strong>{skewTotal}</strong> attempts
                 </span>
               </div>
 
@@ -978,7 +992,7 @@ export default function DistinctExamResultsPage() {
                     setExamResultSearch(v);
                     setResultsPage(1);
                   }}
-                  placeholder="Search attempts . . ."
+                  placeholder="Search attempts..."
                 />
 
                 <select
@@ -987,7 +1001,7 @@ export default function DistinctExamResultsPage() {
                     setSortColumn((e.target.value || null) as keyof StrataExamResultItem | null);
                     setResultsPage(1);
                   }}
-                  className="text-xs font-bold rounded-md border border-slate-300 px-2 py-1.5 bg-white text-slate-600"
+                  className="text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200"
                 >
                   <option value="attemptedAt">Sort: Attempt Date</option>
                   <option value="attemptNumber">Sort: Attempt Number</option>
@@ -998,11 +1012,12 @@ export default function DistinctExamResultsPage() {
                 </select>
 
                 <button
+                  type="button"
                   onClick={() => {
                     setSortDirection((d) => (d === "asc" ? "desc" : "asc"));
                     setResultsPage(1);
                   }}
-                  className="text-xs font-bold rounded-md border border-slate-300 px-2 py-1.5 bg-white text-slate-600"
+                  className="text-xs font-bold rounded-lg border border-slate-200 dark:border-slate-700 px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
                   title="Toggle sort direction"
                 >
                   {sortDirection === "asc" ? "↑ Asc" : "↓ Desc"}
@@ -1012,8 +1027,8 @@ export default function DistinctExamResultsPage() {
 
             {/* Table / List */}
             {otherAttempts.length > 0 ? (
-              <div className="w-full overflow-x-auto rounded-xl border border-slate-200 bg-white">
-                <div className="space-y-3 p-3">
+              <div className="w-full overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
+                <div className="space-y-2.5 p-3">
                   <AttemptRow
                     attempt={exam}
                     isCurrent
@@ -1036,13 +1051,14 @@ export default function DistinctExamResultsPage() {
                 </div>
               </div>
             ) : examResultSearch ? (
-              <div className="w-full rounded-xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center">
+              <div className="w-full rounded-xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 px-4 py-8 text-center">
                 <p className="text-sm font-semibold text-slate-500">
-                  No Attempts Match &quot;{examResultSearch}&quot; ⚓
+                  No attempts match &ldquo;{examResultSearch}&rdquo;
                 </p>
                 <button
+                  type="button"
                   onClick={() => { setExamResultSearch(""); setResultsPage(1); }}
-                  className="mt-2 text-xs font-bold text-indigo-600 hover:underline"
+                  className="mt-2 text-xs font-bold text-teal-600 hover:underline"
                 >
                   Clear Search
                 </button>
@@ -1050,7 +1066,7 @@ export default function DistinctExamResultsPage() {
             ) : null}
 
             {/* Bottom Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
               <div className="flex items-center gap-3">
                 <PerPageSelect
                   value={resultsPerPage}
@@ -1059,10 +1075,6 @@ export default function DistinctExamResultsPage() {
                     setResultsPage(1);
                   }}
                 />
-                <span className="text-xs font-bold text-slate-500">
-                  Manifesting : <strong>{historyExams.length}</strong>
-                  {" "}of <strong>{skewTotal}</strong>
-                </span>
               </div>
 
               {skewTotalPages > 1 && (
@@ -1070,7 +1082,7 @@ export default function DistinctExamResultsPage() {
                   <button
                     disabled={resultsPage === 1}
                     onClick={() => setResultsPage((p) => Math.max(1, p - 1))}
-                    className="px-3 py-1 rounded-md border text-xs font-bold disabled:opacity-40 bg-white text-slate-600"
+                    className="px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold disabled:opacity-40 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                   >
                     Prior
                   </button>
@@ -1084,9 +1096,9 @@ export default function DistinctExamResultsPage() {
                       <button
                         key={p}
                         onClick={() => setResultsPage(p)}
-                        className={`px-3 py-1 rounded-md border text-xs font-bold ${p === resultsPage
-                          ? "bg-indigo-600 border-indigo-600 text-white"
-                          : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50"
+                        className={`px-3 py-1 rounded-lg border text-xs font-bold transition ${p === resultsPage
+                          ? "bg-[#0A2540] border-[#0A2540] text-white shadow-2xs"
+                          : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50"
                           }`}
                       >
                         {p}
@@ -1097,7 +1109,7 @@ export default function DistinctExamResultsPage() {
                   <button
                     disabled={resultsPage === skewTotalPages}
                     onClick={() => setResultsPage((p) => Math.min(skewTotalPages, p + 1))}
-                    className="px-3 py-1 rounded-md border text-xs font-bold disabled:opacity-40 bg-white text-slate-600"
+                    className="px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold disabled:opacity-40 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300"
                   >
                     Next
                   </button>
@@ -1108,64 +1120,27 @@ export default function DistinctExamResultsPage() {
         </div>
       </div>
 
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      <hr className="my-4 h-px border-0 bg-gradient-to-r from-transparent via-blue-800 to-transparent" />
-
-      {/* Dynamic Vista Quote */}
-      <div className="w-full flex justify-center items-center py-4">
-        <div className="
-            max-w-5xl w-full
-            text-center
-            px-6 py-4
-            rounded-2xl
-            border
-            backdrop-blur-xl
-            bg-gradient-to-r
-            from-purple-500/10
-            via-pink-500/10
-            to-cyan-500/10
-            shadow-lg
-            transition-all duration-500
-          "
-        >
-          <div className="flex flex-col md:flex-row justify-center items-center gap-2 text-sm md:text-base">
-
-            <span className="font-bold tracking-wide text-[var(--text-color)]">
-              {randomQuote.quoteTitle}
-            </span>
-
-            <span className="opacity-70 text-[var(--text-color)]">
-              — {randomQuote.quoteDescription}
-            </span>
-
-          </div>
-        </div>
-      </div>
-
-      <hr className="my-4 h-px border-0 bg-gradient-to-r from-transparent via-blue-800 to-transparent" />
-
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
       {/* STICKY ACTION BAR */}
       <div
-        className="fixed bottom-0 bg-green-100 border-t border-slate-200 px-4 py-3 z-20 transition-all duration-300 ease-in-out"
+        className="fixed bottom-0 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-md border-t border-slate-200/90 dark:border-slate-800 px-6 py-3.5 z-20 transition-all duration-300 ease-in-out shadow-lg"
         style={{ left: leftWidth, right: rightWidth }}
       >
-        <div className="max-w-4xl mx-auto flex gap-3">
+        <div className="max-w-4xl mx-auto flex items-center gap-4">
           <button
+            type="button"
             onClick={() =>
               router.push(
                 `/dashboards/hesi-a2/vista/assessment/exams/distinct/overview?level=subject${exam.subjectGuidId ? `&identifier=${exam.subjectGuidId}` : ""}`
               )
             }
-            className="flex-1 py-2 my-0 rounded-xl border border-indigo-300 bg-yellow-300 hover:bg-blue-200 text-slate-600 text-lg font-semibold flex items-center justify-center gap-2 transition"
+            className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 text-sm font-bold flex items-center justify-center gap-2 transition shadow-2xs"
           >
             <ArrowLeft size={16} /> Choose a Different Exam
           </button>
           <button
+            type="button"
             onClick={() => { setModePopupTarget(null); setShowModePopup(true); }}
-            className="flex-1 py-2 my-0 rounded-xl border bg-green-200 hover:bg-indigo-300 text-black text-lg font-bold flex items-center justify-center gap-2 transition"
+            className="flex-1 py-2.5 px-4 rounded-xl bg-[#0A2540] hover:bg-[#081B2E] text-white text-sm font-bold flex items-center justify-center gap-2 transition shadow-sm"
           >
             <RotateCcw size={16} /> Retake This Exam
           </button>
@@ -1174,84 +1149,66 @@ export default function DistinctExamResultsPage() {
 
       {/* EXAM MODE POPUP */}
       {showModePopup && exam && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-3">
-
-          {hoveredMode && (
-            <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100000] w-[92%] max-w-md">
-              <div className="relative rounded-xl border border-indigo-400 bg-white text-slate-700 shadow-2xl px-4 py-3 pr-9">
-                <button
-                  onClick={() => setHoveredMode(null)}
-                  aria-label="Close"
-                  className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full border text-xs font-bold hover:bg-slate-700 hover:text-white transition-all duration-200"
-                >
-                  ✕
-                </button>
-                <div className="text-xs font-bold uppercase tracking-wide text-indigo-500 mb-0.5">
-                  {hoveredMode} Mode
-                </div>
-                <div className="text-sm leading-snug">
-                  {examModeDescriptions[hoveredMode]}
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="relative w-full max-w-sm rounded-2xl border bg-white text-slate-700 shadow-2xl p-4 flex flex-col gap-3">
-
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] text-slate-800 dark:text-slate-100 shadow-2xl p-6 flex flex-col gap-4">
             <button
+              type="button"
               onClick={() => { setShowModePopup(false); setModePopupTarget(null); }}
               aria-label="Close"
-              className="
-                absolute -top-5 right-4 flex h-10 w-10 items-center justify-center rounded-xl border border-gray-700
-                bg-pink-200 text-black shadow-sm backdrop-blur-md transition-all duration-300 ease-out
-                hover:scale-110 hover:border-red-500 hover:bg-black hover:text-red-600 hover:shadow-lg
-                active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500
-              "
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             >
-              <FiX className="h-7 w-7 stroke-[3.5]" />
+              <FiX className="h-5 w-5" />
             </button>
 
-            <div className="text-center px-6">
-              <h2 className="text-2xl font-bold leading-tight">{displayValue(exam.title)}</h2>
+            <div className="text-center pr-6">
+              <h2 className="text-xl font-black text-[#0A2540] dark:text-white leading-tight">
+                {displayValue(exam.title)}
+              </h2>
               {exam.description && (
-                <p className="text-xs opacity-60 mt-1 whitespace-normal break-words">{exam.description}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{displayValue(exam.description)}</p>
               )}
               {modePopupTarget && (
-                <p className="text-[11px] font-bold text-indigo-600 mt-2">
+                <p className="text-xs font-bold text-teal-600 mt-2">
                   Opening Attempt {(modePopupTarget.attemptNumber ?? 0) + 1} — {formatDateTime(modePopupTarget.attemptedAt)}
                 </p>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider text-center">
+              Select Exam Mode
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
               {examModes.map((mode) => (
                 <button
                   key={mode}
+                  type="button"
                   onClick={() => handleModeSelection(mode)}
                   onMouseEnter={() => setHoveredMode(mode)}
                   onMouseLeave={() => setHoveredMode(null)}
-                  onFocus={() => setHoveredMode(mode)}
-                  onBlur={() => setHoveredMode(null)}
-                  className="
-                    rounded-xl border px-3 py-4
-                    flex flex-col items-center justify-center gap-1
-                    transition-all duration-200
-                    hover:scale-105
-                    bg-gradient-to-r from-purple-100 to-green-50
-                    hover:bg-indigo-600
-                    hover:text-green-700
-                    group
-                  "
+                  className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/60 hover:border-teal-500 hover:bg-teal-50/50 dark:hover:bg-teal-950/30 p-3.5 flex flex-col items-center justify-center gap-1 transition group"
                 >
-                  <span className="text-lg font-bold">{mode} Mode</span>
-                  <span className="text-sm opacity-60 group-hover:opacity-90">Click to Start</span>
+                  <span className="text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-400">
+                    {mode} Mode
+                  </span>
+                  <span className="text-[11px] text-slate-400 group-hover:text-teal-600">
+                    Click to Start
+                  </span>
                 </button>
               ))}
             </div>
 
+            {hoveredMode && (
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300">
+                <span className="font-bold text-teal-700 dark:text-teal-400 block mb-0.5">{hoveredMode} Mode:</span>
+                {examModeDescriptions[hoveredMode]}
+              </div>
+            )}
+
             <button
+              type="button"
               onClick={() => { setShowModePopup(false); setModePopupTarget(null); }}
-              className="w-full py-2 rounded-xl border text-xs font-bold bg-gradient-to-r from-purple-200 to-green-200 text-black hover:opacity-80 transition-all"
+              className="w-full py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 transition"
             >
               Cancel &amp; Close
             </button>
