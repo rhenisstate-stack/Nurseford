@@ -128,9 +128,9 @@ export default function Hero() {
               <source src="/videos/hero-books.mp4" type="video/mp4" />
             </video>
 
-            {/* Readability Frost Overlay for Mobile */}
-            <div className="absolute inset-0 bg-white/85 dark:bg-[#0b1329]/90 backdrop-blur-[2px]" />
-            <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-transparent to-white/70 dark:from-[#0b1329]/95 dark:via-transparent dark:to-[#0b1329]/70" />
+            {/* Readability Frost Overlay for Mobile (reduced opacity by 10% to reveal video) */}
+            <div className="absolute inset-0 bg-white/75 dark:bg-[#0b1329]/80 backdrop-blur-[1.5px]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-white/85 via-transparent to-white/60 dark:from-[#0b1329]/85 dark:via-transparent dark:to-[#0b1329]/60" />
           </div>
 
           {/* Left Column (Text & CTAs) */}
