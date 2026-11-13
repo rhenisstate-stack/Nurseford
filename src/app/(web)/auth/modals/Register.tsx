@@ -198,7 +198,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
         }
         onSwitchToLogin(
           cleanEmail,
-          `Account created successfully ⚓ You can now log in as ${cleanEmail}`
+          `Account created successfully. You can now log in as ${cleanEmail}`
         );
       }
     } catch (err: unknown) {
@@ -217,28 +217,24 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl p-8"
+        className="relative w-full max-w-lg bg-white dark:bg-[#1E293B] border border-slate-200/90 dark:border-slate-800 rounded-2xl shadow-2xl p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <button
+          type="button"
           onClick={onClose}
           aria-label="Close"
-          className="
-            absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-xl border border-gray-700
-            bg-pink-200 text-black shadow-sm backdrop-blur-md transition-all duration-300 ease-out
-            hover:scale-110 hover:border-red-500 hover:bg-black hover:text-red-600 hover:shadow-lg
-            active:scale-95 focus:outline-none focus:ring-2 focus:ring-red-500
-          "
+          className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
         >
-          <FiX className="h-7 w-7 stroke-[3.5]" />
+          <FiX className="w-5 h-5" />
         </button>
 
         <div className="text-center mb-4">
           <div className="flex items-center justify-center gap-2">
-            <h1 className="text-xl md:text-2xl font-extrabold text-blue-800">{APP_NAME}</h1>
-            <FiCheckCircle className="text-green-500 text-lg" title="Verified" />
+            <h1 className="text-xl md:text-2xl font-black text-[#0A2540] dark:text-white tracking-tight">{APP_NAME}</h1>
+            <FiCheckCircle className="text-teal-600 text-lg" title="Verified" />
           </div>
-          <p className="text-xs text-gray-600 mt-1">Create your account.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Create your account to start practice tests.</p>
         </div>
 
         <p className="text-center text-gray-500 text-xs font-semibold tracking-wide uppercase mb-3">
@@ -468,15 +464,15 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-indigo-600 font-semibold transition disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full bg-[#0A2540] hover:bg-[#081B2E] text-white py-2.5 rounded-xl font-bold transition shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Registering . . . ⚓" : "Submit and Register"}
+            {isLoading ? "Registering..." : "Submit and Register"}
           </button>
 
           <div className="flex flex-row gap-3 pt-2">
             <Link
               href="/auth/support"
-              className="flex-1 text-center bg-white border border-indigo-600 text-indigo-600 text-sm font-semibold py-2 px-3 rounded-lg hover:bg-indigo-50 transition"
+              className="flex-1 text-center bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold py-2 px-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition"
               onClick={onClose}
             >
               Having Issues?
@@ -484,7 +480,7 @@ export default function RegisterModal({ isOpen, onClose, onSwitchToLogin }: Regi
             <button
               type="button"
               onClick={() => onSwitchToLogin(form.email, "")}
-              className="flex-1 text-center bg-white border border-indigo-600 text-indigo-600 text-sm font-semibold py-2 px-3 rounded-lg hover:bg-indigo-50 transition"
+              className="flex-1 text-center bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold py-2 px-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition"
             >
               Login Instead?
             </button>

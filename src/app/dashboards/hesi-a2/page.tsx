@@ -9,6 +9,7 @@ import { VISTA_QUOTES } from "@/lib/constants/dashboards/nexus/vista/quotes";
 import { Sun, Sunset, Moon, Calendar, CreditCard, Receipt } from "lucide-react";
 import PerformanceIndexGauge from "./includes/components/PerformanceIndexGauge";
 import HesiA2ListCard from "./includes/components/HesiA2ListCard";
+import { useDashboardPerformanceScore } from "@/lib/hooks/nexus/strata/assessment/progress/useDashboardPerformanceScore";
 import { SubjectPlaceholderGrid } from "@/components/common/dashboards/elements/SubjectDataPlaceholders";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
 
@@ -18,6 +19,8 @@ export default function HesiA2HomePage() {
 
   const { user, loading: isUserLoading } = useCurrentSystemUser();
   const firstName = user?.userName?.trim()?.split(" ")[0] || "";
+
+  const { score: performanceScore } = useDashboardPerformanceScore("hesi-a2");
 
   const [now, setNow] = useState(new Date());
 
@@ -143,7 +146,7 @@ export default function HesiA2HomePage() {
 
           {/* Performance Index Gauge */}
           <div className="shrink-0 order-3 lg:order-3 lg:h-[190px]">
-            <PerformanceIndexGauge score={0} />
+            <PerformanceIndexGauge score={performanceScore} />
           </div>
         </div>
 

@@ -10,6 +10,7 @@ import { VISTA_QUOTES } from "@/lib/constants/dashboards/nexus/vista/quotes";
 import { Sun, Sunset, Moon, CreditCard, Receipt } from "lucide-react";
 import PerformanceIndexGauge from "./includes/components/PerformanceIndexGauge";
 import NclexRnListCard from "./includes/components/NclexRnListCard";
+import { useDashboardPerformanceScore } from "@/lib/hooks/nexus/strata/assessment/progress/useDashboardPerformanceScore";
 import {
   NclexActionRow,
   NclexStudyByCourseSection,
@@ -27,6 +28,8 @@ export default function NclexRnHomePage() {
 
   const { user, loading: isUserLoading } = useCurrentSystemUser();
   const firstName = user?.userName?.trim()?.split(" ")[0] || "";
+
+  const { score: performanceScore } = useDashboardPerformanceScore("nclex-rn");
 
   const [now, setNow] = useState(new Date());
 
@@ -183,7 +186,7 @@ export default function NclexRnHomePage() {
 
           {/* Performance Index Gauge (desktop only — phone shows it at the bottom) */}
           <div className="hidden lg:block shrink-0 order-3 lg:order-3 lg:h-[190px]">
-            <PerformanceIndexGauge score={0} />
+            <PerformanceIndexGauge score={performanceScore} />
           </div>
         </div>
 
@@ -260,7 +263,7 @@ export default function NclexRnHomePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:gap-3">
           {/* Performance Index Gauge */}
           <div>
-            <PerformanceIndexGauge score={0} />
+            <PerformanceIndexGauge score={performanceScore} />
           </div>
 
           {/* Nursing Study Notes/Guides Card */}

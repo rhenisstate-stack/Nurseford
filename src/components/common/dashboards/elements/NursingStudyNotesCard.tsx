@@ -18,7 +18,7 @@ const SUBJECTS = [
 
 export default function NursingStudyNotesCard() {
   return (
-    <div className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[var(--card-bg,#15273e)] flex flex-col h-[180px] overflow-hidden shadow-xs hover:shadow-md transition-all duration-200">
+    <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[var(--card-bg,#15273e)] flex flex-col h-[180px] overflow-hidden shadow-xs hover:shadow-md transition-all duration-200">
       <style>{`
         .nursing-notes-scroll::-webkit-scrollbar { width: 5px; }
         .nursing-notes-scroll::-webkit-scrollbar-track { background: transparent; }

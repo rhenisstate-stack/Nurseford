@@ -81,7 +81,7 @@ export default function NursingDashboardHome({
         {/* ─── Top Row: Greeting + Study Notes + Performance Gauge ─── */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 lg:items-stretch">
           {/* Greeting Card */}
-          <div className="order-1 md:col-span-2 lg:col-span-1 min-w-0 rounded-2xl border border-slate-200/90 dark:border-white/10 bg-gradient-to-br from-white via-[#F5F9FF] to-[#ECF4FF] dark:bg-none dark:bg-[var(--card-bg,#15273e)] px-4 py-3 flex flex-col justify-between h-auto lg:h-[180px] shadow-xs hover:shadow-md transition-all duration-200">
+          <div className="order-1 md:col-span-2 lg:col-span-1 min-w-0 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-white via-[#F5F9FF] to-[#ECF4FF] dark:bg-none dark:bg-[var(--card-bg,#15273e)] px-4 py-3 flex flex-col justify-between h-auto lg:h-[180px] shadow-xs hover:shadow-md transition-all duration-200">
             <div>
               <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-0.5">
                 <GreetingIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -125,7 +125,7 @@ export default function NursingDashboardHome({
 
           {/* Performance Index Gauge */}
           <div className="order-2 lg:order-3 min-w-0 lg:h-[180px]">
-            <PerformanceIndexGauge score={0} />
+            <PerformanceIndexGauge scope={programScope} />
           </div>
         </div>
 

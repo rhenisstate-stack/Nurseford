@@ -63,11 +63,11 @@ function AccordionGroup({
         onMouseEnter={(e) => handleItemHover(id, e)}
         onMouseLeave={handleMouseLeave}
         className={`relative flex items-center py-2 px-1 rounded-lg transition cursor-pointer
-          border border-transparent hover:border-[var(--text-color)]/40 select-none
+          border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
           ${isOpened ? "justify-between" : "justify-center"}`}
       >
         <div className="flex items-center min-w-0">
-          <Icon className="w-5 h-5 shrink-0" />
+          <Icon className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-300" />
           {isOpened && (
             <span className={`ml-3 font-medium truncate ${isMobile ? "text-xs" : "text-sm"}`}>{label}</span>
           )}
@@ -75,9 +75,9 @@ function AccordionGroup({
 
         {isOpened &&
           (isActive ? (
-            <ChevronDown className="w-4 h-4 shrink-0" />
+            <ChevronDown className="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400" />
           ) : (
-            <ChevronRight className="w-4 h-4 shrink-0" />
+            <ChevronRight className="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400" />
           ))}
 
         {!isOpened && hoveredItem === id && (
@@ -88,7 +88,7 @@ function AccordionGroup({
       </div>
 
       {isOpened && isActive && (
-        <div className="ml-3 pl-3 mt-1 space-y-1 border-l border-[var(--text-color)]/15">
+        <div className="ml-3 pl-3 mt-1 space-y-1 border-l border-slate-200 dark:border-slate-800">
           {children}
         </div>
       )}
@@ -122,14 +122,14 @@ function SubAccordionGroup({
           onToggle(id);
         }}
         className={`relative flex items-center py-1.5 px-1 rounded-lg transition cursor-pointer
-          border border-transparent hover:border-[var(--text-color)]/40 select-none
-          ${isOpen ? "bg-[var(--text-color)]/5" : ""}
+          border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
+          ${isOpen ? "bg-slate-100/90 dark:bg-slate-800/70 font-semibold" : ""}
           ${isOpened ? "justify-between" : "justify-center"}`}
       >
         <div className="flex items-center min-w-0">
           <span
             className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-              isOpen ? "bg-indigo-400" : "bg-[var(--text-color)]/40"
+              isOpen ? "bg-teal-500" : "bg-slate-400 dark:bg-slate-500"
             }`}
           />
           {isOpened && (
@@ -141,14 +141,14 @@ function SubAccordionGroup({
 
         {isOpened &&
           (isOpen ? (
-            <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-70" />
+            <ChevronDown className="w-3.5 h-3.5 shrink-0 opacity-70 text-slate-500 dark:text-slate-400" />
           ) : (
-            <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-70" />
+            <ChevronRight className="w-3.5 h-3.5 shrink-0 opacity-70 text-slate-500 dark:text-slate-400" />
           ))}
       </div>
 
       {isOpened && isOpen && (
-        <div className="ml-3 pl-2.5 mt-1 space-y-1 border-l border-[var(--text-color)]/15">
+        <div className="ml-3 pl-2.5 mt-1 space-y-1 border-l border-slate-200 dark:border-slate-800">
           {children}
         </div>
       )}
@@ -195,14 +195,14 @@ function NavItem({
         className={`relative flex items-center py-1.5 px-1 rounded-lg transition
           border border-transparent select-none
           ${isActive
-            ? "bg-[var(--text-color)]/10 border-[var(--text-color)]/40 font-medium"
-            : "hover:border-[var(--text-color)]/40"
+            ? "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/40 font-semibold"
+            : "hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200"
           }
           ${isOpened ? "justify-start" : "justify-center"}`}
       >
         <span
           className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-            isActive ? "bg-indigo-400" : "bg-[var(--text-color)]/40"
+            isActive ? "bg-teal-500" : "bg-slate-400 dark:bg-slate-500"
           }`}
         />
         {isOpened && <span className={`ml-2.5 truncate ${isMobile ? "text-xs" : "text-sm"}`}>{label}</span>}
@@ -346,23 +346,19 @@ export default function LeftSidebar() {
           }
           h-[calc(100vh-56px)]
           transition-all duration-300 ease-in-out
-          shadow-md border-r border-[var(--text-color)]/10`}
+          shadow-md border-r border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100`}
         style={{
-          backgroundColor: "var(--leftSidebar-bg, #171C27)",
+          backgroundColor: "var(--leftSidebar-bg, #0f172a)",
           color: "var(--text-color)",
         }}
       >
       <div
-        className={`flex items-center justify-between px-4 py-3 border-b border-[var(--text-color)]/10 shrink-0
-          ${isLightSidebar ? "border-gray-200" : ""}`}
+        className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80 dark:border-slate-800 shrink-0"
       >
         <div className={`flex-1 ${!isOpened && "justify-center flex"}`}>
           <Link
             href={`/dashboards/${DASHBOARD_NAME}`}
-            className={`${isMobile ? "text-base" : "text-lg"} font-semibold ${isLightSidebar
-              ? "text-gray-800 hover:text-gray-600"
-              : "text-[var(--text-color)]"
-              }`}
+            className={`${isMobile ? "text-base" : "text-lg"} font-bold text-slate-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors`}
           >
             {isOpened ? APP_TITLE : APP_ACRONYM}
           </Link>
@@ -372,7 +368,7 @@ export default function LeftSidebar() {
           <button
             onClick={close}
             aria-label="Close sidebar"
-            className="p-1 rounded hover:bg-[var(--text-color)]/10"
+            className="p-1 rounded text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -389,10 +385,10 @@ export default function LeftSidebar() {
             onMouseEnter={(e) => handleItemHover("My Dashboard", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+              border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
               ${!isOpened && "justify-center"}`}
           >
-            <LayoutDashboard className="w-5 h-5 shrink-0" />
+            <LayoutDashboard className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-300" />
             {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Dashboard</span>}
 
             {isCollapsed && hoveredItem === "My Dashboard" && (
@@ -409,10 +405,10 @@ export default function LeftSidebar() {
             onMouseEnter={(e) => handleItemHover("Return Home", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+              border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
               ${!isOpened && "justify-center"}`}
           >
-            <LayoutDashboard className="w-5 h-5 shrink-0" />
+            <LayoutDashboard className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-300" />
             {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Return Home</span>}
 
             {isCollapsed && hoveredItem === "Return Home" && (
@@ -501,11 +497,11 @@ export default function LeftSidebar() {
           </SubAccordionGroup>
         </AccordionGroup>
 
-        <div className="my-2 border-t border-[var(--text-color)]/10" />
+        <div className="my-2 border-t border-slate-200/80 dark:border-slate-800" />
 
         {isOpened && (
           <div className="flex justify-center p-0">
-            <span className="text-[10px] font-semibold tracking-widest uppercase opacity-50 select-none">
+            <span className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 dark:text-slate-400 select-none">
               My Account Data Management
             </span>
           </div>
@@ -517,10 +513,10 @@ export default function LeftSidebar() {
             onMouseEnter={(e) => handleItemHover("My Progress", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+              border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
               ${!isOpened && "justify-center"}`}
           >
-            <BarChart3 className="w-5 h-5 shrink-0" />
+            <BarChart3 className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-300" />
             {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Progress</span>}
 
             {isCollapsed && hoveredItem === "My Progress" && (
@@ -537,10 +533,10 @@ export default function LeftSidebar() {
             onMouseEnter={(e) => handleItemHover("My Reports", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+              border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
               ${!isOpened && "justify-center"}`}
           >
-            <ClipboardList className="w-5 h-5 shrink-0" />
+            <ClipboardList className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-300" />
             {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Reports</span>}
 
             {isCollapsed && hoveredItem === "My Reports" && (
@@ -557,10 +553,10 @@ export default function LeftSidebar() {
             onMouseEnter={(e) => handleItemHover("My Subscriptions", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+              border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
               ${!isOpened && "justify-center"}`}
           >
-            <Receipt className="w-5 h-5 shrink-0" />
+            <Receipt className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-300" />
             {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Subscriptions</span>}
 
             {isCollapsed && hoveredItem === "My Subscriptions" && (
@@ -577,10 +573,10 @@ export default function LeftSidebar() {
             onMouseEnter={(e) => handleItemHover("Subscription Packages", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+              border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
               ${!isOpened && "justify-center"}`}
           >
-            <CreditCard className="w-5 h-5 shrink-0" />
+            <CreditCard className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-300" />
             {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Subscription Packages</span>}
 
             {isCollapsed && hoveredItem === "Subscription Packages" && (
@@ -597,10 +593,10 @@ export default function LeftSidebar() {
             onMouseEnter={(e) => handleItemHover("Contact Us", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+              border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
               ${!isOpened && "justify-center"}`}
           >
-            <LifeBuoy className="w-5 h-5 shrink-0" />
+            <LifeBuoy className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-300" />
             {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Contact Us</span>}
 
             {isCollapsed && hoveredItem === "Contact Us" && (
@@ -617,10 +613,10 @@ export default function LeftSidebar() {
             onMouseEnter={(e) => handleItemHover("Need Help / Assistance", e)}
             onMouseLeave={handleMouseLeave}
             className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+              border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
               ${!isOpened && "justify-center"}`}
           >
-            <HelpCircle className="w-5 h-5 shrink-0" />
+            <HelpCircle className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-300" />
             {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Need Help / Assistance</span>}
 
             {isCollapsed && hoveredItem === "Need Help / Assistance" && (

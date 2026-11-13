@@ -7,6 +7,34 @@ import {
   type NursingProgramScope,
 } from "@/lib/utils/exams/nursingProgramScope";
 
+export type StrataProgramScope =
+  | NursingProgramScope
+  | "nclex-rn"
+  | "nclex-pn"
+  | "hesi-a2";
+
+export function isAllowedResultForProgramScope(
+  item: StrataExamResultItem,
+  scope?: StrataProgramScope
+): boolean {
+  if (!scope) return true;
+  if (scope === "rn-nursing" || scope === "lpn-nursing" || scope === "all") {
+    return isAllowedNursingResult(item, scope);
+  }
+  const text = `${item.segment ?? ""} ${item.programName ?? ""} ${item.courseName ?? ""} ${item.subjectName ?? ""} ${item.title ?? ""}`.toLowerCase();
+  const seg = (item.segment ?? "").toUpperCase();
+  if (scope === "nclex-rn") {
+    return seg === "NCLEX_RN" || (/nclex/i.test(text) && /\brn\b/i.test(text));
+  }
+  if (scope === "nclex-pn") {
+    return seg === "NCLEX_PN" || (/nclex/i.test(text) && /\b(?:pn|lpn)\b/i.test(text));
+  }
+  if (scope === "hesi-a2") {
+    return seg === "HESI_A2" || /hesi/i.test(text);
+  }
+  return true;
+}
+
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
 // EXAM RESULTS + PER-USER 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -209,13 +237,15 @@ export const useRelativeStrataAssessmentResults = ({
   perPage = 20,
   sortColumn = null,
   sortDirection = "asc",
-  programScope = "all",
+  programScope,
+  enabled = true,
 }: {
   page?: number | string;
   perPage?: number | string;
   sortColumn?: keyof StrataExamResultItem | null;
   sortDirection?: "asc" | "desc";
-  programScope?: NursingProgramScope;
+  programScope?: StrataProgramScope;
+  enabled?: boolean;
 } = {}) => {
   const [examresults, setExams] = useState<StrataExamResultItem[]>([]);
   const [filteredExamResults, setFilteredExams] = useState<StrataExamResultItem[]>([]);
@@ -239,6 +269,10 @@ export const useRelativeStrataAssessmentResults = ({
 
   useEffect(() => {
     const fetchExams = async () => {
+      if (!enabled) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         console.log("🚀 [useRelativeStrataAssessmentResults] Fetching Exams ... 🪝");
@@ -297,9 +331,11 @@ export const useRelativeStrataAssessmentResults = ({
               topLevel.items,
             ].find((candidate): candidate is StrataExamResultItem[] => Array.isArray(candidate)) ?? [];
 
-        const items = rawItems.filter((item) =>
-          isAllowedNursingResult(item, programScope)
-        );
+        const items = programScope
+          ? rawItems.filter((item) =>
+              isAllowedResultForProgramScope(item, programScope)
+            )
+          : rawItems;
 
         const rawTotal =
           dataObj.totalResults ??
@@ -334,7 +370,7 @@ export const useRelativeStrataAssessmentResults = ({
     };
 
     fetchExams();
-  }, [examResultSearch, cleanPage, cleanPerPage, sortColumn, sortDirection, programScope, refreshKey]);
+  }, [examResultSearch, cleanPage, cleanPerPage, sortColumn, sortDirection, programScope, enabled, refreshKey]);
 
   // Pass Exams when search changes [ Frontend is just to display !]
   useEffect(() => {

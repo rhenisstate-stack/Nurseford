@@ -359,24 +359,20 @@ export default function LeftSidebar() {
             ? (isOpened ? "w-64 shadow-2xl" : "w-0 overflow-hidden border-r-0 pointer-events-none")
             : sidebarWidth}
           transition-all duration-300 ease-in-out
-          shadow-md border-r border-[var(--text-color)]/10`}
+          shadow-md border-r border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100`}
         style={{
-          backgroundColor: "var(--leftSidebar-bg, #171C27)",
+          backgroundColor: "var(--leftSidebar-bg, #0f172a)",
           color: "var(--text-color)",
         }}
       >
         <div
-          className={`flex items-center justify-between px-4 py-3 border-b border-[var(--text-color)]/10
-            ${isLightSidebar ? "border-gray-200" : ""}`}
+          className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80 dark:border-slate-800"
         >
           <div className={`flex-1 ${!isOpened && "justify-center flex"}`}>
             <Link
               href={`/dashboards/${DASHBOARD_NAME}`}
               onClick={isMobile ? close : undefined}
-              className={`${isMobile ? "text-base" : "text-lg"} font-semibold ${isLightSidebar
-                ? "text-gray-800 hover:text-gray-600"
-                : "text-[var(--text-color)]"
-                }`}
+              className={`${isMobile ? "text-base" : "text-lg"} font-bold text-slate-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors`}
             >
               {isOpened ? APP_TITLE : APP_ACRONYM}
             </Link>

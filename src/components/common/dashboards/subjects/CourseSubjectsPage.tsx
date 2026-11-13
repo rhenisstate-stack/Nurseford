@@ -230,7 +230,7 @@ export function CourseSubjectsPage({
         {showExamBuilder ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
             {/* Card 1: Course Overview Card */}
-            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] p-3.5 sm:p-4 md:p-4.5 transition-all duration-200 shadow-xs text-left">
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border-2 border-slate-200 dark:border-slate-700 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] p-3.5 sm:p-4 md:p-4.5 transition-all duration-200 shadow-xs text-left">
               <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
                 <div className="min-w-0">
                   <h1 className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy dark:text-white truncate leading-tight">
@@ -269,7 +269,7 @@ export function CourseSubjectsPage({
             <button
               type="button"
               onClick={() => setShowBuilder(true)}
-              className="group relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-teal-500/60 bg-white dark:bg-[#1E293B] p-3.5 sm:p-4 md:p-4.5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
+              className="group relative overflow-hidden rounded-2xl border-2 border-slate-200 dark:border-slate-700 hover:border-teal-500/70 bg-white dark:bg-[#1E293B] p-3.5 sm:p-4 md:p-4.5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
             >
               <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
                 <div className="min-w-0">
@@ -293,7 +293,7 @@ export function CourseSubjectsPage({
           </div>
         ) : (
           /* Fallback header when exam builder is disabled for this panel */
-          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-5 md:p-6 shadow-xs text-center space-y-2.5">
+          <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] p-5 md:p-6 shadow-xs text-center space-y-2.5">
             <Link
               href={backHref}
               className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors mb-0.5 font-semibold"
@@ -322,7 +322,7 @@ export function CourseSubjectsPage({
         {/* ─── Subjects Grid ─── */}
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2.5 sm:gap-3 md:gap-4">
           {subjects.length === 0 ? (
-            <div className="col-span-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] px-5 py-12 text-center shadow-xs">
+            <div className="col-span-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] px-5 py-12 text-center shadow-xs">
               <Command className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
               <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                 No subjects available for this course yet — check back soon.
@@ -334,7 +334,7 @@ export function CourseSubjectsPage({
                 key={`${card.id}-${card.slug}`}
                 type="button"
                 onClick={() => openSubjectExams(card)}
-                className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 hover:border-teal-500/60 hover:shadow-md flex flex-col justify-between min-h-[90px] sm:min-h-[105px] md:min-h-[115px] p-3.5 sm:p-4 transition-all duration-200 shadow-2xs text-left cursor-pointer"
+                className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border-2 border-slate-200 dark:border-slate-700 hover:border-teal-500/70 hover:shadow-md flex flex-col justify-between min-h-[90px] sm:min-h-[105px] md:min-h-[115px] p-3.5 sm:p-4 transition-all duration-200 shadow-2xs text-left cursor-pointer"
               >
                 <div className="min-w-0 w-full">
                   <span className="font-serif text-xs sm:text-sm md:text-[15px] font-bold text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors line-clamp-2 leading-snug">

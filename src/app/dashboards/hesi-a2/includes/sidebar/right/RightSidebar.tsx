@@ -111,9 +111,9 @@ export default function RightSidebar() {
       className={`fixed top-16 right-0 z-40 flex flex-col h-[calc(100vh-64px)]
       ${sidebarWidth}
       transition-all duration-300 ease-in-out
-      shadow-md border-l border-[var(--text-color)]/10`}
+      shadow-md border-l border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100`}
       style={{
-        backgroundColor: "var(--rightSidebar-bg)",
+        backgroundColor: "var(--rightSidebar-bg, #0f172a)",
         color: "var(--text-color)",
       }}
     >
@@ -121,15 +121,12 @@ export default function RightSidebar() {
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
       {/* Header */}
       <div
-        className={`flex items-center justify-between px-4 py-3 border-b border-[var(--text-color)]/10`}
+        className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80 dark:border-slate-800"
       >
         <div className={`flex-1 ${!isOpened && "justify-center flex"}`}>
           <Link
             href="/dashboards"
-            className={`text-lg font-bold ${isLightSidebar
-              ? "text-gray-800 hover:text-gray-600"
-              : "text-[var(--text-color)]"
-              }`}
+            className="text-lg font-bold text-slate-900 dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
           >
             {isOpened ? APP_TITLE : APP_ACRONYM}
           </Link>
@@ -139,7 +136,7 @@ export default function RightSidebar() {
           <button
             onClick={close}
             aria-label="Close sidebar"
-            className="p-1 rounded hover:bg-[var(--text-color)]/10"
+            className="p-1 rounded text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
           >
             <X className="w-4 h-4" />
           </button>

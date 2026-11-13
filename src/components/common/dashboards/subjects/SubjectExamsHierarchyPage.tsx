@@ -712,7 +712,7 @@ export function SubjectExamsHierarchyPage({
         {/* ─── Top Row: Build Your Own Exam & Subject Overview Card (Matching Course Level) ─── */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
           {/* Card 1: Subject Overview Card */}
-          <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] p-3.5 sm:p-4 md:p-4.5 transition-all duration-200 shadow-xs text-left">
+          <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border-2 border-slate-200 dark:border-slate-700 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] p-3.5 sm:p-4 md:p-4.5 transition-all duration-200 shadow-xs text-left">
             <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
               <div className="min-w-0">
                 <h1 className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy dark:text-white truncate leading-tight">
@@ -751,7 +751,7 @@ export function SubjectExamsHierarchyPage({
           <button
             type="button"
             onClick={() => setIsBuilderOpen(true)}
-            className="group relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-teal-500/60 bg-white dark:bg-[#1E293B] p-3.5 sm:p-4 md:p-4.5 shadow-xs hover:shadow-md transition-all duration-200 hidden sm:flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
+            className="group relative overflow-hidden rounded-2xl border-2 border-slate-200 dark:border-slate-700 hover:border-teal-500/70 bg-white dark:bg-[#1E293B] p-3.5 sm:p-4 md:p-4.5 shadow-xs hover:shadow-md transition-all duration-200 hidden sm:flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
           >
             <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
               <div className="min-w-0">
@@ -775,7 +775,7 @@ export function SubjectExamsHierarchyPage({
         </div>
 
         {/* Reference-style Filter Bar & Create Custom Test */}
-        <div className="grid grid-cols-2 md:grid-cols-12 items-start md:items-center gap-4 sm:gap-5 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-xs">
+        <div className="grid grid-cols-2 md:grid-cols-12 items-start md:items-center gap-4 sm:gap-5 p-4 sm:p-5 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] shadow-xs">
           {/* 1. Left: Years Column */}
           <div className="col-span-1 md:col-span-3 flex flex-col gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 justify-self-start">
             <label className="inline-flex items-center gap-2 cursor-pointer text-navy dark:text-white hover:text-teal-600 dark:hover:text-teal-400 transition-colors">
@@ -1014,7 +1014,7 @@ export function SubjectExamsHierarchyPage({
                 return (
                   <div
                     key={examId}
-                    className="relative rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] px-3.5 py-3 sm:px-4 sm:py-3.5 flex flex-col justify-between shadow-2xs hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200"
+                    className="relative rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] px-3.5 py-3 sm:px-4 sm:py-3.5 flex flex-col justify-between shadow-2xs hover:shadow-md hover:border-teal-500/70 dark:hover:border-teal-400/70 transition-all duration-200"
                   >
                     {showNew && (
                       <span className="absolute -top-2 right-3 z-10 inline-flex items-center rounded-full bg-blue-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-2xs">
@@ -1023,41 +1023,46 @@ export function SubjectExamsHierarchyPage({
                     )}
                     {/* Top: Title + Status Badge */}
                     <div className="flex items-start justify-between gap-2 mb-1.5">
-                      <h3 className="font-serif text-[13px] sm:text-[14.5px] font-bold text-navy dark:text-white leading-snug line-clamp-2">
+                      <h3 className="font-serif text-[12.5px] sm:text-[13.5px] font-bold text-navy dark:text-white leading-snug line-clamp-2">
                         {exam.title}
                       </h3>
                       {isCompleted ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 shadow-2xs shrink-0">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] sm:text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 shadow-2xs shrink-0">
                           <Check className="w-2.5 h-2.5" />
                           Completed
                         </span>
                       ) : hasFreeAccess ? (
-                        <span className="bg-blue-600 text-white text-[10.5px] font-bold px-2 py-0.5 rounded-full shadow-2xs shrink-0">
+                        <span className="bg-blue-600 text-white text-[9.5px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-2xs shrink-0">
                           Free
                         </span>
                       ) : null}
                     </div>
 
-                    {/* Middle: Meta pills */}
-                    <div className="relative flex items-center justify-between gap-1.5 my-1.5 min-h-[22px]">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs shrink-0 whitespace-nowrap">
-                        Total Questions : {resolvedQCount ?? 0}
-                      </span>
+                    {/* Middle: Meta pills (Left: Total Questions, Center: Season, Right: Year) */}
+                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 my-1.5 min-h-[22px]">
+                      {/* Left: Questions Count */}
+                      <div className="flex items-center justify-start min-w-0">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9.5px] sm:text-[10px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs truncate whitespace-nowrap">
+                          Total Questions : {resolvedQCount ?? 0}
+                        </span>
+                      </div>
 
-                      {!hideSeason && (resolveExamSeason(exam.season, exam.title, exam.description) || exam.season) && (
-                        <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs uppercase pointer-events-auto whitespace-nowrap">
+                      {/* Center: Season */}
+                      <div className="flex items-center justify-center">
+                        {!hideSeason && (resolveExamSeason(exam.season, exam.title, exam.description) || exam.season) ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9.5px] sm:text-[10px] font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs uppercase tracking-tight whitespace-nowrap">
                             {resolveExamSeason(exam.season, exam.title, exam.description) || exam.season}
                           </span>
-                        </div>
-                      )}
+                        ) : null}
+                      </div>
 
-                      <div className="flex items-center gap-1.5 ml-auto shrink-0">
-                        {extractExamYear(exam.title, currentSubjectTitle, exam.year) && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10.5px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs whitespace-nowrap">
+                      {/* Right: Year */}
+                      <div className="flex items-center justify-end min-w-0">
+                        {extractExamYear(exam.title, currentSubjectTitle, exam.year) ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[9.5px] sm:text-[10px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 shadow-2xs whitespace-nowrap">
                             Year : {extractExamYear(exam.title, currentSubjectTitle, exam.year)}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     </div>
 
@@ -1067,7 +1072,7 @@ export function SubjectExamsHierarchyPage({
                         <button
                           type="button"
                           onClick={() => startExam(exam, "Practice")}
-                          className="flex-1 py-1.5 px-1.5 rounded-xl text-[11px] sm:text-xs font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:text-white border border-teal-200/80 dark:border-teal-800/60 transition-all shadow-2xs text-center truncate cursor-pointer active:scale-95"
+                          className="flex-1 py-1.5 px-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-600 hover:text-white dark:hover:bg-teal-600 dark:hover:text-white border border-teal-200/80 dark:border-teal-800/60 transition-all shadow-2xs text-center truncate cursor-pointer active:scale-95"
                         >
                           Practice
                         </button>
@@ -1076,7 +1081,7 @@ export function SubjectExamsHierarchyPage({
                         <button
                           type="button"
                           onClick={() => startExam(exam, "Review")}
-                          className="flex-1 py-1.5 px-1.5 rounded-xl text-[11px] sm:text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white border border-blue-200/80 dark:border-blue-800/60 transition-all shadow-2xs text-center truncate cursor-pointer active:scale-95"
+                          className="flex-1 py-1.5 px-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white border border-blue-200/80 dark:border-blue-800/60 transition-all shadow-2xs text-center truncate cursor-pointer active:scale-95"
                         >
                           Review
                         </button>
@@ -1085,7 +1090,7 @@ export function SubjectExamsHierarchyPage({
                         <button
                           type="button"
                           onClick={() => startExam(exam, "Exam")}
-                          className="flex-1 py-1.5 px-1.5 rounded-xl text-[11px] sm:text-xs font-semibold text-white bg-[#0A2540] hover:bg-teal-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border dark:border-slate-700 transition-all shadow-2xs text-center truncate cursor-pointer active:scale-95"
+                          className="flex-1 py-1.5 px-1 rounded-xl text-[10.5px] sm:text-[11px] font-bold text-white bg-[#0A2540] hover:bg-teal-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:border dark:border-slate-700 transition-all shadow-2xs text-center truncate cursor-pointer active:scale-95"
                         >
                           Exam
                         </button>

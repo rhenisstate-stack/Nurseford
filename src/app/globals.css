@@ -49,15 +49,15 @@ html.light {
 }
 
 html.dark {
-  --background: 	#176B87;
-  --foreground: 	#EAF4FA;
-  --content-bg: #176B87;
-  --text-color: #ffffff;
-  --navbar-bg: #000f25;
-  --leftSidebar-bg: #000f25;
-  --rightSidebar-bg: #000f25;
-  --footer-bg: #000f25;
-  --card-bg: #15273e;
+  --background: #0b1329;
+  --foreground: #f8fafc;
+  --content-bg: #0b1329;
+  --text-color: #f8fafc;
+  --navbar-bg: #0f172a;
+  --leftSidebar-bg: #0f172a;
+  --rightSidebar-bg: #0f172a;
+  --footer-bg: #0f172a;
+  --card-bg: #1E293B;
   --card-border: rgba(255, 255, 255, 0.1);
 }
 

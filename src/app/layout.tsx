@@ -85,11 +85,13 @@ export default function RootLayout({
                     if (mode === 'dark') {
                       document.documentElement.classList.remove('light');
                       document.documentElement.classList.add('dark');
-                      document.documentElement.style.setProperty('--card-bg', '#2C3749');
+                      document.documentElement.style.setProperty('--card-bg', '#1E293B');
                       document.documentElement.style.setProperty('--card-border', 'rgba(255, 255, 255, 0.1)');
-                      document.documentElement.style.setProperty('--content-bg', '#171C27');
-                      document.documentElement.style.setProperty('--navbar-bg', '#171C27');
-                      document.documentElement.style.setProperty('--text-color', '#e2e8f0');
+                      document.documentElement.style.setProperty('--content-bg', '#0b1329');
+                      document.documentElement.style.setProperty('--navbar-bg', '#0f172a');
+                      document.documentElement.style.setProperty('--leftSidebar-bg', '#0f172a');
+                      document.documentElement.style.setProperty('--rightSidebar-bg', '#0f172a');
+                      document.documentElement.style.setProperty('--text-color', '#f8fafc');
                     } else {
                       document.documentElement.classList.remove('dark');
                       document.documentElement.classList.add('light');
@@ -97,6 +99,8 @@ export default function RootLayout({
                       document.documentElement.style.setProperty('--card-border', 'rgba(0, 0, 0, 0.5)');
                       document.documentElement.style.setProperty('--content-bg', '#f8fafc');
                       document.documentElement.style.setProperty('--navbar-bg', '#ffffff');
+                      document.documentElement.style.setProperty('--leftSidebar-bg', '#f8fafc');
+                      document.documentElement.style.setProperty('--rightSidebar-bg', '#f1f5f9');
                       document.documentElement.style.setProperty('--text-color', '#0f172a');
                     }
                   }

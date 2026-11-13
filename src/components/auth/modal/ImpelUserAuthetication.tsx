@@ -31,23 +31,25 @@ export default function ImpelUserLogin({
   return (
     <div className="fixed inset-0 z-[10020] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
 
-      <div className="w-full max-w-md rounded-xl bg-white shadow-xl p-6 relative animate-in fade-in zoom-in-95">
+      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/90 dark:border-slate-800 shadow-2xl p-6 relative animate-in fade-in zoom-in-95">
 
         {/* CLOSE */}
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+          aria-label="Close"
+          className="absolute top-3.5 right-3.5 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
         >
           <X size={18} />
         </button>
 
         {/* HEADER */}
         <div className="text-center mb-4">
-          <h2 className="text-lg font-bold text-gray-800">
-            Authentication Required ⚓
+          <h2 className="text-lg font-bold text-[#0A2540] dark:text-white">
+            Authentication Required
           </h2>
-          <p className="text-sm text-gray-600">
-            Kindly continue your exam
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Please log in or register to continue
           </p>
         </div>
 

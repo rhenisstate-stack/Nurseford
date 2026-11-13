@@ -150,10 +150,10 @@ export function SubjectPlaceholderGrid({
           <Link
             key={`${card.id}-${card.slug}`}
             href={href}
-            className={`group relative overflow-hidden rounded-xl bg-white dark:bg-[var(--card-bg,#15273e)] border border-slate-200/90 dark:border-white/10 ${
+            className={`group relative overflow-hidden rounded-xl bg-white dark:bg-[var(--card-bg,#15273e)] border-2 border-slate-200 dark:border-slate-700 ${
               isExitCard
-                ? "hover:border-teal-500/60 dark:hover:border-[#2FD9C4]/50"
-                : "hover:border-blue-500/50 dark:hover:border-sky-400/50"
+                ? "hover:border-teal-500/70 dark:hover:border-[#2FD9C4]/60"
+                : "hover:border-blue-500/60 dark:hover:border-sky-400/60"
             } flex flex-col shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}
           >
             <div className="flex-1 flex flex-col items-start text-left px-3.5 pt-3.5 pb-2">

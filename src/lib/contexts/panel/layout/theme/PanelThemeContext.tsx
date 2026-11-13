@@ -96,36 +96,37 @@ export function applyThemeToDocument(
   };
 
   const darkColors: Record<keyof CustomColors, string> = {
-    navbar: "#171C27",
-    leftSidebar: "#171C27",
-    rightSidebar: "#171C27",
-    content: "#171C27",
-    footer: "#171C27",
-    text: "#e2e8f0",
+    navbar: "#0f172a",
+    leftSidebar: "#0f172a",
+    rightSidebar: "#0f172a",
+    content: "#0b1329",
+    footer: "#0f172a",
+    text: "#f8fafc",
   };
 
   const components: (keyof CustomColors)[] = ["navbar", "leftSidebar", "rightSidebar", "content", "footer"];
   for (const key of components) {
-    const componentTheme =
-      theme.global === "default"
-        ? "default"
-        : theme[key as ThemeTarget] === "system"
-          ? effectiveTheme
-          : theme[key as ThemeTarget];
+    const targetVal = theme[key as ThemeTarget];
+    let componentTheme: ThemeValue = targetVal;
+    if (targetVal === "system" || theme.global === "default" || targetVal === "default") {
+      componentTheme = effectiveTheme;
+    } else if (effectiveTheme === "dark" && targetVal !== "custom") {
+      componentTheme = "dark";
+    } else if (effectiveTheme === "light" && targetVal !== "custom") {
+      componentTheme = "light";
+    }
 
-    if (componentTheme === "default") {
-      root.style.setProperty(`--${key}-bg`, effectiveTheme === "light" ? lightColors[key] : DEFAULT_THEME_COLORS[key]);
-    } else if (componentTheme === "custom") {
+    if (componentTheme === "custom") {
       root.style.setProperty(`--${key}-bg`, effectiveColors[key]);
-    } else if (componentTheme === "light") {
-      root.style.setProperty(`--${key}-bg`, lightColors[key]);
     } else if (componentTheme === "dark") {
       root.style.setProperty(`--${key}-bg`, darkColors[key]);
+    } else {
+      root.style.setProperty(`--${key}-bg`, lightColors[key]);
     }
   }
 
   // Set distinct elevated card background and border
-  root.style.setProperty("--card-bg", effectiveTheme === "light" ? "#EEF3FE" : "#2C3749");
+  root.style.setProperty("--card-bg", effectiveTheme === "light" ? "#EEF3FE" : "#1E293B");
   root.style.setProperty("--card-border", effectiveTheme === "light" ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.1)");
 
   // Apply global text color
@@ -134,8 +135,8 @@ export function applyThemeToDocument(
     theme.global === "custom"
       ? effectiveColors.text
       : effectiveTheme === "light"
-        ? "#0f172a"
-        : DEFAULT_THEME_COLORS.text
+        ? lightColors.text
+        : darkColors.text
   );
 }
 

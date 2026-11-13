@@ -2,6 +2,10 @@
 
 import { useId, useMemo } from "react";
 import { CheckCircle2, Target, TrendingUp } from "lucide-react";
+import {
+  useDashboardPerformanceScore,
+  type DashboardScope,
+} from "@/lib/hooks/nexus/strata/assessment/progress/useDashboardPerformanceScore";
 
 const BARREL_X = 44;
 const BARREL_Y = 30;
@@ -9,9 +13,9 @@ const BARREL_W = 208;
 const BARREL_H = 34;
 
 const SCALE_MARKERS = [
-  { pct: 0, label: "0%", x: BARREL_X },
+  { pct: 100, label: "100%", x: BARREL_X },
   { pct: 50, label: "50%", x: BARREL_X + BARREL_W * 0.5 },
-  { pct: 100, label: "100%", x: BARREL_X + BARREL_W },
+  { pct: 0, label: "0%", x: BARREL_X + BARREL_W },
 ] as const;
 
 // 21 graduation marks along the top edge of the syringe barrel (every 5%)
@@ -56,15 +60,21 @@ function getPerformanceStatus(score: number) {
 
 export interface PerformanceIndexGaugeProps {
   score?: number;
+  scope?: DashboardScope;
   className?: string;
 }
 
 export default function PerformanceIndexGauge({
-  score = 0,
+  score,
+  scope,
   className = "",
 }: PerformanceIndexGaugeProps) {
+  const hasProvidedScore = typeof score === "number";
+  const live = useDashboardPerformanceScore(scope, { enabled: !hasProvidedScore });
+  const effectiveScore = hasProvidedScore ? (score as number) : live.score;
+
   const uid = useId().replace(/:/g, "");
-  const clampedScore = Math.max(0, Math.min(100, Math.round(score)));
+  const clampedScore = Math.max(0, Math.min(100, Math.round(effectiveScore)));
   const fillWidth = (clampedScore / 100) * BARREL_W;
   const status = useMemo(() => getPerformanceStatus(clampedScore), [clampedScore]);
 
@@ -76,7 +86,7 @@ export default function PerformanceIndexGauge({
 
   return (
     <div
-      className={`rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[var(--card-bg,#15273e)] px-4 py-2.5 flex flex-col justify-between items-center h-[180px] shadow-xs hover:shadow-md transition-all duration-200 ${className}`}
+      className={`rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[var(--card-bg,#15273e)] px-4 py-2.5 flex flex-col justify-between items-center h-[180px] shadow-xs hover:shadow-md transition-all duration-200 ${className}`}
     >
       {/* Top Header */}
       <div className="w-full flex items-center justify-between gap-2 shrink-0">
@@ -115,12 +125,13 @@ export default function PerformanceIndexGauge({
             </clipPath>
 
             <linearGradient id={glassGradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#E2E8F0" stopOpacity="0.9" />
-              <stop offset="45%" stopColor="#F8FAFC" stopOpacity="0.95" />
-              <stop offset="100%" stopColor="#CBD5E1" stopOpacity="0.9" />
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.4" />
+              <stop offset="25%" stopColor="#FFFFFF" stopOpacity="0.08" />
+              <stop offset="70%" stopColor="#CBD5E1" stopOpacity="0.05" />
+              <stop offset="100%" stopColor="#94A3B8" stopOpacity="0.25" />
             </linearGradient>
 
-            <linearGradient id={liquidGradId} x1="0" y1="0" x2="0" y2="1">
+            <linearGradient id={liquidGradId} x1="1" y1="0" x2="0" y2="0">
               <stop offset="0%" stopColor={status.liquidStart} />
               <stop offset="55%" stopColor={status.liquidEnd} />
               <stop offset="100%" stopColor={status.liquidStart} stopOpacity="0.9" />
@@ -168,7 +179,7 @@ export default function PerformanceIndexGauge({
             width="6"
             height="36"
             rx="3"
-            className="fill-slate-300 dark:fill-slate-500 stroke-slate-400 dark:stroke-slate-400"
+            className="fill-slate-200/70 dark:fill-slate-700/70 stroke-slate-300 dark:stroke-slate-500"
             strokeWidth="1"
           />
           <rect
@@ -177,7 +188,7 @@ export default function PerformanceIndexGauge({
             width="25"
             height="12"
             rx="2"
-            className="fill-slate-200 dark:fill-slate-600 stroke-slate-400 dark:stroke-slate-500"
+            className="fill-slate-200/60 dark:fill-slate-700/60 stroke-slate-300 dark:stroke-slate-500"
             strokeWidth="1"
           />
           {/* Left Barrel Grip Flange */}
@@ -187,11 +198,11 @@ export default function PerformanceIndexGauge({
             width="7"
             height="46"
             rx="3.5"
-            className="fill-slate-300 dark:fill-slate-500 stroke-slate-400 dark:stroke-slate-400"
+            className="fill-slate-200/70 dark:fill-slate-700/70 stroke-slate-300 dark:stroke-slate-500"
             strokeWidth="1"
           />
 
-          {/* Syringe Barrel Track */}
+          {/* Syringe Barrel Track (Transparent glass cylinder) */}
           <rect
             x={BARREL_X}
             y={BARREL_Y}
@@ -199,41 +210,65 @@ export default function PerformanceIndexGauge({
             height={BARREL_H}
             rx="5"
             fill={`url(#${glassGradId})`}
-            className="stroke-slate-300 dark:stroke-slate-500"
-            strokeWidth="1.4"
+            className="stroke-slate-300/90 dark:stroke-slate-500/90"
+            strokeWidth="1.2"
           />
 
           {/* Liquid Fill & Stopper Clipped Inside Barrel */}
           <g clipPath={`url(#${barrelClipId})`}>
-            {fillWidth > 0 && (
+            {/* Translucent plunger shaft inside transparent barrel */}
+            {fillWidth < BARREL_W && (
               <rect
                 x={BARREL_X}
+                y={BARREL_Y + 12}
+                width={Math.max(0, BARREL_W - fillWidth)}
+                height="10"
+                className="fill-slate-300/40 dark:fill-slate-500/30 transition-all duration-500 ease-out"
+              />
+            )}
+
+            {/* Plunger Stopper Edge (rubber piston at fluid boundary) */}
+            <rect
+              x={BARREL_X + Math.max(0, BARREL_W - fillWidth - 5)}
+              y={BARREL_Y + 1}
+              width="6"
+              height={BARREL_H - 2}
+              rx="1"
+              className="fill-slate-700 dark:fill-slate-300 transition-all duration-500 ease-out"
+            />
+
+            {/* Liquid Fill (fills from the needle on the right side toward the left) */}
+            {fillWidth > 0 && (
+              <rect
+                x={BARREL_X + BARREL_W - fillWidth}
                 y={BARREL_Y}
                 width={fillWidth}
                 height={BARREL_H}
                 fill={`url(#${liquidGradId})`}
+                opacity="0.92"
                 className="transition-all duration-500 ease-out"
               />
             )}
 
-            {/* Plunger Stopper Edge */}
-            <rect
-              x={BARREL_X + Math.max(0, fillWidth - 4)}
-              y={BARREL_Y}
-              width="5"
-              height={BARREL_H}
-              className="fill-slate-500/75 dark:fill-slate-400/80 transition-all duration-500 ease-out"
-            />
-
             {/* Top Glass Specular Highlight */}
             <rect
               x={BARREL_X + 3}
-              y={BARREL_Y + 3}
+              y={BARREL_Y + 2}
               width={BARREL_W - 6}
-              height="7"
-              rx="3.5"
+              height="5"
+              rx="2.5"
               fill="#FFFFFF"
-              opacity="0.45"
+              opacity="0.4"
+            />
+            {/* Bottom Glass Rim Reflection */}
+            <rect
+              x={BARREL_X + 4}
+              y={BARREL_Y + BARREL_H - 3}
+              width={BARREL_W - 8}
+              height="1.5"
+              rx="0.75"
+              fill="#FFFFFF"
+              opacity="0.25"
             />
           </g>
 
@@ -250,7 +285,7 @@ export default function PerformanceIndexGauge({
                 y2={BARREL_Y + (isMajor ? 10 : 6)}
                 stroke="currentColor"
                 strokeWidth={isMajor ? 1.4 : 1}
-                className="text-slate-600/65"
+                className="text-slate-600/75 dark:text-slate-300/70"
               />
             );
           })}
@@ -262,9 +297,9 @@ export default function PerformanceIndexGauge({
             textAnchor="middle"
             dominantBaseline="middle"
             className={`font-extrabold text-[15px] ${
-              clampedScore >= 56
+              clampedScore >= 50
                 ? "fill-white"
-                : "fill-slate-800"
+                : "fill-slate-800 dark:fill-slate-100"
             }`}
           >
             {clampedScore}%

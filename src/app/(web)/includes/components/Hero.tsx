@@ -110,11 +110,31 @@ export default function Hero() {
     <section className="relative overflow-hidden" style={{ backgroundColor: "var(--content-bg)" }}>
       <div className="mx-auto w-full max-w-[1500px] px-6 sm:px-10 md:px-14 lg:px-20 xl:px-24 pt-[76px] sm:pt-[84px] md:pt-[92px] pb-12 md:pb-16">
         
-        {/* Two-Column Hero: Left Text & CTAs, Right Nurse Photo */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center mb-14 md:mb-18">
+        {/* Two-Column on Desktop (lg+), Video-Behind-Text on Mobile (<lg) */}
+        <div className="relative overflow-hidden rounded-3xl lg:rounded-none p-6 sm:p-10 lg:p-0 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center mb-14 md:mb-18">
           
-          {/* Left Column */}
-          <div className="lg:col-span-7 xl:col-span-6 text-left">
+          {/* Mobile-Only Background Video (< lg) */}
+          <div className="absolute inset-0 z-0 lg:hidden pointer-events-none overflow-hidden">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              poster="/images/home-bg/home-bg-light.jpg"
+              className="w-full h-full object-cover object-center scale-105"
+            >
+              <source src="/images/home-bg/vid_hp/gemini_generated_video_4a7f1909.mp4" type="video/mp4" />
+              <source src="/videos/hero-books.mp4" type="video/mp4" />
+            </video>
+
+            {/* Readability Frost Overlay for Mobile */}
+            <div className="absolute inset-0 bg-white/85 dark:bg-[#0b1329]/90 backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-transparent to-white/70 dark:from-[#0b1329]/95 dark:via-transparent dark:to-[#0b1329]/70" />
+          </div>
+
+          {/* Left Column (Text & CTAs) */}
+          <div className="relative z-10 lg:col-span-7 xl:col-span-6 text-left">
             {/* Eyebrow */}
             <div className="flex items-center gap-2.5 mb-3 sm:mb-4">
               <span className="w-8 h-[2px] bg-amber-600/70 dark:bg-amber-400/70" />
@@ -292,17 +312,33 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right Column: Hero Image */}
-          <div className="lg:col-span-5 xl:col-span-6">
-            <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] rounded-2xl overflow-hidden shadow-md border border-black/5 dark:border-white/10 bg-slate-100 dark:bg-slate-800">
-              <Image
-                src="/images/home-bg/home-bg-light.jpg"
-                alt="Nursing student studying with laptop and books"
-                fill
-                priority
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover object-center"
-              />
+          {/* Right Column: Desktop Video Card (>= lg) */}
+          <div className="hidden lg:block lg:col-span-5 xl:col-span-6 relative z-10">
+            <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] rounded-2xl overflow-hidden shadow-lg bg-slate-900 group">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                poster="/images/home-bg/home-bg-light.jpg"
+                className="w-full h-full object-cover object-center scale-[1.01] transition-transform duration-700 group-hover:scale-105"
+              >
+                <source src="/images/home-bg/vid_hp/gemini_generated_video_4a7f1909.mp4" type="video/mp4" />
+                <source src="/videos/hero-books.mp4" type="video/mp4" />
+                {/* Fallback image if browser disables video */}
+                <Image
+                  src="/images/home-bg/home-bg-light.jpg"
+                  alt="Nursing textbooks and exam preparation materials"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  className="object-cover object-center"
+                />
+              </video>
+
+              {/* Subtle ambient gradient overlay for clinical depth */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A2540]/30 via-transparent to-transparent pointer-events-none" />
             </div>
           </div>
         </div>
@@ -326,14 +362,14 @@ export default function Hero() {
             Choose the exam that fits your goals and get the focused practice, study resources, and support you need.
           </p>
 
-          {/* Cards Grid: Nursing Q-Bank & Exit Exams */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {/* Cards Container: Centered */}
+          <div className={`grid gap-6 mx-auto ${quickLinks.length === 1 ? "max-w-xl grid-cols-1" : "max-w-4xl grid-cols-1 md:grid-cols-2"}`}>
             {quickLinks.map((group) => {
               const Icon = group.icon;
               return (
                 <div
                   key={group.category}
-                  className="rounded-2xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#2C3749] p-6 sm:p-7 flex flex-col justify-between shadow-xs hover:shadow-md transition-all duration-200"
+                  className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] p-6 sm:p-7 flex flex-col justify-between shadow-xs hover:shadow-md transition-all duration-200"
                 >
                   <div>
                     <div className="flex items-start gap-4 mb-4">
