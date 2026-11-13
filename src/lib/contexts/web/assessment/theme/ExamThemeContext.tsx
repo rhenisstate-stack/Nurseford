@@ -273,7 +273,7 @@ export const ExamThemeProvider = ({ children }: { children: ReactNode }) => {
             try {
                 const storedTheme = localStorage.getItem("theme");
                 const parsed = storedTheme ? JSON.parse(storedTheme) : null;
-                const effective = parsed?.global === "light" ? "light" : "dark";
+                const effective = parsed?.global === "dark" ? "dark" : "light";
                 const root = document.documentElement;
                 root.classList.remove("light", "dark");
                 root.classList.add(effective);

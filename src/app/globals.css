@@ -3,32 +3,33 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Explicit Light & Dark display helpers */
-html.dark .show-on-light,
-html:not(.light) .show-on-light {
+html.dark .show-on-light {
   display: none !important;
 }
-html.light .show-on-light {
+html.light .show-on-light,
+html:not(.dark) .show-on-light {
   display: block !important;
 }
 
-html.light .show-on-dark {
+html.light .show-on-dark,
+html:not(.dark) .show-on-dark {
   display: none !important;
 }
-html.dark .show-on-dark,
-html:not(.light) .show-on-dark {
+html.dark .show-on-dark {
   display: block !important;
 }
 
 :root {
-  --background: 	#176B87;
-  --foreground: #ffffff;
-  --content-bg: #176B87;
-  --text-color: #ffffff;
-  --navbar-bg: #176B87;
-  --leftSidebar-bg: #176B87;
-  --rightSidebar-bg: #176B87;
-  --footer-bg: #176B87;
-  --card-bg: #15273e;
+  --background: #f8fafc;
+  --foreground: #000000;
+  --content-bg: #f8fafc;
+  --text-color: #000000;
+  --navbar-bg: #ffffff;
+  --leftSidebar-bg: #f8fafc;
+  --rightSidebar-bg: #f1f5f9;
+  --footer-bg: #f1f5f9;
+  --card-bg: #EEF3FE;
+  --card-border: rgba(0, 0, 0, 0.5);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -87,12 +88,6 @@ html.dark {
   --color-border-light: color-mix(in srgb, var(--text-color) 15%, var(--content-bg));
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #176B87;
-    --foreground: #ffffff;
-  }
-}
 
 body {
   background: var(--background);

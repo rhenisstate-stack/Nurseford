@@ -4,21 +4,22 @@
   --font-serif: var(--font-plus-jakarta), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), monospace;
 
-  /* Concentrated midnight navy blue theme matching background images */
-  --background: #171C27;
-  --navbar-bg: #171C27;
-  --content-bg: #171C27;
-  --footer-bg: #171C27;
-  --card-bg: #2C3749;
-  --text-color: #ffffff;
-  --navbar-text: #ffffff;
-  --sidebar-text: #ffffff;
-  --content-text: #ffffff;
-  --footer-text: #ffffff;
+  /* Clean off-white background, dark clinical typography (Light Mode Default) */
+  --background: #f8fafc;
+  --navbar-bg: #ffffff;
+  --content-bg: #f8fafc;
+  --footer-bg: #f1f5f9;
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.08);
+  --text-color: #000000;
+  --navbar-text: #000000;
+  --sidebar-text: #000000;
+  --content-text: #000000;
+  --footer-text: #000000;
 
-  background: #171C27;
+  background: #f8fafc;
   min-height: 100vh;
-  color: var(--text-color, #ffffff);
+  color: var(--text-color, #000000);
   font-family: var(--font-inter), system-ui, sans-serif;
 }
 

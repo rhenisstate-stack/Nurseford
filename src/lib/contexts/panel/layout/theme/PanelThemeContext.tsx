@@ -22,14 +22,14 @@ export type CustomColors = {
   text: string;
 };
 
-// Default Dashboard Colors — concentrated midnight navy matching background images
+// Default Dashboard Colors — clean off-white background and dark clinical typography
 export const DEFAULT_THEME_COLORS: CustomColors = {
-  navbar: "#171C27",
-  leftSidebar: "#171C27",
-  rightSidebar: "#171C27",
-  content: "#171C27",
-  footer: "#171C27",
-  text: "#e2e8f0",
+  navbar: "#ffffff",
+  leftSidebar: "#f8fafc",
+  rightSidebar: "#f1f5f9",
+  content: "#f8fafc",
+  footer: "#f1f5f9",
+  text: "#0f172a",
 };
 
 export const USER_CUSTOM_COLORS_KEY = "userCustomColors";
@@ -46,12 +46,12 @@ interface ThemeContextType {
 }
 
 const defaultTheme: Record<ThemeTarget, ThemeValue> = {
-  global: "dark",
-  navbar: "dark",
-  leftSidebar: "dark",
-  rightSidebar: "dark",
-  content: "dark",
-  footer: "dark",
+  global: "light",
+  navbar: "light",
+  leftSidebar: "light",
+  rightSidebar: "light",
+  content: "light",
+  footer: "light",
 };
 
 function getSystemTheme(): ThemeValue {
@@ -75,9 +75,9 @@ export function applyThemeToDocument(
   const effectiveTheme =
     theme.global === "system"
       ? getSystemTheme()
-      : theme.global === "light"
-        ? "light"
-        : "dark";
+      : theme.global === "dark"
+        ? "dark"
+        : "light";
 
   // Apply global theme classes
   root.classList.remove("light", "dark");

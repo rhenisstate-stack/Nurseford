@@ -46,7 +46,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${inter.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}
+      className={`light ${inter.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -78,19 +78,11 @@ export default function RootLayout({
                   } else {
                     var stored = localStorage.getItem('theme');
                     var theme = stored ? JSON.parse(stored) : null;
-                    var mode = theme && theme.global && theme.global !== 'default' ? theme.global : 'dark';
+                    var mode = theme && theme.global && theme.global !== 'default' ? theme.global : 'light';
                     if (mode === 'system') {
                       mode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                     }
-                    if (mode === 'light') {
-                      document.documentElement.classList.remove('dark');
-                      document.documentElement.classList.add('light');
-                      document.documentElement.style.setProperty('--card-bg', '#EEF3FE');
-                      document.documentElement.style.setProperty('--card-border', 'rgba(0, 0, 0, 0.5)');
-                      document.documentElement.style.setProperty('--content-bg', '#f8fafc');
-                      document.documentElement.style.setProperty('--navbar-bg', '#ffffff');
-                      document.documentElement.style.setProperty('--text-color', '#0f172a');
-                    } else {
+                    if (mode === 'dark') {
                       document.documentElement.classList.remove('light');
                       document.documentElement.classList.add('dark');
                       document.documentElement.style.setProperty('--card-bg', '#2C3749');
@@ -98,6 +90,14 @@ export default function RootLayout({
                       document.documentElement.style.setProperty('--content-bg', '#171C27');
                       document.documentElement.style.setProperty('--navbar-bg', '#171C27');
                       document.documentElement.style.setProperty('--text-color', '#e2e8f0');
+                    } else {
+                      document.documentElement.classList.remove('dark');
+                      document.documentElement.classList.add('light');
+                      document.documentElement.style.setProperty('--card-bg', '#EEF3FE');
+                      document.documentElement.style.setProperty('--card-border', 'rgba(0, 0, 0, 0.5)');
+                      document.documentElement.style.setProperty('--content-bg', '#f8fafc');
+                      document.documentElement.style.setProperty('--navbar-bg', '#ffffff');
+                      document.documentElement.style.setProperty('--text-color', '#0f172a');
                     }
                   }
                 } catch (e) {}
@@ -109,8 +109,8 @@ export default function RootLayout({
       <body
         className={`${inter.className} transition-colors duration-300`}
         style={{
-          backgroundColor: "var(--content-bg, #171C27)",
-          color: "var(--text-color, #e2e8f0)",
+          backgroundColor: "var(--content-bg, #f8fafc)",
+          color: "var(--text-color, #0f172a)",
         }}
       >
         <ThemeProvider>
