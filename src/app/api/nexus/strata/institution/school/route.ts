@@ -99,7 +99,7 @@ export async function DELETE(req: NextRequest) {
 // ────────────────────────────────────────────────────────────────────────────────────
 // GET ROUTE -> list [ Supports Filters / Pagination ]
 export async function GET(req: NextRequest) {
-  const fetchtype = new URL(req.url).searchParams.get("fetchtype");
+  const fetchtype = new URL(req.url).searchParams.get("fetchtype") || "absolute";
 
   if (fetchtype === "absolute") {
     return forwardToBackend(req, "GET", `${BASE_ROUTE}/list/absolute`);

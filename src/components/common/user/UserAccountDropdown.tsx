@@ -284,12 +284,7 @@ export default function UserAccountDropdown({
           })}
           {isOpen && (
             <div
-              className={`absolute mt-2 w-[240px] rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-xl z-50 p-2 space-y-1 ${align === "left"
-                ? "left-0"
-                : align === "center"
-                  ? "left-1/2 -translate-x-1/2"
-                  : "right-0"
-                }`}
+              className={`absolute mt-2 w-[220px] sm:w-[240px] max-w-[calc(100vw-1rem)] rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-2xl z-[100] p-2 space-y-1 right-0`}
             >
               <Link
                 href={`/dashboards/${targetDashboard}/auth/login`}
@@ -326,19 +321,17 @@ export default function UserAccountDropdown({
       >
         <button
           onClick={() => setIsOpen((v) => !v)}
-          className="group relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-navy dark:text-white bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-2xs hover:bg-slate-200/70 dark:hover:bg-slate-700 transition cursor-pointer"
+          className="group relative flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold text-navy dark:text-white bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-2xs hover:bg-slate-200/70 dark:hover:bg-slate-700 transition cursor-pointer shrink-0"
+          aria-label="Login or Register"
         >
-          <span>Login / Register</span>
+          <FiLogIn className="w-3.5 h-3.5 text-blue-600 sm:hidden shrink-0" />
+          <span className="hidden sm:inline">Login / Register</span>
+          <span className="sm:hidden text-[11px] font-bold">Login</span>
         </button>
 
         {isOpen && (
           <div
-            className={`absolute mt-2 w-[240px] rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-xl z-50 p-2 space-y-1 ${align === "left"
-              ? "left-0"
-              : align === "center"
-                ? "left-1/2 -translate-x-1/2"
-                : "right-0"
-              }`}
+            className={`absolute mt-2 w-[220px] sm:w-[240px] max-w-[calc(100vw-1rem)] rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-2xl z-[100] p-2 space-y-1 right-0`}
           >
             <Link
               href={`/dashboards/${targetDashboard}/auth/login`}

@@ -9,10 +9,11 @@ import HeedMessageBell from "./partials/HeedMessageBell";
 
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
-import { Menu, X } from "lucide-react";
+import React, { Suspense } from "react";
+import { Menu, X, CreditCard } from "lucide-react";
 import { useThemeContext } from "@/lib/contexts/panel/layout/theme/PanelThemeContext";
 import DashboardNavbarSearch from "@/components/common/dashboards/navbar/DashboardNavbarSearch";
+import { CourseSchoolNavbarDropdowns } from "@/components/common/dashboards/navbar/CourseSchoolNavbarDropdowns";
 
 const Navbar: React.FC = () => {
   const { theme } = useThemeContext();
@@ -31,14 +32,14 @@ const Navbar: React.FC = () => {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center bg-[var(--navbar-bg)] text-[var(--text-color)] border-b border-[var(--text-color)]/10 px-3 md:px-6"
+      className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center bg-[var(--navbar-bg)] text-[var(--text-color)] border-b border-[var(--text-color)]/10 px-2 sm:px-3 md:px-6 gap-1 sm:gap-2"
       style={{
         backgroundColor:
           theme.navbar === "custom" ? "var(--navbar-bg)" : undefined,
       }}
     >
       {/* LEFT: Logo + Toggle */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <Link href="/" className="flex items-center shrink-0">
           <Image
             src="/logo/logo.webp"
@@ -63,14 +64,26 @@ const Navbar: React.FC = () => {
         </button>
       </div>
 
+      {/* DIVIDER */}
+      <div className="hidden md:block h-5 w-px bg-slate-200 dark:bg-slate-700/80 mx-1 shrink-0" />
+
+      {/* DROPDOWNS: Courses, Schools & Subscribe */}
+      <div className="flex items-center shrink-0">
+        <Suspense fallback={null}>
+          <CourseSchoolNavbarDropdowns />
+        </Suspense>
+      </div>
+
       {/* SPACER */}
-      <div className="flex-1" />
+      <div className="flex-1 min-w-0" />
 
       {/* SEARCH BAR */}
-      <DashboardNavbarSearch />
+      <div className="hidden lg:block">
+        <DashboardNavbarSearch />
+      </div>
 
       {/* RIGHT: Theme Toggle + Login/Register */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <ThemeModeToggle />
         {!userLoading && user && <HeedMessageBell />}
         <UserDropdown />

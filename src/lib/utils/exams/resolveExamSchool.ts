@@ -5,6 +5,8 @@ export interface ExamSchoolSource {
   institutionName?: string | null;
   title?: string | null;
   description?: string | null;
+  courseName?: string | null;
+  programName?: string | null;
 }
 
 const SCHOOL_MATCHERS: readonly [string, RegExp][] = [
@@ -88,7 +90,8 @@ export function resolveExamSchool(exam: ExamSchoolSource): string | null {
 
   const genericMatch = title.match(GENERIC_SCHOOL_RE);
   if (genericMatch?.[1]) {
-    const candidate = genericMatch[1].trim();
+    let candidate = genericMatch[1].trim();
+    candidate = candidate.replace(/^(Surg Exam|Medical Surg|Adult Health|General Exam)\s+/i, "");
     if (!/^(Community Health|Exam|General|Practice)\b/i.test(candidate)) {
       return candidate;
     }

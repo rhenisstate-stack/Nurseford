@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClasp";
 import { NclexCustomTestPopup } from "@/components/common/dashboards/nclex/NclexDashboardSections";
 import { SubjectExamsPopup } from "@/components/common/dashboards/subjects/SubjectExamsPopup";
@@ -13,19 +13,6 @@ import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
 import { ArrowLeft, ArrowRight, Calendar, Command, Play } from "lucide-react";
 import { registerSearchSubjects } from "@/lib/services/search/searchRegistry";
 
-/**
- * Full-page subject listing for a course (e.g. "EXIT ATI Exams-RN").
- *
- * Rendered under /dashboards/{panel}/exams/{courseSlug}/{courseId} so it inherits
- * the dashboard shell (navbar / sidebar / footer). Subject cards are fetched
- * exactly from the backend via GET /api/exams/{panel}/subjects/{courseId} (the
- * server forwards the session headers).
- *
- * When `showExamBuilder` is true the page renders a "Build Your Own Exam" card
- * that opens the shared custom-test popup, and subject cards navigate to the
- * exam hierarchy page for that subject. Otherwise the legacy behaviour is kept:
- * clicking a subject opens the exam picker popup.
- */
 const cleanSubjectStr = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
 const courseSubjectsClientCache = new Map<
@@ -48,6 +35,8 @@ export function CourseSubjectsPage({
 }) {
   const { leftWidth } = useFlexPageClasp();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentSchool = searchParams?.get("school");
 
   const cacheKey = `${panelSlug}:${courseId}`;
   const cached = courseSubjectsClientCache.get(cacheKey);
@@ -119,8 +108,8 @@ export function CourseSubjectsPage({
         mediumPct: matched?.mediumPct || 34,
         hardPct: matched?.hardPct || 33,
         order: index + 1,
-        subCategories: subs, // Preserve real subcategories/exams so when clicking a subject card, its exams appear in the popup
-        examList: subs, // Preserve real underlying exams for custom exam builder launch
+        subCategories: subs,
+        examList: subs,
       };
     });
   }, [subjects, panelSlug, dashboardCourses]);
@@ -209,7 +198,13 @@ export function CourseSubjectsPage({
   const openSubjectExams = (card: BackendSubject) => {
     const identifier = card.guidId || card.id;
     if (showExamBuilder) {
-      const examHref = `/dashboards/${panelSlug}/exams/${courseSlug}/${courseId}/exams/${identifier}?subjectName=${encodeURIComponent(card.name)}`;
+      const schoolQuery =
+        currentSchool && currentSchool !== "all"
+          ? `&school=${encodeURIComponent(currentSchool)}`
+          : "";
+      const examHref = `/dashboards/${panelSlug}/exams/${courseSlug}/${courseId}/exams/${identifier}?subjectName=${encodeURIComponent(
+        card.name
+      )}${schoolQuery}`;
       router.push(examHref);
     } else {
       setActiveSubject(card);
@@ -225,25 +220,25 @@ export function CourseSubjectsPage({
         color: "var(--text-color)",
       }}
     >
-      <div className="p-2 md:p-4 lg:p-4 max-w-7xl mx-auto space-y-2.5 sm:space-y-3 md:space-y-4 w-full flex-1 flex flex-col">
+      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-5 md:space-y-5 w-full flex-1 flex flex-col">
         {/* ─── Top Row: Build Your Own Exam & Course Overview Card ─── */}
         {showExamBuilder ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 md:gap-5">
             {/* Card 1: Course Overview Card */}
-            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border-2 border-slate-200 dark:border-slate-700 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] p-3.5 sm:p-4 md:p-4.5 transition-all duration-200 shadow-xs text-left">
-              <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
+            <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between min-h-[115px] sm:min-h-[125px] md:min-h-[135px] p-4.5 sm:p-5 md:p-6 transition-all duration-200 shadow-xs text-left">
+              <div className="flex items-start justify-between gap-3 sm:gap-4 w-full">
                 <div className="min-w-0">
-                  <h1 className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy dark:text-white truncate leading-tight">
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-navy dark:text-white truncate leading-tight">
                     {courseName}
                   </h1>
-                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
+                  <p className="text-xs sm:text-sm md:text-[15px] text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
                     {isLoading
                       ? "Loading subjects..."
                       : `${subjects.length} Subject${subjects.length === 1 ? "" : "s"} under this course`}
                   </p>
                 </div>
                 <div className="flex flex-col items-end shrink-0">
-                  <span suppressHydrationWarning className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 text-xs font-semibold shrink-0">
+                  <span suppressHydrationWarning className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 text-xs sm:text-sm font-semibold shrink-0">
                     <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                     {formattedUpdateDate}
                   </span>
@@ -255,61 +250,46 @@ export function CourseSubjectsPage({
                   </p>
                 </div>
               </div>
-              <div className="flex-1 min-h-[8px]" />
-              <Link
-                href={backHref}
-                className="w-full select-none inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/90 hover:bg-slate-100 dark:hover:bg-slate-700 text-navy dark:text-white transition-all duration-200 shadow-2xs"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back to {panelSlug.toUpperCase()} Dashboard
-              </Link>
             </div>
 
             {/* Card 2: Build Your Own Exam (Custom) */}
             <button
               type="button"
               onClick={() => setShowBuilder(true)}
-              className="group relative overflow-hidden rounded-2xl border-2 border-slate-200 dark:border-slate-700 hover:border-teal-500/70 bg-white dark:bg-[#1E293B] p-3.5 sm:p-4 md:p-4.5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[80px] sm:min-h-[96px] md:min-h-[115px] text-left cursor-pointer"
+              className="group relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-slate-800 hover:border-teal-500/60 bg-white dark:bg-[#1E293B] p-4.5 sm:p-5 md:p-6 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between min-h-[115px] sm:min-h-[125px] md:min-h-[135px] text-left cursor-pointer"
             >
-              <div className="flex items-start justify-between gap-2 sm:gap-3 w-full">
+              <div className="flex items-start justify-between gap-3 sm:gap-4 w-full">
                 <div className="min-w-0">
-                  <span className="font-serif text-base sm:text-lg md:text-xl font-bold text-navy dark:text-white block leading-tight">
+                  <span className="text-lg sm:text-xl md:text-2xl font-bold text-navy dark:text-white block leading-tight">
                     Build Your Own Exam
                   </span>
-                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
+                  <p className="text-xs sm:text-sm md:text-[15px] text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
                     Select custom question count, topics & test modes
                   </p>
                 </div>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800/60 text-xs font-bold shrink-0">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800/60 text-xs sm:text-sm font-bold shrink-0">
                   Custom
                 </span>
               </div>
-              <div className="flex-1 min-h-[8px]" />
-              <span className="w-full select-none inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs sm:text-sm font-semibold bg-[#0A2540] hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white transition-all duration-200 shadow-2xs">
-                <Play className="w-3.5 h-3.5 fill-current" />
+              <div className="flex-1 min-h-[10px]" />
+              <span className="w-full select-none inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs sm:text-sm md:text-[15px] font-semibold bg-[#0A2540] hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white transition-all duration-200 shadow-2xs">
+                <Play className="w-4 h-4 fill-current" />
                 Create Exam
               </span>
             </button>
           </div>
         ) : (
           /* Fallback header when exam builder is disabled for this panel */
-          <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] p-5 md:p-6 shadow-xs text-center space-y-2.5">
-            <Link
-              href={backHref}
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors mb-0.5 font-semibold"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back to {panelSlug.toUpperCase()} Dashboard
-            </Link>
-            <h1 className="font-serif text-xl md:text-2xl lg:text-3xl font-bold text-navy dark:text-white">
+          <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-6 md:p-8 shadow-xs text-center space-y-2.5">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-navy dark:text-white">
               {courseName}
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
+            <p className="text-xs sm:text-sm md:text-base text-slate-500 dark:text-slate-400 font-medium">
               {isLoading
                 ? "Loading subjects..."
                 : `${subjects.length} Subject${subjects.length === 1 ? "" : "s"} under this course`}
             </p>
-            <p className="inline-flex items-center justify-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium pt-0.5">
+            <p className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium pt-0.5">
               <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               Exams last updated on{" "}
               <span suppressHydrationWarning className="text-emerald-700 dark:text-emerald-400 font-bold">
@@ -320,9 +300,9 @@ export function CourseSubjectsPage({
         )}
 
         {/* ─── Subjects Grid ─── */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-2.5 sm:gap-3 md:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3.5 sm:gap-4 md:gap-4.5">
           {subjects.length === 0 ? (
-            <div className="col-span-full rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] px-5 py-12 text-center shadow-xs">
+            <div className="col-span-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] px-5 py-12 text-center shadow-xs">
               <Command className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
               <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
                 No subjects available for this course yet — check back soon.
@@ -334,23 +314,23 @@ export function CourseSubjectsPage({
                 key={`${card.id}-${card.slug}`}
                 type="button"
                 onClick={() => openSubjectExams(card)}
-                className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border-2 border-slate-200 dark:border-slate-700 hover:border-teal-500/70 hover:shadow-md flex flex-col justify-between min-h-[90px] sm:min-h-[105px] md:min-h-[115px] p-3.5 sm:p-4 transition-all duration-200 shadow-2xs text-left cursor-pointer"
+                className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 hover:border-teal-500/60 hover:shadow-md flex flex-col justify-between min-h-[110px] sm:min-h-[120px] md:min-h-[130px] p-4 sm:p-4.5 md:p-5 transition-all duration-200 shadow-2xs text-left cursor-pointer"
               >
                 <div className="min-w-0 w-full">
-                  <span className="font-serif text-xs sm:text-sm md:text-[15px] font-bold text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors line-clamp-2 leading-snug">
+                  <span className="text-sm sm:text-base md:text-[16px] lg:text-[17px] font-bold text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors line-clamp-2 leading-snug">
                     {card.name}
                   </span>
                   {card.description && (
-                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                    <p className="text-xs sm:text-[13px] md:text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mt-1.5 leading-relaxed">
                       {card.description}
                     </p>
                   )}
                 </div>
-                <div className="w-full pt-3 mt-auto flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 text-xs font-semibold text-teal-700 dark:text-teal-400">
+                <div className="w-full pt-3.5 mt-auto flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 text-xs sm:text-sm font-semibold text-teal-700 dark:text-teal-400">
                   <span className="group-hover:text-teal-800 dark:group-hover:text-teal-300 transition-colors">
                     Access Exams
                   </span>
-                  <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-1 transition-all duration-200" />
+                  <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-1 transition-all duration-200" />
                 </div>
               </button>
             ))

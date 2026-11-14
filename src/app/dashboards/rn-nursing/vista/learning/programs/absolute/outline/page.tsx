@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClasp";
@@ -19,7 +19,7 @@ const VISTA_STRATA_PANEL = "rn-nursing";
 const VISTA_STRATA_LEVEL = "Programs";
 const VISTA_STRATA_NAME = "Program";
 // const VISTA_STRATA_GROUP = "program";
-const VISTA_CHILD_LEVEL = "Courses";  // For Distinct Child Redirection
+const VISTA_CHILD_LEVEL = "Subjects";  // For Direct Subject Redirection
 const VISTA_DEFAULT_PERPAGE_LIST = 12;
 const VISTA_STRATA = VISTA_STRATA_LEVEL.toLocaleLowerCase();
 const VISTA_CHILD_STRATA = VISTA_CHILD_LEVEL.toLocaleLowerCase();

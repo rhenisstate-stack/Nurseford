@@ -42,10 +42,10 @@ const EXAM_SEGMENTS: Record<string, string> = {
 const PROGRAM_NAME_FILTERS: Record<string, RegExp> = {
   "ati-teas": /^ATI[\s\-]*TEAS$/i,
   "hesi-a2": /^HESI[\s\-]*A2$/i,
-  "rn-nursing": /^RN[\s\-]*Nursing\s*Exams$/i,
-  "lpn-nursing": /^LPN[\s\-]*Nursing\s*Exams$/i,
-  "rn-exit": /^(?:RN[\s\-]*Exit(?:\s*Exams)?|Exit\s*Exams[\s\-–(]*RN\)?)/i,
-  "lpn-exit": /^(?:LPN[\s\-]*Exit(?:\s*Exams)?|Exit\s*Exams[\s\-–(]*LPN\)?)/i,
+  "rn-nursing": /^(?:RN[\s\-]*Nursing\s*Exams|RN[\s\-]*Exit(?:\s*Exams)?|Exit\s*Exams[\s\-–(]*RN\)?)/i,
+  "lpn-nursing": /^(?:LPN[\s\-]*Nursing\s*Exams|LPN[\s\-]*Exit(?:\s*Exams)?|Exit\s*Exams[\s\-–(]*LPN\)?)/i,
+  "rn-exit": /^(?:RN[\s\-]*Exit(?:\s*Exams)?|Exit\s*Exams[\s\-–(]*RN\)?|RN[\s\-]*Nursing\s*Exams)/i,
+  "lpn-exit": /^(?:LPN[\s\-]*Exit(?:\s*Exams)?|Exit\s*Exams[\s\-–(]*LPN\)?|LPN[\s\-]*Nursing\s*Exams)/i,
   "nclex-rn": /^NCLEX[\s\-]*RN$/i,
   "nclex-pn": /^NCLEX[\s\-]*PN$/i,
   "cna": /^CNA/i,
@@ -168,22 +168,12 @@ async function fetchBackendSubjects(examType: string, req: NextRequest): Promise
 
   let filtered = byProgramName;
 
-  if (examType === "rn-nursing") {
-    filtered = filtered.filter((c) => !/exit/i.test(c.name ?? "") && !/exit/i.test(c.programName ?? ""));
-  } else if (examType === "lpn-nursing") {
-    filtered = filtered.filter((c) => !/exit/i.test(c.name ?? "") && !/exit/i.test(c.programName ?? ""));
-  }
-
   // Fallback: if nothing matched from programName, use specialized classifiers
   if (filtered.length === 0) {
-    if (examType === "rn-exit") {
-      filtered = items.filter((c) => /exit/i.test(c.name ?? "") && /rn/i.test(c.name ?? ""));
-    } else if (examType === "lpn-exit") {
-      filtered = items.filter((c) => /exit/i.test(c.name ?? "") && /lpn/i.test(c.name ?? ""));
-    } else if (examType === "rn-nursing") {
-      filtered = items.filter((c) => !/exit/i.test(c.name ?? "") && (/rn/i.test(c.name ?? "") || /rn/i.test(c.programName ?? "")));
-    } else if (examType === "lpn-nursing") {
-      filtered = items.filter((c) => !/exit/i.test(c.name ?? "") && (/lpn/i.test(c.name ?? "") || /lpn/i.test(c.programName ?? "")));
+    if (examType === "rn-exit" || examType === "rn-nursing") {
+      filtered = items.filter((c) => /rn/i.test(c.name ?? "") || /rn/i.test(c.programName ?? ""));
+    } else if (examType === "lpn-exit" || examType === "lpn-nursing") {
+      filtered = items.filter((c) => /lpn|pn\b/i.test(c.name ?? "") || /lpn|pn\b/i.test(c.programName ?? ""));
     } else if (examType === "nclex-rn") {
       filtered = items.filter((c) => /nclex[\s\-]*rn/i.test(c.name ?? "") || /nclex[\s\-]*rn/i.test(c.programName ?? ""));
     } else if (examType === "nclex-pn") {

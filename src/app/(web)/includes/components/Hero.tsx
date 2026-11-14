@@ -111,10 +111,10 @@ export default function Hero() {
       <div className="mx-auto w-full max-w-[1500px] px-6 sm:px-10 md:px-14 lg:px-20 xl:px-24 pt-[76px] sm:pt-[84px] md:pt-[92px] pb-12 md:pb-16">
         
         {/* Two-Column on Desktop (lg+), Video-Behind-Text on Mobile (<lg) */}
-        <div className="relative overflow-hidden rounded-3xl lg:rounded-none p-6 sm:p-10 lg:p-0 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center mb-14 md:mb-18">
+        <div className="relative overflow-visible rounded-3xl lg:rounded-none p-6 sm:p-10 lg:p-0 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center mb-14 md:mb-18">
           
           {/* Mobile-Only Background Video (< lg) */}
-          <div className="absolute inset-0 z-0 lg:hidden pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 z-0 lg:hidden pointer-events-none overflow-hidden rounded-3xl">
             <video
               autoPlay
               loop
@@ -158,7 +158,7 @@ export default function Hero() {
             {/* Action CTA Buttons */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
               {/* Start Free Practice Dropdown */}
-              <div className="relative inline-block text-left z-40" ref={dropdownRef}>
+              <div className="relative inline-block text-left z-50" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setOpenPracticeDropdown((prev) => !prev)}
@@ -171,7 +171,7 @@ export default function Hero() {
                 </button>
 
                 {openPracticeDropdown && (
-                  <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-border dark:border-white/15 bg-white dark:bg-[#001326] p-2 sm:p-2.5 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-border dark:border-white/15 bg-white dark:bg-[#001326] p-2 sm:p-2.5 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 z-[100] animate-in fade-in zoom-in-95 duration-150">
                     <div className="space-y-1">
                       {practiceExams.map((item) => {
                         const ItemIcon = item.icon;
@@ -326,15 +326,6 @@ export default function Hero() {
               >
                 <source src="/images/home-bg/vid_hp/gemini_generated_video_4a7f1909.mp4" type="video/mp4" />
                 <source src="/videos/hero-books.mp4" type="video/mp4" />
-                {/* Fallback image if browser disables video */}
-                <Image
-                  src="/images/home-bg/home-bg-light.jpg"
-                  alt="Nursing textbooks and exam preparation materials"
-                  fill
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                  className="object-cover object-center"
-                />
               </video>
 
               {/* Subtle ambient gradient overlay for clinical depth */}

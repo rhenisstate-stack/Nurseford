@@ -27,8 +27,8 @@ const tracks = [
     tags: ["Comprehensive Content Review", "Critical-Thinking Scenarios", "Focused Curriculum", "Clinical Skills Practice", "Readiness", "Exam-Day Confidence"],
     accent: "blue" as const,
     links: [
-      { label: "RN Exit Exams", href: "/dashboards/rn-nursing" },
-      { label: "LPN Exit Exams", href: "/dashboards/lpn-nursing" },
+      { label: "RN Exit Exams", href: "/dashboards/rn-nursing?track=exit" },
+      { label: "LPN Exit Exams", href: "/dashboards/lpn-nursing?track=exit" },
     ],
   },
 ];

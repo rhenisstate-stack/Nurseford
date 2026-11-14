@@ -133,7 +133,30 @@ export function SubjectExamsHierarchyPage({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedSeason, setSelectedSeason] = useState<string>("all");
-  const [selectedSchool, setSelectedSchool] = useState<string>("all");
+  const [selectedSchool, setSelectedSchool] = useState<string>(
+    () => searchParams?.get("school") || "all"
+  );
+
+  useEffect(() => {
+    const s = searchParams?.get("school");
+    if (s) {
+      setSelectedSchool(s);
+    } else {
+      setSelectedSchool("all");
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const handleSchoolChange = (e: Event) => {
+      const custom = e as CustomEvent<{ school: string }>;
+      if (custom.detail?.school) {
+        setSelectedSchool(custom.detail.school);
+      }
+    };
+    window.addEventListener("nurseford-school-change", handleSchoolChange);
+    return () =>
+      window.removeEventListener("nurseford-school-change", handleSchoolChange);
+  }, []);
 
   const normalizedExamType =
     panelSlug === "hesi-a2"
@@ -590,12 +613,64 @@ export function SubjectExamsHierarchyPage({
 
   const availableSchools = useMemo(() => {
     const schools = new Set<string>();
+    const effectiveCourseName = dynamicCourseName || courseSlug;
     exams.forEach((e) => {
-      const resolved = resolveExamSchool(e as ExamWithParentNames);
+      const examWithCourse = {
+        ...(e as ExamWithParentNames),
+        courseName: (e as ExamWithParentNames).courseName || effectiveCourseName,
+      };
+      const resolved = resolveExamSchool(examWithCourse);
       if (resolved) schools.add(resolved);
     });
     return Array.from(schools).sort((a, b) => a.localeCompare(b));
-  }, [exams]);
+  }, [exams, dynamicCourseName, courseSlug]);
+
+  // Synchronize dynamically resolved subject schools with the global Navbar school dropdown
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("nurseford-available-schools-update", {
+          detail: { schools: availableSchools },
+        })
+      );
+    }
+  }, [availableSchools]);
+
+  // Answer on-demand requests from Navbar when it mounts or re-renders
+  useEffect(() => {
+    const handleRequest = () => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("nurseford-available-schools-update", {
+            detail: { schools: availableSchools },
+          })
+        );
+      }
+    };
+    window.addEventListener("nurseford-request-available-schools", handleRequest);
+    return () => {
+      window.removeEventListener("nurseford-request-available-schools", handleRequest);
+    };
+  }, [availableSchools]);
+
+  // Auto-reset school filter to 'all' if the selected school doesn't exist under this subject's exams
+  useEffect(() => {
+    if (
+      selectedSchool !== "all" &&
+      availableSchools.length > 0 &&
+      !availableSchools.includes(selectedSchool)
+    ) {
+      setSelectedSchool("all");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("nurseford-school-change", { detail: { school: "all" } })
+        );
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.delete("school");
+        window.history.replaceState({}, "", currentUrl.toString());
+      }
+    }
+  }, [availableSchools, selectedSchool]);
 
   // Filtered exams
   const filteredExams = useMemo(() => {
@@ -603,7 +678,10 @@ export function SubjectExamsHierarchyPage({
       const yrNum = extractExamYear(exam.title, currentSubjectTitle, exam.year);
       const examYr = yrNum ? String(yrNum) : "";
       const examSeason = resolveExamSeason(exam.season, exam.title, exam.description) || exam.season;
-      const examSchool = resolveExamSchool(exam as ExamWithParentNames);
+      const examSchool = resolveExamSchool({
+        ...(exam as ExamWithParentNames),
+        courseName: (exam as ExamWithParentNames).courseName || dynamicCourseName || courseSlug,
+      });
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchTitle = exam.title?.toLowerCase().includes(q);
@@ -849,7 +927,24 @@ export function SubjectExamsHierarchyPage({
               id="exam-school-filter"
               aria-label="Select School"
               value={selectedSchool}
-              onChange={(e) => setSelectedSchool(e.target.value)}
+              onChange={(e) => {
+                const newSchool = e.target.value;
+                setSelectedSchool(newSchool);
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(
+                    new CustomEvent("nurseford-school-change", {
+                      detail: { school: newSchool },
+                    })
+                  );
+                  const currentUrl = new URL(window.location.href);
+                  if (newSchool === "all") {
+                    currentUrl.searchParams.delete("school");
+                  } else {
+                    currentUrl.searchParams.set("school", newSchool);
+                  }
+                  window.history.replaceState({}, "", currentUrl.toString());
+                }
+              }}
               className="w-full px-3 py-2 rounded-xl text-xs font-medium bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-navy dark:text-white focus:outline-none focus:bg-white dark:focus:bg-[#1e293b] focus:border-teal-500 transition-colors shadow-2xs cursor-pointer"
             >
               <option value="all" className="bg-white text-slate-900 dark:bg-[#1E293B] dark:text-white">
