@@ -61,8 +61,8 @@ const tracks: TrackItem[] = [
     eyebrow: "RN Graduation Readiness",
     title: "RN Exit Exams",
     description:
-      "High-stakes simulations for comprehensive ATI & HESI RN exit examinations. Scenario-based clinical judgment items and predictor scoring to ensure exam-day pass readiness.",
-    tags: ["ATI RN Exit", "HESI RN Exit", "Predictor Scoring", "Clinical Scenarios"],
+      "High-stakes simulations for comprehensive RN exit examinations. Scenario-based clinical judgment items and predictor scoring to ensure exam-day pass readiness.",
+    tags: ["RN Exit Exams", "Predictor Scoring", "Clinical Scenarios", "Readiness Mocks"],
     href: "/dashboards/rn-nursing?track=exit",
     accentColor: "#ea580c",
     borderClass:
@@ -105,8 +105,8 @@ const tracks: TrackItem[] = [
     eyebrow: "PN Graduation Readiness",
     title: "LPN Exit Exams",
     description:
-      "Comprehensive exit assessments for LPN/LVN students. Authentic ATI & HESI PN exit mock exams designed to verify clinical competency before graduation.",
-    tags: ["ATI PN Exit", "HESI PN Exit", "Readiness Scoring", "Practice CATs"],
+      "Comprehensive exit assessments for LPN/LVN students. Authentic PN exit mock exams designed to verify clinical competency before graduation.",
+    tags: ["LPN Exit Exams", "Readiness Scoring", "Practice CATs", "Clinical Competency"],
     href: "/dashboards/lpn-nursing?track=exit",
     accentColor: "#2563eb",
     borderClass:
