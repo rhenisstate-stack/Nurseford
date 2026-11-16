@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   X,
@@ -182,9 +182,19 @@ function NavItem({
   exact?: boolean;
 }) {
   const pathname = usePathname();
-  const isActive = exact
-    ? pathname === href
-    : pathname === href || (href !== "/" && href !== "/dashboards/rn-nursing" && href !== "/dashboards/lpn-nursing" && pathname?.startsWith(href));
+  const searchParams = useSearchParams();
+  const currentTrack = searchParams?.get("track");
+
+  let isActive = false;
+  if (href.includes("?track=exit")) {
+    isActive = pathname === href.split("?")[0] && currentTrack === "exit";
+  } else if (href === "/dashboards/rn-nursing" || href === "/dashboards/lpn-nursing") {
+    isActive = pathname === href && currentTrack !== "exit";
+  } else {
+    isActive = exact
+      ? pathname === href
+      : pathname === href || (href !== "/" && href !== "/dashboards/rn-nursing" && href !== "/dashboards/lpn-nursing" && pathname?.startsWith(href));
+  }
 
   return (
     <Link href={href} onClick={handleItemClick}>
@@ -205,7 +215,7 @@ function NavItem({
             isActive ? "bg-teal-500" : "bg-slate-400 dark:bg-slate-500"
           }`}
         />
-        {isOpened && <span className={`ml-2.5 truncate ${isMobile ? "text-xs" : "text-sm"}`}>{label}</span>}
+        {isOpened && <span className={`ml-2.5 truncate ${isMobile ? "text-[10px]" : "text-[12px]"}`}>{label}</span>}
 
         {isCollapsed && hoveredItem === label && (
           <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>

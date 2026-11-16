@@ -228,10 +228,10 @@ export function CourseSubjectsPage({
             <div className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between min-h-[115px] sm:min-h-[125px] md:min-h-[135px] p-4.5 sm:p-5 md:p-6 transition-all duration-200 shadow-xs text-left">
               <div className="flex items-start justify-between gap-3 sm:gap-4 w-full">
                 <div className="min-w-0">
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-navy dark:text-white truncate leading-tight">
+                  <h1 className="text-[16px] sm:text-[18px] md:text-[22px] font-bold text-navy dark:text-white truncate leading-tight">
                     {courseName}
                   </h1>
-                  <p className="text-xs sm:text-sm md:text-[15px] text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
+                  <p className="text-[11px] sm:text-xs md:text-[13px] text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
                     {isLoading
                       ? "Loading subjects..."
                       : `${subjects.length} Subject${subjects.length === 1 ? "" : "s"} under this course`}
@@ -260,11 +260,11 @@ export function CourseSubjectsPage({
             >
               <div className="flex items-start justify-between gap-3 sm:gap-4 w-full">
                 <div className="min-w-0">
-                  <span className="text-lg sm:text-xl md:text-2xl font-bold text-navy dark:text-white block leading-tight">
+                  <span className="text-[16px] sm:text-[18px] md:text-[22px] font-bold text-navy dark:text-white block leading-tight">
                     Build Your Own Exam
                   </span>
-                  <p className="text-xs sm:text-sm md:text-[15px] text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
-                    Select custom question count, topics & test modes
+                  <p className="text-[11px] sm:text-xs md:text-[13px] text-slate-500 dark:text-slate-400 font-medium truncate mt-1">
+                    Select custom question count, topics &amp; test modes
                   </p>
                 </div>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200/80 dark:border-teal-800/60 text-xs sm:text-sm font-bold shrink-0">
@@ -314,14 +314,14 @@ export function CourseSubjectsPage({
                 key={`${card.id}-${card.slug}`}
                 type="button"
                 onClick={() => openSubjectExams(card)}
-                className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 hover:border-teal-500/60 hover:shadow-md flex flex-col justify-between min-h-[110px] sm:min-h-[120px] md:min-h-[130px] p-4 sm:p-4.5 md:p-5 transition-all duration-200 shadow-2xs text-left cursor-pointer"
+                className="group relative overflow-hidden rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 hover:border-teal-500/60 hover:shadow-md flex flex-col justify-between min-h-[110px] sm:min-h-[120px] md:min-h-[125px] p-3.5 sm:p-4 md:p-4.5 transition-all duration-200 shadow-2xs text-left cursor-pointer"
               >
                 <div className="min-w-0 w-full">
-                  <span className="text-sm sm:text-base md:text-[16px] lg:text-[17px] font-bold text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors line-clamp-2 leading-snug">
+                  <span className="text-xs sm:text-[13px] md:text-[14px] lg:text-[14.5px] font-bold text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors line-clamp-2 leading-snug">
                     {card.name}
                   </span>
                   {card.description && (
-                    <p className="text-xs sm:text-[13px] md:text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mt-1.5 leading-relaxed">
+                    <p className="text-[10px] sm:text-[11px] md:text-[11.5px] lg:text-[12px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
                       {card.description}
                     </p>
                   )}
