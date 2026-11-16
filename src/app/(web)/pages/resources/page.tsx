@@ -120,10 +120,18 @@ export default function DashboardsPage() {
     }
 
     return (
-        <div className="min-h-screen pt-8 pb-10 px-4 md:px-10" style={{ backgroundColor: 'var(--content-bg)' }}>
-            <h1 className="font-serif text-4xl font-semibold text-center text-navy mb-3">
-                📚 Explore All Resources.
-            </h1>
+        <div className="min-h-screen pt-24 sm:pt-28 md:pt-32 pb-14 px-4 sm:px-6 md:px-10" style={{ backgroundColor: 'var(--content-bg)' }}>
+            <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
+                <span className="inline-block font-mono text-xs tracking-widest uppercase text-teal-600 dark:text-[#2FD9C4] font-bold mb-2">
+                    Clinical Dashboards &amp; Resources
+                </span>
+                <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-navy dark:text-white tracking-tight">
+                    Explore All Resources
+                </h1>
+                <p className="mt-3 text-sm sm:text-base text-navy/65 dark:text-white/65">
+                    Access your specialized RN &amp; LPN question banks, exit exams, subscription plans, and performance analytics.
+                </p>
+            </div>
 
             <div className="border border-black/50 dark:border-border rounded-2xl p-6 bg-paper/50">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -155,11 +163,11 @@ export default function DashboardsPage() {
 
                                 <div className="mb-4 flex justify-center">{card.icon}</div>
 
-                                <h2 className="font-serif text-lg font-semibold text-navy text-center mb-2">
+                                <h2 className="font-serif text-lg font-semibold text-navy dark:text-white text-center mb-2">
                                     {card.label}
                                 </h2>
 
-                                <p className="text-sm text-navy/60 text-center">{card.description}</p>
+                                <p className="text-sm text-navy/60 dark:text-white/60 text-center">{card.description}</p>
                             </div>
                         )
                     })}

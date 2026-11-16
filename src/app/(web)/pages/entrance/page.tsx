@@ -61,7 +61,7 @@ export default function EntrancePage() {
     });
 
     return (
-        <div className="min-h-screen px-4 py-12 sm:px-8" style={{ backgroundColor: "var(--content-bg)" }}>
+        <div className="min-h-screen px-4 pt-24 sm:pt-28 pb-14 sm:px-8" style={{ backgroundColor: "var(--content-bg)" }}>
             <div className="mx-auto max-w-7xl">
                 <div className="mb-10 text-center">
                     <h1 className="font-serif text-3xl font-semibold text-navy sm:text-4xl tracking-tight">
