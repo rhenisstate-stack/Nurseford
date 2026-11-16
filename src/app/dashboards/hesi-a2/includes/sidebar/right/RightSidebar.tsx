@@ -147,30 +147,6 @@ export default function RightSidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto space-y-1 p-2 right-sidebar-scroll">
 
-        {/* Dashboard */}
-        <Link href={`/dashboards/${DASHBOARD_NAME.toLowerCase()}`}>
-          <div
-            onClick={handleItemClick}
-            onMouseEnter={(e) => handleItemHover("Dashboard", e)}
-            onMouseLeave={handleMouseLeave}
-            className={`relative flex items-center py-2 px-1 rounded-lg transition
-            border-1 border-transparent hover:border-[var(--text-color)]/40 select-none
-            ${isLightSidebar ? "text-[var(--text-color)]" : "text-[var(--text-color)]"}
-            ${!isOpened && "justify-center"}`}
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            {isOpened && <span className="ml-3">My Dashboard</span>}
-
-            {isCollapsed && hoveredItem === "Dashboard" && (
-              <Tooltip x={tooltipPosition.x} y={tooltipPosition.y} position="left">
-                Dashboard
-              </Tooltip>
-            )}
-          </div>
-        </Link>
-
-        {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
         {/* Home */}
         <Link href="/">
           <div

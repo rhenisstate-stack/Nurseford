@@ -45,16 +45,16 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Copyright */}
           <div className="text-center md:text-left">
-            &copy; {new Date().getFullYear()} Castoline. All rights reserved.
+            &copy; {new Date().getFullYear()} Nurseford. All rights reserved.
           </div>
 
           {/* Links */}
           <div className="flex flex-wrap justify-center gap-4 md:gap-6 w-full md:w-auto">
             {[
-              { href: "/privacy", label: "Privacy Policy" },
-              { href: "/terms", label: "Terms of Service" },
-              { href: "/contact", label: "Contact Us" },
-              { href: "/docs", label: "Documentation" },
+              { href: "/pages/privacy-policy", label: "Privacy Policy" },
+              { href: "/pages/terms", label: "Terms of Service" },
+              { href: "/pages/contact-us", label: "Contact Us" },
+              { href: "/pages/resources", label: "Documentation" },
             ].map((link) => (
               <Link
                 key={link.href}

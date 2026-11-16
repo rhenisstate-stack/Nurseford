@@ -2,13 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   GraduationCap,
   BookOpen,
   BookOpenCheck,
   TrendingUp,
   BarChart3,
+  CheckCircle2,
+  Clock,
+  Smartphone,
   ArrowRight,
   ChevronRight,
   ChevronDown,
@@ -121,7 +123,6 @@ export default function Hero() {
               muted
               playsInline
               preload="auto"
-              poster="/images/home-bg/home-bg-light.jpg"
               className="w-full h-full object-cover object-center scale-105"
             >
               <source src="/images/home-bg/vid_hp/gemini_generated_video_4a7f1909.mp4" type="video/mp4" />
@@ -321,7 +322,6 @@ export default function Hero() {
                 muted
                 playsInline
                 preload="auto"
-                poster="/images/home-bg/home-bg-light.jpg"
                 className="w-full h-full object-cover object-center scale-[1.01] transition-transform duration-700 group-hover:scale-105"
               >
                 <source src="/images/home-bg/vid_hp/gemini_generated_video_4a7f1909.mp4" type="video/mp4" />
@@ -407,63 +407,50 @@ export default function Hero() {
           </div>
 
           {/* Feature Strip */}
-          <div className="mt-12 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-[#2C3749] p-4 sm:p-6 md:p-8 shadow-xs hover:shadow-md transition-all duration-200">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-              <div className="flex flex-col items-center text-center">
-                <span className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border border-border-light mb-2">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 md:w-5 md:h-5 text-navy/60 dark:text-white/60">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M8 12.5l2.5 2.5L16 9.5" />
-                  </svg>
+          <div className="mt-12 rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] p-5 sm:p-7 md:p-8 shadow-xs hover:shadow-md transition-all duration-200">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
+              <div className="flex flex-col items-center text-center group">
+                <span className="inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/30 text-teal-600 dark:text-teal-400 mb-2.5 group-hover:scale-105 transition-transform duration-200">
+                  <CheckCircle2 className="w-5 h-5" />
                 </span>
-                <span className="text-xs sm:text-sm font-semibold text-navy dark:text-white mb-0.5 leading-tight">
-                  High-Quality Questions
+                <span className="text-xs sm:text-sm font-bold text-navy dark:text-white mb-0.5 leading-tight">
+                  Exam-Caliber Questions
                 </span>
-                <span className="text-[11px] sm:text-xs leading-snug text-navy/50 dark:text-white/50">
-                  Up-to-date and exam-focused content you can trust.
+                <span className="text-[11px] sm:text-xs leading-snug text-navy/60 dark:text-white/60">
+                  Current, board-standard practice with deep clinical rationales.
                 </span>
               </div>
-              <div className="flex flex-col items-center text-center">
-                <span className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border border-border-light mb-2">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 md:w-5 md:h-5 text-navy/60 dark:text-white/60">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 7v5l3 3" />
-                  </svg>
+              <div className="flex flex-col items-center text-center group">
+                <span className="inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-500/10 dark:bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 mb-2.5 group-hover:scale-105 transition-transform duration-200">
+                  <Clock className="w-5 h-5" />
                 </span>
-                <span className="text-xs sm:text-sm font-semibold text-navy dark:text-white mb-0.5 leading-tight">
-                  Timed Practice Tests
+                <span className="text-xs sm:text-sm font-bold text-navy dark:text-white mb-0.5 leading-tight">
+                  Authentic Test Simulation
                 </span>
-                <span className="text-[11px] sm:text-xs leading-snug text-navy/50 dark:text-white/50">
-                  Simulate real exam conditions.
+                <span className="text-[11px] sm:text-xs leading-snug text-navy/60 dark:text-white/60">
+                  Build pacing and endurance under realistic testing conditions.
                 </span>
               </div>
-              <div className="flex flex-col items-center text-center">
-                <span className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border border-border-light mb-2">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 md:w-5 md:h-5 text-navy/60 dark:text-white/60">
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M9 14v2M12 11v5M15 8v8" />
-                  </svg>
+              <div className="flex flex-col items-center text-center group">
+                <span className="inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-coral/10 dark:bg-coral/15 border border-coral/30 text-[#ff6b35] dark:text-[#ff8a65] mb-2.5 group-hover:scale-105 transition-transform duration-200">
+                  <BarChart3 className="w-5 h-5" />
                 </span>
-                <span className="text-xs sm:text-sm font-semibold text-navy dark:text-white mb-0.5 leading-tight">
-                  Track Your Progress
+                <span className="text-xs sm:text-sm font-bold text-navy dark:text-white mb-0.5 leading-tight">
+                  Live Score Diagnostics
                 </span>
-                <span className="text-[11px] sm:text-xs leading-snug text-navy/50 dark:text-white/50">
-                  Monitor performance and improve smarter.
+                <span className="text-[11px] sm:text-xs leading-snug text-navy/60 dark:text-white/60">
+                  Pinpoint weak clinical areas and target score growth faster.
                 </span>
               </div>
-              <div className="flex flex-col items-center text-center">
-                <span className="inline-flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border border-border-light mb-2">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-4 h-4 md:w-5 md:h-5 text-navy/60 dark:text-white/60">
-                    <circle cx="12" cy="12" r="9" />
-                    <rect x="9.5" y="8" width="5" height="8" rx="1" />
-                    <path d="M11.5 14.5h1" />
-                  </svg>
+              <div className="flex flex-col items-center text-center group">
+                <span className="inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 mb-2.5 group-hover:scale-105 transition-transform duration-200">
+                  <Smartphone className="w-5 h-5" />
                 </span>
-                <span className="text-xs sm:text-sm font-semibold text-navy dark:text-white mb-0.5 leading-tight">
-                  Study Anywhere
+                <span className="text-xs sm:text-sm font-bold text-navy dark:text-white mb-0.5 leading-tight">
+                  Study On Any Device
                 </span>
-                <span className="text-[11px] sm:text-xs leading-snug text-navy/50 dark:text-white/50">
-                  Access on any device, anytime.
+                <span className="text-[11px] sm:text-xs leading-snug text-navy/60 dark:text-white/60">
+                  Seamless responsive access on mobile, tablet, and desktop.
                 </span>
               </div>
             </div>

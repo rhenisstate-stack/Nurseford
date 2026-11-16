@@ -92,14 +92,14 @@ export default function PulseLine({
           </svg>
 
           <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 -mt-3 leading-tight">
-            <span className="font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-coral mb-0.5">
-              RN / LPN
+            <span className="font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-coral mb-1">
+              RN &bull; LPN
             </span>
-            <span className="font-serif text-xs sm:text-sm font-bold text-navy dark:text-white">
-              Nursing &amp; Exit
+            <span className="font-serif text-xs sm:text-sm font-bold text-navy dark:text-white leading-tight">
+              Nursing Exams
             </span>
-            <span className="font-serif text-xs sm:text-sm font-bold text-navy dark:text-white">
-              Exams
+            <span className="font-serif text-xs sm:text-sm font-bold text-teal-600 dark:text-[#2FD9C4] leading-tight">
+              Exit Exams
             </span>
           </div>
         </div>
