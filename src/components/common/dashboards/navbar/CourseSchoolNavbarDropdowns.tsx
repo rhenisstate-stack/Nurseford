@@ -2,22 +2,34 @@
 
 import { useState, useRef, useEffect, useMemo, useTransition } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useNursingSchools } from "@/lib/data/nursingSchools";
+import { useCoursesFilter } from "@/lib/contexts/courses/CoursesFilterContext";
 import {
+  GraduationCap,
   School,
+  Calendar,
+  Sun,
   ChevronDown,
   Check,
   Search,
   X,
   Filter,
+  RefreshCw,
   CreditCard,
 } from "lucide-react";
+
+const PROGRAM_OPTIONS = [
+  "All Programmes",
+  "RN Nursing Exams",
+  "LPN Nursing Exams",
+  "RN Exit Exams",
+  "LPN Exit Exams",
+];
 
 export function CourseSchoolNavbarDropdowns() {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
   // Extract panel from pathname: /dashboards/[panelSlug]/...
@@ -26,47 +38,37 @@ export function CourseSchoolNavbarDropdowns() {
     return match ? match[1] : "rn-nursing";
   }, [pathname]);
 
+  const {
+    selectedProgram,
+    setSelectedProgram,
+    selectedSchool,
+    setSelectedSchool,
+    selectedYear,
+    setSelectedYear,
+    selectedSeason,
+    setSelectedSeason,
+    clearAllFilters,
+    hasActiveFilters,
+    dynamicPrograms,
+    dynamicYears,
+    dynamicSeasons,
+  } = useCoursesFilter();
+
   const { schools } = useNursingSchools(panelSlug);
-
-  // Active School
-  const currentSchoolParam = searchParams?.get("school") || "all";
-  const [selectedSchool, setSelectedSchool] = useState<string>(currentSchoolParam);
-
-  useEffect(() => {
-    setSelectedSchool(searchParams?.get("school") || "all");
-  }, [searchParams]);
-
-  useEffect(() => {
-    const handleSchoolChange = (e: Event) => {
-      const custom = e as CustomEvent<{ school: string }>;
-      if (custom.detail?.school) {
-        setSelectedSchool(custom.detail.school);
-      }
-    };
-    window.addEventListener("nurseford-school-change", handleSchoolChange);
-    return () => window.removeEventListener("nurseford-school-change", handleSchoolChange);
-  }, []);
-
-  // Dropdown open states
-  const [isSchoolOpen, setIsSchoolOpen] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [schoolSearch, setSchoolSearch] = useState("");
-  const schoolDropdownRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Click outside to close & ESC key
+  // Close menus on outside click or ESC
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        schoolDropdownRef.current &&
-        !schoolDropdownRef.current.contains(e.target as Node)
-      ) {
-        setIsSchoolOpen(false);
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpenMenu(null);
       }
-    };
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setIsSchoolOpen(false);
-      }
-    };
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpenMenu(null);
+    }
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
     return () => {
@@ -75,81 +77,149 @@ export function CourseSchoolNavbarDropdowns() {
     };
   }, []);
 
-  // Filtered schools
+  const toggleMenu = (name: string) => {
+    setOpenMenu((prev) => (prev === name ? null : name));
+  };
+
+  const availableProgramOptions = useMemo(() => {
+    if (dynamicPrograms.length > 0) {
+      const merged = Array.from(new Set(["All Programmes", ...dynamicPrograms]));
+      return merged;
+    }
+    return PROGRAM_OPTIONS;
+  }, [dynamicPrograms]);
+
   const filteredSchools = useMemo(() => {
     if (!schoolSearch.trim()) return schools;
     const q = schoolSearch.toLowerCase();
     return schools.filter((s) => s.toLowerCase().includes(q));
   }, [schools, schoolSearch]);
 
-  // School selection handler
-  const handleSelectSchool = (school: string) => {
-    setIsSchoolOpen(false);
-    setSchoolSearch("");
-    setSelectedSchool(school);
+  const handleSelectProgram = (prog: string) => {
+    setSelectedProgram(prog);
+    setOpenMenu(null);
 
-    const currentUrl = new URL(window.location.href);
-    if (school === "all") {
-      currentUrl.searchParams.delete("school");
-    } else {
-      currentUrl.searchParams.set("school", school);
+    // If on a dashboard page, navigate to courses page with program filter
+    if (pathname?.includes("/dashboards/")) {
+      startTransition(() => {
+        if (prog === "All Programmes") {
+          router.push("/courses");
+        } else {
+          router.push(`/courses?program=${encodeURIComponent(prog)}`);
+        }
+      });
     }
-
-    // Dispatch custom event for real-time listener components
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent("nurseford-school-change", { detail: { school } })
-      );
-    }
-
-    startTransition(() => {
-      router.replace(currentUrl.pathname + currentUrl.search, { scroll: false });
-    });
   };
 
+  const handleSelectSchool = (school: string) => {
+    const val = school === "all" ? "All Schools" : school;
+    setSelectedSchool(val);
+    setOpenMenu(null);
+    setSchoolSearch("");
+  };
+
+  const handleSelectYear = (yr: string) => {
+    const val = yr === "all" ? "All Years" : yr;
+    setSelectedYear(val);
+    setOpenMenu(null);
+  };
+
+  const handleSelectSeason = (sn: string) => {
+    const val = sn === "all" ? "All Seasons" : sn;
+    setSelectedSeason(val);
+    setOpenMenu(null);
+  };
+
+  const isSchoolActive = selectedSchool !== "All Schools" && selectedSchool !== "all";
+  const isYearActive = selectedYear !== "All Years" && selectedYear !== "all";
+  const isSeasonActive = selectedSeason !== "All Seasons" && selectedSeason !== "all";
+  const isProgramActive = selectedProgram !== "All Programmes";
+
   return (
-    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-      {/* ─── SCHOOL DROPDOWN ─── */}
-      <div className="relative" ref={schoolDropdownRef}>
+    <div ref={containerRef} className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+      {/* ─── 1. PROGRAMME FILTER ─── */}
+      <div className="relative">
         <button
           type="button"
-          onClick={() => {
-            setIsSchoolOpen((prev) => !prev);
-          }}
-          className={`group inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-1.5 rounded-xl text-xs font-semibold
-            border transition-all duration-150 select-none cursor-pointer
-            ${
-              isSchoolOpen || (selectedSchool && selectedSchool !== "all")
-                ? "border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 text-blue-700 dark:text-sky-300 ring-2 ring-blue-500/20"
-                : "border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 hover:border-blue-500/50 hover:bg-slate-50 dark:hover:bg-slate-800"
-            }
-            shadow-2xs active:scale-[0.98]`}
-          aria-haspopup="listbox"
-          aria-expanded={isSchoolOpen}
-          title={`School: ${
-            selectedSchool === "all" ? "All Schools" : selectedSchool
+          onClick={() => toggleMenu("program")}
+          className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer select-none ${
+            isProgramActive
+              ? "bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-[#2FD9C4] border-teal-500/60 ring-2 ring-teal-500/20"
+              : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
           }`}
+          title={`Programme: ${selectedProgram}`}
         >
-          <School className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400 shrink-0" />
-          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 shrink-0">
-            School<span className="hidden sm:inline">:</span>
+          <GraduationCap className="w-3.5 h-3.5 text-teal-600 dark:text-[#2FD9C4] shrink-0" />
+          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden sm:inline">
+            Programme:
           </span>
-          <span className="hidden sm:inline font-normal text-slate-600 dark:text-slate-300 truncate max-w-[80px] md:max-w-[120px] lg:max-w-[150px]">
-            {selectedSchool === "all" ? "All" : selectedSchool}
+          <span className="font-normal text-slate-600 dark:text-slate-300 truncate max-w-[70px] sm:max-w-[90px] md:max-w-[120px]">
+            {selectedProgram === "All Programmes" ? "All" : selectedProgram}
           </span>
           <ChevronDown
-            className={`w-3 h-3 text-slate-400 dark:text-slate-400 transition-transform duration-200 shrink-0 ${
-              isSchoolOpen ? "rotate-180" : ""
+            className={`w-3 h-3 text-slate-400 transition-transform ${
+              openMenu === "program" ? "rotate-180" : ""
             }`}
           />
         </button>
 
-        {/* Dropdown Menu */}
-        {isSchoolOpen && (
-          <div className="fixed inset-x-3 top-[60px] sm:absolute sm:inset-x-auto sm:left-0 sm:top-full mt-1.5 sm:w-80 rounded-2xl bg-white dark:bg-[#15202B] border border-slate-200 dark:border-slate-700/90 shadow-2xl z-[100] overflow-hidden animate-in fade-in-0 zoom-in-95 duration-100">
+        {openMenu === "program" && (
+          <div className="absolute left-0 top-full mt-1.5 w-56 rounded-2xl bg-white dark:bg-[#15202B] border border-slate-200 dark:border-slate-700 shadow-2xl z-50 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+            <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Filter by Programme
+            </div>
+            {availableProgramOptions.map((prog) => (
+              <button
+                key={prog}
+                type="button"
+                onClick={() => handleSelectProgram(prog)}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
+                  selectedProgram === prog
+                    ? "bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-[#2FD9C4] font-bold"
+                    : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                }`}
+              >
+                <span className="truncate">{prog}</span>
+                {selectedProgram === prog && (
+                  <Check className="w-3.5 h-3.5 text-teal-600 dark:text-[#2FD9C4] shrink-0" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ─── 2. SCHOOL FILTER ─── */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => toggleMenu("school")}
+          className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer select-none ${
+            isSchoolActive
+              ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 border-blue-500/60 ring-2 ring-blue-500/20"
+              : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+          }`}
+          title={`School: ${selectedSchool}`}
+        >
+          <School className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400 shrink-0" />
+          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden sm:inline">
+            School:
+          </span>
+          <span className="font-normal text-slate-600 dark:text-slate-300 truncate max-w-[65px] sm:max-w-[85px] md:max-w-[110px]">
+            {isSchoolActive ? selectedSchool : "All"}
+          </span>
+          <ChevronDown
+            className={`w-3 h-3 text-slate-400 transition-transform ${
+              openMenu === "school" ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {openMenu === "school" && (
+          <div className="fixed inset-x-3 top-[60px] sm:absolute sm:inset-x-auto sm:left-0 sm:top-full mt-1.5 sm:w-80 rounded-2xl bg-white dark:bg-[#15202B] border border-slate-200 dark:border-slate-700/90 shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-100">
             <div className="p-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/40">
               <div className="flex items-center justify-between mb-1.5 px-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   Filter by School
                 </span>
                 <span className="text-[10px] font-medium text-blue-600 dark:text-sky-400">
@@ -178,61 +248,192 @@ export function CourseSchoolNavbarDropdowns() {
             </div>
 
             <div className="max-h-[60vh] sm:max-h-72 overflow-y-auto p-1.5 space-y-0.5">
-              {/* All Schools Option */}
               <button
                 type="button"
                 onClick={() => handleSelectSchool("all")}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors cursor-pointer ${
-                  selectedSchool === "all"
-                    ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 font-semibold"
-                    : "hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200"
+                  !isSchoolActive
+                    ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 font-bold"
+                    : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <Filter className="w-3.5 h-3.5 text-slate-400" />
-                  <span>All Schools (Show Everything)</span>
+                  <span>All Schools</span>
                 </div>
-                {selectedSchool === "all" && (
+                {!isSchoolActive && (
                   <Check className="w-4 h-4 text-blue-600 dark:text-sky-400 shrink-0" />
                 )}
               </button>
 
               <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
 
-              {filteredSchools.length === 0 ? (
-                <div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400">
-                  {schoolSearch
-                    ? `No schools found matching "${schoolSearch}"`
-                    : "No specific schools found"}
-                </div>
-              ) : (
-                filteredSchools.map((school) => {
-                  const isSelected = selectedSchool === school;
-                  return (
-                    <button
-                      key={school}
-                      type="button"
-                      onClick={() => handleSelectSchool(school)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors cursor-pointer ${
-                        isSelected
-                          ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 font-semibold"
-                          : "hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200"
-                      }`}
-                    >
-                      <span className="truncate pr-2">{school}</span>
-                      {isSelected && (
-                        <Check className="w-4 h-4 text-blue-600 dark:text-sky-400 shrink-0" />
-                      )}
-                    </button>
-                  );
-                })
-              )}
+              {filteredSchools.map((sch) => (
+                <button
+                  key={sch}
+                  type="button"
+                  onClick={() => handleSelectSchool(sch)}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition-colors cursor-pointer ${
+                    selectedSchool === sch
+                      ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 font-bold"
+                      : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                  }`}
+                >
+                  <span className="truncate pr-2">{sch}</span>
+                  {selectedSchool === sch && (
+                    <Check className="w-4 h-4 text-blue-600 dark:text-sky-400 shrink-0" />
+                  )}
+                </button>
+              ))}
             </div>
           </div>
         )}
       </div>
 
-      {/* ─── SUBSCRIPTION BUTTON ─── */}
+      {/* ─── 3. YEAR FILTER ─── */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => toggleMenu("year")}
+          className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer select-none ${
+            isYearActive
+              ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-500/60 ring-2 ring-amber-500/20"
+              : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+          }`}
+          title={`Year: ${selectedYear}`}
+        >
+          <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden md:inline">
+            Year:
+          </span>
+          <span className="font-normal text-slate-600 dark:text-slate-300">
+            {isYearActive ? selectedYear : "All"}
+          </span>
+          <ChevronDown
+            className={`w-3 h-3 text-slate-400 transition-transform ${
+              openMenu === "year" ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {openMenu === "year" && (
+          <div className="absolute left-0 top-full mt-1.5 w-40 rounded-2xl bg-white dark:bg-[#15202B] border border-slate-200 dark:border-slate-700 shadow-2xl z-50 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+            <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Academic Year
+            </div>
+            <button
+              type="button"
+              onClick={() => handleSelectYear("all")}
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
+                !isYearActive
+                  ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold"
+                  : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+              }`}
+            >
+              <span>All Years</span>
+              {!isYearActive && <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+            </button>
+            <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+            {dynamicYears.map((yr) => (
+              <button
+                key={yr}
+                type="button"
+                onClick={() => handleSelectYear(String(yr))}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
+                  selectedYear === String(yr)
+                    ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold"
+                    : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                }`}
+              >
+                <span>{yr}</span>
+                {selectedYear === String(yr) && (
+                  <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ─── 4. SEASON FILTER ─── */}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => toggleMenu("season")}
+          className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer select-none ${
+            isSeasonActive
+              ? "bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border-purple-500/60 ring-2 ring-purple-500/20"
+              : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+          }`}
+          title={`Season: ${selectedSeason}`}
+        >
+          <Sun className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden md:inline">
+            Season:
+          </span>
+          <span className="font-normal text-slate-600 dark:text-slate-300">
+            {isSeasonActive ? selectedSeason : "All"}
+          </span>
+          <ChevronDown
+            className={`w-3 h-3 text-slate-400 transition-transform ${
+              openMenu === "season" ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {openMenu === "season" && (
+          <div className="absolute left-0 top-full mt-1.5 w-40 rounded-2xl bg-white dark:bg-[#15202B] border border-slate-200 dark:border-slate-700 shadow-2xl z-50 p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-100">
+            <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Exam Season
+            </div>
+            <button
+              type="button"
+              onClick={() => handleSelectSeason("all")}
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
+                !isSeasonActive
+                  ? "bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 font-bold"
+                  : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+              }`}
+            >
+              <span>All Seasons</span>
+              {!isSeasonActive && <Check className="w-3.5 h-3.5 text-purple-600 shrink-0" />}
+            </button>
+            <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+            {dynamicSeasons.map((seas) => (
+              <button
+                key={seas}
+                type="button"
+                onClick={() => handleSelectSeason(seas)}
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
+                  selectedSeason === seas
+                    ? "bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 font-bold"
+                    : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
+                }`}
+              >
+                <span>{seas}</span>
+                {selectedSeason === seas && (
+                  <Check className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ─── 5. RESET BUTTON ─── */}
+      {hasActiveFilters && (
+        <button
+          type="button"
+          onClick={clearAllFilters}
+          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+          title="Reset all filters"
+        >
+          <RefreshCw className="w-3 h-3" />
+          <span className="hidden sm:inline">Reset</span>
+        </button>
+      )}
+
+      {/* ─── 6. SUBSCRIBE PLANS BUTTON ─── */}
       <Link
         href={`/dashboards/${panelSlug}/vista/subscriptions/items`}
         className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold
@@ -247,3 +448,4 @@ export function CourseSchoolNavbarDropdowns() {
     </div>
   );
 }
+export default CourseSchoolNavbarDropdowns;

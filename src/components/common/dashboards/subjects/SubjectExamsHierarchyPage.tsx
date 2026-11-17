@@ -131,32 +131,90 @@ export function SubjectExamsHierarchyPage({
 
   // Client-side search and filters
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedYear, setSelectedYear] = useState<string>("all");
-  const [selectedSeason, setSelectedSeason] = useState<string>("all");
+  const [selectedYear, setSelectedYear] = useState<string>(
+    () => searchParams?.get("year") || "all"
+  );
+  const [selectedSeason, setSelectedSeason] = useState<string>(
+    () => searchParams?.get("season") || "all"
+  );
   const [selectedSchool, setSelectedSchool] = useState<string>(
     () => searchParams?.get("school") || "all"
   );
 
   useEffect(() => {
     const s = searchParams?.get("school");
-    if (s) {
-      setSelectedSchool(s);
-    } else {
-      setSelectedSchool("all");
-    }
+    setSelectedSchool(s && s !== "all" ? s : "all");
+
+    const y = searchParams?.get("year");
+    setSelectedYear(y && y !== "all" ? y : "all");
+
+    const sn = searchParams?.get("season");
+    setSelectedSeason(sn && sn !== "all" ? sn : "all");
   }, [searchParams]);
 
   useEffect(() => {
     const handleSchoolChange = (e: Event) => {
       const custom = e as CustomEvent<{ school: string }>;
-      if (custom.detail?.school) {
+      if (custom.detail?.school !== undefined) {
         setSelectedSchool(custom.detail.school);
       }
     };
+    const handleYearChange = (e: Event) => {
+      const custom = e as CustomEvent<{ year: string }>;
+      if (custom.detail?.year !== undefined) {
+        setSelectedYear(custom.detail.year);
+      }
+    };
+    const handleSeasonChange = (e: Event) => {
+      const custom = e as CustomEvent<{ season: string }>;
+      if (custom.detail?.season !== undefined) {
+        setSelectedSeason(custom.detail.season);
+      }
+    };
+
     window.addEventListener("nurseford-school-change", handleSchoolChange);
-    return () =>
+    window.addEventListener("nurseford-year-change", handleYearChange);
+    window.addEventListener("nurseford-season-change", handleSeasonChange);
+
+    return () => {
       window.removeEventListener("nurseford-school-change", handleSchoolChange);
+      window.removeEventListener("nurseford-year-change", handleYearChange);
+      window.removeEventListener("nurseford-season-change", handleSeasonChange);
+    };
   }, []);
+
+  const applyYear = (yr: string) => {
+    setSelectedYear(yr);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("nurseford-year-change", { detail: { year: yr } }));
+      const currentUrl = new URL(window.location.href);
+      if (yr === "all") currentUrl.searchParams.delete("year");
+      else currentUrl.searchParams.set("year", yr);
+      window.history.replaceState({}, "", currentUrl.toString());
+    }
+  };
+
+  const applySeason = (sn: string) => {
+    setSelectedSeason(sn);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("nurseford-season-change", { detail: { season: sn } }));
+      const currentUrl = new URL(window.location.href);
+      if (sn === "all") currentUrl.searchParams.delete("season");
+      else currentUrl.searchParams.set("season", sn);
+      window.history.replaceState({}, "", currentUrl.toString());
+    }
+  };
+
+  const applySchool = (sch: string) => {
+    setSelectedSchool(sch);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("nurseford-school-change", { detail: { school: sch } }));
+      const currentUrl = new URL(window.location.href);
+      if (sch === "all") currentUrl.searchParams.delete("school");
+      else currentUrl.searchParams.set("school", sch);
+      window.history.replaceState({}, "", currentUrl.toString());
+    }
+  };
 
   const normalizedExamType =
     panelSlug === "hesi-a2"
@@ -356,9 +414,12 @@ export function SubjectExamsHierarchyPage({
       setExams([]);
     }
     setSearchQuery("");
-    setSelectedYear("all");
-    setSelectedSeason("all");
-    setSelectedSchool("all");
+    const initialSchool = searchParams?.get("school") || "all";
+    const initialYear = searchParams?.get("year") || "all";
+    const initialSeason = searchParams?.get("season") || "all";
+    setSelectedYear(initialYear);
+    setSelectedSeason(initialSeason);
+    setSelectedSchool(initialSchool);
 
     const loadExams = async () => {
       try {
@@ -460,7 +521,7 @@ export function SubjectExamsHierarchyPage({
     return () => {
       cancelled = true;
     };
-  }, [panelSlug, courseId, subjectId, subjectName, cacheKey]);
+  }, [panelSlug, courseId, subjectId, subjectName, cacheKey, searchParams]);
 
   const startExam = (examTarget: (StrataItem & { modes?: string[] }) | string, mode: string) => {
     const gateTarget =
@@ -625,7 +686,7 @@ export function SubjectExamsHierarchyPage({
     return Array.from(schools).sort((a, b) => a.localeCompare(b));
   }, [exams, dynamicCourseName, courseSlug]);
 
-  // Synchronize dynamically resolved subject schools with the global Navbar school dropdown
+  // Synchronize dynamically resolved subject schools, years, and seasons with the global Navbar dropdowns
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(
@@ -636,6 +697,26 @@ export function SubjectExamsHierarchyPage({
     }
   }, [availableSchools]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && availableYears.length > 0) {
+      window.dispatchEvent(
+        new CustomEvent("nurseford-available-years-update", {
+          detail: { years: availableYears },
+        })
+      );
+    }
+  }, [availableYears]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && availableSeasons.length > 0) {
+      window.dispatchEvent(
+        new CustomEvent("nurseford-available-seasons-update", {
+          detail: { seasons: availableSeasons },
+        })
+      );
+    }
+  }, [availableSeasons]);
+
   // Answer on-demand requests from Navbar when it mounts or re-renders
   useEffect(() => {
     const handleRequest = () => {
@@ -645,13 +726,27 @@ export function SubjectExamsHierarchyPage({
             detail: { schools: availableSchools },
           })
         );
+        if (availableYears.length > 0) {
+          window.dispatchEvent(
+            new CustomEvent("nurseford-available-years-update", {
+              detail: { years: availableYears },
+            })
+          );
+        }
+        if (availableSeasons.length > 0) {
+          window.dispatchEvent(
+            new CustomEvent("nurseford-available-seasons-update", {
+              detail: { seasons: availableSeasons },
+            })
+          );
+        }
       }
     };
     window.addEventListener("nurseford-request-available-schools", handleRequest);
     return () => {
       window.removeEventListener("nurseford-request-available-schools", handleRequest);
     };
-  }, [availableSchools]);
+  }, [availableSchools, availableYears, availableSeasons]);
 
   // Auto-reset school filter to 'all' if the selected school doesn't exist under this subject's exams
   useEffect(() => {
@@ -711,7 +806,7 @@ export function SubjectExamsHierarchyPage({
 
       return (Number(b.id) || 0) - (Number(a.id) || 0);
     });
-  }, [exams, searchQuery, selectedYear, selectedSeason, selectedSchool, currentSubjectTitle]);
+  }, [exams, searchQuery, selectedYear, selectedSeason, selectedSchool, currentSubjectTitle, dynamicCourseName, courseSlug]);
 
   const [perPage, setPerPage] = useState<number>(100);
 
@@ -860,7 +955,7 @@ export function SubjectExamsHierarchyPage({
               <input
                 type="checkbox"
                 checked={selectedYear === "all"}
-                onChange={() => setSelectedYear("all")}
+                onChange={() => applyYear("all")}
                 className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
               />
               <span className="font-bold">All Years</span>
@@ -876,7 +971,7 @@ export function SubjectExamsHierarchyPage({
                       <input
                         type="checkbox"
                         checked={selectedYear === yr}
-                        onChange={() => setSelectedYear(selectedYear === yr ? "all" : yr)}
+                        onChange={() => applyYear(selectedYear === yr ? "all" : yr)}
                         className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
                       />
                       <span>{yr}</span>
@@ -893,7 +988,7 @@ export function SubjectExamsHierarchyPage({
               <input
                 type="checkbox"
                 checked={selectedSeason === "all"}
-                onChange={() => setSelectedSeason("all")}
+                onChange={() => applySeason("all")}
                 className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
               />
               <span className="font-bold">All Seasons</span>
@@ -907,7 +1002,7 @@ export function SubjectExamsHierarchyPage({
                   <input
                     type="checkbox"
                     checked={selectedSeason === sn}
-                    onChange={() => setSelectedSeason(selectedSeason === sn ? "all" : sn)}
+                    onChange={() => applySeason(selectedSeason === sn ? "all" : sn)}
                     className="rounded border-slate-300 text-teal-600 focus:ring-teal-500 w-3.5 h-3.5 cursor-pointer"
                   />
                   <span>{sn}</span>
@@ -927,24 +1022,7 @@ export function SubjectExamsHierarchyPage({
               id="exam-school-filter"
               aria-label="Select School"
               value={selectedSchool}
-              onChange={(e) => {
-                const newSchool = e.target.value;
-                setSelectedSchool(newSchool);
-                if (typeof window !== "undefined") {
-                  window.dispatchEvent(
-                    new CustomEvent("nurseford-school-change", {
-                      detail: { school: newSchool },
-                    })
-                  );
-                  const currentUrl = new URL(window.location.href);
-                  if (newSchool === "all") {
-                    currentUrl.searchParams.delete("school");
-                  } else {
-                    currentUrl.searchParams.set("school", newSchool);
-                  }
-                  window.history.replaceState({}, "", currentUrl.toString());
-                }
-              }}
+              onChange={(e) => applySchool(e.target.value)}
               className="w-full px-3 py-2 rounded-xl text-xs font-medium bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-navy dark:text-white focus:outline-none focus:bg-white dark:focus:bg-[#1e293b] focus:border-teal-500 transition-colors shadow-2xs cursor-pointer"
             >
               <option value="all" className="bg-white text-slate-900 dark:bg-[#1E293B] dark:text-white">

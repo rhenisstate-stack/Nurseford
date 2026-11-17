@@ -37,6 +37,9 @@ export function CourseSubjectsPage({
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentSchool = searchParams?.get("school");
+  const currentYear = searchParams?.get("year");
+  const currentSeason = searchParams?.get("season");
+  const currentSearch = searchParams?.get("q") || "";
 
   const cacheKey = `${panelSlug}:${courseId}`;
   const cached = courseSubjectsClientCache.get(cacheKey);
@@ -48,6 +51,16 @@ export function CourseSubjectsPage({
   const [showBuilder, setShowBuilder] = useState(false);
   const [selectedBuilderSubject, setSelectedBuilderSubject] = useState<BackendSubject | null>(null);
   const [activeSubject, setActiveSubject] = useState<BackendSubject | null>(null);
+
+  const filteredSubjects = useMemo(() => {
+    if (!currentSearch.trim()) return subjects;
+    const q = currentSearch.toLowerCase().trim();
+    return subjects.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        (s.description && s.description.toLowerCase().includes(q))
+    );
+  }, [subjects, currentSearch]);
 
   const normalizedExamType =
     panelSlug === "hesi-a2"
@@ -198,13 +211,20 @@ export function CourseSubjectsPage({
   const openSubjectExams = (card: BackendSubject) => {
     const identifier = card.guidId || card.id;
     if (showExamBuilder) {
-      const schoolQuery =
-        currentSchool && currentSchool !== "all"
-          ? `&school=${encodeURIComponent(currentSchool)}`
-          : "";
-      const examHref = `/dashboards/${panelSlug}/exams/${courseSlug}/${courseId}/exams/${identifier}?subjectName=${encodeURIComponent(
-        card.name
-      )}${schoolQuery}`;
+      const qParams = new URLSearchParams();
+      qParams.set("subjectName", card.name);
+
+      if (currentSchool && currentSchool !== "all" && currentSchool !== "All Schools") {
+        qParams.set("school", currentSchool);
+      }
+      if (currentYear && currentYear !== "all" && currentYear !== "All Years") {
+        qParams.set("year", currentYear);
+      }
+      if (currentSeason && currentSeason !== "all" && currentSeason !== "All Seasons") {
+        qParams.set("season", currentSeason);
+      }
+
+      const examHref = `/dashboards/${panelSlug}/exams/${courseSlug}/${courseId}/exams/${identifier}?${qParams.toString()}`;
       router.push(examHref);
     } else {
       setActiveSubject(card);
@@ -301,15 +321,17 @@ export function CourseSubjectsPage({
 
         {/* ─── Subjects Grid ─── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3.5 sm:gap-4 md:gap-4.5">
-          {subjects.length === 0 ? (
+          {filteredSubjects.length === 0 ? (
             <div className="col-span-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] px-5 py-12 text-center shadow-xs">
               <Command className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
               <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                No subjects available for this course yet — check back soon.
+                {currentSearch
+                  ? `No subjects matching "${currentSearch}".`
+                  : "No subjects available for this course yet — check back soon."}
               </p>
             </div>
           ) : (
-            subjects.map((card) => (
+            filteredSubjects.map((card) => (
               <button
                 key={`${card.id}-${card.slug}`}
                 type="button"

@@ -2,9 +2,11 @@
 import './globals.css';
 import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google';
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { LeftSidebarProvider } from '@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext';
 import { RightSidebarProvider } from '@/lib/contexts/panel/layout/includes/sidebar/RightSidebarContext';
 import { ThemeProvider } from '@/lib/contexts/panel/layout/theme/PanelThemeContext';
+import { CoursesFilterProvider } from '@/lib/contexts/courses/CoursesFilterContext';
 import { APP_NAME } from '@/lib/config/config';
 
 const inter = Inter({
@@ -120,7 +122,11 @@ export default function RootLayout({
         <ThemeProvider>
           <LeftSidebarProvider>
             <RightSidebarProvider>
-              {children}
+              <Suspense fallback={null}>
+                <CoursesFilterProvider>
+                  {children}
+                </CoursesFilterProvider>
+              </Suspense>
             </RightSidebarProvider>
           </LeftSidebarProvider>
         </ThemeProvider>

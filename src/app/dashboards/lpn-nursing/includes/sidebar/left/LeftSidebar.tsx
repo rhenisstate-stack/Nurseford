@@ -409,19 +409,6 @@ export default function LeftSidebar() {
           </div>
         </Link>
 
-        {/* ─── LPN Subjects ─── */}
-        <AccordionGroup
-          id="LPN Programs"
-          icon={ClipboardCheck}
-          label="LPN Subjects"
-          isActive={activeDropdown === "LPN Programs"}
-          onToggle={toggleDropdown}
-          {...sharedNavProps}
-        >
-          <NavItem href="/dashboards/lpn-nursing" label="LPN Nursing Subjects" exact {...sharedNavProps} />
-          <NavItem href="/dashboards/lpn-nursing?track=exit" label="LPN Exit Exam Subjects" exact {...sharedNavProps} />
-        </AccordionGroup>
-
         <div className="my-2 border-t border-slate-200/80 dark:border-slate-800" />
 
         {isOpened && (
