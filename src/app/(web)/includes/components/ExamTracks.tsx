@@ -122,7 +122,7 @@ const tracks: TrackItem[] = [
 
 export default function ExamTracks() {
   return (
-    <section id="exams" className="py-14 md:py-20" style={{ backgroundColor: "var(--content-bg)" }}>
+    <section id="exams" className="pt-4 sm:pt-6 pb-14 md:pb-20" style={{ backgroundColor: "var(--content-bg)" }}>
       <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14 xl:px-18">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">

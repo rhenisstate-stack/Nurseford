@@ -16,14 +16,6 @@ import {
 import { useCoursesFilter } from "@/lib/contexts/courses/CoursesFilterContext";
 import { useNursingSchools } from "@/lib/data/nursingSchools";
 
-const PROGRAM_OPTIONS = [
-  "All Programmes",
-  "RN Nursing Exams",
-  "LPN Nursing Exams",
-  "RN Exit Exams",
-  "LPN Exit Exams",
-];
-
 export default function CoursesNavbarFilters() {
   const {
     selectedProgram,
@@ -69,10 +61,7 @@ export default function CoursesNavbarFilters() {
   };
 
   const availableProgramOptions = useMemo(() => {
-    if (dynamicPrograms.length > 0) {
-      return ["All Programmes", ...dynamicPrograms];
-    }
-    return PROGRAM_OPTIONS;
+    return Array.from(new Set(["All Programmes", ...dynamicPrograms]));
   }, [dynamicPrograms]);
 
   const filteredSchools = useMemo(() => {

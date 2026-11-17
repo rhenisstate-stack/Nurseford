@@ -41,6 +41,42 @@ export function CourseSubjectsPage({
   const currentSeason = searchParams?.get("season");
   const currentSearch = searchParams?.get("q") || "";
 
+  const [selectedSchool, setSelectedSchool] = useState<string>(() => currentSchool || "All Schools");
+  const [selectedYear, setSelectedYear] = useState<string>(() => currentYear || "All Years");
+  const [selectedSeason, setSelectedSeason] = useState<string>(() => currentSeason || "All Seasons");
+
+  // Listen to navbar dropdown changes
+  useEffect(() => {
+    const handleSchoolChange = (e: Event) => {
+      const custom = e as CustomEvent<{ school: string }>;
+      if (custom.detail?.school !== undefined) {
+        setSelectedSchool(custom.detail.school === "all" ? "All Schools" : custom.detail.school);
+      }
+    };
+    const handleYearChange = (e: Event) => {
+      const custom = e as CustomEvent<{ year: string }>;
+      if (custom.detail?.year !== undefined) {
+        setSelectedYear(custom.detail.year === "all" ? "All Years" : custom.detail.year);
+      }
+    };
+    const handleSeasonChange = (e: Event) => {
+      const custom = e as CustomEvent<{ season: string }>;
+      if (custom.detail?.season !== undefined) {
+        setSelectedSeason(custom.detail.season === "all" ? "All Seasons" : custom.detail.season);
+      }
+    };
+
+    window.addEventListener("nurseford-school-change", handleSchoolChange);
+    window.addEventListener("nurseford-year-change", handleYearChange);
+    window.addEventListener("nurseford-season-change", handleSeasonChange);
+
+    return () => {
+      window.removeEventListener("nurseford-school-change", handleSchoolChange);
+      window.removeEventListener("nurseford-year-change", handleYearChange);
+      window.removeEventListener("nurseford-season-change", handleSeasonChange);
+    };
+  }, []);
+
   const cacheKey = `${panelSlug}:${courseId}`;
   const cached = courseSubjectsClientCache.get(cacheKey);
 
@@ -214,14 +250,17 @@ export function CourseSubjectsPage({
       const qParams = new URLSearchParams();
       qParams.set("subjectName", card.name);
 
-      if (currentSchool && currentSchool !== "all" && currentSchool !== "All Schools") {
-        qParams.set("school", currentSchool);
+      const sch = selectedSchool !== "All Schools" && selectedSchool !== "all" ? selectedSchool : currentSchool;
+      if (sch && sch !== "all" && sch !== "All Schools") {
+        qParams.set("school", sch);
       }
-      if (currentYear && currentYear !== "all" && currentYear !== "All Years") {
-        qParams.set("year", currentYear);
+      const yr = selectedYear !== "All Years" && selectedYear !== "all" ? selectedYear : currentYear;
+      if (yr && yr !== "all" && yr !== "All Years") {
+        qParams.set("year", yr);
       }
-      if (currentSeason && currentSeason !== "all" && currentSeason !== "All Seasons") {
-        qParams.set("season", currentSeason);
+      const sn = selectedSeason !== "All Seasons" && selectedSeason !== "all" ? selectedSeason : currentSeason;
+      if (sn && sn !== "all" && sn !== "All Seasons") {
+        qParams.set("season", sn);
       }
 
       const examHref = `/dashboards/${panelSlug}/exams/${courseSlug}/${courseId}/exams/${identifier}?${qParams.toString()}`;

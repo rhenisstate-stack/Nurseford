@@ -120,24 +120,8 @@ export default function Navbar() {
     >
       <div className="mx-auto w-full max-w-[1600px] px-4 md:px-6 lg:px-8 flex items-center justify-between">
         {/* Brand & Sidebar Toggle */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {isCoursesPage && (
-            <button
-              type="button"
-              onClick={toggleLeftSidebar}
-              className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-navy dark:text-white"
-              aria-label="Toggle Sidebar"
-              title={isLeftOpened ? "Collapse Sidebar" : "Expand Sidebar"}
-            >
-              {isLeftOpened ? (
-                <X className="w-4 h-4" strokeWidth={2.5} />
-              ) : (
-                <Menu className="w-4 h-4" strokeWidth={2.5} />
-              )}
-            </button>
-          )}
-
-          <Link href="/" className="flex items-center gap-2 group" onClick={() => setOpenDropdown(null)}>
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <Link href="/" className="flex items-center gap-2 group shrink-0" onClick={() => setOpenDropdown(null)}>
             <Image
               src="/logo/logo.webp"
               alt="Nurseford"
@@ -150,6 +134,22 @@ export default function Navbar() {
               Nurseford
             </span>
           </Link>
+
+          {isCoursesPage && (
+            <button
+              type="button"
+              onClick={toggleLeftSidebar}
+              className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-navy dark:text-white shrink-0"
+              aria-label="Toggle Sidebar"
+              title={isLeftOpened ? "Collapse Sidebar" : "Expand Sidebar"}
+            >
+              {isLeftOpened ? (
+                <X className="w-4 h-4" strokeWidth={2.5} />
+              ) : (
+                <Menu className="w-4 h-4" strokeWidth={2.5} />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Desktop nav: ONLY rendered on Home Page */}

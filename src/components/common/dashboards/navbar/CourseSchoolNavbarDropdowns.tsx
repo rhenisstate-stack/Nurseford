@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useTransition } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useNursingSchools } from "@/lib/data/nursingSchools";
 import { useCoursesFilter } from "@/lib/contexts/courses/CoursesFilterContext";
 import {
@@ -19,18 +19,8 @@ import {
   CreditCard,
 } from "lucide-react";
 
-const PROGRAM_OPTIONS = [
-  "All Programmes",
-  "RN Nursing Exams",
-  "LPN Nursing Exams",
-  "RN Exit Exams",
-  "LPN Exit Exams",
-];
-
 export function CourseSchoolNavbarDropdowns() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [, startTransition] = useTransition();
 
   // Extract panel from pathname: /dashboards/[panelSlug]/...
   const panelSlug = useMemo(() => {
@@ -82,34 +72,72 @@ export function CourseSchoolNavbarDropdowns() {
   };
 
   const availableProgramOptions = useMemo(() => {
-    if (dynamicPrograms.length > 0) {
-      const merged = Array.from(new Set(["All Programmes", ...dynamicPrograms]));
-      return merged;
-    }
-    return PROGRAM_OPTIONS;
+    return Array.from(new Set(["All Programmes", ...dynamicPrograms]));
   }, [dynamicPrograms]);
+
+  const isDashboardPage = Boolean(pathname?.includes("/dashboards/"));
+
+  const detectedDashboardProgram = useMemo(() => {
+    if (!pathname) return null;
+    const isExit =
+      pathname.includes("exit") ||
+      (typeof window !== "undefined" && window.location.search.includes("track=exit"));
+    if (panelSlug === "lpn-nursing") {
+      return isExit ? "LPN Exit Exams" : "LPN Nursing Exams";
+    }
+    if (panelSlug === "rn-nursing") {
+      return isExit ? "RN Exit Exams" : "RN Nursing Exams";
+    }
+    if (panelSlug === "hesi-a2") return "HESI A2";
+    if (panelSlug === "ati-teas") return "ATI TEAS";
+    if (panelSlug === "nclex-rn") return "NCLEX RN";
+    if (panelSlug === "nclex-pn") return "NCLEX PN";
+    return null;
+  }, [pathname, panelSlug]);
+
+  const activeProgramLabel = useMemo(() => {
+    if (selectedProgram && selectedProgram !== "All Programmes") {
+      return selectedProgram;
+    }
+    if (isDashboardPage && detectedDashboardProgram) {
+      return detectedDashboardProgram;
+    }
+    return "All";
+  }, [selectedProgram, isDashboardPage, detectedDashboardProgram]);
+
+  const isProgramOptionSelected = (prog: string) => {
+    if (selectedProgram && selectedProgram !== "All Programmes") {
+      return selectedProgram === prog;
+    }
+    if (isDashboardPage && detectedDashboardProgram) {
+      return detectedDashboardProgram === prog;
+    }
+    return prog === "All Programmes";
+  };
+
+  const getProgramHref = (prog: string) => {
+    const params = new URLSearchParams();
+    if (prog !== "All Programmes") {
+      params.set("program", prog);
+    }
+    if (selectedSchool && selectedSchool !== "All Schools" && selectedSchool !== "all") {
+      params.set("school", selectedSchool);
+    }
+    if (selectedYear && selectedYear !== "All Years" && selectedYear !== "all") {
+      params.set("year", selectedYear);
+    }
+    if (selectedSeason && selectedSeason !== "All Seasons" && selectedSeason !== "all") {
+      params.set("season", selectedSeason);
+    }
+    const qs = params.toString();
+    return qs ? `/courses?${qs}` : "/courses";
+  };
 
   const filteredSchools = useMemo(() => {
     if (!schoolSearch.trim()) return schools;
     const q = schoolSearch.toLowerCase();
     return schools.filter((s) => s.toLowerCase().includes(q));
   }, [schools, schoolSearch]);
-
-  const handleSelectProgram = (prog: string) => {
-    setSelectedProgram(prog);
-    setOpenMenu(null);
-
-    // If on a dashboard page, navigate to courses page with program filter
-    if (pathname?.includes("/dashboards/")) {
-      startTransition(() => {
-        if (prog === "All Programmes") {
-          router.push("/courses");
-        } else {
-          router.push(`/courses?program=${encodeURIComponent(prog)}`);
-        }
-      });
-    }
-  };
 
   const handleSelectSchool = (school: string) => {
     const val = school === "all" ? "All Schools" : school;
@@ -133,7 +161,9 @@ export function CourseSchoolNavbarDropdowns() {
   const isSchoolActive = selectedSchool !== "All Schools" && selectedSchool !== "all";
   const isYearActive = selectedYear !== "All Years" && selectedYear !== "all";
   const isSeasonActive = selectedSeason !== "All Seasons" && selectedSeason !== "all";
-  const isProgramActive = selectedProgram !== "All Programmes";
+  const isProgramActive =
+    (selectedProgram && selectedProgram !== "All Programmes") ||
+    (isDashboardPage && Boolean(detectedDashboardProgram));
 
   return (
     <div ref={containerRef} className="flex items-center gap-1 sm:gap-1.5 shrink-0">
@@ -147,14 +177,14 @@ export function CourseSchoolNavbarDropdowns() {
               ? "bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-[#2FD9C4] border-teal-500/60 ring-2 ring-teal-500/20"
               : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
           }`}
-          title={`Programme: ${selectedProgram}`}
+          title={`Programme: ${activeProgramLabel}`}
         >
           <GraduationCap className="w-3.5 h-3.5 text-teal-600 dark:text-[#2FD9C4] shrink-0" />
           <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden sm:inline">
             Programme:
           </span>
           <span className="font-normal text-slate-600 dark:text-slate-300 truncate max-w-[70px] sm:max-w-[90px] md:max-w-[120px]">
-            {selectedProgram === "All Programmes" ? "All" : selectedProgram}
+            {activeProgramLabel}
           </span>
           <ChevronDown
             className={`w-3 h-3 text-slate-400 transition-transform ${
@@ -169,21 +199,24 @@ export function CourseSchoolNavbarDropdowns() {
               Filter by Programme
             </div>
             {availableProgramOptions.map((prog) => (
-              <button
+              <Link
                 key={prog}
-                type="button"
-                onClick={() => handleSelectProgram(prog)}
+                href={getProgramHref(prog)}
+                onClick={() => {
+                  setSelectedProgram(prog);
+                  setOpenMenu(null);
+                }}
                 className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
-                  selectedProgram === prog
+                  isProgramOptionSelected(prog)
                     ? "bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-[#2FD9C4] font-bold"
                     : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
                 }`}
               >
                 <span className="truncate">{prog}</span>
-                {selectedProgram === prog && (
+                {isProgramOptionSelected(prog) && (
                   <Check className="w-3.5 h-3.5 text-teal-600 dark:text-[#2FD9C4] shrink-0" />
                 )}
-              </button>
+              </Link>
             ))}
           </div>
         )}

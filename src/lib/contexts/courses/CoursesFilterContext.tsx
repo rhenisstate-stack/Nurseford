@@ -247,24 +247,50 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     };
   }, []);
 
-  // Sync state to URL without full page reload
+  // Synchronize state when URL search params change (e.g. navigation to /courses?program=...)
+  useEffect(() => {
+    if (!searchParams) return;
+
+    const prog = searchParams.get("program");
+    if (prog) {
+      setSelectedProgram(prog);
+    }
+
+    const sch = searchParams.get("school");
+    if (sch) {
+      setSelectedSchoolState(sch === "all" ? "All Schools" : sch);
+    }
+
+    const yr = searchParams.get("year");
+    if (yr) {
+      setSelectedYearState(yr === "all" ? "All Years" : yr);
+    }
+
+    const sn = searchParams.get("season");
+    if (sn) {
+      setSelectedSeasonState(sn === "all" ? "All Seasons" : sn);
+    }
+
+    const q = searchParams.get("q");
+    if (q !== null) {
+      setSearchQuery(q);
+    }
+  }, [searchParams]);
+
+  // Sync state to URL on /courses page without full page reload
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const isCoursesPage = window.location.pathname.includes("/courses");
-    const isDashboardPage = window.location.pathname.includes("/dashboards/");
-
-    if (!isCoursesPage && !isDashboardPage) return;
+    const isCoursesPage = window.location.pathname.startsWith("/courses");
+    if (!isCoursesPage) return;
 
     const url = new URL(window.location.href);
 
-    if (isCoursesPage) {
-      if (searchQuery.trim()) url.searchParams.set("q", searchQuery.trim());
-      else url.searchParams.delete("q");
+    if (searchQuery.trim()) url.searchParams.set("q", searchQuery.trim());
+    else url.searchParams.delete("q");
 
-      if (selectedProgram !== "All Programmes") url.searchParams.set("program", selectedProgram);
-      else url.searchParams.delete("program");
-    }
+    if (selectedProgram !== "All Programmes") url.searchParams.set("program", selectedProgram);
+    else url.searchParams.delete("program");
 
     if (selectedSchool !== "All Schools" && selectedSchool !== "all") {
       url.searchParams.set("school", selectedSchool);
@@ -284,7 +310,9 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
       url.searchParams.delete("season");
     }
 
-    window.history.replaceState(null, "", url.pathname + url.search);
+    if (url.pathname + url.search !== window.location.pathname + window.location.search) {
+      window.history.replaceState(null, "", url.pathname + url.search);
+    }
   }, [searchQuery, selectedProgram, selectedSchool, selectedYear, selectedSeason]);
 
   const hasActiveFilters = useMemo(() => {

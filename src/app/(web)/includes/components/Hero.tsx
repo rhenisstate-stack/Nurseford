@@ -57,7 +57,7 @@ export default function Hero() {
 
   return (
     <section className="relative overflow-hidden" style={{ backgroundColor: "var(--content-bg)" }}>
-      <div className="mx-auto w-full max-w-[1500px] px-6 sm:px-10 md:px-14 lg:px-20 xl:px-24 pt-[76px] sm:pt-[84px] md:pt-[92px] pb-12 md:pb-16">
+      <div className="mx-auto w-full max-w-[1500px] px-6 sm:px-10 md:px-14 lg:px-20 xl:px-24 pt-[76px] sm:pt-[84px] md:pt-[92px] pb-4 sm:pb-6">
         
         {/* Two-Column on Desktop (lg+), Video-Behind-Text on Mobile (<lg) */}
         <div className="relative overflow-visible rounded-3xl lg:rounded-none p-6 sm:p-10 lg:p-0 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center mb-6 sm:mb-8 md:mb-10">
@@ -331,7 +331,7 @@ export default function Hero() {
 
           <Stats />
 
-          <div className="mt-14 md:mt-20">
+          <div className="mt-8 sm:mt-10">
             <PulseLine showWaypoints variant="hero" />
           </div>
         </div>

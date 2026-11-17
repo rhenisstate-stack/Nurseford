@@ -288,7 +288,7 @@ export default function CoursesPage() {
       <CoursesLeftSidebar />
 
       <div
-        className={`min-h-screen pt-24 sm:pt-28 md:pt-32 pb-20 transition-all duration-300 ease-in-out ${
+        className={`min-h-screen pt-18 sm:pt-20 pb-16 transition-all duration-300 ease-in-out ${
           isSidebarOpened ? "lg:pl-64" : "pl-0"
         }`}
         style={{ backgroundColor: "var(--content-bg)" }}
@@ -296,13 +296,13 @@ export default function CoursesPage() {
         <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14">
         
         {/* Header Hero Section */}
-        <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-8">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-[#2FD9C4] text-xs font-mono font-bold tracking-widest uppercase mb-3 shadow-2xs">
+        <div className="text-center max-w-3xl mx-auto mb-4 sm:mb-5">
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-[#2FD9C4] text-[11px] font-mono font-bold tracking-wider uppercase mb-2 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Dynamic Exam Curriculum</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-navy dark:text-white tracking-tight leading-tight">
+          <h1 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold text-navy dark:text-white tracking-tight leading-tight">
             Explore All Nursing Courses
           </h1>
         </div>
@@ -319,19 +319,21 @@ export default function CoursesPage() {
 
         {/* Loading State */}
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5 md:gap-4">
             {[1, 2, 3, 4, 5, 6].map((idx) => (
               <div
                 key={idx}
-                className="rounded-2xl border-2 border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-6 shadow-xs animate-pulse space-y-4"
+                className="rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-3.5 sm:p-4 shadow-2xs animate-pulse space-y-2.5"
               >
                 <div className="flex justify-between items-center">
-                  <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded-full" />
-                  <div className="h-4 w-14 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                  <div className="h-3.5 w-20 bg-slate-200 dark:bg-slate-700 rounded-md" />
+                  <div className="h-3.5 w-12 bg-slate-200 dark:bg-slate-700 rounded-md" />
                 </div>
-                <div className="h-6 w-3/4 bg-slate-200 dark:bg-slate-700 rounded-lg" />
-                <div className="h-10 w-full bg-slate-200 dark:bg-slate-700 rounded-lg" />
-                <div className="h-8 w-full bg-slate-200 dark:bg-slate-700 rounded-xl" />
+                <div className="h-4.5 w-3/4 bg-slate-200 dark:bg-slate-700 rounded-md" />
+                <div className="h-3 w-5/6 bg-slate-200 dark:bg-slate-700 rounded-md" />
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+                  <div className="h-6 w-24 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                </div>
               </div>
             ))}
           </div>
@@ -371,7 +373,7 @@ export default function CoursesPage() {
 
         {/* Courses Grid */}
         {!isLoading && !error && filteredCourses.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5 md:gap-4">
             {filteredCourses.map((course) => {
               const isLpn = course.panelSlug === "lpn-nursing";
               const href = getCourseHref(course);
@@ -379,13 +381,13 @@ export default function CoursesPage() {
               return (
                 <div
                   key={`${course.panelSlug}-${course.id}`}
-                  className="group relative rounded-2xl border-2 border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#1E293B] hover:border-teal-500/70 dark:hover:border-teal-400/60 p-5 sm:p-6 shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-200 flex flex-col justify-between"
+                  className="group relative rounded-xl border border-slate-200/90 dark:border-slate-700/80 bg-white dark:bg-[#1E293B] hover:border-teal-500/70 dark:hover:border-teal-400/60 p-3.5 sm:p-4 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 flex flex-col justify-between"
                 >
                   <div>
                     {/* Top Badges Row */}
-                    <div className="flex items-center justify-between gap-2 mb-3.5">
+                    <div className="flex items-center justify-between gap-1.5 mb-2">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wide uppercase border ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide uppercase border ${
                           isLpn
                             ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
                             : "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800"
@@ -396,7 +398,7 @@ export default function CoursesPage() {
 
                       {/* Year & Season Pill */}
                       {(course.year || course.season) && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 shrink-0">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 shrink-0">
                           {course.season && <span>{course.season}</span>}
                           {course.year && <span>{course.year}</span>}
                         </span>
@@ -404,24 +406,23 @@ export default function CoursesPage() {
                     </div>
 
                     {/* Course Title */}
-                    <h2 className="font-serif text-base sm:text-lg md:text-[1.15rem] font-bold text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors leading-snug line-clamp-2 mb-2">
+                    <h2 className="font-serif text-sm sm:text-[15px] font-bold text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors leading-snug line-clamp-1 mb-1">
                       {course.name}
                     </h2>
 
-                    {/* Description */}
                     {/* Description (rendered only when provided by backend) */}
                     {course.description ? (
-                      <p className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-4">
+                      <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-1 leading-relaxed mb-2.5">
                         {course.description}
                       </p>
                     ) : null}
                   </div>
 
                   {/* Card Bottom Footer */}
-                  <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end">
+                  <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end">
                     <Link
                       href={href}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0A2540] hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white shadow-2xs group-hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold bg-[#0A2540] hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white shadow-2xs group-hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
                     >
                       <span>Start Practice</span>
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
