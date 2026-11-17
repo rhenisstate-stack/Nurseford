@@ -39,10 +39,10 @@ const contactMethods = [
 
 export default function ContactUs() {
   return (
-    <section id="contact" className="py-14 md:py-20" style={{ backgroundColor: "var(--content-bg)" }}>
+    <section id="contact" className="py-8 md:py-10" style={{ backgroundColor: "var(--content-bg)" }}>
       <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14 xl:px-18">
         {/* Intro */}
-        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14">
+        <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-[#2FD9C4] text-xs font-mono font-bold tracking-widest uppercase mb-3">
             <Headphones className="w-3.5 h-3.5" />
             <span>Get in Touch</span>
@@ -58,7 +58,7 @@ export default function ContactUs() {
         </div>
 
         {/* Contact info cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-5xl mx-auto mb-10 sm:mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 max-w-5xl mx-auto mb-6 sm:mb-8">
           {contactMethods.map((method) => {
             const Icon = method.icon;
             return (

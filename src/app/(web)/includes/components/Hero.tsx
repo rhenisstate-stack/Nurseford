@@ -65,6 +65,8 @@ export default function Hero() {
           {/* Mobile-Only Background Video (< lg) */}
           <div className="absolute inset-0 z-0 lg:hidden pointer-events-none overflow-hidden rounded-3xl">
             <video
+              key="hero-video-mobile-af417f73"
+              src="/videos/gemini_generated_video_af417f73.mp4"
               autoPlay
               loop
               muted
@@ -72,8 +74,8 @@ export default function Hero() {
               preload="auto"
               className="w-full h-full object-cover object-center scale-105"
             >
-              <source src="/images/home-bg/vid_hp/gemini_generated_video_4a7f1909.mp4" type="video/mp4" />
-              <source src="/videos/hero-books.mp4" type="video/mp4" />
+              <source src="/videos/gemini_generated_video_af417f73.mp4" type="video/mp4" />
+              <source src="/images/home-bg/vid_hp/gemini_generated_video_af417f73.mp4" type="video/mp4" />
             </video>
 
             {/* Readability Frost Overlay for Mobile (reduced opacity by 10% to reveal video) */}
@@ -224,6 +226,8 @@ export default function Hero() {
           <div className="hidden lg:block lg:col-span-5 xl:col-span-6 relative z-10">
             <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] rounded-2xl overflow-hidden shadow-lg bg-slate-900 group">
               <video
+                key="hero-video-desktop-af417f73"
+                src="/videos/gemini_generated_video_af417f73.mp4"
                 autoPlay
                 loop
                 muted
@@ -231,8 +235,8 @@ export default function Hero() {
                 preload="auto"
                 className="w-full h-full object-cover object-center scale-[1.01] transition-transform duration-700 group-hover:scale-105"
               >
-                <source src="/images/home-bg/vid_hp/gemini_generated_video_4a7f1909.mp4" type="video/mp4" />
-                <source src="/videos/hero-books.mp4" type="video/mp4" />
+                <source src="/videos/gemini_generated_video_af417f73.mp4" type="video/mp4" />
+                <source src="/images/home-bg/vid_hp/gemini_generated_video_af417f73.mp4" type="video/mp4" />
               </video>
 
               {/* Subtle ambient gradient overlay for clinical depth */}

@@ -27,7 +27,7 @@ export default function Footer() {
     <>
       <footer className="bg-slate-50 dark:bg-[#0c1524] text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-white/10 transition-colors">
         {/* Main Footer Content */}
-        <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14 xl:px-18 py-12 md:py-16">
+        <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14 xl:px-18 py-8 md:py-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
             {/* Col 1: Brand */}
             <div>

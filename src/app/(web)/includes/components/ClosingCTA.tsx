@@ -6,11 +6,11 @@ import { Sparkles, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 export default function ClosingCTA() {
   return (
-    <section className="py-14 md:py-20" style={{ backgroundColor: "var(--content-bg)" }}>
+    <section className="py-8 md:py-10" style={{ backgroundColor: "var(--content-bg)" }}>
       <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14 xl:px-18">
-        <PulseLine variant="divider" className="mb-10 sm:mb-14" />
+        <PulseLine variant="divider" className="mb-6 sm:mb-8" />
 
-        <div className="max-w-4xl mx-auto rounded-3xl border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-[#F5F9FF] via-white to-[#ECF4FF] dark:bg-none dark:bg-[#15273e] p-8 sm:p-12 md:p-16 text-center shadow-lg relative overflow-hidden">
+        <div className="max-w-4xl mx-auto rounded-3xl border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-[#F5F9FF] via-white to-[#ECF4FF] dark:bg-none dark:bg-[#15273e] p-6 sm:p-8 md:p-10 text-center shadow-lg relative overflow-hidden">
           {/* Subtle background ambient orb */}
           <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-teal-500/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-24 -right-24 w-64 h-64 rounded-full bg-coral/10 blur-3xl pointer-events-none" />

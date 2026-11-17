@@ -122,10 +122,10 @@ const tracks: TrackItem[] = [
 
 export default function ExamTracks() {
   return (
-    <section id="exams" className="pt-4 sm:pt-6 pb-14 md:pb-20" style={{ backgroundColor: "var(--content-bg)" }}>
+    <section id="exams" className="pt-4 sm:pt-6 pb-8 md:pb-10" style={{ backgroundColor: "var(--content-bg)" }}>
       <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14 xl:px-18">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
+        <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-[#2FD9C4] text-xs font-mono font-bold tracking-widest uppercase mb-3">
             <Sparkles className="w-3.5 h-3.5" />
             <span>4 Distinct Exam Tracks</span>

@@ -26,10 +26,10 @@ const subjects = [
 
 export default function StudyKit() {
   return (
-    <section id="study-kit" className="py-14 md:py-20" style={{ backgroundColor: "var(--content-bg)" }}>
+    <section id="study-kit" className="py-8 md:py-10" style={{ backgroundColor: "var(--content-bg)" }}>
       <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14 xl:px-18">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+        <div className="text-center max-w-2xl mx-auto mb-6 sm:mb-8">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-coral/30 bg-coral/10 text-coral text-xs font-mono font-bold tracking-widest uppercase mb-3">
             <BookMarked className="w-3.5 h-3.5" />
             <span>Nurseford Study Kit</span>
@@ -43,7 +43,7 @@ export default function StudyKit() {
         </div>
 
         {/* 2-Column Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-5xl mx-auto mb-6">
           {/* Card 1: FlashCards */}
           <article className="rounded-2xl border-2 border-slate-200 dark:border-slate-700/80 hover:border-coral/70 dark:hover:border-coral/60 bg-white dark:bg-[#1E293B] p-6 sm:p-8 flex flex-col justify-between shadow-xs hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
             <div>
