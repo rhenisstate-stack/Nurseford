@@ -4,8 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   GraduationCap,
-  BookOpen,
-  BookOpenCheck,
   TrendingUp,
   BarChart3,
   CheckCircle2,
@@ -22,62 +20,15 @@ import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurre
 import { useUserExamProgress } from "@/lib/hooks/nexus/strata/assessment/progress/useUserExamProgress";
 import UserAccountDropdown from "@/components/common/user/UserAccountDropdown";
 
-const practiceExams = [
-  {
-    label: "RN Nursing Exams",
-    subtitle: "Registered Nurse Q-Bank",
-    href: "/dashboards/rn-nursing",
-    icon: BookOpenCheck,
-    bgClass: "bg-teal/15",
-    colorClass: "text-teal-light",
-  },
-  {
-    label: "LPN Nursing Exams",
-    subtitle: "Practical Nurse Q-Bank",
-    href: "/dashboards/lpn-nursing",
-    icon: BookOpenCheck,
-    bgClass: "bg-sage/15",
-    colorClass: "text-sage-light",
-  },
-  {
-    label: "RN Exit Exams",
-    subtitle: "Comprehensive Exit Practice",
-    href: "/dashboards/rn-nursing",
-    icon: BarChart3,
-    bgClass: "bg-coral/15",
-    colorClass: "text-coral",
-  },
-  {
-    label: "LPN Exit Exams",
-    subtitle: "Practical Nurse Exit Practice",
-    href: "/dashboards/lpn-nursing",
-    icon: BarChart3,
-    bgClass: "bg-coral/15",
-    colorClass: "text-coral",
-  },
-];
-
-const quickLinks = [
-  {
-    category: "Nursing Q-Bank",
-    description: "Comprehensive question banks for nursing students.",
-    icon: BookOpen,
-    iconBg: "bg-[#E8F1FC] dark:bg-blue-500/20",
-    iconColor: "text-[#2B73D6] dark:text-blue-300",
-    links: [
-      { label: "RN Nursing Exams", href: "/dashboards/rn-nursing" },
-      { label: "LPN Nursing Exams", href: "/dashboards/lpn-nursing" },
-      { label: "RN Exit Exams", href: "/dashboards/rn-nursing" },
-      { label: "LPN Exit Exams", href: "/dashboards/lpn-nursing" },
-    ],
-  },
-  
+const pathButtons = [
+  { label: "RN Nursing Exams", href: "/dashboards/rn-nursing" },
+  { label: "LPN Nursing Exams", href: "/dashboards/lpn-nursing" },
+  { label: "RN Exit Exams", href: "/dashboards/rn-nursing?track=exit" },
+  { label: "LPN Exit Exams", href: "/dashboards/lpn-nursing?track=exit" },
 ];
 
 export default function Hero() {
-  const [openPracticeDropdown, setOpenPracticeDropdown] = useState(false);
   const [openProgressDropdown, setOpenProgressDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const progressDropdownRef = useRef<HTMLDivElement>(null);
 
   const { user, authenticated, loading } = useCurrentSystemUser();
@@ -87,16 +38,12 @@ export default function Hero() {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpenPracticeDropdown(false);
-      }
       if (progressDropdownRef.current && !progressDropdownRef.current.contains(e.target as Node)) {
         setOpenProgressDropdown(false);
       }
     }
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        setOpenPracticeDropdown(false);
         setOpenProgressDropdown(false);
       }
     }
@@ -113,7 +60,7 @@ export default function Hero() {
       <div className="mx-auto w-full max-w-[1500px] px-6 sm:px-10 md:px-14 lg:px-20 xl:px-24 pt-[76px] sm:pt-[84px] md:pt-[92px] pb-12 md:pb-16">
         
         {/* Two-Column on Desktop (lg+), Video-Behind-Text on Mobile (<lg) */}
-        <div className="relative overflow-visible rounded-3xl lg:rounded-none p-6 sm:p-10 lg:p-0 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center mb-14 md:mb-18">
+        <div className="relative overflow-visible rounded-3xl lg:rounded-none p-6 sm:p-10 lg:p-0 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center mb-6 sm:mb-8 md:mb-10">
           
           {/* Mobile-Only Background Video (< lg) */}
           <div className="absolute inset-0 z-0 lg:hidden pointer-events-none overflow-hidden rounded-3xl">
@@ -158,54 +105,14 @@ export default function Hero() {
 
             {/* Action CTA Buttons */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              {/* Start Free Practice Dropdown */}
-              <div className="relative inline-block text-left z-50" ref={dropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setOpenPracticeDropdown((prev) => !prev)}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-[#0A2540] hover:bg-[#06182a] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
-                  aria-expanded={openPracticeDropdown}
-                  aria-haspopup="true"
-                >
-                  <span>Start Free Practice</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-
-                {openPracticeDropdown && (
-                  <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-border dark:border-white/15 bg-white dark:bg-[#001326] p-2 sm:p-2.5 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 z-[100] animate-in fade-in zoom-in-95 duration-150">
-                    <div className="space-y-1">
-                      {practiceExams.map((item) => {
-                        const ItemIcon = item.icon;
-                        return (
-                          <Link
-                            key={item.href + item.label}
-                            href={item.href}
-                            onClick={() => setOpenPracticeDropdown(false)}
-                            className="flex items-center justify-between px-3 py-2 sm:py-2.5 rounded-xl hover:bg-[#EEF3FE] dark:hover:bg-white/10 transition-colors group"
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <span
-                                className={`inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-lg ${item.bgClass} ${item.colorClass} shrink-0 group-hover:scale-105 transition-transform`}
-                              >
-                                <ItemIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" strokeWidth={2} />
-                              </span>
-                              <div className="flex flex-col min-w-0 text-left">
-                                <span className="font-semibold text-xs sm:text-sm text-navy dark:text-white truncate">
-                                  {item.label}
-                                </span>
-                                <span className="text-[10px] sm:text-xs text-navy/50 dark:text-white/50 truncate">
-                                  {item.subtitle}
-                                </span>
-                              </div>
-                            </div>
-                            <ChevronRight className="w-3.5 h-3.5 text-navy/40 dark:text-white/40 group-hover:text-navy dark:group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Start Free Practice - Direct Link to Courses Page */}
+              <Link
+                href="/courses"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-[#0A2540] hover:bg-[#06182a] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
+              >
+                <span>Start Free Practice</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
 
               {/* Track My Progress Dropdown */}
               <div className="relative inline-block text-left z-40" ref={progressDropdownRef}>
@@ -335,75 +242,41 @@ export default function Hero() {
         </div>
 
         {/* Section Below Hero: Your path to nursing success */}
-        <div className="pt-6 sm:pt-10">
+        <div className="pt-1 sm:pt-2">
           {/* Eyebrow Header Graphic */}
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <span className="h-px w-10 sm:w-16 bg-amber-600/40" />
-            <GraduationCap className="w-5 h-5 text-amber-600 dark:text-amber-400" strokeWidth={1.5} />
-            <span className="h-px w-10 sm:w-16 bg-amber-600/40" />
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <span className="h-px w-8 sm:w-12 bg-amber-600/40" />
+            <GraduationCap className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-amber-600 dark:text-amber-400" strokeWidth={1.5} />
+            <span className="h-px w-8 sm:w-12 bg-amber-600/40" />
           </div>
 
           {/* Section Heading */}
-          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-semibold text-center text-navy dark:text-white tracking-tight mb-3">
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-semibold text-center text-navy dark:text-white tracking-tight mb-2">
             Your path to nursing success
           </h2>
 
           {/* Section Subtitle */}
-          <p className="text-sm md:text-base text-navy/70 dark:text-white/70 max-w-2xl mx-auto text-center mb-8 sm:mb-10">
+          <p className="text-sm md:text-base text-navy/70 dark:text-white/70 max-w-2xl mx-auto text-center mb-4 sm:mb-5">
             Choose the exam that fits your goals and get the focused practice, study resources, and support you need.
           </p>
 
-          {/* Cards Container: Centered */}
-          <div className={`grid gap-6 mx-auto ${quickLinks.length === 1 ? "max-w-xl grid-cols-1" : "max-w-4xl grid-cols-1 md:grid-cols-2"}`}>
-            {quickLinks.map((group) => {
-              const Icon = group.icon;
-              return (
-                <div
-                  key={group.category}
-                  className="rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] p-6 sm:p-7 flex flex-col justify-between shadow-xs hover:shadow-md transition-all duration-200"
-                >
-                  <div>
-                    <div className="flex items-start gap-4 mb-4">
-                      <span
-                        className={`inline-flex items-center justify-center w-12 h-12 shrink-0 rounded-full ${group.iconBg} ${group.iconColor}`}
-                      >
-                        <Icon className="w-6 h-6" strokeWidth={1.75} />
-                      </span>
-                      <div className="flex flex-col min-w-0">
-                        <h3 className="font-serif text-lg sm:text-xl font-bold text-navy dark:text-white leading-tight">
-                          {group.category}
-                        </h3>
-                        <p className="text-xs sm:text-sm text-navy/60 dark:text-white/60 leading-relaxed mt-1">
-                          {group.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-slate-200 dark:border-white/10 my-4" />
-                  </div>
-
-                  <div className="flex flex-col">
-                    {group.links.map((link, idx) => (
-                      <div key={link.href + link.label}>
-                        {idx > 0 && <div className="border-t border-slate-100 dark:border-white/5" />}
-                        <Link
-                          href={link.href}
-                          className="flex items-center justify-between py-3 group hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        >
-                          <span className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-navy/90 dark:text-white/90 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                            {link.label}
-                          </span>
-                          <ArrowRight
-                            className="w-4 h-4 text-navy/40 dark:text-white/40 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-1 transition-all shrink-0 ml-2"
-                            strokeWidth={2}
-                          />
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+          {/* Horizontal Buttons: Each as a standalone button */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-3.5 max-w-5xl mx-auto w-full">
+            {pathButtons.map((btn) => (
+              <Link
+                key={btn.label}
+                href={btn.href}
+                className="group flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] shadow-2xs hover:shadow-md hover:border-teal-500/70 dark:hover:border-teal-400/60 active:scale-[0.99] transition-all duration-200 cursor-pointer"
+              >
+                <span className="text-xs sm:text-[13px] font-bold tracking-wider uppercase text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors truncate">
+                  {btn.label}
+                </span>
+                <ArrowRight
+                  className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-1 transition-all shrink-0 ml-1.5"
+                  strokeWidth={2}
+                />
+              </Link>
+            ))}
           </div>
 
           {/* Feature Strip */}
