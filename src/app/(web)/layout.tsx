@@ -1,9 +1,11 @@
+import { Suspense } from 'react';
 import Navbar from '@/app/(web)/includes/navbar';
 import Footer from '@/app/(web)/includes/footer';
 import type { Metadata } from 'next';
 import ScrollToTopButton from '@/components/common/ScrollToTopButton';
 import Whastapp from '@/app/(web)/includes/partials/Whastapp';
 import Tawkto from '@/app/(web)/includes/partials/Tawkto';
+import { CoursesFilterProvider } from '@/lib/contexts/courses/CoursesFilterContext';
 import { APP_DESCRIPTION, APP_NAME, SEO } from '@/lib/config/config';
 import '@/styles/web/rhenis.css';
 
@@ -54,8 +56,12 @@ export default function WebLayout({ children }: { children: React.ReactNode }) {
     <div
       className="nurseford-web rhenis-web flex min-h-screen flex-col"
     >
-      <Navbar />
-      <main className="flex-grow">{children}</main>
+      <Suspense fallback={null}>
+        <CoursesFilterProvider>
+          <Navbar />
+          <main className="flex-grow">{children}</main>
+        </CoursesFilterProvider>
+      </Suspense>
       <Footer />
       <ScrollToTopButton />
       <Whastapp />

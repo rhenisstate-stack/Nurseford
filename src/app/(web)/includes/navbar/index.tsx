@@ -3,12 +3,15 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Menu, X, ChevronDown, User } from 'lucide-react';
 import SearchBar from './search';
 import ThemeModeToggle from '@/components/common/theme/ThemeModeToggle';
 import { useCurrentSystemUser } from '@/lib/hooks/users/account/current/useCurrentSystemUser';
 import UserAccountDropdown from '@/components/common/user/UserAccountDropdown';
 import HeedMessageBell from './HeedMessageBell';
+import CoursesNavbarFilters from './CoursesNavbarFilters';
+import { useLeftSidebar } from '@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext';
 
 const nursingSchoolLinks = [
   {
@@ -47,6 +50,12 @@ const resourceLinks = [
 ];
 
 export default function Navbar() {
+  const pathname = usePathname() || '';
+  const isHomePage = pathname === '/' || pathname === '';
+  const isCoursesPage = pathname === '/courses' || pathname === '/pages/courses';
+
+  const { isOpened: isLeftOpened, toggle: toggleLeftSidebar } = useLeftSidebar();
+
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -57,7 +66,6 @@ export default function Navbar() {
 
   const { user, authenticated, loading } = useCurrentSystemUser();
   const signedIn = !loading && authenticated && !!user;
-  const userName = (user?.userName ?? '').trim();
 
   useEffect(() => {
     const onScroll = () => {
@@ -111,127 +119,154 @@ export default function Navbar() {
       }`}
     >
       <div className="mx-auto w-full max-w-[1600px] px-4 md:px-6 lg:px-8 flex items-center justify-between">
-        {/* Brand */}
-        <Link href="/" className="flex items-center gap-2 group" onClick={() => setOpenDropdown(null)}>
-          <Image
-            src="/logo/logo.webp"
-            alt="Nurseford"
-            width={32}
-            height={32}
-            priority
-            className="w-8 h-8 object-contain"
-          />
-          <span className="font-serif text-xl font-bold text-navy dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-            Nurseford
-          </span>
-        </Link>
-
-        {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-8">
-          {/* Nursing School dropdown */}
-          <div className="relative" ref={nursingRef}>
+        {/* Brand & Sidebar Toggle */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {isCoursesPage && (
             <button
               type="button"
-              onClick={() => toggleDropdown('nursing')}
-              className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${
-                openDropdown === 'nursing' ? 'text-blue-600 dark:text-blue-400' : 'text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white'
-              }`}
-              aria-expanded={openDropdown === 'nursing'}
-              aria-haspopup="true"
+              onClick={toggleLeftSidebar}
+              className="flex items-center justify-center w-8 h-8 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer text-navy dark:text-white"
+              aria-label="Toggle Sidebar"
+              title={isLeftOpened ? "Collapse Sidebar" : "Expand Sidebar"}
             >
-              Nursing School
-              <ChevronDown
-                className={`w-4 h-4 transition-transform ${openDropdown === 'nursing' ? 'rotate-180' : ''}`}
-              />
+              {isLeftOpened ? (
+                <X className="w-4 h-4" strokeWidth={2.5} />
+              ) : (
+                <Menu className="w-4 h-4" strokeWidth={2.5} />
+              )}
             </button>
-            {openDropdown === 'nursing' && (
-              <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
-                <div className="w-72 rounded-2xl border border-border bg-white dark:bg-[#1E293B] p-3 shadow-2xl">
-                  {nursingSchoolLinks.map((item) => (
-                    <Link
-                      key={item.href + item.label}
-                      href={item.href}
-                      onClick={() => setOpenDropdown(null)}
-                      className="flex flex-col gap-0.5 rounded-xl px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
-                    >
-                      <span className="font-serif text-sm font-semibold text-navy dark:text-white">{item.label}</span>
-                      <span className="text-xs text-navy/50 dark:text-white/50">{item.description}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          )}
 
-          {/* Exit Exams dropdown */}
-          <div className="relative" ref={exitRef}>
-            <button
-              type="button"
-              onClick={() => toggleDropdown('exit')}
-              className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${
-                openDropdown === 'exit' ? 'text-blue-600 dark:text-blue-400' : 'text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white'
-              }`}
-              aria-expanded={openDropdown === 'exit'}
-              aria-haspopup="true"
-            >
-              Exit Exams
-              <ChevronDown
-                className={`w-4 h-4 transition-transform ${openDropdown === 'exit' ? 'rotate-180' : ''}`}
-              />
-            </button>
-            {openDropdown === 'exit' && (
-              <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
-                <div className="w-72 rounded-2xl border border-border bg-white dark:bg-[#1E293B] p-3 shadow-2xl">
-                  {exitExamLinks.map((item) => (
-                    <Link
-                      key={item.href + item.label}
-                      href={item.href}
-                      onClick={() => setOpenDropdown(null)}
-                      className="flex flex-col gap-0.5 rounded-xl px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
-                    >
-                      <span className="font-serif text-sm font-semibold text-navy dark:text-white">{item.label}</span>
-                      <span className="text-xs text-navy/50 dark:text-white/50">{item.description}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+          <Link href="/" className="flex items-center gap-2 group" onClick={() => setOpenDropdown(null)}>
+            <Image
+              src="/logo/logo.webp"
+              alt="Nurseford"
+              width={32}
+              height={32}
+              priority
+              className="w-8 h-8 object-contain"
+            />
+            <span className="font-serif text-xl font-bold text-navy dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              Nurseford
+            </span>
+          </Link>
+        </div>
 
-          {/* Resources dropdown */}
-          <div className="relative" ref={resourceRef}>
-            <button
-              type="button"
-              onClick={() => toggleDropdown('resources')}
-              className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${
-                openDropdown === 'resources' ? 'text-blue-600 dark:text-blue-400' : 'text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white'
-              }`}
-              aria-expanded={openDropdown === 'resources'}
-              aria-haspopup="true"
-            >
-              Resources
-              <ChevronDown
-                className={`w-4 h-4 transition-transform ${openDropdown === 'resources' ? 'rotate-180' : ''}`}
-              />
-            </button>
-            {openDropdown === 'resources' && (
-              <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
-                <div className="w-64 rounded-2xl border border-border bg-white dark:bg-[#1E293B] p-3 shadow-2xl">
-                  {resourceLinks.map((item) => (
-                    <Link
-                      key={item.href + item.label}
-                      href={item.href}
-                      onClick={() => setOpenDropdown(null)}
-                      className="block rounded-xl px-4 py-2.5 text-sm font-medium text-navy/80 dark:text-white/80 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
+        {/* Desktop nav: ONLY rendered on Home Page */}
+        {isHomePage && (
+          <nav className="hidden lg:flex items-center gap-8">
+            {/* Nursing School dropdown */}
+            <div className="relative" ref={nursingRef}>
+              <button
+                type="button"
+                onClick={() => toggleDropdown('nursing')}
+                className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                  openDropdown === 'nursing' ? 'text-blue-600 dark:text-blue-400' : 'text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white'
+                }`}
+                aria-expanded={openDropdown === 'nursing'}
+                aria-haspopup="true"
+              >
+                Nursing School
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${openDropdown === 'nursing' ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {openDropdown === 'nursing' && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
+                  <div className="w-72 rounded-2xl border border-border bg-white dark:bg-[#1E293B] p-3 shadow-2xl">
+                    {nursingSchoolLinks.map((item) => (
+                      <Link
+                        key={item.href + item.label}
+                        href={item.href}
+                        onClick={() => setOpenDropdown(null)}
+                        className="flex flex-col gap-0.5 rounded-xl px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+                      >
+                        <span className="font-serif text-sm font-semibold text-navy dark:text-white">{item.label}</span>
+                        <span className="text-xs text-navy/50 dark:text-white/50">{item.description}</span>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Exit Exams dropdown */}
+            <div className="relative" ref={exitRef}>
+              <button
+                type="button"
+                onClick={() => toggleDropdown('exit')}
+                className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                  openDropdown === 'exit' ? 'text-blue-600 dark:text-blue-400' : 'text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white'
+                }`}
+                aria-expanded={openDropdown === 'exit'}
+                aria-haspopup="true"
+              >
+                Exit Exams
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${openDropdown === 'exit' ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {openDropdown === 'exit' && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
+                  <div className="w-72 rounded-2xl border border-border bg-white dark:bg-[#1E293B] p-3 shadow-2xl">
+                    {exitExamLinks.map((item) => (
+                      <Link
+                        key={item.href + item.label}
+                        href={item.href}
+                        onClick={() => setOpenDropdown(null)}
+                        className="flex flex-col gap-0.5 rounded-xl px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
+                      >
+                        <span className="font-serif text-sm font-semibold text-navy dark:text-white">{item.label}</span>
+                        <span className="text-xs text-navy/50 dark:text-white/50">{item.description}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Resources dropdown */}
+            <div className="relative" ref={resourceRef}>
+              <button
+                type="button"
+                onClick={() => toggleDropdown('resources')}
+                className={`flex items-center gap-1.5 text-sm font-semibold transition-colors ${
+                  openDropdown === 'resources' ? 'text-blue-600 dark:text-blue-400' : 'text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white'
+                }`}
+                aria-expanded={openDropdown === 'resources'}
+                aria-haspopup="true"
+              >
+                Resources
+                <ChevronDown
+                  className={`w-4 h-4 transition-transform ${openDropdown === 'resources' ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {openDropdown === 'resources' && (
+                <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-50">
+                  <div className="w-64 rounded-2xl border border-border bg-white dark:bg-[#1E293B] p-3 shadow-2xl">
+                    {resourceLinks.map((item) => (
+                      <Link
+                        key={item.href + item.label}
+                        href={item.href}
+                        onClick={() => setOpenDropdown(null)}
+                        className="block rounded-xl px-4 py-2.5 text-sm font-medium text-navy/80 dark:text-white/80 hover:bg-slate-50 dark:hover:bg-white/10 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </nav>
+        )}
+
+        {/* Courses Filters: ONLY rendered on Courses Page */}
+        {isCoursesPage && (
+          <div className="hidden lg:flex items-center mx-2 overflow-visible">
+            <CoursesNavbarFilters />
           </div>
-        </nav>
+        )}
 
         {/* Desktop search + Actions */}
         <div className="hidden lg:flex items-center gap-4">
@@ -297,45 +332,63 @@ export default function Navbar() {
             <Link href="/" onClick={() => setMobileOpen(false)} className="py-2.5 text-sm font-semibold text-navy dark:text-white hover:text-blue-600 transition-colors">
               Home
             </Link>
-            <div className="pt-2 pb-1 text-xs font-bold uppercase tracking-wider text-navy/40 dark:text-white/40">
-              Nursing School
-            </div>
-            {nursingSchoolLinks.map((item) => (
-              <Link
-                key={item.href + item.label}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className="py-2 text-sm font-medium text-navy/80 dark:text-white/80 hover:text-blue-600 transition-colors pl-2"
-              >
-                {item.label}
-              </Link>
-            ))}
-            <div className="pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-navy/40 dark:text-white/40">
-              Exit Exams
-            </div>
-            {exitExamLinks.map((item) => (
-              <Link
-                key={item.href + item.label}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className="py-2 text-sm font-medium text-navy/80 dark:text-white/80 hover:text-blue-600 transition-colors pl-2"
-              >
-                {item.label}
-              </Link>
-            ))}
-            <div className="pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-navy/40 dark:text-white/40">
-              Resources
-            </div>
-            {resourceLinks.map((item) => (
-              <Link
-                key={item.href + item.label}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
-                className="py-2 text-sm font-medium text-navy/80 dark:text-white/80 hover:text-blue-600 transition-colors pl-2"
-              >
-                {item.label}
-              </Link>
-            ))}
+
+            {/* ONLY ON HOME PAGE */}
+            {isHomePage && (
+              <>
+                <div className="pt-2 pb-1 text-xs font-bold uppercase tracking-wider text-navy/40 dark:text-white/40">
+                  Nursing School
+                </div>
+                {nursingSchoolLinks.map((item) => (
+                  <Link
+                    key={item.href + item.label}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="py-2 text-sm font-medium text-navy/80 dark:text-white/80 hover:text-blue-600 transition-colors pl-2"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                <div className="pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-navy/40 dark:text-white/40">
+                  Exit Exams
+                </div>
+                {exitExamLinks.map((item) => (
+                  <Link
+                    key={item.href + item.label}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="py-2 text-sm font-medium text-navy/80 dark:text-white/80 hover:text-blue-600 transition-colors pl-2"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+                <div className="pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-navy/40 dark:text-white/40">
+                  Resources
+                </div>
+                {resourceLinks.map((item) => (
+                  <Link
+                    key={item.href + item.label}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="py-2 text-sm font-medium text-navy/80 dark:text-white/80 hover:text-blue-600 transition-colors pl-2"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </>
+            )}
+
+            {/* ON COURSES PAGE */}
+            {isCoursesPage && (
+              <div className="pt-3 pb-2 border-t border-border mt-2">
+                <div className="pb-2 text-xs font-bold uppercase tracking-wider text-navy/40 dark:text-white/40">
+                  Course Filters
+                </div>
+                <div className="overflow-x-auto py-1">
+                  <CoursesNavbarFilters />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-2.5 pt-4 border-t border-border mt-3">

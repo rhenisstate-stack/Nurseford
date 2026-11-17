@@ -232,7 +232,7 @@ export async function GET(
       questionsCount: Number(e.questionsCount ?? 0),
       accessType: e.accessType ?? "Restricted",
       status: e.status ?? "Active",
-      modes: e.modes || ["Practice", "Review", "Exam"],
+      modes: e.modes || [],
       examActions: e.examActions || e.actions || [],
       updatedAt: e.updatedAt || e.updated_at || e.createdAt || e.created_at || null,
       createdAt: e.createdAt || e.created_at || null,

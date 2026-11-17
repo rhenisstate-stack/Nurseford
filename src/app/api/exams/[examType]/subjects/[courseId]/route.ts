@@ -306,7 +306,7 @@ export async function GET(
             const subCategories: DashboardSubCategory[] = rawItems.map((e, index) => {
               const qCount = extractExamQuestionCount(e);
               const examId = String(e.guidId || e.id || e.GuidId || e.Id);
-              const examTitle = e.title || e.Title || `Exam ${index + 1}`;
+              const examTitle = e.title || e.Title || "";
               return {
                 id: examId,
                 title: examTitle,
@@ -333,16 +333,16 @@ export async function GET(
     );
 
     const subjects: BackendSubject[] = items.map((c, i) => {
-      const name = c.name?.trim() || `Subject ${i + 1}`;
+      const name = c.name?.trim() || "";
       const live = liveSubjectData[i] || { examCount: 0, questionCount: 0, subCategories: [] };
       const guid = c.guidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : undefined);
 
       return {
-        id: guid ?? c.id ?? name,
+        id: guid ?? c.id ?? "",
         guidId: guid,
         name,
         slug: toSlug(name),
-        description: c.description,
+        description: c.description || "",
         coursesCount: toNumber(c.coursesCount, 0),
         order: parseOrder(c.order ?? c.position ?? c.rank ?? c.sortOrder ?? c.displayOrder, i + 1),
         examCount: live.examCount,

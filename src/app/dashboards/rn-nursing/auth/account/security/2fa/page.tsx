@@ -30,12 +30,24 @@ export default function TwoFactorAuthPage() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
 
-  // ⚠️ ASSUMPTION: your backend will return a QR code image URL / otpauth secret here.
-  const [mockSecret] = useState("JBSWY3DPEHPK3PXP");
+  const [twoFactorSecret, setTwoFactorSecret] = useState("");
 
-  const handleStartSetup = () => {
+  const handleStartSetup = async () => {
     setMessage(null);
-    setStep("setup");
+    setBusy(true);
+    try {
+      const res = await fetch("/api/auth/support/2fa");
+      if (res.ok) {
+        const data = await res.json();
+        const sec = data?.data?.secret || data?.secret || "";
+        if (sec) setTwoFactorSecret(sec);
+      }
+    } catch {
+      // Dynamic fetch handled
+    } finally {
+      setBusy(false);
+      setStep("setup");
+    }
   };
 
   const handleConfirm = async () => {
@@ -181,18 +193,20 @@ export default function TwoFactorAuthPage() {
                 <div className="w-36 h-36 rounded-xl border border-[var(--text-color)]/20 bg-[var(--text-color)]/5 flex items-center justify-center text-[10px] opacity-50 text-[var(--text-color)]">
                   QR Code Placeholder
                 </div>
-                <div className="flex items-center gap-2">
-                  <code className="px-3 py-1.5 rounded-lg bg-[var(--text-color)]/10 text-xs font-mono text-[var(--text-color)]">
-                    {mockSecret}
-                  </code>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(mockSecret)}
-                    className="p-1.5 rounded-lg hover:bg-[var(--text-color)]/10 text-[var(--text-color)] opacity-60 hover:opacity-100 transition"
-                    title="Copy secret"
-                  >
-                    <FiCopy className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                {twoFactorSecret && (
+                  <div className="flex items-center gap-2">
+                    <code className="px-3 py-1.5 rounded-lg bg-[var(--text-color)]/10 text-xs font-mono text-[var(--text-color)]">
+                      {twoFactorSecret}
+                    </code>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(twoFactorSecret)}
+                      className="p-1.5 rounded-lg hover:bg-[var(--text-color)]/10 text-[var(--text-color)] opacity-60 hover:opacity-100 transition"
+                      title="Copy secret"
+                    >
+                      <FiCopy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
                 <button
                   onClick={() => setStep("confirm")}
                   className="px-5 py-2 rounded-xl font-semibold text-xs bg-indigo-500 text-white hover:scale-105 transition-transform"

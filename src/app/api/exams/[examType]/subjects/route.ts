@@ -192,20 +192,50 @@ async function fetchBackendSubjects(examType: string, req: NextRequest): Promise
     `final: ${filtered.length}`
   );
 
-  const mapped: BackendSubject[] = filtered.map((c, i) => {
-    const name = c.name?.trim() || `Subject ${i + 1}`;
-    const guid = c.guidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : undefined);
-    return {
-      id: guid ?? c.id ?? name,
-      guidId: guid,
-      name,
-      slug: toSlug(name),
-      description: c.description,
-      coursesCount: toNumber(c.coursesCount, 0),
-      examCount: toNumber(c.subjectsCount, 0),
-      order: parseOrder(c.order ?? c.position ?? c.rank ?? c.sortOrder ?? c.displayOrder, i + 1),
-    };
-  });
+  const mapped: BackendSubject[] = await Promise.all(
+    filtered.map(async (c, i) => {
+      const name = c.name?.trim() || "";
+      const guid = c.guidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : undefined);
+      const slug = toSlug(name);
+      const identifier = guid || (typeof c.id === "string" ? c.id : String(c.id || ""));
+
+      let liveSubjectsCount = toNumber(c.subjectsCount, 0);
+
+      if (identifier) {
+        try {
+          const distinctUrl = `${getBackendBaseUrl()}/api/castoline/strata/learning/subjects/list/distinct?identifier=${encodeURIComponent(
+            identifier
+          )}&type=course&dynamicPage=1&dynamicPerPage=100`;
+          const subRes = await fetch(distinctUrl, {
+            headers,
+            cache: "no-store",
+          });
+          if (subRes.ok) {
+            const rawSub = await subRes.json();
+            const convertedSub = convertBackendKeysToCamel(rawSub) as {
+              data?: { items?: unknown[]; skewTotal?: number };
+            };
+            const items = convertedSub?.data?.items || [];
+            liveSubjectsCount = items.length;
+          }
+        } catch {
+          // Keep backend count if distinct fetch fails
+        }
+      }
+
+      return {
+        id: guid ?? c.id ?? name,
+        guidId: guid,
+        name,
+        slug,
+        description: c.description || "",
+        coursesCount: liveSubjectsCount,
+        subjectsCount: liveSubjectsCount,
+        examCount: liveSubjectsCount,
+        order: parseOrder(c.order ?? c.position ?? c.rank ?? c.sortOrder ?? c.displayOrder, i + 1),
+      };
+    })
+  );
 
   mapped.sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
   return mapped;

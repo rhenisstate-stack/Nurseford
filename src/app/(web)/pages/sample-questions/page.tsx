@@ -28,11 +28,17 @@ export default function SampleQuestionsPage() {
           </p>
         </div>
 
-        <div className="space-y-6">
-          {SAMPLE_QUESTIONS.map((item, idx) => (
-            <SampleQuestionCard key={item.id} item={item} index={idx} />
-          ))}
-        </div>
+        {SAMPLE_QUESTIONS.length > 0 ? (
+          <div className="space-y-6">
+            {SAMPLE_QUESTIONS.map((item, idx) => (
+              <SampleQuestionCard key={item.id} item={item} index={idx} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-slate-500">
+            Practice questions load dynamically from your active exam banks.
+          </div>
+        )}
 
         <div className="mt-10 rounded-2xl border border-coral/30 bg-coral/10 p-6 text-center">
           <h2 className="font-serif text-xl font-semibold text-navy mb-2">

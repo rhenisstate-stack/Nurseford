@@ -2,26 +2,20 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import {
-  Search,
-  X,
   BookOpen,
-  Calendar,
-  Sun,
-  School,
   ArrowRight,
-  GraduationCap,
   Sparkles,
   RefreshCw,
-  Check,
-  ChevronDown,
 } from "lucide-react";
-import { useNursingSchools } from "@/lib/data/nursingSchools";
 import { toSlug } from "@/lib/data/exam-subjects";
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
 import { isAllowedNursingCourse } from "@/lib/utils/exams/nursingProgramScope";
+import { useCoursesFilter } from "@/lib/contexts/courses/CoursesFilterContext";
+import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext";
+import CoursesNavbarFilters from "@/app/(web)/includes/navbar/CoursesNavbarFilters";
+import CoursesLeftSidebar from "@/app/(web)/includes/sidebar/CoursesLeftSidebar";
 
 export interface DynamicCourse {
   id: string;
@@ -34,7 +28,7 @@ export interface DynamicCourse {
   panelSlug: "rn-nursing" | "lpn-nursing";
   year: number | null;
   season: string | null;
-  subjectsCount: number;
+  subjectsCount?: number;
 }
 
 interface RawCoursePayload {
@@ -54,44 +48,28 @@ interface RawCoursePayload {
   subjectsCount?: number;
 }
 
-const PROGRAM_OPTIONS = [
-  "All Programmes",
-  "RN Nursing Exams",
-  "LPN Nursing Exams",
-  "RN Exit Exams",
-  "LPN Exit Exams",
-];
-
 export default function CoursesPage() {
-  const searchParams = useSearchParams();
+  const { isOpened: isSidebarOpened } = useLeftSidebar();
 
-  // Local filter states
+  const {
+    searchQuery,
+    selectedProgram,
+    selectedSchool,
+    selectedYear,
+    selectedSeason,
+    clearAllFilters,
+    setDynamicPrograms,
+    setDynamicYears,
+    setDynamicSeasons,
+    setTotalCoursesCount,
+    setFilteredCount,
+  } = useCoursesFilter();
+
   const [courses, setCourses] = useState<DynamicCourse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProgram, setSelectedProgram] = useState<string>(() => {
-    return searchParams.get("program") || "All Programmes";
-  });
-  const [selectedSchool, setSelectedSchool] = useState<string>(() => {
-    return searchParams.get("school") || "All Schools";
-  });
-  const [selectedYear, setSelectedYear] = useState<string>(() => {
-    return searchParams.get("year") || "All Years";
-  });
-  const [selectedSeason, setSelectedSeason] = useState<string>(() => {
-    return searchParams.get("season") || "All Seasons";
-  });
-
-  // Dropdown menus visibility
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-  // Dynamic schools list
-  const { schools } = useNursingSchools();
-
-  // Fetch courses dynamically from both endpoints with fallback
+  // Fetch courses dynamically from endpoints with fallback
   useEffect(() => {
     let cancelled = false;
 
@@ -188,16 +166,17 @@ export default function CoursesPage() {
             id,
             guidId: item.guidId,
             name,
-            description:
-              item.description ||
-              `Comprehensive ${programName} module with verified practice questions and clinical rationales.`,
+            description: item.description?.trim() || "",
             slug,
             programName,
             category: isExit ? "exit" : "core",
             panelSlug,
             year,
             season,
-            subjectsCount: item.subjectsCount || item.coursesCount || (isExit ? 4 : 6),
+            subjectsCount:
+              typeof item.subjectsCount === "number" && item.subjectsCount > 0
+                ? item.subjectsCount
+                : undefined,
           });
         }
 
@@ -212,7 +191,23 @@ export default function CoursesPage() {
           return a.name.localeCompare(b.name);
         });
 
+        // Compute available programs, years, and seasons strictly from backend courses data
+        const programsSet = new Set<string>();
+        const yearsSet = new Set<number>();
+        const seasonsSet = new Set<string>();
+        normalized.forEach((c) => {
+          if (c.programName) programsSet.add(c.programName);
+          if (c.year) yearsSet.add(c.year);
+          if (c.season) seasonsSet.add(c.season);
+        });
+        setDynamicPrograms(Array.from(programsSet).sort((a, b) => a.localeCompare(b)));
+        setDynamicYears(Array.from(yearsSet).sort((a, b) => b - a));
+        setDynamicSeasons(Array.from(seasonsSet));
+
+        if (cancelled) return;
+
         setCourses(normalized);
+        setTotalCoursesCount(normalized.length);
       } catch (err: unknown) {
         console.error("[CoursesPage] Error loading dynamic courses:", err);
         if (!cancelled) setError("Failed to load courses. Please try again.");
@@ -226,39 +221,7 @@ export default function CoursesPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  // Close dropdown on click outside
-  useEffect(() => {
-    function handleClickOutside() {
-      setOpenDropdown(null);
-    }
-    if (openDropdown) {
-      window.addEventListener("click", handleClickOutside);
-      return () => window.removeEventListener("click", handleClickOutside);
-    }
-  }, [openDropdown]);
-
-  // Dynamically extract unique available years from loaded courses
-  const dynamicYears = useMemo(() => {
-    const set = new Set<number>();
-    courses.forEach((c) => {
-      if (c.year) set.add(c.year);
-    });
-    // Add current/recent years if not present
-    [2026, 2025, 2024, 2023].forEach((y) => set.add(y));
-    return Array.from(set).sort((a, b) => b - a);
-  }, [courses]);
-
-  // Dynamically extract unique seasons
-  const dynamicSeasons = useMemo(() => {
-    const standard = ["Fall", "Spring", "Summer", "Winter"];
-    const found = new Set<string>(standard);
-    courses.forEach((c) => {
-      if (c.season) found.add(c.season);
-    });
-    return Array.from(found);
-  }, [courses]);
+  }, [setDynamicPrograms, setDynamicSeasons, setDynamicYears, setTotalCoursesCount]);
 
   // Filter courses based on active filters
   const filteredCourses = useMemo(() => {
@@ -298,20 +261,10 @@ export default function CoursesPage() {
     });
   }, [courses, searchQuery, selectedProgram, selectedYear, selectedSeason]);
 
-  const hasActiveFilters =
-    Boolean(searchQuery.trim()) ||
-    selectedProgram !== "All Programmes" ||
-    selectedSchool !== "All Schools" ||
-    selectedYear !== "All Years" ||
-    selectedSeason !== "All Seasons";
-
-  const clearAllFilters = () => {
-    setSearchQuery("");
-    setSelectedProgram("All Programmes");
-    setSelectedSchool("All Schools");
-    setSelectedYear("All Years");
-    setSelectedSeason("All Seasons");
-  };
+  // Sync filtered count back to context
+  useEffect(() => {
+    setFilteredCount(filteredCourses.length);
+  }, [filteredCourses.length, setFilteredCount]);
 
   // Build target link for a course, preserving school filter if active
   const getCourseHref = (course: DynamicCourse) => {
@@ -331,360 +284,37 @@ export default function CoursesPage() {
   };
 
   return (
-    <div className="min-h-screen pt-24 sm:pt-28 md:pt-32 pb-20" style={{ backgroundColor: "var(--content-bg)" }}>
-      <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14">
+    <>
+      <CoursesLeftSidebar />
+
+      <div
+        className={`min-h-screen pt-24 sm:pt-28 md:pt-32 pb-20 transition-all duration-300 ease-in-out ${
+          isSidebarOpened ? "lg:pl-64" : "pl-0"
+        }`}
+        style={{ backgroundColor: "var(--content-bg)" }}
+      >
+        <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14">
         
         {/* Header Hero Section */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-[#2FD9C4] text-xs font-mono font-bold tracking-widest uppercase mb-3.5 shadow-2xs">
+        <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-8">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-700 dark:text-[#2FD9C4] text-xs font-mono font-bold tracking-widest uppercase mb-3 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Dynamic Exam Curriculum</span>
           </div>
 
-          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-navy dark:text-white tracking-tight leading-tight mb-3.5">
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-navy dark:text-white tracking-tight leading-tight">
             Explore All Nursing Courses
           </h1>
-
-          <p className="text-sm sm:text-base text-navy/70 dark:text-white/70 leading-relaxed max-w-2xl mx-auto">
-            Choose your course to access comprehensive question banks, realistic practice CATs, and verified Next-Gen rationales. Filter by program, school, academic year, and season.
-          </p>
-
-          {/* Quick Counter Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-5">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs">
-              <BookOpen className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-              <span>{isLoading ? "..." : `${courses.length} Total Courses`}</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs">
-              <GraduationCap className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>RN &amp; LPN Specializations</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-2xs">
-              <School className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>{schools.length} Nursing Schools</span>
-            </span>
-          </div>
         </div>
 
-        {/* Dynamic Filter Controls Bar */}
-        <div className="rounded-2xl border-2 border-slate-200 dark:border-slate-700/80 bg-white dark:bg-[#1E293B] p-4 sm:p-5 shadow-sm mb-8 transition-all">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-center">
-            
-            {/* Search Input */}
-            <div className="relative md:col-span-4 lg:col-span-3">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search courses or topics..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 rounded-xl text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-navy dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-teal-500 transition-colors"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Filter by Programme Dropdown */}
-            <div className="relative md:col-span-3 lg:col-span-2.5" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(openDropdown === "program" ? null : "program")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all cursor-pointer ${
-                  selectedProgram !== "All Programmes"
-                    ? "bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-[#2FD9C4] border-teal-500/50"
-                    : "bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <GraduationCap className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-                  <span className="truncate">{selectedProgram}</span>
-                </div>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === "program" ? "rotate-180" : ""}`} />
-              </button>
-
-              {openDropdown === "program" && (
-                <div className="absolute left-0 top-full mt-1.5 w-60 rounded-xl bg-white dark:bg-[#15202B] border border-slate-200 dark:border-slate-700 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in-50 zoom-in-95 duration-100">
-                  {PROGRAM_OPTIONS.map((prog) => (
-                    <button
-                      key={prog}
-                      type="button"
-                      onClick={() => {
-                        setSelectedProgram(prog);
-                        setOpenDropdown(null);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer ${
-                        selectedProgram === prog
-                          ? "bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 font-bold"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                      }`}
-                    >
-                      <span>{prog}</span>
-                      {selectedProgram === prog && <Check className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Filter by School Dropdown */}
-            <div className="relative md:col-span-3 lg:col-span-2.5" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(openDropdown === "school" ? null : "school")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all cursor-pointer ${
-                  selectedSchool !== "All Schools"
-                    ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 border-blue-500/50"
-                    : "bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <School className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400 shrink-0" />
-                  <span className="truncate">{selectedSchool}</span>
-                </div>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === "school" ? "rotate-180" : ""}`} />
-              </button>
-
-              {openDropdown === "school" && (
-                <div className="absolute left-0 top-full mt-1.5 w-72 max-h-64 overflow-y-auto rounded-xl bg-white dark:bg-[#15202B] border border-slate-200 dark:border-slate-700 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in-50 zoom-in-95 duration-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedSchool("All Schools");
-                      setOpenDropdown(null);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer ${
-                      selectedSchool === "All Schools"
-                        ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 font-bold"
-                        : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                    }`}
-                  >
-                    <span>All Schools</span>
-                    {selectedSchool === "All Schools" && <Check className="w-3.5 h-3.5 text-blue-600" />}
-                  </button>
-                  <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
-                  {schools.map((sch) => (
-                    <button
-                      key={sch}
-                      type="button"
-                      onClick={() => {
-                        setSelectedSchool(sch);
-                        setOpenDropdown(null);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer ${
-                        selectedSchool === sch
-                          ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 font-bold"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                      }`}
-                    >
-                      <span className="truncate pr-2">{sch}</span>
-                      {selectedSchool === sch && <Check className="w-3.5 h-3.5 text-blue-600" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Filter by Year Dropdown */}
-            <div className="relative md:col-span-2 lg:col-span-2" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(openDropdown === "year" ? null : "year")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all cursor-pointer ${
-                  selectedYear !== "All Years"
-                    ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-500/50"
-                    : "bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span className="truncate">{selectedYear}</span>
-                </div>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === "year" ? "rotate-180" : ""}`} />
-              </button>
-
-              {openDropdown === "year" && (
-                <div className="absolute left-0 top-full mt-1.5 w-44 rounded-xl bg-white dark:bg-[#15202B] border border-slate-200 dark:border-slate-700 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in-50 zoom-in-95 duration-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedYear("All Years");
-                      setOpenDropdown(null);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer ${
-                      selectedYear === "All Years"
-                        ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold"
-                        : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                    }`}
-                  >
-                    <span>All Years</span>
-                    {selectedYear === "All Years" && <Check className="w-3.5 h-3.5 text-amber-600" />}
-                  </button>
-                  <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
-                  {dynamicYears.map((yr) => (
-                    <button
-                      key={yr}
-                      type="button"
-                      onClick={() => {
-                        setSelectedYear(String(yr));
-                        setOpenDropdown(null);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer ${
-                        selectedYear === String(yr)
-                          ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-bold"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                      }`}
-                    >
-                      <span>{yr}</span>
-                      {selectedYear === String(yr) && <Check className="w-3.5 h-3.5 text-amber-600" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Filter by Season Dropdown */}
-            <div className="relative md:col-span-2 lg:col-span-1.5" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                onClick={() => setOpenDropdown(openDropdown === "season" ? null : "season")}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold border transition-all cursor-pointer ${
-                  selectedSeason !== "All Seasons"
-                    ? "bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border-purple-500/50"
-                    : "bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-                }`}
-              >
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <Sun className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-                  <span className="truncate">{selectedSeason}</span>
-                </div>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${openDropdown === "season" ? "rotate-180" : ""}`} />
-              </button>
-
-              {openDropdown === "season" && (
-                <div className="absolute left-0 top-full mt-1.5 w-44 rounded-xl bg-white dark:bg-[#15202B] border border-slate-200 dark:border-slate-700 shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in-50 zoom-in-95 duration-100">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedSeason("All Seasons");
-                      setOpenDropdown(null);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer ${
-                      selectedSeason === "All Seasons"
-                        ? "bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 font-bold"
-                        : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                    }`}
-                  >
-                    <span>All Seasons</span>
-                    {selectedSeason === "All Seasons" && <Check className="w-3.5 h-3.5 text-purple-600" />}
-                  </button>
-                  <div className="border-t border-slate-100 dark:border-slate-800 my-1" />
-                  {dynamicSeasons.map((seas) => (
-                    <button
-                      key={seas}
-                      type="button"
-                      onClick={() => {
-                        setSelectedSeason(seas);
-                        setOpenDropdown(null);
-                      }}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer ${
-                        selectedSeason === seas
-                          ? "bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 font-bold"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200"
-                      }`}
-                    >
-                      <span>{seas}</span>
-                      {selectedSeason === seas && <Check className="w-3.5 h-3.5 text-purple-600" />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Reset Filters Action Button */}
-            {hasActiveFilters && (
-              <div className="md:col-span-12 lg:col-span-0.5 flex justify-end">
-                <button
-                  type="button"
-                  onClick={clearAllFilters}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-                  title="Clear all active filters"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Reset</span>
-                </button>
-              </div>
-            )}
+        {/* Mobile Filter Bar - Visible on screens below lg where navbar filters are hidden in hamburger */}
+        <div className="lg:hidden mb-6 p-2 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 px-1">
+            Filter Curriculum:
           </div>
-
-          {/* Active Filter Tags Pill Row */}
-          {hasActiveFilters && (
-            <div className="flex flex-wrap items-center gap-2 pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
-              <span className="text-slate-400 font-medium">Active Filters:</span>
-              {selectedProgram !== "All Programmes" && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-[11px] font-semibold">
-                  Program: {selectedProgram}
-                  <button onClick={() => setSelectedProgram("All Programmes")} className="hover:text-teal-900 ml-1">
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-              {selectedSchool !== "All Schools" && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-sky-300 border border-blue-200 dark:border-blue-800 text-[11px] font-semibold">
-                  School: {selectedSchool}
-                  <button onClick={() => setSelectedSchool("All Schools")} className="hover:text-blue-900 ml-1">
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-              {selectedYear !== "All Years" && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-[11px] font-semibold">
-                  Year: {selectedYear}
-                  <button onClick={() => setSelectedYear("All Years")} className="hover:text-amber-900 ml-1">
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-              {selectedSeason !== "All Seasons" && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[11px] font-semibold">
-                  Season: {selectedSeason}
-                  <button onClick={() => setSelectedSeason("All Seasons")} className="hover:text-purple-900 ml-1">
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-              {searchQuery && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-semibold">
-                  Keyword: &quot;{searchQuery}&quot;
-                  <button onClick={() => setSearchQuery("")} className="hover:text-slate-900 ml-1">
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Results Counter */}
-        <div className="flex items-center justify-between mb-5 px-1">
-          <span className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Showing <strong className="text-navy dark:text-white font-bold">{filteredCourses.length}</strong> of{" "}
-            {courses.length} courses
-          </span>
-          {hasActiveFilters && (
-            <button
-              onClick={clearAllFilters}
-              className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline"
-            >
-              Reset All Filters
-            </button>
-          )}
+          <div className="overflow-x-auto pb-1">
+            <CoursesNavbarFilters />
+          </div>
         </div>
 
         {/* Loading State */}
@@ -779,18 +409,16 @@ export default function CoursesPage() {
                     </h2>
 
                     {/* Description */}
-                    <p className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-4">
-                      {course.description}
-                    </p>
+                    {/* Description (rendered only when provided by backend) */}
+                    {course.description ? (
+                      <p className="text-xs sm:text-[13px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-4">
+                        {course.description}
+                      </p>
+                    ) : null}
                   </div>
 
                   {/* Card Bottom Footer */}
-                  <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold text-slate-400 dark:text-slate-500">
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>{course.subjectsCount} Subjects</span>
-                    </span>
-
+                  <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-end">
                     <Link
                       href={href}
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#0A2540] hover:bg-teal-700 dark:bg-teal-600 dark:hover:bg-teal-700 text-white shadow-2xs group-hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
@@ -806,5 +434,6 @@ export default function CoursesPage() {
         )}
       </div>
     </div>
+    </>
   );
 }
