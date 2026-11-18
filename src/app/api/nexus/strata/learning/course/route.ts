@@ -56,6 +56,7 @@ async function forwardToBackend(
       method,
       headers,
       body: method !== "GET" ? JSON.stringify(body) : undefined,
+      signal: AbortSignal.timeout(8000),
     });
 
     const responseBody: DynamicStrataResponse = await backendResponse.json().catch(() => ({

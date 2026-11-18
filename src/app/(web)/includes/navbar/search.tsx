@@ -15,9 +15,11 @@ interface SearchItem {
 export default function SearchBar({
   onNavigate,
   compact,
+  className = '',
 }: {
   onNavigate?: () => void;
   compact?: boolean;
+  className?: string;
 }) {
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -98,9 +100,9 @@ export default function SearchBar({
           if (e.key === 'Enter' && results[0]) go(results[0].href);
           if (e.key === 'Escape') close();
         }}
-        placeholder="Search exams, subjects, courses..."
+        placeholder="Search exams, courses..."
         autoFocus={!!compact && expanded}
-        className="w-full bg-transparent text-[16px] sm:text-sm text-navy placeholder:text-navy/40 outline-none"
+        className="w-full bg-transparent text-[16px] sm:text-xs xl:text-sm text-navy dark:text-white placeholder:text-navy/40 dark:placeholder:text-white/40 outline-none truncate"
       />
       {query ? (
         <button
@@ -182,7 +184,10 @@ export default function SearchBar({
   }
 
   return (
-    <div ref={wrapRef} className="relative">
+    <div
+      ref={wrapRef}
+      className={`relative w-36 sm:w-44 lg:w-44 xl:w-60 2xl:w-72 transition-all duration-200 focus-within:w-48 lg:focus-within:w-56 xl:focus-within:w-72 2xl:focus-within:w-80 ${className}`}
+    >
       {input}
       {dropdown}
     </div>

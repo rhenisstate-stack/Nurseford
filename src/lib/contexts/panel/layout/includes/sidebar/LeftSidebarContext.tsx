@@ -24,7 +24,19 @@ interface LeftSidebarContextProps {
   toggle: () => void;
 }
 
-const LeftSidebarContext = createContext<LeftSidebarContextProps | null>(null);
+export const defaultLeftSidebarContext: LeftSidebarContextProps = {
+  state: "closed",
+  isOpened: false,
+  isCollapsed: false,
+  isClosed: true,
+  isMobile: false,
+  open: () => {},
+  collapse: () => {},
+  close: () => {},
+  toggle: () => {},
+};
+
+const LeftSidebarContext = createContext<LeftSidebarContextProps>(defaultLeftSidebarContext);
 
 export const LeftSidebarProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -138,6 +150,5 @@ export const LeftSidebarProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useLeftSidebar = () => {
   const context = useContext(LeftSidebarContext);
-  if (!context) throw new Error("useLeftSidebar must be used inside LeftSidebarProvider");
-  return context;
+  return context || defaultLeftSidebarContext;
 };

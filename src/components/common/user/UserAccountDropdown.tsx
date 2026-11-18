@@ -401,7 +401,7 @@ export default function UserAccountDropdown({
   return (
     <div
       ref={containerRef}
-      className="relative inline-block"
+      className="relative inline-block shrink-0"
       onMouseEnter={() => {
         hoverTimeout.current = setTimeout(() => setIsOpen(true), 80);
       }}
@@ -421,7 +421,7 @@ export default function UserAccountDropdown({
       ) : (
         <button
           onClick={() => setIsOpen((v) => !v)}
-          className="group flex items-center gap-2 rounded-xl px-2 py-1 transition-all duration-200 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200/80 dark:hover:border-slate-700 cursor-pointer"
+          className="group flex items-center gap-1.5 xl:gap-2 rounded-xl px-2 py-1 transition-all duration-200 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200/80 dark:hover:border-slate-700 cursor-pointer shrink-0"
           aria-expanded={isOpen}
           aria-haspopup="true"
         >
@@ -441,11 +441,11 @@ export default function UserAccountDropdown({
               )}
             </span>
           )}
-          <span className="text-xs font-semibold text-navy dark:text-white max-w-[120px] truncate">
+          <span className="text-xs font-semibold text-navy dark:text-white max-w-[75px] lg:max-w-[95px] xl:max-w-[130px] truncate">
             {userName}
           </span>
           <FiChevronDown
-            className={`w-3.5 h-3.5 text-navy/50 dark:text-white/50 transition-transform duration-200 ${
+            className={`w-3.5 h-3.5 text-navy/50 dark:text-white/50 transition-transform duration-200 shrink-0 ${
               isOpen ? "rotate-180" : ""
             }`}
           />

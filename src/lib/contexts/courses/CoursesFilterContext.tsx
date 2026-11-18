@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useMemo, useEffect, useCall
 import { useSearchParams } from "next/navigation";
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
+import { isAllowedNursingCourse } from "@/lib/utils/exams/nursingProgramScope";
 
 export interface CoursesFilterContextType {
   searchQuery: string;
@@ -30,7 +31,32 @@ export interface CoursesFilterContextType {
   setFilteredCount: (n: number) => void;
 }
 
-const CoursesFilterContext = createContext<CoursesFilterContextType | null>(null);
+export const defaultCoursesFilterContext: CoursesFilterContextType = {
+  searchQuery: "",
+  setSearchQuery: () => {},
+  selectedProgram: "All Programmes",
+  setSelectedProgram: () => {},
+  selectedSchool: "All Schools",
+  setSelectedSchool: () => {},
+  selectedYear: "All Years",
+  setSelectedYear: () => {},
+  selectedSeason: "All Seasons",
+  setSelectedSeason: () => {},
+  clearAllFilters: () => {},
+  hasActiveFilters: false,
+  dynamicPrograms: [],
+  setDynamicPrograms: () => {},
+  dynamicYears: [],
+  setDynamicYears: () => {},
+  dynamicSeasons: [],
+  setDynamicSeasons: () => {},
+  totalCoursesCount: 0,
+  setTotalCoursesCount: () => {},
+  filteredCount: 0,
+  setFilteredCount: () => {},
+};
+
+const CoursesFilterContext = createContext<CoursesFilterContextType>(defaultCoursesFilterContext);
 
 interface RawCourseData {
   name?: string;
@@ -77,21 +103,62 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     let cancelled = false;
 
     async function loadDynamicDefaults() {
-      try {
-        const [rnRes, lpnRes] = await Promise.allSettled([
-          fetch("/api/exams/rn-nursing/subjects", { cache: "no-store" }),
-          fetch("/api/exams/lpn-nursing/subjects", { cache: "no-store" }),
-        ]);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
+      try {
         const rawList: RawCourseData[] = [];
-        if (rnRes.status === "fulfilled" && rnRes.value.ok) {
-          const data = (await rnRes.value.json().catch(() => ({}))) as { subjects?: RawCourseData[] };
-          (data?.subjects || []).forEach((s) => rawList.push({ ...s, panelHint: "rn-nursing" }));
+
+        // Primary: fetch master courses catalog to extract real dynamic programs, years, seasons
+        try {
+          const masterRes = await fetch(
+            "/api/nexus/strata/learning/course?fetchtype=absolute&dynamicPage=1&dynamicPerPage=200",
+            { cache: "no-store", signal: controller.signal }
+          );
+          if (masterRes.ok) {
+            const masterData = (await masterRes.json().catch(() => ({}))) as {
+              data?: { items?: RawCourseData[] } | RawCourseData[];
+            };
+            const items = Array.isArray(masterData?.data)
+              ? masterData.data
+              : Array.isArray(masterData?.data?.items)
+              ? masterData.data.items
+              : [];
+            items.forEach((item) => {
+              if (isAllowedNursingCourse(item, "all")) {
+                rawList.push(item);
+              }
+            });
+          }
+        } catch {
+          // fallback to dashboard endpoints below
         }
-        if (lpnRes.status === "fulfilled" && lpnRes.value.ok) {
-          const data = (await lpnRes.value.json().catch(() => ({}))) as { subjects?: RawCourseData[] };
-          (data?.subjects || []).forEach((s) => rawList.push({ ...s, panelHint: "lpn-nursing" }));
+
+        if (rawList.length === 0) {
+          const [rnRes, lpnRes] = await Promise.allSettled([
+            fetch("/api/exams/rn-nursing/subjects", { cache: "no-store", signal: controller.signal }),
+            fetch("/api/exams/lpn-nursing/subjects", { cache: "no-store", signal: controller.signal }),
+          ]);
+
+          if (rnRes.status === "fulfilled" && rnRes.value.ok) {
+            const data = (await rnRes.value.json().catch(() => ({}))) as { subjects?: RawCourseData[] };
+            (data?.subjects || []).forEach((s) => {
+              if (isAllowedNursingCourse(s, "all")) {
+                rawList.push({ ...s, panelHint: "rn-nursing" });
+              }
+            });
+          }
+          if (lpnRes.status === "fulfilled" && lpnRes.value.ok) {
+            const data = (await lpnRes.value.json().catch(() => ({}))) as { subjects?: RawCourseData[] };
+            (data?.subjects || []).forEach((s) => {
+              if (isAllowedNursingCourse(s, "all")) {
+                rawList.push({ ...s, panelHint: "lpn-nursing" });
+              }
+            });
+          }
         }
+
+        clearTimeout(timeoutId);
 
         if (cancelled || rawList.length === 0) return;
 
@@ -101,6 +168,9 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
 
         rawList.forEach((c) => {
           const name = (c.name || c.title || "").trim();
+          if (!name) return;
+          if (!isAllowedNursingCourse(c, "all")) return;
+
           const isLpn =
             c.panelHint === "lpn-nursing" ||
             /lpn|pn\b/i.test(name) ||
@@ -124,15 +194,15 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
 
           pSet.add(prog);
 
-          const yr = extractExamYear(name, undefined, c.year, c.createdAt);
+          const yr = extractExamYear(name, undefined, c.year ? Number(c.year) : undefined, c.createdAt ?? undefined);
           if (yr) ySet.add(yr);
 
-          const sn = resolveExamSeason(c.season, name, c.description);
+          const sn = resolveExamSeason(c.season, name, c.description ?? undefined);
           if (sn) sSet.add(sn);
         });
 
         if (!cancelled) {
-          if (pSet.size > 0) setDynamicPrograms(Array.from(pSet));
+          if (pSet.size > 0) setDynamicPrograms(Array.from(pSet).sort((a, b) => a.localeCompare(b)));
           if (ySet.size > 0) setDynamicYears(Array.from(ySet).sort((a, b) => b - a));
           if (sSet.size > 0) {
             const seasonOrder = ["Fall", "Spring", "Summer", "Winter"];
@@ -150,6 +220,8 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
         }
       } catch (err) {
         console.error("[CoursesFilterProvider] Failed to load dynamic defaults:", err);
+      } finally {
+        clearTimeout(timeoutId);
       }
     }
 
@@ -392,8 +464,5 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
 
 export function useCoursesFilter() {
   const context = useContext(CoursesFilterContext);
-  if (!context) {
-    throw new Error("useCoursesFilter must be used within a CoursesFilterProvider");
-  }
-  return context;
+  return context || defaultCoursesFilterContext;
 }

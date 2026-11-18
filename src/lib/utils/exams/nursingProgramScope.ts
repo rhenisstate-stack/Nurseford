@@ -77,6 +77,7 @@ export function isAllowedNursingProgram(
 
   const seg = (item.segment ?? "").toUpperCase().trim();
   const label = (item.name ?? item.programName ?? item.title ?? "").trim();
+  if (!label && !seg) return false;
 
   if (seg && EXCLUDED_SEGMENTS.has(seg)) return false;
   if (label && EXCLUDED_NAME_RE.test(label)) return false;
@@ -84,17 +85,17 @@ export function isAllowedNursingProgram(
   const isRn =
     seg === "RN_NURSING" ||
     seg === "RN_EXIT" ||
-    (label.length > 0 && RN_NURSING_OR_EXIT_RE.test(label));
+    RN_NURSING_OR_EXIT_RE.test(label);
 
   const isLpn =
     seg === "LPN_NURSING" ||
     seg === "LPN_EXIT" ||
-    (label.length > 0 && LPN_NURSING_OR_EXIT_RE.test(label));
+    LPN_NURSING_OR_EXIT_RE.test(label);
 
   if (scope === "rn-nursing") return isRn;
   if (scope === "lpn-nursing") return isLpn;
 
-  return isRn || isLpn || (label.length > 0 && GENERIC_EXIT_RE.test(label));
+  return isRn || isLpn || GENERIC_EXIT_RE.test(label);
 }
 
 export function isAllowedNursingAssessment(
@@ -123,6 +124,8 @@ export function isAllowedNursingCourse(
   if (!item) return false;
 
   const title = (item.name ?? item.title ?? "").trim();
+  if (!title) return false;
+
   const seg = (item.segment ?? "").toUpperCase().trim();
   const normalizedSeg = seg.replace(/_/g, " ");
 

@@ -118,7 +118,7 @@ export default function Navbar() {
         scrolled ? 'bg-[var(--navbar-bg)]/95 backdrop-blur-md py-2.5 shadow-sm' : 'bg-[var(--navbar-bg)] py-3.5'
       }`}
     >
-      <div className="mx-auto w-full max-w-[1600px] px-4 md:px-6 lg:px-8 flex items-center justify-between">
+      <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-4 md:px-6 lg:px-6 xl:px-8 flex items-center justify-between gap-2 xl:gap-4 min-w-0">
         {/* Brand & Sidebar Toggle */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           <Link href="/" className="flex items-center gap-2 group shrink-0" onClick={() => setOpenDropdown(null)}>
@@ -154,7 +154,7 @@ export default function Navbar() {
 
         {/* Desktop nav: ONLY rendered on Home Page */}
         {isHomePage && (
-          <nav className="hidden lg:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-3.5 xl:gap-6 2xl:gap-8 shrink-0">
             {/* Nursing School dropdown */}
             <div className="relative" ref={nursingRef}>
               <button
@@ -263,46 +263,57 @@ export default function Navbar() {
 
         {/* Courses Filters: ONLY rendered on Courses Page */}
         {isCoursesPage && (
-          <div className="hidden lg:flex items-center mx-2 overflow-visible">
+          <div className="hidden lg:flex items-center mx-1 xl:mx-2 min-w-0 shrink">
             <CoursesNavbarFilters />
           </div>
         )}
 
         {/* Desktop search + Actions */}
-        <div className="hidden lg:flex items-center gap-4">
-          <SearchBar />
+        <div className="hidden lg:flex items-center gap-2 xl:gap-3 2xl:gap-4 shrink-0 min-w-0">
+          <div className="shrink min-w-0">
+            <SearchBar />
+          </div>
 
-          <div className="h-5 w-px bg-slate-200 dark:bg-white/10" />
+          <div className="h-5 w-px bg-slate-200 dark:bg-white/10 shrink-0" />
 
-          <ThemeModeToggle />
-          {!loading && signedIn && <HeedMessageBell />}
+          <div className="shrink-0">
+            <ThemeModeToggle />
+          </div>
+
+          {!loading && signedIn && (
+            <div className="shrink-0">
+              <HeedMessageBell />
+            </div>
+          )}
 
           {loading ? (
-            <div className="h-9 w-24 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse" />
+            <div className="h-9 w-20 xl:w-24 rounded-lg bg-slate-200 dark:bg-slate-700 animate-pulse shrink-0" />
           ) : signedIn ? (
-            <>
-              <UserAccountDropdown currentDashboard="rn-nursing" />
+            <div className="flex items-center gap-2 xl:gap-3 shrink-0">
+              <div className="shrink-0">
+                <UserAccountDropdown currentDashboard="rn-nursing" />
+              </div>
               <Link
                 href="/dashboards/rn-nursing"
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#0A2540] hover:bg-[#071829] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white transition-all duration-200 shadow-2xs active:scale-[0.98]"
+                className="px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-sm font-semibold bg-[#0A2540] hover:bg-[#071829] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white transition-all duration-200 shadow-2xs active:scale-[0.98] shrink-0 whitespace-nowrap"
               >
                 Dashboard
               </Link>
-            </>
+            </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 xl:gap-3 shrink-0">
               <Link
                 href="/auth/login"
-                className="flex items-center gap-1.5 text-sm font-semibold text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white transition-colors"
+                className="flex items-center gap-1.5 text-xs xl:text-sm font-semibold text-navy/80 hover:text-navy dark:text-white/80 dark:hover:text-white transition-colors shrink-0 whitespace-nowrap"
               >
-                <span className="w-7 h-7 rounded-full border border-navy/30 dark:border-white/30 flex items-center justify-center">
+                <span className="w-7 h-7 rounded-full border border-navy/30 dark:border-white/30 flex items-center justify-center shrink-0">
                   <User className="w-4 h-4 text-navy/70 dark:text-white/70" />
                 </span>
                 <span>Sign In</span>
               </Link>
               <Link
                 href="/auth/register"
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#0A2540] hover:bg-[#071829] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white shadow-2xs transition-all duration-200 active:scale-[0.98]"
+                className="px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-sm font-semibold bg-[#0A2540] hover:bg-[#071829] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white shadow-2xs transition-all duration-200 active:scale-[0.98] shrink-0 whitespace-nowrap"
               >
                 Register
               </Link>

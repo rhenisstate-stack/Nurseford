@@ -61,13 +61,14 @@ export default function CoursesNavbarFilters() {
   };
 
   const availableProgramOptions = useMemo(() => {
-    return Array.from(new Set(["All Programmes", ...dynamicPrograms]));
+    return Array.from(new Set(["All Programmes", ...(dynamicPrograms || [])]));
   }, [dynamicPrograms]);
 
   const filteredSchools = useMemo(() => {
-    if (!schoolSearch.trim()) return schools;
+    const list = Array.isArray(schools) ? schools : [];
+    if (!schoolSearch.trim()) return list;
     const q = schoolSearch.toLowerCase();
-    return schools.filter((s) => s.toLowerCase().includes(q));
+    return list.filter((s) => typeof s === "string" && s.toLowerCase().includes(q));
   }, [schools, schoolSearch]);
 
   return (
@@ -264,7 +265,7 @@ export default function CoursesNavbarFilters() {
               {selectedYear === "All Years" && <Check className="w-3.5 h-3.5 text-amber-600" />}
             </button>
             <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-            {dynamicYears.map((yr) => (
+            {(dynamicYears || []).map((yr) => (
               <button
                 key={yr}
                 type="button"
@@ -329,7 +330,7 @@ export default function CoursesNavbarFilters() {
               {selectedSeason === "All Seasons" && <Check className="w-3.5 h-3.5 text-purple-600" />}
             </button>
             <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-            {dynamicSeasons.map((seas) => (
+            {(dynamicSeasons || []).map((seas) => (
               <button
                 key={seas}
                 type="button"

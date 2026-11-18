@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   BookOpen,
@@ -11,9 +11,11 @@ import {
 import { toSlug } from "@/lib/data/exam-subjects";
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
+import { resolveExamSchool } from "@/lib/utils/exams/resolveExamSchool";
 import { isAllowedNursingCourse } from "@/lib/utils/exams/nursingProgramScope";
 import { useCoursesFilter } from "@/lib/contexts/courses/CoursesFilterContext";
 import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext";
+import { setAvailableSchools } from "@/lib/data/nursingSchools";
 import CoursesNavbarFilters from "@/app/(web)/includes/navbar/CoursesNavbarFilters";
 import CoursesLeftSidebar from "@/app/(web)/includes/sidebar/CoursesLeftSidebar";
 
@@ -28,6 +30,7 @@ export interface DynamicCourse {
   panelSlug: "rn-nursing" | "lpn-nursing";
   year: number | null;
   season: string | null;
+  school?: string;
   subjectsCount?: number;
 }
 
@@ -37,10 +40,16 @@ interface RawCoursePayload {
   name?: string;
   title?: string;
   description?: string;
+  summary?: string;
+  details?: string;
   slug?: string;
   panelHint?: string;
   segment?: string;
   programName?: string;
+  schoolName?: string;
+  school?: string;
+  institution?: string;
+  institutionName?: string;
   year?: number;
   season?: string;
   createdAt?: string;
@@ -66,61 +75,83 @@ export default function CoursesPage() {
   } = useCoursesFilter();
 
   const [courses, setCourses] = useState<DynamicCourse[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
 
-  // Fetch courses dynamically from endpoints with fallback
+  // Clear any legacy sessionStorage cache so courses are always 100% dynamic
   useEffect(() => {
-    let cancelled = false;
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.removeItem("nurseford_cached_courses");
+      } catch {}
+    }
+  }, []);
+
+  // Fetch courses dynamically from endpoints with timeout
+  useEffect(() => {
+    isMountedRef.current = true;
 
     async function loadAllCourses() {
       setIsLoading(true);
       setError(null);
 
-      try {
-        const [rnRes, lpnRes, strataRes] = await Promise.allSettled([
-          fetch("/api/exams/rn-nursing/subjects", { cache: "no-store" }),
-          fetch("/api/exams/lpn-nursing/subjects", { cache: "no-store" }),
-          fetch("/api/nexus/strata/learning/course?fetchtype=absolute&dynamicPage=1&dynamicPerPage=200", {
-            cache: "no-store",
-          }),
-        ]);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
 
+      try {
         const rawList: RawCoursePayload[] = [];
 
-        if (rnRes.status === "fulfilled" && rnRes.value.ok) {
-          const data = (await rnRes.value.json().catch(() => ({}))) as {
-            subjects?: RawCoursePayload[];
-          };
-          const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
-          subjects.forEach((s) => rawList.push({ ...s, panelHint: "rn-nursing" }));
+        // Primary: fetch master courses catalog directly
+        try {
+          const strataRes = await fetch(
+            "/api/nexus/strata/learning/course?fetchtype=absolute&dynamicPage=1&dynamicPerPage=200",
+            { cache: "no-store", signal: controller.signal }
+          );
+          if (strataRes.ok) {
+            const strataData = (await strataRes.json().catch(() => ({}))) as {
+              data?: { items?: RawCoursePayload[] } | RawCoursePayload[];
+            };
+            const items = Array.isArray(strataData?.data)
+              ? strataData.data
+              : Array.isArray(strataData?.data?.items)
+              ? strataData.data.items
+              : [];
+            items.forEach((c) => {
+              if (isAllowedNursingCourse(c, "all")) {
+                rawList.push(c);
+              }
+            });
+          }
+        } catch (e) {
+          console.warn("[CoursesPage] Master courses fetch failed, trying dashboard endpoints:", e);
         }
 
-        if (lpnRes.status === "fulfilled" && lpnRes.value.ok) {
-          const data = (await lpnRes.value.json().catch(() => ({}))) as {
-            subjects?: RawCoursePayload[];
-          };
-          const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
-          subjects.forEach((s) => rawList.push({ ...s, panelHint: "lpn-nursing" }));
+        // Secondary fallback if master catalog returned empty
+        if (rawList.length === 0) {
+          const [rnRes, lpnRes] = await Promise.allSettled([
+            fetch("/api/exams/rn-nursing/subjects", { cache: "no-store", signal: controller.signal }),
+            fetch("/api/exams/lpn-nursing/subjects", { cache: "no-store", signal: controller.signal }),
+          ]);
+
+          if (rnRes.status === "fulfilled" && rnRes.value.ok) {
+            const data = (await rnRes.value.json().catch(() => ({}))) as {
+              subjects?: RawCoursePayload[];
+            };
+            const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
+            subjects.forEach((s) => rawList.push({ ...s, panelHint: "rn-nursing" }));
+          }
+
+          if (lpnRes.status === "fulfilled" && lpnRes.value.ok) {
+            const data = (await lpnRes.value.json().catch(() => ({}))) as {
+              subjects?: RawCoursePayload[];
+            };
+            const subjects = Array.isArray(data?.subjects) ? data.subjects : [];
+            subjects.forEach((s) => rawList.push({ ...s, panelHint: "lpn-nursing" }));
+          }
         }
 
-        if (strataRes.status === "fulfilled" && strataRes.value.ok) {
-          const strataData = (await strataRes.value.json().catch(() => ({}))) as {
-            data?: { items?: RawCoursePayload[] } | RawCoursePayload[];
-          };
-          const items = Array.isArray(strataData?.data)
-            ? strataData.data
-            : Array.isArray(strataData?.data?.items)
-            ? strataData.data.items
-            : [];
-          items.forEach((c) => {
-            if (isAllowedNursingCourse(c, "all")) {
-              rawList.push(c);
-            }
-          });
-        }
-
-        if (cancelled) return;
+        clearTimeout(timeoutId);
 
         // Deduplicate and normalize
         const seen = new Set<string>();
@@ -151,6 +182,7 @@ export default function CoursesPage() {
 
           const panelSlug: "rn-nursing" | "lpn-nursing" = isLpn ? "lpn-nursing" : "rn-nursing";
 
+          // Map strictly to the discussed RN and LPN nursing programs
           const programName = isLpn
             ? isExit
               ? "LPN Exit Exams"
@@ -161,18 +193,31 @@ export default function CoursesPage() {
 
           const year = extractExamYear(name, undefined, item.year, item.createdAt);
           const season = resolveExamSeason(item.season, name, item.description);
+          const rawSchool = (item.schoolName || item.school || item.institution || item.institutionName || "").trim();
+          const school =
+            rawSchool ||
+            resolveExamSchool({
+              title: name,
+              description: item.description,
+              school: item.school,
+              schoolName: item.schoolName,
+              institution: item.institution,
+              institutionName: item.institutionName,
+            }) ||
+            undefined;
 
           normalized.push({
             id,
             guidId: item.guidId,
             name,
-            description: item.description?.trim() || "",
+            description: (item.description || item.summary || item.details || "").trim(),
             slug,
             programName,
             category: isExit ? "exit" : "core",
             panelSlug,
             year,
             season,
+            school,
             subjectsCount:
               typeof item.subjectsCount === "number" && item.subjectsCount > 0
                 ? item.subjectsCount
@@ -191,75 +236,105 @@ export default function CoursesPage() {
           return a.name.localeCompare(b.name);
         });
 
-        // Compute available programs, years, and seasons strictly from backend courses data
+        // Compute available programs, years, seasons, and schools strictly from backend courses data
         const programsSet = new Set<string>();
         const yearsSet = new Set<number>();
         const seasonsSet = new Set<string>();
+        const schoolsSet = new Set<string>();
+
         normalized.forEach((c) => {
           if (c.programName) programsSet.add(c.programName);
           if (c.year) yearsSet.add(c.year);
           if (c.season) seasonsSet.add(c.season);
+          if (c.school) schoolsSet.add(c.school);
         });
+
         setDynamicPrograms(Array.from(programsSet).sort((a, b) => a.localeCompare(b)));
         setDynamicYears(Array.from(yearsSet).sort((a, b) => b - a));
-        setDynamicSeasons(Array.from(seasonsSet));
+        setDynamicSeasons(Array.from(seasonsSet).sort((a, b) => a.localeCompare(b)));
+        if (schoolsSet.size > 0) {
+          setAvailableSchools(Array.from(schoolsSet).sort((a, b) => a.localeCompare(b)));
+        }
 
-        if (cancelled) return;
-
-        setCourses(normalized);
-        setTotalCoursesCount(normalized.length);
+        if (isMountedRef.current) {
+          if (normalized.length > 0) {
+            setCourses(normalized);
+            setTotalCoursesCount(normalized.length);
+          } else {
+            setError("No courses are currently available from the server.");
+          }
+        }
       } catch (err: unknown) {
         console.error("[CoursesPage] Error loading dynamic courses:", err);
-        if (!cancelled) setError("Failed to load courses. Please try again.");
+        if (isMountedRef.current) {
+          setError("Failed to load courses. Please check your connection and try again.");
+        }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        clearTimeout(timeoutId);
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
       }
     }
 
     loadAllCourses();
 
     return () => {
-      cancelled = true;
+      isMountedRef.current = false;
     };
-  }, [setDynamicPrograms, setDynamicSeasons, setDynamicYears, setTotalCoursesCount]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Filter courses based on active filters
   const filteredCourses = useMemo(() => {
-    return courses.filter((course) => {
+    const list = Array.isArray(courses) ? courses : [];
+    return list.filter((course) => {
+      if (!course) return false;
+
       // 1. Search Query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesName = course.name.toLowerCase().includes(q);
+      const q = (searchQuery || "").trim().toLowerCase();
+      if (q) {
+        const matchesName = (course.name || "").toLowerCase().includes(q);
         const matchesDesc = (course.description || "").toLowerCase().includes(q);
-        const matchesProg = course.programName.toLowerCase().includes(q);
-        if (!matchesName && !matchesDesc && !matchesProg) return false;
+        const matchesProg = (course.programName || "").toLowerCase().includes(q);
+        const matchesSchool = (course.school || "").toLowerCase().includes(q);
+        if (!matchesName && !matchesDesc && !matchesProg && !matchesSchool) return false;
       }
 
       // 2. Programme Filter
-      if (selectedProgram !== "All Programmes") {
-        if (course.programName !== selectedProgram) return false;
+      if (selectedProgram && selectedProgram !== "All Programmes") {
+        if ((course.programName || "").trim().toLowerCase() !== selectedProgram.trim().toLowerCase()) {
+          return false;
+        }
       }
 
-      // 3. Year Filter
-      if (selectedYear !== "All Years") {
+      // 3. School Filter
+      if (selectedSchool && selectedSchool !== "All Schools") {
+        if (course.school && course.school.toLowerCase() !== selectedSchool.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // 4. Year Filter
+      if (selectedYear && selectedYear !== "All Years") {
         const targetYear = parseInt(selectedYear, 10);
         if (course.year && course.year !== targetYear) return false;
-        if (!course.year && !course.name.includes(selectedYear)) return false;
+        if (!course.year && !String(course.name || "").includes(selectedYear)) return false;
       }
 
-      // 4. Season Filter
-      if (selectedSeason !== "All Seasons") {
+      // 5. Season Filter
+      if (selectedSeason && selectedSeason !== "All Seasons") {
         if (course.season && course.season.toLowerCase() !== selectedSeason.toLowerCase()) {
           return false;
         }
-        if (!course.season && !course.name.toLowerCase().includes(selectedSeason.toLowerCase())) {
+        if (!course.season && !String(course.name || "").toLowerCase().includes(selectedSeason.toLowerCase())) {
           return false;
         }
       }
 
       return true;
     });
-  }, [courses, searchQuery, selectedProgram, selectedYear, selectedSeason]);
+  }, [courses, searchQuery, selectedProgram, selectedSchool, selectedYear, selectedSeason]);
 
   // Sync filtered count back to context
   useEffect(() => {
@@ -412,7 +487,7 @@ export default function CoursesPage() {
 
                     {/* Description (rendered only when provided by backend) */}
                     {course.description ? (
-                      <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-1 leading-relaxed mb-2.5">
+                      <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-2.5">
                         {course.description}
                       </p>
                     ) : null}
