@@ -31,16 +31,28 @@ function StatCard({
   value: string | number;
   tone: string;
 }) {
+  const isLongValue = typeof value === "string" && value.length > 5;
+
   return (
-    <div className="rounded-2xl border border-[var(--text-color)]/15 bg-[var(--content-bg)] p-4 flex items-center gap-3 shadow-xs">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${tone}`}>
+    <div className="rounded-2xl border border-[var(--text-color)]/15 bg-[var(--content-bg)] px-3 py-3 sm:px-3.5 sm:py-3.5 flex items-center gap-2.5 sm:gap-3 shadow-xs min-w-0">
+      <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${tone}`}>
         {icon}
       </div>
-      <div className="min-w-0">
-        <p className="text-[10px] uppercase font-bold opacity-50 tracking-wider text-[var(--text-color)] truncate">
+      <div className="min-w-0 flex-1">
+        <p
+          title={label}
+          className="text-[9px] sm:text-[10px] uppercase font-bold opacity-60 tracking-tight text-[var(--text-color)] truncate"
+        >
           {label}
         </p>
-        <p className="text-base sm:text-lg font-bold text-[var(--text-color)] leading-tight truncate mt-0.5">
+        <p
+          title={String(value)}
+          className={`font-bold text-[var(--text-color)] leading-tight mt-0.5 ${
+            isLongValue
+              ? "text-xs sm:text-[13px] 2xl:text-sm whitespace-nowrap"
+              : "text-base sm:text-lg truncate"
+          }`}
+        >
           {value}
         </p>
       </div>
