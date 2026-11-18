@@ -158,11 +158,16 @@ export function CourseSchoolNavbarDropdowns() {
     setOpenMenu(null);
   };
 
+  const formatProgramDisplay = (name: string) => {
+    if (!name || name === "All Programmes" || name === "all") return "Program";
+    return name.replace(/\s+Exams$/i, "");
+  };
+
   const isSchoolActive = selectedSchool !== "All Schools" && selectedSchool !== "all";
   const isYearActive = selectedYear !== "All Years" && selectedYear !== "all";
   const isSeasonActive = selectedSeason !== "All Seasons" && selectedSeason !== "all";
   const isProgramActive =
-    (selectedProgram && selectedProgram !== "All Programmes") ||
+    (selectedProgram && selectedProgram !== "All Programmes" && selectedProgram !== "all") ||
     (isDashboardPage && Boolean(detectedDashboardProgram));
 
   return (
@@ -177,14 +182,11 @@ export function CourseSchoolNavbarDropdowns() {
               ? "bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-[#2FD9C4] border-teal-500/60 ring-2 ring-teal-500/20"
               : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
           }`}
-          title={`Programme: ${activeProgramLabel}`}
+          title={isProgramActive ? `Program: ${activeProgramLabel}` : "Filter by Program"}
         >
           <GraduationCap className="w-3.5 h-3.5 text-teal-600 dark:text-[#2FD9C4] shrink-0" />
-          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden sm:inline">
-            Programme:
-          </span>
-          <span className="font-normal text-slate-600 dark:text-slate-300 truncate max-w-[70px] sm:max-w-[90px] md:max-w-[120px]">
-            {activeProgramLabel}
+          <span className="font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[85px] sm:max-w-[110px] md:max-w-[140px]">
+            {isProgramActive ? formatProgramDisplay(activeProgramLabel) : "Program"}
           </span>
           <ChevronDown
             className={`w-3 h-3 text-slate-400 transition-transform ${
@@ -232,14 +234,11 @@ export function CourseSchoolNavbarDropdowns() {
               ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 border-blue-500/60 ring-2 ring-blue-500/20"
               : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
           }`}
-          title={`School: ${selectedSchool}`}
+          title={isSchoolActive ? `School: ${selectedSchool}` : "Filter by School"}
         >
           <School className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400 shrink-0" />
-          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden sm:inline">
-            School:
-          </span>
-          <span className="font-normal text-slate-600 dark:text-slate-300 truncate max-w-[65px] sm:max-w-[85px] md:max-w-[110px]">
-            {isSchoolActive ? selectedSchool : "All"}
+          <span className="font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[75px] sm:max-w-[100px] md:max-w-[130px]">
+            {isSchoolActive ? selectedSchool : "School"}
           </span>
           <ChevronDown
             className={`w-3 h-3 text-slate-400 transition-transform ${
@@ -324,7 +323,7 @@ export function CourseSchoolNavbarDropdowns() {
       </div>
 
       {/* ─── 3. YEAR FILTER ─── */}
-      <div className="relative">
+      <div className={`relative ${isYearActive ? "block" : "hidden sm:block"}`}>
         <button
           type="button"
           onClick={() => toggleMenu("year")}
@@ -333,14 +332,11 @@ export function CourseSchoolNavbarDropdowns() {
               ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-500/60 ring-2 ring-amber-500/20"
               : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
           }`}
-          title={`Year: ${selectedYear}`}
+          title={isYearActive ? `Year: ${selectedYear}` : "Filter by Year"}
         >
           <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden md:inline">
-            Year:
-          </span>
-          <span className="font-normal text-slate-600 dark:text-slate-300">
-            {isYearActive ? selectedYear : "All"}
+          <span className="font-semibold text-slate-800 dark:text-slate-100">
+            {isYearActive ? selectedYear : "Year"}
           </span>
           <ChevronDown
             className={`w-3 h-3 text-slate-400 transition-transform ${
@@ -389,7 +385,7 @@ export function CourseSchoolNavbarDropdowns() {
       </div>
 
       {/* ─── 4. SEASON FILTER ─── */}
-      <div className="relative">
+      <div className={`relative ${isSeasonActive ? "block" : "hidden sm:block"}`}>
         <button
           type="button"
           onClick={() => toggleMenu("season")}
@@ -398,14 +394,11 @@ export function CourseSchoolNavbarDropdowns() {
               ? "bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border-purple-500/60 ring-2 ring-purple-500/20"
               : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
           }`}
-          title={`Season: ${selectedSeason}`}
+          title={isSeasonActive ? `Season: ${selectedSeason}` : "Filter by Season"}
         >
           <Sun className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden md:inline">
-            Season:
-          </span>
-          <span className="font-normal text-slate-600 dark:text-slate-300">
-            {isSeasonActive ? selectedSeason : "All"}
+          <span className="font-semibold text-slate-800 dark:text-slate-100">
+            {isSeasonActive ? selectedSeason : "Season"}
           </span>
           <ChevronDown
             className={`w-3 h-3 text-slate-400 transition-transform ${
@@ -476,7 +469,7 @@ export function CourseSchoolNavbarDropdowns() {
       >
         <CreditCard className="w-3.5 h-3.5 text-white/90 shrink-0" />
         <span className="font-semibold text-white text-[11px] sm:text-xs">Subscribe</span>
-        <span className="hidden md:inline font-normal text-white/90">Plans</span>
+        <span className="hidden xl:inline font-normal text-white/90">Plans</span>
       </Link>
     </div>
   );

@@ -121,7 +121,7 @@ export default function Navbar() {
       <div className="mx-auto w-full max-w-[1600px] px-3 sm:px-4 md:px-6 lg:px-6 xl:px-8 flex items-center justify-between gap-2 xl:gap-4 min-w-0">
         {/* Brand & Sidebar Toggle */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-          <Link href="/" className="flex items-center gap-2 group shrink-0" onClick={() => setOpenDropdown(null)}>
+          <Link href="/" className="flex items-center shrink-0" onClick={() => setOpenDropdown(null)} aria-label="Nurseford Home">
             <Image
               src="/logo/logo.webp"
               alt="Nurseford"
@@ -130,9 +130,6 @@ export default function Navbar() {
               priority
               className="w-8 h-8 object-contain"
             />
-            <span className="font-serif text-xl font-bold text-navy dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-              Nurseford
-            </span>
           </Link>
 
           {isCoursesPage && (

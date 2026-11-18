@@ -71,6 +71,16 @@ export default function CoursesNavbarFilters() {
     return list.filter((s) => typeof s === "string" && s.toLowerCase().includes(q));
   }, [schools, schoolSearch]);
 
+  const formatProgramDisplay = (name: string) => {
+    if (!name || name === "All Programmes" || name === "all") return "Program";
+    return name.replace(/\s+Exams$/i, "");
+  };
+
+  const isProgramActive = selectedProgram && selectedProgram !== "All Programmes" && selectedProgram !== "all";
+  const isSchoolActive = selectedSchool && selectedSchool !== "All Schools" && selectedSchool !== "all";
+  const isYearActive = selectedYear && selectedYear !== "All Years" && selectedYear !== "all";
+  const isSeasonActive = selectedSeason && selectedSeason !== "All Seasons" && selectedSeason !== "all";
+
   return (
     <div ref={containerRef} className="flex items-center gap-1 sm:gap-1.5 shrink-0">
       
@@ -80,18 +90,15 @@ export default function CoursesNavbarFilters() {
           type="button"
           onClick={() => toggleMenu("program")}
           className={`inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all duration-150 cursor-pointer select-none ${
-            selectedProgram !== "All Programmes"
+            isProgramActive
               ? "bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-[#2FD9C4] border-teal-500/60 ring-2 ring-teal-500/20"
               : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
           }`}
-          title={`Programme: ${selectedProgram}`}
+          title={isProgramActive ? `Program: ${selectedProgram}` : "Filter by Program"}
         >
           <GraduationCap className="w-3.5 h-3.5 text-teal-600 dark:text-[#2FD9C4] shrink-0" />
-          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden sm:inline">
-            Programme:
-          </span>
-          <span className="font-normal text-slate-600 dark:text-slate-300 truncate max-w-[80px] md:max-w-[120px]">
-            {selectedProgram === "All Programmes" ? "All" : selectedProgram}
+          <span className="font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[85px] sm:max-w-[110px] md:max-w-[140px]">
+            {isProgramActive ? formatProgramDisplay(selectedProgram) : "Program"}
           </span>
           <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${openMenu === "program" ? "rotate-180" : ""}`} />
         </button>
@@ -133,14 +140,11 @@ export default function CoursesNavbarFilters() {
               ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 border-blue-500/60 ring-2 ring-blue-500/20"
               : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
           }`}
-          title={`School: ${selectedSchool}`}
+          title={selectedSchool !== "All Schools" ? `School: ${selectedSchool}` : "Filter by School"}
         >
           <School className="w-3.5 h-3.5 text-blue-600 dark:text-sky-400 shrink-0" />
-          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden sm:inline">
-            School:
-          </span>
-          <span className="font-normal text-slate-600 dark:text-slate-300 truncate max-w-[70px] md:max-w-[100px]">
-            {selectedSchool === "All Schools" ? "All" : selectedSchool}
+          <span className="font-semibold text-slate-800 dark:text-slate-100 truncate max-w-[75px] sm:max-w-[100px] md:max-w-[130px]">
+            {selectedSchool !== "All Schools" ? selectedSchool : "School"}
           </span>
           <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${openMenu === "school" ? "rotate-180" : ""}`} />
         </button>
@@ -232,14 +236,11 @@ export default function CoursesNavbarFilters() {
               ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-500/60 ring-2 ring-amber-500/20"
               : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
           }`}
-          title={`Year: ${selectedYear}`}
+          title={selectedYear !== "All Years" ? `Year: ${selectedYear}` : "Filter by Year"}
         >
           <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden md:inline">
-            Year:
-          </span>
-          <span className="font-normal text-slate-600 dark:text-slate-300">
-            {selectedYear === "All Years" ? "All" : selectedYear}
+          <span className="font-semibold text-slate-800 dark:text-slate-100">
+            {selectedYear !== "All Years" ? selectedYear : "Year"}
           </span>
           <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${openMenu === "year" ? "rotate-180" : ""}`} />
         </button>
@@ -297,14 +298,11 @@ export default function CoursesNavbarFilters() {
               ? "bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border-purple-500/60 ring-2 ring-purple-500/20"
               : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
           }`}
-          title={`Season: ${selectedSeason}`}
+          title={selectedSeason !== "All Seasons" ? `Season: ${selectedSeason}` : "Filter by Season"}
         >
           <Sun className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
-          <span className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-100 hidden md:inline">
-            Season:
-          </span>
-          <span className="font-normal text-slate-600 dark:text-slate-300">
-            {selectedSeason === "All Seasons" ? "All" : selectedSeason}
+          <span className="font-semibold text-slate-800 dark:text-slate-100">
+            {selectedSeason !== "All Seasons" ? selectedSeason : "Season"}
           </span>
           <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${openMenu === "season" ? "rotate-180" : ""}`} />
         </button>

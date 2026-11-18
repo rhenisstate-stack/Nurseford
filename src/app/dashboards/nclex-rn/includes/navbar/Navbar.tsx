@@ -32,7 +32,7 @@ const Navbar: React.FC = () => {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center bg-[var(--navbar-bg)] text-[var(--text-color)] border-b border-[var(--text-color)]/10 px-2 sm:px-3 md:px-6 gap-1 sm:gap-2"
+      className="fixed top-0 left-0 right-0 z-50 h-14 flex items-center bg-[var(--navbar-bg)] text-[var(--text-color)] border-b border-[var(--text-color)]/10 px-2 sm:px-3 lg:px-4 xl:px-6 gap-1 sm:gap-2"
       style={{
         backgroundColor:
           theme.navbar === "custom" ? "var(--navbar-bg)" : undefined,
@@ -77,13 +77,11 @@ const Navbar: React.FC = () => {
       {/* SPACER */}
       <div className="flex-1 min-w-0" />
 
-      {/* SEARCH BAR */}
-      <div className="hidden lg:block">
-        <DashboardNavbarSearch />
-      </div>
-
-      {/* RIGHT: Theme Toggle + Login/Register */}
-      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+      {/* RIGHT ACTIONS: Search + Theme + Account */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="hidden lg:block">
+          <DashboardNavbarSearch />
+        </div>
         <ThemeModeToggle />
         {!userLoading && user && <HeedMessageBell />}
         <UserDropdown />

@@ -247,7 +247,7 @@ export default function DashboardNavbarSearch() {
   };
 
   return (
-    <div ref={containerRef} className="relative w-28 sm:w-48 lg:w-80 mr-3">
+    <div ref={containerRef} className="relative w-32 sm:w-40 lg:w-44 xl:w-56 2xl:w-72">
       {/* Search Input Bar */}
       <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[var(--text-color)]/5 border border-[var(--text-color)]/15 focus-within:border-blue-500 dark:focus-within:border-teal-400 focus-within:bg-[var(--card-bg,#15273e)] transition-all shadow-2xs">
         {isSearching ? (
