@@ -377,6 +377,15 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
         if (unique.length > 0) setDynamicSeasons(unique);
       }
     };
+    const handleAvailableCourses = (e: Event) => {
+      const custom = e as CustomEvent<{ courses: string[] }>;
+      if (Array.isArray(custom.detail?.courses) && custom.detail.courses.length > 0) {
+        const unique = Array.from(
+          new Set(custom.detail.courses.map((c) => c.trim()).filter(Boolean))
+        ).sort((a, b) => a.localeCompare(b));
+        if (unique.length > 0) setDynamicCourses(unique);
+      }
+    };
 
     window.addEventListener("nurseford-school-change", handleSchoolChange);
     window.addEventListener("nurseford-course-change", handleCourseChange);
@@ -385,6 +394,7 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     window.addEventListener("nurseford-season-change", handleSeasonChange);
     window.addEventListener("nurseford-available-years-update", handleAvailableYears);
     window.addEventListener("nurseford-available-seasons-update", handleAvailableSeasons);
+    window.addEventListener("nurseford-available-courses-update", handleAvailableCourses);
 
     return () => {
       window.removeEventListener("nurseford-school-change", handleSchoolChange);
@@ -394,6 +404,7 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
       window.removeEventListener("nurseford-season-change", handleSeasonChange);
       window.removeEventListener("nurseford-available-years-update", handleAvailableYears);
       window.removeEventListener("nurseford-available-seasons-update", handleAvailableSeasons);
+      window.removeEventListener("nurseford-available-courses-update", handleAvailableCourses);
     };
   }, []);
 

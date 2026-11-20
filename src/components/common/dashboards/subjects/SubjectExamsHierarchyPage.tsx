@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClasp";
@@ -142,6 +142,13 @@ export function SubjectExamsHierarchyPage({
 
   // Client-side search and filters
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCourseFilter, setSelectedCourseFilter] = useState<string>(
+    () => searchParams?.get("course") || "all"
+  );
+  const currentCourseRef = useRef<string>(selectedCourseFilter);
+  currentCourseRef.current = selectedCourseFilter;
+  const handleCourseChangeRef = useRef<((selectedTitle: string) => Promise<void> | void) | undefined>(undefined);
+
   const [selectedYear, setSelectedYear] = useState<string>(
     () => searchParams?.get("year") || "all"
   );
@@ -153,6 +160,11 @@ export function SubjectExamsHierarchyPage({
   );
 
   useEffect(() => {
+    const c = searchParams?.get("course");
+    const nextCourse = c && c !== "all" ? c : "all";
+    setSelectedCourseFilter(nextCourse);
+    currentCourseRef.current = nextCourse;
+
     const s = searchParams?.get("school");
     setSelectedSchool(s && s !== "all" ? s : "all");
 
@@ -164,6 +176,17 @@ export function SubjectExamsHierarchyPage({
   }, [searchParams]);
 
   useEffect(() => {
+    const handleCourseChangeEvt = (e: Event) => {
+      const custom = e as CustomEvent<{ course: string }>;
+      if (custom.detail?.course !== undefined) {
+        const nextCourse = custom.detail.course;
+        if (currentCourseRef.current.toLowerCase() !== nextCourse.toLowerCase()) {
+          currentCourseRef.current = nextCourse;
+          setSelectedCourseFilter(nextCourse);
+          handleCourseChangeRef.current?.(nextCourse);
+        }
+      }
+    };
     const handleSchoolChange = (e: Event) => {
       const custom = e as CustomEvent<{ school: string }>;
       if (custom.detail?.school !== undefined) {
@@ -183,16 +206,30 @@ export function SubjectExamsHierarchyPage({
       }
     };
 
+    window.addEventListener("nurseford-course-change", handleCourseChangeEvt);
     window.addEventListener("nurseford-school-change", handleSchoolChange);
     window.addEventListener("nurseford-year-change", handleYearChange);
     window.addEventListener("nurseford-season-change", handleSeasonChange);
 
     return () => {
+      window.removeEventListener("nurseford-course-change", handleCourseChangeEvt);
       window.removeEventListener("nurseford-school-change", handleSchoolChange);
       window.removeEventListener("nurseford-year-change", handleYearChange);
       window.removeEventListener("nurseford-season-change", handleSeasonChange);
     };
   }, []);
+
+  const applyCourse = (crs: string) => {
+    currentCourseRef.current = crs;
+    setSelectedCourseFilter(crs);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("nurseford-course-change", { detail: { course: crs } }));
+      const currentUrl = new URL(window.location.href);
+      if (crs === "all" || crs === "All Courses") currentUrl.searchParams.delete("course");
+      else currentUrl.searchParams.set("course", crs);
+      window.history.replaceState({}, "", currentUrl.toString());
+    }
+  };
 
   const applyYear = (yr: string) => {
     setSelectedYear(yr);
@@ -412,6 +449,25 @@ export function SubjectExamsHierarchyPage({
     return completedSet;
   }, [allResults, nominalExams]);
 
+  const getCourseTitleForSubId = useCallback(
+    (sId: string): string => {
+      if (!sId || !Array.isArray(dashboardCourses)) return "";
+      for (const c of dashboardCourses) {
+        if (
+          c.subCategories?.some(
+            (sc) =>
+              String(sc.id) === String(sId) ||
+              (Boolean((sc as any).guidId) && String((sc as any).guidId) === String(sId))
+          )
+        ) {
+          return c.title;
+        }
+      }
+      return "";
+    },
+    [dashboardCourses]
+  );
+
   useEffect(() => {
     setCurrentPage(1);
   }, [subjectId]);
@@ -436,6 +492,7 @@ export function SubjectExamsHierarchyPage({
       try {
         // Fetch nominal exams across all targetSubjectIds (supports single or merged subjects)
         const fetchExamsForSubject = async (subId: string): Promise<StrataItem[]> => {
+          const courseForSub = getCourseTitleForSubId(subId);
           const result = await strataService<{
             items?: StrataItem[];
             skewTotal?: number;
@@ -480,6 +537,15 @@ export function SubjectExamsHierarchyPage({
               }
             }
           }
+
+          items.forEach((item: any) => {
+            if (!item.courseName && courseForSub) {
+              item.courseName = courseForSub;
+            }
+            if (!item.subjectGuidId) {
+              item.subjectGuidId = subId;
+            }
+          });
 
           return items;
         };
@@ -771,14 +837,28 @@ export function SubjectExamsHierarchyPage({
 
     const toSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-    // Include current course
-    if (courseName && courseId) {
+    // 1. Include courses present in the loaded exams (crucial for merged subjects!)
+    exams.forEach((e) => {
+      const cn = (e as ExamWithParentNames).courseName;
+      if (cn && !seen.has(cn.toLowerCase())) {
+        const s = toSlug(cn);
+        list.push({ title: cn, slug: s, id: s });
+        seen.add(cn.toLowerCase());
+        seen.add(s.toLowerCase());
+      }
+    });
+
+    // 2. Include current route course if single-course
+    if (courseName && courseId && !isMerged) {
       const curSlug = courseSlug || toSlug(courseName);
-      list.push({ title: courseName, slug: curSlug, id: courseId });
-      seen.add(courseName.toLowerCase());
-      seen.add(curSlug.toLowerCase());
+      if (!seen.has(courseName.toLowerCase())) {
+        list.push({ title: courseName, slug: curSlug, id: courseId });
+        seen.add(courseName.toLowerCase());
+        seen.add(curSlug.toLowerCase());
+      }
     }
 
+    // 3. Include dashboard courses so user can select any course
     if (Array.isArray(dashboardCourses)) {
       dashboardCourses.forEach((c) => {
         if (c.title && !seen.has(c.title.toLowerCase())) {
@@ -792,24 +872,132 @@ export function SubjectExamsHierarchyPage({
     }
 
     return list;
-  }, [dashboardCourses, courseName, courseId, courseSlug]);
+  }, [dashboardCourses, courseName, courseId, courseSlug, exams, isMerged]);
 
-  const selectedCourseValue = courseName || "all";
+  const selectedCourseValue = useMemo(() => {
+    if (selectedCourseFilter && selectedCourseFilter !== "all" && selectedCourseFilter !== "All Courses") {
+      return selectedCourseFilter;
+    }
+    if (isMerged) return "all";
+    return courseName || "all";
+  }, [selectedCourseFilter, isMerged, courseName]);
 
-  const handleCourseChange = (selectedTitle: string) => {
+  const handleCourseChange = async (selectedTitle: string) => {
+    // 1. If selecting "All Courses" or "all":
     if (!selectedTitle || selectedTitle === "all" || selectedTitle === "All Courses") {
-      router.push(`/dashboards/${panelSlug}`);
+      applyCourse("all");
       return;
     }
+
+    const toSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+    // 2. If on a merged subject (exams from all courses are loaded in memory),
+    // filter in-place immediately without navigating away!
+    if (isMerged) {
+      applyCourse(selectedTitle);
+      return;
+    }
+
+    // 3. If on a single course and selecting current course:
+    if (courseName && courseName.toLowerCase() === selectedTitle.toLowerCase()) {
+      applyCourse(selectedTitle);
+      return;
+    }
+
+    // 4. Try finding the SAME subject in the selected course to stay at the Exam Level!
     const found = availableCourseOptions.find(
       (c) => c.title.toLowerCase() === selectedTitle.toLowerCase()
     );
-    if (found) {
-      router.push(`/dashboards/${panelSlug}/exams/${found.slug}/${found.id}`);
-    }
-  };
 
-  // Synchronize dynamically resolved subject schools, years, and seasons with the global Navbar dropdowns
+    const normalizeForCourseMatch = (s?: string) =>
+      (s || "")
+        .toLowerCase()
+        .replace(/\b(rn|lpn|exams?)\b/gi, "")
+        .replace(/[^a-z0-9]/g, "");
+
+    const targetClean = normalizeForCourseMatch(dynamicSubjectName || subjectName || currentSubjectTitle);
+
+    // Check dashboardCourses in-memory
+    const foundCourse = dashboardCourses?.find(
+      (c) =>
+        c.title.toLowerCase() === selectedTitle.toLowerCase() ||
+        (found && (c.guidId === found.id || String(c.id) === found.id))
+    );
+
+    if (foundCourse && Array.isArray(foundCourse.subCategories)) {
+      const matchingSub = foundCourse.subCategories.find((sc) => {
+        const scClean = normalizeForCourseMatch(sc.title);
+        return (
+          scClean === targetClean ||
+          scClean.includes(targetClean) ||
+          targetClean.includes(scClean) ||
+          (scClean.includes("pediatric") && targetClean.includes("pediatric")) ||
+          (scClean.includes("maternal") && targetClean.includes("maternal")) ||
+          (scClean.includes("mental") && targetClean.includes("mental"))
+        );
+      });
+
+      if (matchingSub) {
+        const cSlug = (foundCourse as any).slug || toSlug(foundCourse.title);
+        const cId = foundCourse.guidId || String(foundCourse.id);
+        router.push(
+          `/dashboards/${panelSlug}/exams/${cSlug}/${cId}/exams/${matchingSub.id}?subjectName=${encodeURIComponent(
+            matchingSub.title
+          )}`
+        );
+        return;
+      }
+    }
+
+    // Fallback: fetch subjects for this course from API to find matching subject
+    if (found?.id) {
+      try {
+        const res = await fetch(`/api/exams/${panelSlug}/subjects/${found.id}`);
+        if (res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const subs: any[] = Array.isArray(data?.subjects) ? data.subjects : [];
+          const matched = subs.find((s) => {
+            const sClean = normalizeForCourseMatch(s.name || s.title);
+            return (
+              sClean === targetClean ||
+              sClean.includes(targetClean) ||
+              targetClean.includes(sClean) ||
+              (sClean.includes("pediatric") && targetClean.includes("pediatric")) ||
+              (sClean.includes("maternal") && targetClean.includes("maternal")) ||
+              (sClean.includes("mental") && targetClean.includes("mental"))
+            );
+          });
+          if (matched) {
+            const subId = matched.guidId || String(matched.id);
+            router.push(
+              `/dashboards/${panelSlug}/exams/${found.slug}/${found.id}/exams/${subId}?subjectName=${encodeURIComponent(
+                matched.name || matched.title
+              )}`
+            );
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("[SubjectExamsHierarchyPage] Fallback subject lookup error:", e);
+      }
+    }
+
+    // If matching subject doesn't exist under that course, filter in-place so user is never redirected away
+    applyCourse(selectedTitle);
+  };
+  handleCourseChangeRef.current = handleCourseChange;
+
+  // Synchronize dynamically resolved subject courses, schools, years, and seasons with the global Navbar dropdowns
+  useEffect(() => {
+    if (typeof window !== "undefined" && availableCourseOptions.length > 0) {
+      window.dispatchEvent(
+        new CustomEvent("nurseford-available-courses-update", {
+          detail: { courses: availableCourseOptions.map((c) => c.title) },
+        })
+      );
+    }
+  }, [availableCourseOptions]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(
@@ -844,6 +1032,13 @@ export function SubjectExamsHierarchyPage({
   useEffect(() => {
     const handleRequest = () => {
       if (typeof window !== "undefined") {
+        if (availableCourseOptions.length > 0) {
+          window.dispatchEvent(
+            new CustomEvent("nurseford-available-courses-update", {
+              detail: { courses: availableCourseOptions.map((c) => c.title) },
+            })
+          );
+        }
         window.dispatchEvent(
           new CustomEvent("nurseford-available-schools-update", {
             detail: { schools: availableSchools },
@@ -869,7 +1064,7 @@ export function SubjectExamsHierarchyPage({
     return () => {
       window.removeEventListener("nurseford-request-available-schools", handleRequest);
     };
-  }, [availableSchools, availableYears, availableSeasons]);
+  }, [availableSchools, availableYears, availableSeasons, availableCourseOptions]);
 
   // Auto-reset school filter to 'all' if the selected school doesn't exist under this subject's exams
   useEffect(() => {
@@ -917,6 +1112,31 @@ export function SubjectExamsHierarchyPage({
       if (selectedSchool !== "all") {
         if (!examSchool || examSchool.toLowerCase() !== selectedSchool.toLowerCase()) return false;
       }
+
+      // Course filter check
+      if (selectedCourseFilter && selectedCourseFilter !== "all" && selectedCourseFilter !== "All Courses") {
+        const examCourse = (
+          (exam as ExamWithParentNames).courseName ||
+          getCourseTitleForSubId(String((exam as any).subjectGuidId || (exam as any).subjectId || "")) ||
+          ""
+        ).toLowerCase();
+        const target = selectedCourseFilter.toLowerCase().trim();
+        const examTitle = (exam.title || "").toLowerCase();
+        const examDesc = (exam.description || "").toLowerCase();
+
+        const matchesCourse =
+          examCourse.includes(target) ||
+          examTitle.includes(target) ||
+          examDesc.includes(target) ||
+          (target.includes("a-t") && (examCourse.includes("a-t") || examTitle.includes("a-t") || examCourse.includes("ati") || examTitle.includes("ati"))) ||
+          (target.includes("h-s") && (examCourse.includes("h-s") || examTitle.includes("h-s") || examCourse.includes("hesi") || examTitle.includes("hesi"))) ||
+          ((target.includes("exemplify") || target.includes("rhem")) &&
+            (examCourse.includes("exemplify") || examCourse.includes("rhem") || examTitle.includes("exemplify") || examTitle.includes("rhem"))) ||
+          (target.includes("general") && (examCourse.includes("general") || examTitle.includes("general")));
+
+        if (!matchesCourse) return false;
+      }
+
       return true;
     }).sort((a, b) => {
       const yrB = extractExamYear(b.title, currentSubjectTitle, b.year, b.createdAt) ?? 0;
@@ -929,14 +1149,25 @@ export function SubjectExamsHierarchyPage({
 
       return (Number(b.id) || 0) - (Number(a.id) || 0);
     });
-  }, [exams, searchQuery, selectedYear, selectedSeason, selectedSchool, currentSubjectTitle, dynamicCourseName, courseSlug]);
+  }, [
+    exams,
+    searchQuery,
+    selectedCourseFilter,
+    selectedYear,
+    selectedSeason,
+    selectedSchool,
+    currentSubjectTitle,
+    dynamicCourseName,
+    courseSlug,
+    getCourseTitleForSubId,
+  ]);
 
   const [perPage, setPerPage] = useState<number>(100);
 
   // Reset pagination to page 1 on filter or search change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedYear, selectedSeason, selectedSchool, perPage]);
+  }, [searchQuery, selectedCourseFilter, selectedYear, selectedSeason, selectedSchool, perPage]);
 
   const totalPages = Math.max(1, Math.ceil(filteredExams.length / perPage));
   const safePage = Math.min(Math.max(1, currentPage), totalPages);
