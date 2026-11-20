@@ -413,7 +413,7 @@ export function ExamCorrectAnswerView({
   const hasAnyData = formattedAnswers.length > 0 || rationales.length > 0 || exhibits.length > 0;
 
   return (
-    <div className="w-full rounded-2xl bg-white dark:bg-[#001326] border border-slate-200 dark:border-slate-800 shadow-sm p-3.5 sm:p-5 text-slate-800 dark:text-slate-100 space-y-3.5 my-3 transition-all">
+    <div className="w-full rounded-2xl bg-white dark:bg-[#001326] border border-slate-200 dark:border-slate-800 shadow-sm p-3 sm:p-4 text-slate-800 dark:text-slate-100 space-y-2.5 my-2.5 transition-all">
       {/* ── EMPTY DATA NOTICE (No fake hardcoded fallback) ── */}
       {!hasAnyData && (
         <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
@@ -424,7 +424,7 @@ export function ExamCorrectAnswerView({
       {/* ── 1. VERIFIED CORRECT ANSWER(S) ── */}
       {formattedAnswers.length > 0 && (
         <div className="space-y-1.5">
-          <div className="text-xs font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
+          <div className="exam-title-heading text-base sm:text-lg font-bold tracking-wide text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
             VERIFIED CORRECT ANSWER(S)
           </div>
 
@@ -432,7 +432,7 @@ export function ExamCorrectAnswerView({
             {formattedAnswers.map((item, idx) => (
               <div
                 key={idx}
-                className="rounded-lg border border-emerald-300/80 dark:border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 px-3 py-1.5 sm:px-3.5 sm:py-2 flex items-center justify-between gap-3 transition-all"
+                className="rounded-lg border border-emerald-300/80 dark:border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 px-3 py-1 sm:px-3.5 sm:py-1.5 flex items-center justify-between gap-3 transition-all"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   {item.label ? (
@@ -457,11 +457,11 @@ export function ExamCorrectAnswerView({
       {/* ── 2. CLINICAL RATIONALE & ANALYSIS (Strictly backend descriptions, zero fake sentences) ── */}
       {rationales.length > 0 && (
         <div className="space-y-1.5">
-          <div className="text-xs font-bold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
+          <div className="exam-title-heading text-base sm:text-lg font-bold tracking-wide text-emerald-600 dark:text-emerald-400 uppercase flex items-center gap-1.5">
             📖 CLINICAL RATIONALE &amp; ANALYSIS
           </div>
 
-          <div className="exhibit-content-body rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 p-3.5 sm:p-5 text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed space-y-2">
+          <div className="exhibit-content-body rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 p-2.5 sm:p-3.5 text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed space-y-1.5">
             {rationales.map((rationale, idx) => (
               <div
                 key={idx}

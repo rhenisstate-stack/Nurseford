@@ -95,6 +95,6 @@ export const DEVELOPER = {
 export const SEO = {
   author: DEVELOPER.NAME || "Nurseford",
   keywords: "Nursing, Nursing Exams, RN Nursing, LPN Nursing, RN Exit Exams, LPN Exit Exams, Exam Prep, Study Resources",
-  ogImage: `${CONTACT.CANONICALLINK || "https://nurseford.com"}/images/og-banner.jpg`,
-  siteUrl: CONTACT.CANONICALLINK || "https://nurseford.com",
+  ogImage: `${CONTACT.CANONICALLINK || "https://www.nurseford.com"}/logo/logo.png`,
+  siteUrl: CONTACT.CANONICALLINK || "https://www.nurseford.com",
 };

@@ -7,8 +7,32 @@ import type {
     StrataSessionQuestionFull,
     StrataSessionCorrectAnswer,
 } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
-import { Star, Pin, Bookmark, Flag, X, MessageSquare, Lightbulb, CheckCircle2 }
+import { Star, Pin, Bookmark, Flag, X, MessageSquare, Lightbulb, CheckCircle2, Eraser }
     from "lucide-react";
+import { CLEAR_QUESTION_EVENT } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useClearLiveExamUserAnswers";
+
+// lowercase q.type (without "casebased") → submissionType suffix
+const ANSWER_TYPE_SUFFIX: Record<string, string> = {
+    singlechoice: "SingleChoice",
+    multipleselect: "MultipleSelect",
+    truefalse: "TrueFalse",
+    numericresponse: "NumericResponse",
+    matching: "Matching",
+    orderingnumber: "OrderingNumber",
+    orderingitem: "OrderingItem",
+    orderingdragdrop: "OrderingDragDrop",
+    dynamicimage: "DynamicImage",
+    multipleimage: "MultipleImage",
+    blankselect: "BlankSelect",
+    blankfill: "BlankFill",
+    hotspot: "Hotspot",
+    openended: "OpenEnded",
+    highlight: "HighLight",
+    audiobased: "AudioBased",
+    videobased: "VideoBased",
+    matrixsinglechoice: "MatrixSingleChoice",
+    matrixmultipleselect: "MatrixMultipleSelect",
+};
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
 import { ExamCorrectAnswerView } from "./ExamCorrectAnswerView";
 
@@ -139,7 +163,7 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
     const canShowCorrectAnswer = m === "practice" || m === "review" || m === "tutor";
     const canShowFlag = m !== "tutor";
 
-    const { submitTool } = useLiveExamActionContext();
+    const { submitTool, submitAnswer } = useLiveExamActionContext();
 
     //  Accordion state ─
     const [showHint, setShowHint] = useState(false);
@@ -545,6 +569,28 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
 
     // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+    const handleClearSelection = async () => {
+        // 1. reset the question component's local state
+        window.dispatchEvent(new CustomEvent(CLEAR_QUESTION_EVENT, { detail: { questionId: q.id } }));
+
+        // 2. persist the cleared answer
+        const rawType = (q.type ?? "").toLowerCase().trim();
+        const isCaseBased = rawType.startsWith("casebased");
+        const baseType = isCaseBased ? rawType.slice("casebased".length) : rawType;
+        const suffix = ANSWER_TYPE_SUFFIX[baseType];
+        if (!suffix) return;
+        const submissionType = `Action${isCaseBased ? "CaseBased" : ""}${suffix}` as Parameters<typeof submitAnswer>[0];
+        await submitAnswer(submissionType, {
+            questionId: q.id,
+            questionGuidId: q.guidId,
+            examId,
+            examGuidId,
+            sectionId,
+            sectionGuidId,
+            answer: null,
+        });
+    };
+
     const handleStar = useCallback(async () => {
         const next = !starred;
         setStarred(next);
@@ -568,6 +614,49 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
     const handleBookmark = useCallback(async () => {
         const next = !bookmarked;
         setBookmarked(next);
+        if (typeof window !== "undefined") {
+            try {
+                const stored = new Set<string | number>(
+                    JSON.parse(localStorage.getItem("nurseford_bookmarked_questions") || localStorage.getItem("rhenis_bookmarked_questions") || "[]")
+                );
+                const qIds = [q.id, q.guidId].filter(Boolean);
+                if (next) {
+                    for (const qid of qIds) {
+                        stored.add(qid);
+                        stored.add(String(qid));
+                    }
+                } else {
+                    for (const qid of qIds) {
+                        stored.delete(qid);
+                        stored.delete(String(qid));
+                        if (typeof qid === "number") stored.delete(qid);
+                        else if (!isNaN(Number(qid))) stored.delete(Number(qid));
+                    }
+                }
+                localStorage.setItem("nurseford_bookmarked_questions", JSON.stringify(Array.from(stored)));
+
+                const examKeys = [examId, examGuidId].filter(Boolean);
+                for (const ek of examKeys) {
+                    const examStored = new Set<string | number>(
+                        JSON.parse(localStorage.getItem(`nurseford_exam_bookmarked_${ek}`) || localStorage.getItem(`rhenis_exam_bookmarked_${ek}`) || "[]")
+                    );
+                    if (next) {
+                        for (const qid of qIds) {
+                            examStored.add(qid);
+                            examStored.add(String(qid));
+                        }
+                    } else {
+                        for (const qid of qIds) {
+                            examStored.delete(qid);
+                            examStored.delete(String(qid));
+                            if (typeof qid === "number") examStored.delete(qid);
+                            else if (!isNaN(Number(qid))) examStored.delete(Number(qid));
+                        }
+                    }
+                    localStorage.setItem(`nurseford_exam_bookmarked_${ek}`, JSON.stringify(Array.from(examStored)));
+                }
+            } catch {}
+        }
         await submitTool("ActionQuestionBookmark", {
             examId, examGuidId, sectionId, sectionGuidId,
             questionId: q.id, questionGuidId: q.guidId,
@@ -666,7 +755,7 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
     return (
 
         // BORDER LINE
-        <div className="mt-4 border-t border-slate-200 pt-3 space-y-3">
+        <div className="mt-2.5 sm:mt-3 border-t border-slate-200 dark:border-slate-800 pt-2 sm:pt-2.5 space-y-2">
 
             {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
             {/* ROW: action buttons */}
@@ -686,6 +775,16 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
 
                 {/* 2. Middle: Hint, Show Correct Answer, and (on sm+ only) Star, Pin, Bookmark, Flag */}
                 <div className="order-2 flex items-center justify-center gap-1 sm:gap-2 flex-nowrap sm:flex-wrap sm:mx-auto">
+                    {/* Clear Selection */}
+                    <button
+                        type="button"
+                        onClick={handleClearSelection}
+                        title="Clear Selection"
+                        className="px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-semibold rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-400 text-slate-700 dark:text-slate-200 hover:text-red-600 dark:hover:text-red-400 transition flex items-center gap-1 cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
+                    >
+                        <Eraser size={13} />
+                        <span className="hidden sm:inline">Clear</span>
+                    </button>
                     {/* Show Hint */}
                     {canShowHint && hint && (
                         <button
@@ -867,21 +966,3 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
         </div>
     );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

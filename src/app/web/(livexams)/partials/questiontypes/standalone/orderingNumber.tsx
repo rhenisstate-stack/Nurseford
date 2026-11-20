@@ -8,6 +8,7 @@ import type {
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { useClearOnEvent } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useClearLiveExamUserAnswers";
 import { isValidExamText } from "@/lib/utils/exams/cleanExamText";
 
 interface Props {
@@ -111,6 +112,9 @@ export const OrderingNumberQuestion = ({
 
   // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+  useClearOnEvent(q.id, () => setAssignments(Object.fromEntries(displayOptions.map((opt) => [opt.id, ""])))
+  );
+
   const assign = (optId: number, value: string) => {
     if (value !== "") {
       const n = parseInt(value, 10);
@@ -151,16 +155,6 @@ export const OrderingNumberQuestion = ({
         metaQuestionText={q.metaQuestionText}
         hideQuestionHeader={hideQuestionHeader}
       />
-{/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      {!hideQuestionHeader &&
-        q.metaQuestionText &&
-        q.metaQuestionText.trim().toLowerCase() !== "null" && (
-          <div
-            className="text-sm px-2 text-gray-500 italic"
-            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
-          />
-        )}
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 

@@ -5,11 +5,11 @@ import ScrollToTopButton from '@/components/common/ScrollToTopButton';
 import Whastapp from '@/app/(web)/includes/partials/Whastapp';
 import Tawkto from '@/app/(web)/includes/partials/Tawkto';
 import { APP_DESCRIPTION, APP_NAME, SEO } from '@/lib/config/config';
-import '@/styles/web/rhenis.css';
+import '@/styles/web/theme.css';
 
 const resolvedSiteUrl = /^https?:\/\//i.test((SEO.siteUrl || '').trim())
   ? SEO.siteUrl.trim().replace(/\/+$/, '')
-  : `https://${(SEO.siteUrl || 'nurseford.com').trim().replace(/\/+$/, '')}`;
+  : `https://${(SEO.siteUrl || 'www.nurseford.com').trim().replace(/\/+$/, '')}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(resolvedSiteUrl),
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
 export default function WebLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="nurseford-web rhenis-web flex min-h-screen flex-col"
+      className="nurseford-web flex min-h-screen flex-col"
     >
       <Navbar />
       <main className="flex-grow">{children}</main>

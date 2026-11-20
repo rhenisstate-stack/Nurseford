@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, type ComponentType } from "react";
 import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
-import { filterExhibitTabs, cleanTabTitle, formatExhibitHtml } from "@/lib/utils/exams/cleanExamText";
+import { filterExhibitTabs, cleanTabTitle, formatExhibitHtml, cleanPromptHtml } from "@/lib/utils/exams/cleanExamText";
 
 export interface InnerQuestionProps {
   q: StrataSessionQuestionFull;
@@ -66,7 +66,10 @@ export const CaseBasedStencil = ({
   const activeDesc = useMemo(() => formatExhibitHtml(rawDesc), [rawDesc]);
 
   return (
-    <div className="p-0 space-y-3">
+    <div
+      className="p-0 space-y-2"
+      style={{ fontFamily: "'Calibre', 'Calibri', Candara, 'Segoe UI', Arial, sans-serif" }}
+    >
       {/* Question number + stem rendered ONCE with standard older system styling */}
       <QuestionPromptHeader
         questionNumber={questionNumber}
@@ -75,7 +78,7 @@ export const CaseBasedStencil = ({
 
       {/* Case passage / scenario tabs (Nurses' Notes, Vital Signs, etc.) */}
       {caseContents.length > 0 && (
-        <div className="my-3">
+        <div className="my-1.5 sm:my-2">
           <div className="flex items-end overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar-button]:hidden">
             {caseContents.map((c) => {
               const isActive = activeTab === c.id;
@@ -84,7 +87,7 @@ export const CaseBasedStencil = ({
                   key={c.id}
                   type="button"
                   onClick={() => setActiveTab(c.id)}
-                  className={`px-4 py-2 text-xs sm:text-sm whitespace-nowrap transition cursor-pointer ${
+                  className={`exhibit-tab-btn px-3 py-1 sm:px-3.5 sm:py-1 whitespace-nowrap transition cursor-pointer ${
                     isActive
                       ? "font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-[#001326] border-t border-l border-r border-slate-300 dark:border-slate-600 rounded-t-md border-b-0"
                       : "font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 bg-transparent border-b border-slate-300 dark:border-slate-700 border-t-0 border-l-0 border-r-0 rounded-none hover:bg-slate-50 dark:hover:bg-slate-800/20"
@@ -98,7 +101,7 @@ export const CaseBasedStencil = ({
           </div>
           {activeContent && (
             <div
-              className="exhibit-content-body py-2 px-0.5 sm:px-1 text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar-button]:hidden [&_p]:my-1.5 [&_p]:leading-relaxed [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:my-1.5 [&_ol]:my-1.5 [&_li]:leading-relaxed [&_p:empty]:my-2 [&_p:empty]:min-h-[0.75rem]"
+              className="exhibit-content-body py-1 sm:py-1.5 px-0.5 sm:px-1 text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar-button]:hidden [&_p]:my-1 [&_p]:leading-relaxed [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:leading-relaxed [&_p:empty]:my-1 [&_p:empty]:min-h-[0.5rem]"
               dangerouslySetInnerHTML={{ __html: activeDesc }}
             />
           )}
@@ -107,15 +110,15 @@ export const CaseBasedStencil = ({
 
       {/* Separation border line after exhibit and before meta */}
       {caseContents.length > 0 && (
-        <div className="border-b border-slate-300 dark:border-slate-700 my-3" />
+        <div className="border-b border-slate-300 dark:border-slate-700 my-1.5 sm:my-2" />
       )}
 
       {/* Meta Question below separation line and above Choices */}
       {q.metaQuestionText && q.metaQuestionText.toLowerCase().trim() !== "null" && (
-        <div className="pt-1 pb-2 mb-2">
+        <div className="pt-0.5 pb-1">
           <div
-            className="text-base sm:text-lg text-blue-700 dark:text-blue-400 font-bold italic leading-snug"
-            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
+            className="exam-title-heading text-base sm:text-lg text-blue-700 dark:text-blue-400 font-bold italic leading-snug [&_*]:!text-inherit [&_*]:!font-inherit [&_*]:!leading-snug"
+            dangerouslySetInnerHTML={{ __html: cleanPromptHtml(q.metaQuestionText, false) }}
           />
         </div>
       )}

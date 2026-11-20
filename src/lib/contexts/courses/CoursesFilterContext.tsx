@@ -13,6 +13,10 @@ export interface CoursesFilterContextType {
   setSelectedProgram: (p: string) => void;
   selectedSchool: string;
   setSelectedSchool: (s: string) => void;
+  selectedCourse: string;
+  setSelectedCourse: (c: string) => void;
+  selectedSubject: string;
+  setSelectedSubject: (sub: string) => void;
   selectedYear: string;
   setSelectedYear: (y: string) => void;
   selectedSeason: string;
@@ -21,6 +25,10 @@ export interface CoursesFilterContextType {
   hasActiveFilters: boolean;
   dynamicPrograms: string[];
   setDynamicPrograms: (programs: string[]) => void;
+  dynamicCourses: string[];
+  setDynamicCourses: (courses: string[]) => void;
+  dynamicSubjects: string[];
+  setDynamicSubjects: (subjects: string[]) => void;
   dynamicYears: number[];
   setDynamicYears: (years: number[]) => void;
   dynamicSeasons: string[];
@@ -38,6 +46,10 @@ export const defaultCoursesFilterContext: CoursesFilterContextType = {
   setSelectedProgram: () => {},
   selectedSchool: "All Schools",
   setSelectedSchool: () => {},
+  selectedCourse: "All Courses",
+  setSelectedCourse: () => {},
+  selectedSubject: "All Subjects",
+  setSelectedSubject: () => {},
   selectedYear: "All Years",
   setSelectedYear: () => {},
   selectedSeason: "All Seasons",
@@ -46,6 +58,10 @@ export const defaultCoursesFilterContext: CoursesFilterContextType = {
   hasActiveFilters: false,
   dynamicPrograms: [],
   setDynamicPrograms: () => {},
+  dynamicCourses: [],
+  setDynamicCourses: () => {},
+  dynamicSubjects: [],
+  setDynamicSubjects: () => {},
   dynamicYears: [],
   setDynamicYears: () => {},
   dynamicSeasons: [],
@@ -81,6 +97,14 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     const s = searchParams?.get("school");
     return s && s !== "all" ? s : "All Schools";
   });
+  const [selectedCourse, setSelectedCourseState] = useState<string>(() => {
+    const c = searchParams?.get("course");
+    return c && c !== "all" ? c : "All Courses";
+  });
+  const [selectedSubject, setSelectedSubjectState] = useState<string>(() => {
+    const sub = searchParams?.get("subject");
+    return sub && sub !== "all" ? sub : "All Subjects";
+  });
   const [selectedYear, setSelectedYearState] = useState<string>(() => {
     const y = searchParams?.get("year");
     return y && y !== "all" ? y : "All Years";
@@ -91,6 +115,21 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
   });
 
   const [dynamicPrograms, setDynamicPrograms] = useState<string[]>([]);
+  const [dynamicCourses, setDynamicCourses] = useState<string[]>([]);
+  const [dynamicSubjects, setDynamicSubjects] = useState<string[]>([
+    "Med-Surg / Adult Health",
+    "Pharmacology",
+    "Fundamentals of Nursing",
+    "Maternal & Newborn Care",
+    "Pediatrics & Child Health",
+    "Mental Health & Psych",
+    "Dosage Calculation",
+    "Health Assessment",
+    "Leadership & Management",
+    "Community Health",
+    "Critical Care",
+    "Exit Exams & Capstone",
+  ]);
   const [dynamicYears, setDynamicYears] = useState<number[]>([]);
   const [dynamicSeasons, setDynamicSeasons] = useState<string[]>([]);
   const [totalCoursesCount, setTotalCoursesCount] = useState<number>(0);
@@ -163,13 +202,17 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
         if (cancelled || rawList.length === 0) return;
 
         const pSet = new Set<string>();
+        const cSet = new Set<string>();
         const ySet = new Set<number>();
         const sSet = new Set<string>();
 
         rawList.forEach((c) => {
-          const name = (c.name || c.title || "").trim();
-          if (!name) return;
+          const rawName = (c.name || c.title || "").trim();
+          if (!rawName) return;
           if (!isAllowedNursingCourse(c, "all")) return;
+
+          const name = rawName.replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify");
+          cSet.add(name);
 
           const isLpn =
             c.panelHint === "lpn-nursing" ||
@@ -203,6 +246,7 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
 
         if (!cancelled) {
           if (pSet.size > 0) setDynamicPrograms(Array.from(pSet).sort((a, b) => a.localeCompare(b)));
+          if (cSet.size > 0) setDynamicCourses(Array.from(cSet).sort((a, b) => a.localeCompare(b)));
           if (ySet.size > 0) setDynamicYears(Array.from(ySet).sort((a, b) => b - a));
           if (sSet.size > 0) {
             const seasonOrder = ["Fall", "Spring", "Summer", "Winter"];
@@ -241,6 +285,22 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     }
   }, []);
 
+  const setSelectedCourse = useCallback((c: string) => {
+    setSelectedCourseState(c);
+    if (typeof window !== "undefined") {
+      const val = c === "All Courses" ? "all" : c;
+      window.dispatchEvent(new CustomEvent("nurseford-course-change", { detail: { course: val } }));
+    }
+  }, []);
+
+  const setSelectedSubject = useCallback((sub: string) => {
+    setSelectedSubjectState(sub);
+    if (typeof window !== "undefined") {
+      const val = sub === "All Subjects" ? "all" : sub;
+      window.dispatchEvent(new CustomEvent("nurseford-subject-change", { detail: { subject: val } }));
+    }
+  }, []);
+
   const setSelectedYear = useCallback((y: string) => {
     setSelectedYearState(y);
     if (typeof window !== "undefined") {
@@ -264,6 +324,20 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
       if (custom.detail?.school !== undefined) {
         const val = custom.detail.school === "all" ? "All Schools" : custom.detail.school;
         setSelectedSchoolState(val);
+      }
+    };
+    const handleCourseChange = (e: Event) => {
+      const custom = e as CustomEvent<{ course: string }>;
+      if (custom.detail?.course !== undefined) {
+        const val = custom.detail.course === "all" ? "All Courses" : custom.detail.course;
+        setSelectedCourseState(val);
+      }
+    };
+    const handleSubjectChange = (e: Event) => {
+      const custom = e as CustomEvent<{ subject: string }>;
+      if (custom.detail?.subject !== undefined) {
+        const val = custom.detail.subject === "all" ? "All Subjects" : custom.detail.subject;
+        setSelectedSubjectState(val);
       }
     };
     const handleYearChange = (e: Event) => {
@@ -305,6 +379,8 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     };
 
     window.addEventListener("nurseford-school-change", handleSchoolChange);
+    window.addEventListener("nurseford-course-change", handleCourseChange);
+    window.addEventListener("nurseford-subject-change", handleSubjectChange);
     window.addEventListener("nurseford-year-change", handleYearChange);
     window.addEventListener("nurseford-season-change", handleSeasonChange);
     window.addEventListener("nurseford-available-years-update", handleAvailableYears);
@@ -312,6 +388,8 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
 
     return () => {
       window.removeEventListener("nurseford-school-change", handleSchoolChange);
+      window.removeEventListener("nurseford-course-change", handleCourseChange);
+      window.removeEventListener("nurseford-subject-change", handleSubjectChange);
       window.removeEventListener("nurseford-year-change", handleYearChange);
       window.removeEventListener("nurseford-season-change", handleSeasonChange);
       window.removeEventListener("nurseford-available-years-update", handleAvailableYears);
@@ -333,6 +411,16 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
       setSelectedSchoolState(sch === "all" ? "All Schools" : sch);
     }
 
+    const crs = searchParams.get("course");
+    if (crs) {
+      setSelectedCourseState(crs === "all" ? "All Courses" : crs);
+    }
+
+    const sub = searchParams.get("subject");
+    if (sub) {
+      setSelectedSubjectState(sub === "all" ? "All Subjects" : sub);
+    }
+
     const yr = searchParams.get("year");
     if (yr) {
       setSelectedYearState(yr === "all" ? "All Years" : yr);
@@ -349,12 +437,14 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     }
   }, [searchParams]);
 
-  // Sync state to URL on /courses page without full page reload
+  // Sync state to URL on /courses or /subjects page without full page reload
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const isCoursesPage = window.location.pathname.startsWith("/courses");
-    if (!isCoursesPage) return;
+    const isCatalogPage =
+      window.location.pathname.startsWith("/courses") ||
+      window.location.pathname.startsWith("/subjects");
+    if (!isCatalogPage) return;
 
     const url = new URL(window.location.href);
 
@@ -368,6 +458,18 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
       url.searchParams.set("school", selectedSchool);
     } else {
       url.searchParams.delete("school");
+    }
+
+    if (selectedCourse !== "All Courses" && selectedCourse !== "all") {
+      url.searchParams.set("course", selectedCourse);
+    } else {
+      url.searchParams.delete("course");
+    }
+
+    if (selectedSubject !== "All Subjects" && selectedSubject !== "all") {
+      url.searchParams.set("subject", selectedSubject);
+    } else {
+      url.searchParams.delete("subject");
     }
 
     if (selectedYear !== "All Years" && selectedYear !== "all") {
@@ -385,27 +487,33 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     if (url.pathname + url.search !== window.location.pathname + window.location.search) {
       window.history.replaceState(null, "", url.pathname + url.search);
     }
-  }, [searchQuery, selectedProgram, selectedSchool, selectedYear, selectedSeason]);
+  }, [searchQuery, selectedProgram, selectedSchool, selectedCourse, selectedSubject, selectedYear, selectedSeason]);
 
   const hasActiveFilters = useMemo(() => {
     return (
       Boolean(searchQuery.trim()) ||
       selectedProgram !== "All Programmes" ||
       (selectedSchool !== "All Schools" && selectedSchool !== "all") ||
+      (selectedCourse !== "All Courses" && selectedCourse !== "all") ||
+      (selectedSubject !== "All Subjects" && selectedSubject !== "all") ||
       (selectedYear !== "All Years" && selectedYear !== "all") ||
       (selectedSeason !== "All Seasons" && selectedSeason !== "all")
     );
-  }, [searchQuery, selectedProgram, selectedSchool, selectedYear, selectedSeason]);
+  }, [searchQuery, selectedProgram, selectedSchool, selectedCourse, selectedSubject, selectedYear, selectedSeason]);
 
   const clearAllFilters = useCallback(() => {
     setSearchQuery("");
     setSelectedProgram("All Programmes");
     setSelectedSchoolState("All Schools");
+    setSelectedCourseState("All Courses");
+    setSelectedSubjectState("All Subjects");
     setSelectedYearState("All Years");
     setSelectedSeasonState("All Seasons");
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("nurseford-school-change", { detail: { school: "all" } }));
+      window.dispatchEvent(new CustomEvent("nurseford-course-change", { detail: { course: "all" } }));
+      window.dispatchEvent(new CustomEvent("nurseford-subject-change", { detail: { subject: "all" } }));
       window.dispatchEvent(new CustomEvent("nurseford-year-change", { detail: { year: "all" } }));
       window.dispatchEvent(new CustomEvent("nurseford-season-change", { detail: { season: "all" } }));
     }
@@ -419,6 +527,10 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
       setSelectedProgram,
       selectedSchool,
       setSelectedSchool,
+      selectedCourse,
+      setSelectedCourse,
+      selectedSubject,
+      setSelectedSubject,
       selectedYear,
       setSelectedYear,
       selectedSeason,
@@ -427,6 +539,10 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
       hasActiveFilters,
       dynamicPrograms,
       setDynamicPrograms,
+      dynamicCourses,
+      setDynamicCourses,
+      dynamicSubjects,
+      setDynamicSubjects,
       dynamicYears,
       setDynamicYears,
       dynamicSeasons,
@@ -441,6 +557,10 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
       selectedProgram,
       selectedSchool,
       setSelectedSchool,
+      selectedCourse,
+      setSelectedCourse,
+      selectedSubject,
+      setSelectedSubject,
       selectedYear,
       setSelectedYear,
       selectedSeason,
@@ -448,6 +568,8 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
       clearAllFilters,
       hasActiveFilters,
       dynamicPrograms,
+      dynamicCourses,
+      dynamicSubjects,
       dynamicYears,
       dynamicSeasons,
       totalCoursesCount,

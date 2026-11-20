@@ -1,5 +1,4 @@
-.nurseford-web,
-.rhenis-web {
+.nurseford-web {
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-serif: var(--font-plus-jakarta), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), monospace;
@@ -24,10 +23,8 @@
 }
 
 /* Light mode: clean off-white background, dark typography, light tinted card surfaces */
-html.light .rhenis-web,
 html.light .nurseford-web,
-.nurseford-web.light,
-.rhenis-web.light {
+.nurseford-web.light {
   --background: #f8fafc;
   --navbar-bg: #ffffff;
   --content-bg: #f8fafc;
@@ -45,10 +42,8 @@ html.light .nurseford-web,
 }
 
 /* Dark mode: concentrated midnight navy */
-html.dark .rhenis-web,
 html.dark .nurseford-web,
-.nurseford-web.dark,
-.rhenis-web.dark {
+.nurseford-web.dark {
   --background: #171C27;
   --navbar-bg: #171C27;
   --content-bg: #171C27;
@@ -65,11 +60,11 @@ html.dark .nurseford-web,
   color: #ffffff;
 }
 
-.rhenis-web h1,
-.rhenis-web h2,
-.rhenis-web h3,
-.rhenis-web h4,
-.rhenis-web h5,
-.rhenis-web h6 {
+.nurseford-web h1,
+.nurseford-web h2,
+.nurseford-web h3,
+.nurseford-web h4,
+.nurseford-web h5,
+.nurseford-web h6 {
   font-family: var(--font-plus-jakarta), var(--font-inter), sans-serif;
 }

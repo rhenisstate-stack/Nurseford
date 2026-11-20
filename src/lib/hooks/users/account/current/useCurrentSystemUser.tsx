@@ -1,7 +1,7 @@
 // src/lib/hooks/users/account/current/useCurrentSystemUser.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { userService, UserAction } from "@/lib/services/users/user/userService";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
 import { getCookie, setUsernameCookie, getUsernameCookie, deleteUsernameCookie, clearAuthSessionCookies } from "@/lib/utils/sessions/generateSystemUserSessionCookies";
@@ -432,9 +432,16 @@ export const useCurrentSystemUser = () => {
     }
   }, []);
 
+  const refetch = useCallback(async () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("session:login"));
+    }
+  }, []);
+
   return {
     user,
     loading,
     authenticated,
+    refetch,
   };
 };

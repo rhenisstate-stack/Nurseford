@@ -321,12 +321,12 @@ export default function UserAccountDropdown({
       >
         <button
           onClick={() => setIsOpen((v) => !v)}
-          className="group relative flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl text-xs font-semibold text-navy dark:text-white bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-2xs hover:bg-slate-200/70 dark:hover:bg-slate-700 transition cursor-pointer shrink-0"
+          className="group relative flex items-center justify-center w-8 h-8 sm:w-auto sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold text-navy dark:text-white bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 shadow-2xs hover:bg-slate-200/70 dark:hover:bg-slate-700 transition cursor-pointer shrink-0"
           aria-label="Login or Register"
+          title="Login / Register"
         >
-          <FiLogIn className="w-3.5 h-3.5 text-blue-600 sm:hidden shrink-0" />
-          <span className="hidden sm:inline">Login / Register</span>
-          <span className="sm:hidden text-[11px] font-bold">Login</span>
+          <FiLogIn className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+          <span className="hidden sm:inline ml-1.5">Login / Register</span>
         </button>
 
         {isOpen && (
@@ -421,9 +421,10 @@ export default function UserAccountDropdown({
       ) : (
         <button
           onClick={() => setIsOpen((v) => !v)}
-          className="group flex items-center gap-1.5 xl:gap-2 rounded-xl px-2 py-1 transition-all duration-200 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200/80 dark:hover:border-slate-700 cursor-pointer shrink-0"
+          className="group flex items-center gap-1.5 xl:gap-2 rounded-xl p-0.5 sm:px-2 sm:py-1 transition-all duration-200 hover:bg-slate-100/80 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200/80 dark:hover:border-slate-700 cursor-pointer shrink-0"
           aria-expanded={isOpen}
           aria-haspopup="true"
+          title={userName || "User Profile"}
         >
           {!hideAvatar && (
             <span className="h-8 w-8 rounded-lg overflow-hidden flex items-center justify-center bg-blue-100 text-blue-700 font-bold dark:bg-blue-900/60 dark:text-blue-200 border border-blue-200/60 dark:border-blue-800/60 transition-transform group-hover:scale-105 shrink-0 text-xs shadow-2xs">
@@ -441,11 +442,11 @@ export default function UserAccountDropdown({
               )}
             </span>
           )}
-          <span className="text-xs font-semibold text-navy dark:text-white max-w-[75px] lg:max-w-[95px] xl:max-w-[130px] truncate">
+          <span className="hidden sm:inline text-xs font-semibold text-navy dark:text-white max-w-[75px] lg:max-w-[95px] xl:max-w-[130px] truncate">
             {userName}
           </span>
           <FiChevronDown
-            className={`w-3.5 h-3.5 text-navy/50 dark:text-white/50 transition-transform duration-200 shrink-0 ${
+            className={`hidden sm:inline w-3.5 h-3.5 text-navy/50 dark:text-white/50 transition-transform duration-200 shrink-0 ${
               isOpen ? "rotate-180" : ""
             }`}
           />

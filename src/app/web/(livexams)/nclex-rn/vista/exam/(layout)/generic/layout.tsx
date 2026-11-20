@@ -17,6 +17,7 @@ export default function WebLayout({ children }: { children: ReactNode }) {
             <ExamFontSizeProvider>
               <div
                 data-exam-page="true"
+                style={{ fontFamily: "'Calibre', 'Calibri', Candara, 'Segoe UI', Arial, sans-serif" }}
                 className="min-h-screen select-none bg-slate-50 dark:bg-[#071321] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200"
               >
                 {children}

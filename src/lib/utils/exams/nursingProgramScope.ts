@@ -158,7 +158,7 @@ export function isAllowedNursingCourse(
   const combinedTitle = normalizedSeg ? `${title} ${normalizedSeg}`.trim() : title;
 
   const isRnCourse =
-    /\b(?:rn|grn)\b|\b(?:rhenis|rhemplify|exit)[^a-z0-9]*.*\brn\b|rhenis\s+general\s+exams/i.test(
+    /\b(?:rn|grn)\b|\b(?:rhenis|rhemplify|rhemify|exemplify|exit)[^a-z0-9]*.*\brn\b|rhenis\s+general\s+exams/i.test(
       combinedTitle
     );
   const isLpnCourse =

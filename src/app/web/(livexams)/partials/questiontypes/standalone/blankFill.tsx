@@ -5,6 +5,7 @@ import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessm
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { useClearOnEvent } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useClearLiveExamUserAnswers";
 
 interface Props {
   q: StrataSessionQuestionFull;
@@ -125,6 +126,9 @@ export const BlankFillQuestion = ({
   }, []);
 
   // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  useClearOnEvent(q.id, () => setValues(Object.fromEntries(blanks.map((b) => [b.blankLabel, ""])))
+  );
 
   const setValue = (blankLabel: string, val: string) => {
     const next = {

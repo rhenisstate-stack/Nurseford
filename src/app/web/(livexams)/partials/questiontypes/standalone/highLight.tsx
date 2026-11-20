@@ -7,7 +7,9 @@ import type {
   StrataSessionQuestionOption,
 } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionToolbar } from "../../components/QuestionToolbar";
+import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { useClearOnEvent } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useClearLiveExamUserAnswers";
 
 interface Props {
   q: StrataSessionQuestionFull;
@@ -126,6 +128,8 @@ export const HighLightQuestion = ({
 
   // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+  useClearOnEvent(q.id, () => setPicked(new Set()));
+
   const toggle = (optionId: number | null) => {
     if (optionId == null) return; // marker didn't resolve to a real option — not selectable
 
@@ -167,30 +171,12 @@ export const HighLightQuestion = ({
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
-      {!hideQuestionHeader && (
-        <div className="flex items-center gap-3">
-          <div className="shrink-0 py-1 px-2 rounded
-            bg-gradient-to-br from-indigo-800 to-blue-600 text-white
-            flex items-center justify-center text-xs md:text-sm font-bold shadow-md">
-            {questionNumber}
-          </div>
-          <div
-            className="flex-1 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: q.questionText ?? "" }}
-          />
-        </div>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      {!hideQuestionHeader &&
-        q.metaQuestionText &&
-        q.metaQuestionText.trim().toLowerCase() !== "null" && (
-          <div
-            className="text-sm px-2 text-gray-500 italic"
-            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
-          />
-        )}
+      <QuestionPromptHeader
+        questionNumber={questionNumber}
+        questionText={q.questionText}
+        metaQuestionText={q.metaQuestionText}
+        hideQuestionHeader={hideQuestionHeader}
+      />
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 

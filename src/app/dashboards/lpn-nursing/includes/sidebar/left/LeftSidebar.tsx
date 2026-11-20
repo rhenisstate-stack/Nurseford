@@ -15,6 +15,7 @@ import {
   CreditCard,
   LifeBuoy,
   HelpCircle,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext";
@@ -24,6 +25,7 @@ import { useSidebarAutoScroll } from "@/lib/hooks/nexus/includes/sidebars/useSid
 
 import { Tooltip } from "@/components/dashboards/includes/sidebar/tooltips/SidebarTooltip";
 import { APP_TITLE, APP_ACRONYM } from "@/lib/config/config";
+import SidebarUserProfile from "@/components/common/user/SidebarUserProfile";
 
 const PANEL = "lpn-nursing";
 const VISTA = `/dashboards/${PANEL}/vista`;
@@ -386,7 +388,7 @@ export default function LeftSidebar() {
       </div>
 
       <nav
-        className={`flex-1 overflow-y-auto space-y-1 p-2 pb-16 left-sidebar-scroll overscroll-contain ${isMobile ? "text-xs" : ""}`}
+        className={`flex-1 overflow-y-auto space-y-1 p-2 pb-4 left-sidebar-scroll overscroll-contain ${isMobile ? "text-xs" : ""}`}
       >
 
         <Link href="/">
@@ -418,6 +420,26 @@ export default function LeftSidebar() {
             </span>
           </div>
         )}
+
+        <Link href={`/dashboards/${DASHBOARD_NAME}/auth/account/edit`} onClick={handleItemClick}>
+          <div
+            onClick={handleItemClick}
+            onMouseEnter={(e) => handleItemHover("Account Settings", e)}
+            onMouseLeave={handleMouseLeave}
+            className={`relative flex items-center py-2 px-1 rounded-lg transition
+              border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
+              ${!isOpened && "justify-center"}`}
+          >
+            <Settings className="w-5 h-5 shrink-0 text-slate-600 dark:text-slate-300" />
+            {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Account Settings</span>}
+
+            {isCollapsed && hoveredItem === "Account Settings" && (
+              <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
+                Account Settings
+              </Tooltip>
+            )}
+          </div>
+        </Link>
 
         <Link href={`${VISTA}/stats/progress`}>
           <div
@@ -540,6 +562,13 @@ export default function LeftSidebar() {
         </Link>
 
       </nav>
+
+      {/* Profile Dropdown Below All Other Components */}
+      {isOpened && (
+        <div className="sm:hidden mt-auto shrink-0 border-t border-slate-200/80 dark:border-slate-800">
+          <SidebarUserProfile panelSlug={DASHBOARD_NAME} onClose={close} />
+        </div>
+      )}
     </aside>
     </>
   );

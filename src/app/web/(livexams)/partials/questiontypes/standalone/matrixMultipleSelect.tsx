@@ -5,6 +5,7 @@ import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessm
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { useClearOnEvent } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useClearLiveExamUserAnswers";
 import { resolveQuestionMatrix } from "@/lib/utils/exams/matrixResolver";
 
 interface Props {
@@ -84,6 +85,8 @@ export const MatrixMultipleSelectQuestion = ({
     };
   }, [persistedIds]);
 
+  useClearOnEvent(q.id, () => setPicked(new Set()));
+
   const toggle = (cellId: number) => {
     const next = new Set(picked);
     if (next.has(cellId)) {
@@ -158,13 +161,13 @@ export const MatrixMultipleSelectQuestion = ({
         <table className="min-w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th className="border-b border-r border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3.5 py-1.5 sm:py-2 text-left text-sm md:text-base font-bold text-slate-900 dark:text-white whitespace-nowrap">
+              <th className="border-b border-r border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3.5 py-1.5 sm:py-2 text-left font-semibold text-slate-900 dark:text-white whitespace-nowrap">
                 {matrix.topLeftCell || "Assessment / Findings"}
               </th>
               {Array.from({ length: columnCount }).map((_, colIdx) => (
                 <th
                   key={colIdx}
-                  className="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-1.5 sm:py-2 text-center text-sm md:text-base font-bold text-slate-900 dark:text-white whitespace-nowrap"
+                  className="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-4 py-1.5 sm:py-2 text-center font-semibold text-slate-900 dark:text-white whitespace-nowrap"
                 >
                   {columnHeaders[colIdx] ?? ""}
                 </th>
@@ -174,7 +177,7 @@ export const MatrixMultipleSelectQuestion = ({
           <tbody className="divide-y divide-gray-100 dark:divide-white/5">
             {Array.from({ length: rowCount }).map((_, rowIdx) => (
               <tr key={rowIdx} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
-                <th className="border-r border-b border-gray-200 dark:border-white/10 bg-gray-50/70 dark:bg-white/[0.02] px-3.5 py-1 sm:py-1.5 text-left text-[15px] md:text-[17px] font-bold text-slate-900 dark:text-white align-middle leading-tight">
+                <th className="border-r border-b border-gray-200 dark:border-white/10 bg-gray-50/70 dark:bg-white/[0.02] px-3.5 py-1 sm:py-1.5 text-left font-normal text-slate-900 dark:text-white align-middle leading-tight">
                   {rowHeaders[rowIdx] ?? ""}
                 </th>
                 {Array.from({ length: columnCount }).map((_, colIdx) => {
@@ -224,7 +227,7 @@ export const MatrixMultipleSelectQuestion = ({
                         {cell.cellValue &&
                         !/^(null|undefined)$/i.test(cell.cellValue.trim()) &&
                         cell.cellValue.trim().toLowerCase() !== (columnHeaders[colIdx] ?? "").trim().toLowerCase() ? (
-                          <span className="ml-5 text-[15px] md:text-[17px] font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                          <span className="ml-5 font-normal text-gray-900 dark:text-gray-100 whitespace-nowrap">
                             {cell.cellValue}
                           </span>
                         ) : null}

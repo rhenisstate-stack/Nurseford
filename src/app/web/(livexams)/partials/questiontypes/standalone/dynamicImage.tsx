@@ -9,6 +9,7 @@ import type {
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { useClearOnEvent } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useClearLiveExamUserAnswers";
 import { isValidExamText } from "@/lib/utils/exams/cleanExamText";
 
 interface Props {
@@ -88,6 +89,8 @@ export const DynamicImageQuestion = ({
 
   // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+  useClearOnEvent(q.id, () => setPicked(new Set()));
+
   const toggle = (optId: number) => {
     setPicked((prev) => {
       const next = new Set(prev);
@@ -110,10 +113,8 @@ export const DynamicImageQuestion = ({
   };
 
   const getState = (optId: number): "correct" | "wrong" | "idle" => {
-    if (!showFeedback) return "idle";
-    if (correctIds.includes(optId)) return "correct";
-    if (picked.has(optId)) return "wrong";
-    return "idle";
+    if (!showFeedback || !picked.has(optId)) return "idle";
+    return correctIds.includes(optId) ? "correct" : "wrong";
   };
 
   return (
@@ -127,18 +128,6 @@ export const DynamicImageQuestion = ({
         metaQuestionText={q.metaQuestionText}
         hideQuestionHeader={hideQuestionHeader}
       />
-{/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      {!hideQuestionHeader &&
-        q.metaQuestionText &&
-        q.metaQuestionText.trim().toLowerCase() !== "null" && (
-          <div
-            className="text-sm px-2 text-gray-500 italic"
-            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
-          />
-        )}
-
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
       {q.questionMedias?.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

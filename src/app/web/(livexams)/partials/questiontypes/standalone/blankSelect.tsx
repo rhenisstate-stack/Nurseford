@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
-import { cleanOptionText } from "@/lib/utils/exams/cleanExamText";
+import { cleanOptionText, cleanPromptHtml } from "@/lib/utils/exams/cleanExamText";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { useClearOnEvent } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useClearLiveExamUserAnswers";
 
 interface Props {
   q: StrataSessionQuestionFull;
@@ -132,6 +133,9 @@ export const BlankSelectQuestion = ({
 
   // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+  useClearOnEvent(q.id, () => setSelected(Object.fromEntries(groups.map(([blank]) => [blank, null])))
+  );
+
   const handleSelect = (blankNumber: string, optId: number | null) => {
     const next = { ...selected, [blankNumber]: optId };
     setSelected(next);
@@ -179,21 +183,9 @@ export const BlankSelectQuestion = ({
         metaQuestionText={q.metaQuestionText}
         hideQuestionHeader={hideQuestionHeader}
       />
-{/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      {!hideQuestionHeader &&
-        q.metaQuestionText &&
-        q.metaQuestionText.trim().toLowerCase() !== "null" && (
-          <div
-            className="text-sm px-2 text-gray-500 italic"
-            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
-          />
-        )}
-
-      {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 
       {parts.length > 0 ? (
-        <div className="leading-loose text-sm md:text-base">
+        <div className="leading-relaxed text-sm md:text-base">
           {parts.map((part, i) => {
             if (part.type === "text") return <span key={i}>{part.value}</span>;
             const { blankNumber } = part;

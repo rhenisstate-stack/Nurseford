@@ -8,7 +8,9 @@ import { LiveExamActionProvider } from "@/lib/contexts/web/assessment/live/useLi
 function LiveExamLayoutInner({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
 
-  const examIdentifier = searchParams.get("identifier") ?? "";
+ const diyIdentifier  = searchParams.get("diyidentifier");
+  const examIdentifier = diyIdentifier ?? searchParams.get("identifier") ?? "";
+  const isDiy          = !!diyIdentifier;
   const selectedMode   = searchParams.get("mode")       ?? "Exam";
   const selectedLayout = searchParams.get("layout")     ?? "Generic";
 
@@ -28,6 +30,7 @@ function LiveExamLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <LiveStrataExamProvider
       examIdentifier={examIdentifier}
+      isDiy={isDiy}
       selectedMode={selectedMode}
       selectedLayout={selectedLayout}
       targetAttemptNumber={Number.isNaN(targetAttemptNumber) ? null : targetAttemptNumber}

@@ -194,7 +194,11 @@ async function fetchBackendSubjects(examType: string, req: NextRequest): Promise
   );
 
   const mapped: BackendSubject[] = filtered.map((c, i) => {
-    const name = c.name?.trim() || "";
+    const rawName = c.name?.trim() || "";
+    const name = rawName
+      .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
+      .replace(/rhenis\s*/gi, "")
+      .trim();
     const guid = c.guidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : undefined);
     const slug = toSlug(name);
     const liveSubjectsCount = toNumber(c.subjectsCount ?? c.coursesCount, 0);

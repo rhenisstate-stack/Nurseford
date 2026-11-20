@@ -6,7 +6,6 @@
 // dispatcher resolve and the app compiles.
 
 import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
-import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 
 interface Props {
   q: StrataSessionQuestionFull;
@@ -21,12 +20,12 @@ interface Props {
 
 export const AudioBasedQuestion = ({ q, questionNumber, hideQuestionHeader }: Props) => (
   <div className="p-3 space-y-2">
-    <QuestionPromptHeader
-      questionNumber={questionNumber}
-      questionText={q.questionText}
-      metaQuestionText={q.metaQuestionText}
-      hideQuestionHeader={hideQuestionHeader}
-    />
+    {!hideQuestionHeader && (
+      <div className="flex items-baseline gap-2 font-medium">
+        <span className="text-xs font-bold text-indigo-100 shrink-0">Q - {questionNumber}</span>
+        <span dangerouslySetInnerHTML={{ __html: q.questionText ?? "" }} />
+      </div>
+    )}
     <div className="text-sm text-amber-600 bg-amber-50 rounded-md px-3 py-2">
       🚧 AudioBased question UI not yet implemented.
     </div>

@@ -54,103 +54,116 @@ class QuestionRendererRegistry {
       sectionGuidId: ctx?.sectionGuidId ?? "",
     };
 
-    switch (type) {
+    const renderQuestion = () => {
+      switch (type) {
 
-      // ═════════════════════════════════════════════════════════════════════════════════
-      // BASE TYPES (19) — matches StrataQuestionType enum 1:1
-      // ═════════════════════════════════════════════════════════════════════════════════
-      case "":
-      case "singlechoice":
-        return <SingleChoiceQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        // ═════════════════════════════════════════════════════════════════════════════════
+        // BASE TYPES (19) — matches StrataQuestionType enum 1:1
+        // ═════════════════════════════════════════════════════════════════════════════════
+        case "":
+        case "singlechoice":
+          return <SingleChoiceQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "multipleselect":
-        return <MultipleSelectQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "multipleselect":
+          return <MultipleSelectQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "truefalse":
-        return <TrueFalseQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "truefalse":
+          return <TrueFalseQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "numericresponse":
-        return <NumericResponseQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "numericresponse":
+          return <NumericResponseQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "matching":
-        return <MatchingQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "matching":
+          return <MatchingQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "orderingnumber":
-        return <OrderingNumberQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "orderingnumber":
+          return <OrderingNumberQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "orderingitem":
-        return <OrderingItemQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "orderingitem":
+          return <OrderingItemQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "orderingdragdrop":
-        return <OrderingDragDropQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "orderingdragdrop":
+          return <OrderingDragDropQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "dynamicimage":
-        return <DynamicImageQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "dynamicimage":
+          return <DynamicImageQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "multipleimage":
-        return <MultipleImageQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "multipleimage":
+          return <MultipleImageQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "blankselect":
-        return <BlankSelectQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "blankselect":
+          return <BlankSelectQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "blankfill":
-        return <BlankFillQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "blankfill":
+          return <BlankFillQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "hotspot":
-        return <HotspotQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "hotspot":
+          return <HotspotQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "openended":
-        return <OpenEndedQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "openended":
+          return <OpenEndedQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "highlight":
-        return <HighLightQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "highlight":
+          return <HighLightQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "audiobased":
-        return <AudioBasedQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "audiobased":
+          return <AudioBasedQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "videobased":
-        return <VideoBasedQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "videobased":
+          return <VideoBasedQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "matrixsinglechoice":
-        return <MatrixSingleChoiceQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "matrixsinglechoice":
+          return <MatrixSingleChoiceQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      case "matrixmultipleselect":
-        return <MatrixMultipleSelectQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        case "matrixmultipleselect":
+          return <MatrixMultipleSelectQuestion key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      // ═════════════════════════════════════════════════════════════════════════════════
-      // CASE-BASED TYPES (19) — matches StrataQuestionType.CaseBased* enum 1:1.
-      // Every case below routes to the SAME linking component; CaseBasedDynamics
-      // determines internally (from q.type) which standalone InnerQuestion to use.
-      // ═════════════════════════════════════════════════════════════════════════════════
-      case "casebasedsinglechoice":
-      case "casebasedmultipleselect":
-      case "casebasedtruefalse":
-      case "casebasednumericresponse":
-      case "casebasedmatching":
-      case "casebasedorderingnumber":
-      case "casebasedorderingitem":
-      case "casebasedorderingdragdrop":
-      case "casebaseddynamicimage":
-      case "casebasedmultipleimage":
-      case "casebasedblankselect":
-      case "casebasedblankfill":
-      case "casebasedhotspot":
-      case "casebasedopenended":
-      case "casebasedmatrixsinglechoice":
-      case "casebasedmatrixmultipleselect":
-      case "casebasedhighlight":
-      case "casebasedaudiobased":
-      case "casebasedvideobased":
-        return <CaseBasedDynamics key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
+        // ═════════════════════════════════════════════════════════════════════════════════
+        // CASE-BASED TYPES (19) — matches StrataQuestionType.CaseBased* enum 1:1.
+        // Every case below routes to the SAME linking component; CaseBasedDynamics
+        // determines internally (from q.type) which standalone InnerQuestion to use.
+        // ═════════════════════════════════════════════════════════════════════════════════
+        case "casebasedsinglechoice":
+        case "casebasedmultipleselect":
+        case "casebasedtruefalse":
+        case "casebasednumericresponse":
+        case "casebasedmatching":
+        case "casebasedorderingnumber":
+        case "casebasedorderingitem":
+        case "casebasedorderingdragdrop":
+        case "casebaseddynamicimage":
+        case "casebasedmultipleimage":
+        case "casebasedblankselect":
+        case "casebasedblankfill":
+        case "casebasedhotspot":
+        case "casebasedopenended":
+        case "casebasedmatrixsinglechoice":
+        case "casebasedmatrixmultipleselect":
+        case "casebasedhighlight":
+        case "casebasedaudiobased":
+        case "casebasedvideobased":
+          return <CaseBasedDynamics key={q.id} q={q} questionNumber={questionNumber} mode={mode} {...shared} />;
 
-      // ═════════════════════════════════════════════════════════════════════════════════
-      default:
-        return (
-          <div key={q.id} className="p-3 border-b text-sm text-gray-400">
-            Unsupported Type: {q.type}
-          </div>
-        );
-    }
+        // ═════════════════════════════════════════════════════════════════════════════════
+        default:
+          return (
+            <div key={q.id} className="p-3 border-b text-sm text-gray-400">
+              Unsupported Type: {q.type}
+            </div>
+          );
+      }
+    };
+
+    return (
+      <div
+        key={`qt-${q.id || q.guidId}`}
+        className="question-type-root"
+        data-question-type="true"
+        style={{ fontFamily: "'Calibre', 'Calibri', Candara, 'Segoe UI', Arial, sans-serif" }}
+      >
+        {renderQuestion()}
+      </div>
+    );
   }
 }
 

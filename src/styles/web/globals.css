@@ -44,7 +44,115 @@
   --footer-text: #f8fafc;
 }
 
+/* ── Web Font Definitions for Calibre / Calibri ── */
+@font-face {
+  font-family: 'Calibre';
+  src: url('/fonts/calibre/calibri.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Calibre';
+  src: url('/fonts/calibre/calibrib.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Calibre';
+  src: url('/fonts/calibre/calibrii.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Calibre';
+  src: url('/fonts/calibre/calibriz.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Calibri';
+  src: url('/fonts/calibre/calibri.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Calibri';
+  src: url('/fonts/calibre/calibrib.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Apply theme variables */
+[data-exam-page],
+[data-exam-page] *,
+#exam-question-viewport,
+#exam-question-viewport *,
+[data-question-type],
+[data-question-type] *,
+.question-type-root,
+.question-type-root * {
+  font-family: 'Calibre', 'Calibri', Candara, 'Segoe UI', Arial, sans-serif !important;
+}
+
+[data-exam-page] .exam-title-heading,
+[data-exam-page] .exam-title-heading * {
+  font-size: var(--exam-font-desktop-lg, 16.5px) !important;
+}
+
+@media (max-width: 639px) {
+  [data-exam-page] .exam-title-heading,
+  [data-exam-page] .exam-title-heading * {
+    font-size: var(--exam-font-mobile-lg, 15px) !important;
+  }
+}
+
+/* Snug, comfortable answer choice containers */
+[data-exam-page] label:has(input[type="checkbox"]),
+[data-exam-page] label:has(input[type="radio"]) {
+  min-height: 32px !important;
+  padding-top: 0.3rem !important;
+  padding-bottom: 0.3rem !important;
+}
+
+[data-exam-page] label:has(input[type="checkbox"]) input,
+[data-exam-page] label:has(input[type="radio"]) input {
+  margin-top: 0.125rem !important;
+}
+
+/* ── Option Boxes & Matrix Cells: Sized identically to Exhibit Passage Body & Clinical Tables ── */
+[data-question-type] table th,
+[data-question-type] table td,
+[data-question-type] label:has(input[type="checkbox"]),
+[data-question-type] label:has(input[type="radio"]),
+[data-question-type] label:has(input[type="checkbox"]) span,
+[data-question-type] label:has(input[type="radio"]) span,
+.question-option-box {
+  font-size: calc(var(--exam-font-desktop-base, 13.5px) + 1.5px) !important;
+}
+
+@media (max-width: 639px) {
+  [data-question-type] table th,
+  [data-question-type] table td,
+  [data-question-type] label:has(input[type="checkbox"]),
+  [data-question-type] label:has(input[type="radio"]),
+  [data-question-type] label:has(input[type="checkbox"]) span,
+  [data-question-type] label:has(input[type="radio"]) span,
+  .question-option-box {
+    font-size: calc(var(--exam-font-mobile-base, 12px) + 1.5px) !important;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -139,4 +247,31 @@ body {
 
 .react-phone-number-input__input {
   @apply !text-green-600;
+}
+
+/* ── Dynamic Exhibit & Case Study Passage Spacing & Sizing (+1.5px) ── */
+.exhibit-content-body {
+  white-space: normal !important;
+  word-break: break-word;
+  font-size: calc(var(--exam-font-desktop-base, 13.5px) + 1.5px) !important;
+}
+
+.exhibit-content-body * {
+  font-size: inherit;
+}
+
+@media (max-width: 639px) {
+  .exhibit-content-body {
+    font-size: calc(var(--exam-font-mobile-base, 12px) + 1.5px) !important;
+  }
+}
+
+.exhibit-tab-btn {
+  font-size: calc(var(--exam-font-desktop-sm, 11px) + 1.5px) !important;
+}
+
+@media (max-width: 639px) {
+  .exhibit-tab-btn {
+    font-size: calc(var(--exam-font-mobile-sm, 10px) + 1.5px) !important;
+  }
 }

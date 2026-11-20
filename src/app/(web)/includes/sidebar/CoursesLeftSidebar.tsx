@@ -9,10 +9,12 @@ import {
   CreditCard,
   LifeBuoy,
   HelpCircle,
+  Settings,
   X,
 } from "lucide-react";
 import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext";
 import { APP_TITLE } from "@/lib/config/config";
+import SidebarUserProfile from "@/components/common/user/SidebarUserProfile";
 
 const VISTA_RN = "/dashboards/rn-nursing/vista";
 
@@ -61,7 +63,7 @@ export default function CoursesLeftSidebar() {
         </div>
 
         {/* Scrollable Nav Items */}
-        <nav className="flex-1 overflow-y-auto space-y-1 p-2.5 pb-20 left-sidebar-scroll">
+        <nav className="flex-1 overflow-y-auto space-y-1 p-2.5 pb-4 left-sidebar-scroll">
           {/* Return Home */}
           <Link href="/" onClick={handleItemClick}>
             <div className="flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none cursor-pointer">
@@ -78,6 +80,13 @@ export default function CoursesLeftSidebar() {
               My Account Data Management
             </span>
           </div>
+
+          <Link href="/dashboards/rn-nursing/auth/account/edit" onClick={handleItemClick}>
+            <div className="flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 select-none cursor-pointer">
+              <Settings className="w-4 h-4 shrink-0 text-slate-500" />
+              <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Account Settings</span>
+            </div>
+          </Link>
 
           <Link href={`${VISTA_RN}/stats/progress`} onClick={handleItemClick}>
             <div className="flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 select-none cursor-pointer">
@@ -121,6 +130,11 @@ export default function CoursesLeftSidebar() {
             </div>
           </Link>
         </nav>
+
+        {/* Profile Dropdown Below All Other Components */}
+        <div className="sm:hidden mt-auto shrink-0 border-t border-slate-200/80 dark:border-slate-800">
+          <SidebarUserProfile panelSlug="rn-nursing" onClose={close} />
+        </div>
       </aside>
     </>
   );

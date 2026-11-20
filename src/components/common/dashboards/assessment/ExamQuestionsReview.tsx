@@ -94,7 +94,7 @@ function parseUserPicks(userAnswerData?: string | null): (number | string)[] {
     if (typeof parsed === "object" && parsed !== null) {
       if (parsed.answer !== undefined && parsed.answer !== null) {
         if (Array.isArray(parsed.answer)) {
-          return parsed.answer.filter((v) => v !== null && v !== undefined && String(v).toLowerCase() !== "null");
+          return parsed.answer.filter((v: any) => v !== null && v !== undefined && String(v).toLowerCase() !== "null");
         }
         if (String(parsed.answer).toLowerCase() !== "null") return [parsed.answer];
       }
@@ -622,7 +622,9 @@ export default function ExamQuestionsReview({
             return (
               <div
                 key={q.id || q.guidId}
-                className={`border rounded-xl transition-all duration-200 overflow-hidden ${
+                data-question-type="true"
+                style={{ fontFamily: "'Calibre', 'Calibri', Candara, 'Segoe UI', Arial, sans-serif" }}
+                className={`question-type-root border rounded-xl transition-all duration-200 overflow-hidden ${
                   isCorrect
                     ? "border-emerald-300 dark:border-emerald-800/60 bg-emerald-50/15 dark:bg-emerald-950/10"
                     : q.status === "incorrect"

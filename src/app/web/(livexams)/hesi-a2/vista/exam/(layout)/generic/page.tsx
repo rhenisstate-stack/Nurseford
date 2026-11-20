@@ -1081,7 +1081,39 @@ export default function LiveExamPage() {
     return flatTotal;
   }, [flatTotal]);
 
-
+  // Set in-progress markers in storage on exam load
+  useEffect(() => {
+    if (!examSession?.exam) return;
+    const guidId = examSession.exam.guidId;
+    const id = examSession.exam.id;
+    const examPayload = JSON.stringify({
+      id: examSession.exam.id,
+      guidId: examSession.exam.guidId,
+      title: examSession.exam.title,
+      subjectName: examSession.exam.subjectName || examSession.exam.assessmentName,
+      courseName: examSession.exam.courseName,
+      questionsCount: examSession.exam.questionsCount || flatTotal || 0,
+      startedAt: new Date().toISOString(),
+    });
+    try {
+      if (guidId) {
+        localStorage.setItem(`exam_in_progress_${guidId}`, examPayload);
+        sessionStorage.setItem(`exam_in_progress_${guidId}`, examPayload);
+        if (examSession.exam.title) {
+          localStorage.setItem(`exam_title_${guidId}`, examSession.exam.title);
+          sessionStorage.setItem(`exam_title_${guidId}`, examSession.exam.title);
+        }
+      }
+      if (id) {
+        localStorage.setItem(`exam_in_progress_${id}`, examPayload);
+        sessionStorage.setItem(`exam_in_progress_${id}`, examPayload);
+        if (examSession.exam.title) {
+          localStorage.setItem(`exam_title_${id}`, examSession.exam.title);
+          sessionStorage.setItem(`exam_title_${id}`, examSession.exam.title);
+        }
+      }
+    } catch { }
+  }, [examSession?.exam, flatTotal]);
 
   const answeredMap = useMemo(() => {
     const map: Record<number, boolean> = {};
@@ -1408,6 +1440,10 @@ export default function LiveExamPage() {
     const key = `dynamic_live_exam_current_question_position_${examSession.exam.guidId}`;
     try {
       sessionStorage.removeItem(key);
+      localStorage.removeItem(`exam_in_progress_${examSession.exam.guidId}`);
+      sessionStorage.removeItem(`exam_in_progress_${examSession.exam.guidId}`);
+      localStorage.removeItem(`exam_in_progress_${examSession.exam.id}`);
+      sessionStorage.removeItem(`exam_in_progress_${examSession.exam.id}`);
     } catch { }
     setShowSubmitConfirm(false);
 
@@ -1592,11 +1628,14 @@ export default function LiveExamPage() {
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#001326] text-slate-900 dark:text-slate-100 flex flex-col select-none transition-colors duration-200">
+    <div
+      style={{ fontFamily: "'Calibre', 'Calibri', Candara, 'Segoe UI', Arial, sans-serif" }}
+      className="min-h-screen bg-white dark:bg-[#001326] text-slate-900 dark:text-slate-100 flex flex-col select-none transition-colors duration-200"
+    >
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 1. TOP HEADER (ROW 1: BRAND, TITLE, STATS, CALCULATOR) */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <header className="relative z-50 w-full bg-[#EBF1FA] dark:bg-[#071321] text-slate-900 dark:text-slate-100 px-6 sm:px-10 py-3 border-b border-blue-200/60 dark:border-white/10 transition-colors">
+      <header className="relative z-50 w-full bg-[#EBF1FA] dark:bg-[#071321] text-slate-900 dark:text-slate-100 px-6 sm:px-10 py-2 sm:py-2.5 border-b border-blue-200/60 dark:border-white/10 transition-colors">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
           {/* Left: Brand Logo, Exam Title, Total Questions */}
           <div className="min-w-0 flex-1 space-y-0.5">
@@ -1605,7 +1644,7 @@ export default function LiveExamPage() {
               title="Return to Home"
               className="inline-flex items-center gap-2 group cursor-pointer hover:opacity-80 transition-opacity duration-150 w-fit"
             >
-              <div className="relative w-6 h-6 sm:w-7 sm:h-7 shrink-0 group-hover:scale-105 transition-transform">
+              <div className="relative w-5 h-5 sm:w-6 sm:h-6 shrink-0 group-hover:scale-105 transition-transform">
                 <Image
                   src="/logo/logo.png"
                   alt="Nurseford"
@@ -1779,70 +1818,109 @@ export default function LiveExamPage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       <main
         id="exam-question-viewport"
-        className="flex-1 max-w-[1440px] mx-auto w-full px-6 sm:px-10 py-6 pb-28"
+        className="flex-1 max-w-[1440px] mx-auto w-full px-6 sm:px-10 py-3.5 sm:py-4 pb-20 sm:pb-24"
         style={{
-          ["--exam-font-desktop-base" as string]: `${fontSizes?.content?.base ?? 16}px`,
-          ["--exam-font-desktop-sm" as string]: `${fontSizes?.content?.sm ?? 13}px`,
-          ["--exam-font-desktop-lg" as string]: `${fontSizes?.content?.lg ?? 20}px`,
-          ["--exam-font-desktop-xl" as string]: `${fontSizes?.content?.xl ?? 24}px`,
+          ["--exam-font-desktop-base" as string]: `${fontSizes?.content?.base ?? 13.5}px`,
+          ["--exam-font-desktop-sm" as string]: `${fontSizes?.content?.sm ?? 11}px`,
+          ["--exam-font-desktop-lg" as string]: `${fontSizes?.content?.lg ?? 16.5}px`,
+          ["--exam-font-desktop-xl" as string]: `${fontSizes?.content?.xl ?? 20}px`,
 
-          ["--exam-font-mobile-base" as string]: `${Math.max(14, (fontSizes?.content?.base ?? 16) - 1)}px`,
-          ["--exam-font-mobile-sm" as string]: `${Math.max(12, (fontSizes?.content?.sm ?? 13) - 1)}px`,
-          ["--exam-font-mobile-lg" as string]: `${(fontSizes?.content?.lg ?? 20) - 1}px`,
-          ["--exam-font-mobile-xl" as string]: `${(fontSizes?.content?.xl ?? 24) - 1}px`,
+          ["--exam-font-mobile-base" as string]: `${Math.max(12, (fontSizes?.content?.base ?? 13.5) - 1.5)}px`,
+          ["--exam-font-mobile-sm" as string]: `${Math.max(10, (fontSizes?.content?.sm ?? 11) - 1)}px`,
+          ["--exam-font-mobile-lg" as string]: `${(fontSizes?.content?.lg ?? 16.5) - 1.5}px`,
+          ["--exam-font-mobile-xl" as string]: `${(fontSizes?.content?.xl ?? 20) - 2}px`,
         }}
       >
         <style>{`
+          #exam-question-viewport,
+          #exam-question-viewport * {
+            font-family: 'Calibre', 'Calibri', Candara, 'Segoe UI', Arial, sans-serif !important;
+          }
+
           /* Default Phone Mode (< 640px) */
           #exam-question-viewport {
-            font-size: var(--exam-font-mobile-base, 15px);
+            font-size: var(--exam-font-mobile-base, 12px);
           }
           #exam-question-viewport .text-xs {
-            font-size: var(--exam-font-mobile-sm, 12px) !important;
+            font-size: var(--exam-font-mobile-sm, 10px) !important;
           }
           #exam-question-viewport .text-sm {
-            font-size: calc(var(--exam-font-mobile-base, 15px) - 1px) !important;
+            font-size: calc(var(--exam-font-mobile-base, 12px) - 1px) !important;
           }
           #exam-question-viewport .text-base {
-            font-size: var(--exam-font-mobile-base, 15px) !important;
+            font-size: var(--exam-font-mobile-base, 12px) !important;
           }
           #exam-question-viewport .text-lg {
-            font-size: var(--exam-font-mobile-lg, 19px) !important;
+            font-size: var(--exam-font-mobile-lg, 15px) !important;
           }
           #exam-question-viewport .text-xl {
-            font-size: var(--exam-font-mobile-xl, 23px) !important;
+            font-size: var(--exam-font-mobile-xl, 18px) !important;
           }
           #exam-question-viewport .exhibit-content-body {
-            font-size: var(--exam-font-mobile-base, 15px) !important;
+            font-size: calc(var(--exam-font-mobile-base, 12px) + 1.5px) !important;
+          }
+          #exam-question-viewport .exhibit-tab-btn {
+            font-size: calc(var(--exam-font-mobile-sm, 10px) + 1.5px) !important;
+          }
+          #exam-question-viewport table th,
+          #exam-question-viewport table td,
+          #exam-question-viewport label:has(input[type="checkbox"]),
+          #exam-question-viewport label:has(input[type="radio"]),
+          #exam-question-viewport label:has(input[type="checkbox"]) span,
+          #exam-question-viewport label:has(input[type="radio"]) span {
+            font-size: calc(var(--exam-font-mobile-base, 12px) + 1.5px) !important;
           }
 
           /* Computer & Tablet Mode (>= 640px) */
           @media (min-width: 640px) {
             #exam-question-viewport {
-              font-size: var(--exam-font-desktop-base, 16px);
+              font-size: var(--exam-font-desktop-base, 13.5px);
             }
             #exam-question-viewport .text-xs,
             #exam-question-viewport .sm\\:text-xs {
-              font-size: var(--exam-font-desktop-sm, 13px) !important;
+              font-size: var(--exam-font-desktop-sm, 11px) !important;
             }
             #exam-question-viewport .text-sm,
             #exam-question-viewport .sm\\:text-sm {
-              font-size: calc(var(--exam-font-desktop-base, 16px) - 1.5px) !important;
+              font-size: calc(var(--exam-font-desktop-base, 13.5px) - 1.5px) !important;
             }
             #exam-question-viewport .text-base,
             #exam-question-viewport .sm\\:text-base {
-              font-size: var(--exam-font-desktop-base, 16px) !important;
+              font-size: var(--exam-font-desktop-base, 13.5px) !important;
             }
             #exam-question-viewport .text-lg,
             #exam-question-viewport .sm\\:text-lg {
-              font-size: var(--exam-font-desktop-lg, 20px) !important;
+              font-size: var(--exam-font-desktop-lg, 16.5px) !important;
             }
             #exam-question-viewport .text-xl,
             #exam-question-viewport .sm\\:text-xl {
-              font-size: var(--exam-font-desktop-xl, 24px) !important;
+              font-size: var(--exam-font-desktop-xl, 20px) !important;
             }
             #exam-question-viewport .exhibit-content-body {
-              font-size: var(--exam-font-desktop-base, 16px) !important;
+              font-size: calc(var(--exam-font-desktop-base, 13.5px) + 1.5px) !important;
+            }
+            #exam-question-viewport .exhibit-tab-btn {
+              font-size: calc(var(--exam-font-desktop-sm, 11px) + 1.5px) !important;
+            }
+            #exam-question-viewport table th,
+            #exam-question-viewport table td,
+            #exam-question-viewport label:has(input[type="checkbox"]),
+            #exam-question-viewport label:has(input[type="radio"]),
+            #exam-question-viewport label:has(input[type="checkbox"]) span,
+            #exam-question-viewport label:has(input[type="radio"]) span {
+              font-size: calc(var(--exam-font-desktop-base, 13.5px) + 1.5px) !important;
+            }
+          }
+
+          /* Unify font size: Main Question, Meta Question, VERIFIED CORRECT ANSWER, and CLINICAL RATIONALE */
+          #exam-question-viewport .exam-title-heading,
+          #exam-question-viewport .exam-title-heading * {
+            font-size: var(--exam-font-desktop-lg, 16.5px) !important;
+          }
+          @media (max-width: 639px) {
+            #exam-question-viewport .exam-title-heading,
+            #exam-question-viewport .exam-title-heading * {
+              font-size: var(--exam-font-mobile-lg, 15px) !important;
             }
           }
 
@@ -1850,7 +1928,7 @@ export default function LiveExamPage() {
           #exam-question-viewport [data-no-font-scale] .sm\\:text-xs,
           #exam-question-viewport [data-no-font-scale] .text-sm,
           #exam-question-viewport [data-no-font-scale] .sm\\:text-sm {
-            font-size: 0.8125rem !important;
+            font-size: 0.75rem !important;
           }
 
           /* Exhibit content: runs naturally without scroll box and supports dynamic paragraph spacing */
@@ -1861,9 +1939,9 @@ export default function LiveExamPage() {
             white-space: normal !important;
           }
           #exam-question-viewport .exhibit-content-body p {
-            margin-top: 0.25rem !important;
-            margin-bottom: 0.375rem !important;
-            line-height: 1.5 !important;
+            margin-top: 0.2rem !important;
+            margin-bottom: 0.3rem !important;
+            line-height: 1.45 !important;
           }
           #exam-question-viewport .exhibit-content-body p:first-child {
             margin-top: 0 !important;
@@ -1874,9 +1952,9 @@ export default function LiveExamPage() {
           #exam-question-viewport .exhibit-content-body .exhibit-spacer,
           #exam-question-viewport .exhibit-content-body p:empty,
           #exam-question-viewport .exhibit-content-body p:has(> br:only-child) {
-            margin-top: 0.375rem !important;
-            margin-bottom: 0.375rem !important;
-            min-height: 0.75rem;
+            margin-top: 0.3rem !important;
+            margin-bottom: 0.3rem !important;
+            min-height: 0.65rem;
           }
 
           /* Tables inside exhibits - seen as a whole without altering font size */

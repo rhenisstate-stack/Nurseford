@@ -7,6 +7,10 @@ import { APP_NAME } from '@/lib/config/config';
 export const metadata: Metadata = {
   title: APP_NAME,
   description: `${APP_NAME} Systems`,
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function WebLayout({ children }: { children: React.ReactNode }) {

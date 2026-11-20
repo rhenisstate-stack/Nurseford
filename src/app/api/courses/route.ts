@@ -407,7 +407,10 @@ async function fetchBackendStandaloneSubjectsAsCourses(
 
   const subjectCards: DashboardCourse[] = await Promise.all(
     subjects.map(async (s, i) => {
-      const title = s.name?.trim() || `Course ${i + 1}`;
+      const title = (s.name?.trim() || `Course ${i + 1}`)
+        .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
+        .replace(/rhenis\s*/gi, "")
+        .trim();
 
       let subCategories: DashboardSubCategory[] = [];
       if (toNumber(s.unitsCount, 0) > 0) {
@@ -603,7 +606,10 @@ async function fetchBackendProgramCourseCards(
 
   const result: DashboardCourse[] = await Promise.all(
     validCourses.map(async (c, i) => {
-      const title = c.name?.trim() || `Subject ${i + 1}`;
+      const title = (c.name?.trim() || `Subject ${i + 1}`)
+        .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
+        .replace(/rhenis\s*/gi, "")
+        .trim();
       const courseId = String(c.id ?? c.guidId ?? "");
 
       let subCategories: DashboardSubCategory[] = [];

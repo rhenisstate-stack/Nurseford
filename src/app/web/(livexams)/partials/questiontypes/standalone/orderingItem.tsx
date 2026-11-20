@@ -9,6 +9,7 @@ import type {
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { useClearOnEvent } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useClearLiveExamUserAnswers";
 import { isValidExamText } from "@/lib/utils/exams/cleanExamText";
 
 interface Props {
@@ -137,6 +138,8 @@ export const OrderingItemQuestion = ({
   const dragIndex = useRef<number | null>(null);
   const dragOverIndex = useRef<number | null>(null);
 
+  useClearOnEvent(q.id, () => setItems(initial));
+
   const onDragStart = (index: number) => { dragIndex.current = index; };
   const onDragEnter = (index: number) => { dragOverIndex.current = index; };
 
@@ -213,16 +216,6 @@ export const OrderingItemQuestion = ({
         metaQuestionText={q.metaQuestionText}
         hideQuestionHeader={hideQuestionHeader}
       />
-{/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      {!hideQuestionHeader &&
-        q.metaQuestionText &&
-        q.metaQuestionText.trim().toLowerCase() !== "null" && (
-          <div
-            className="text-sm px-2 text-gray-500 italic"
-            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
-          />
-        )}
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 

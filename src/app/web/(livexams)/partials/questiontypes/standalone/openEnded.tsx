@@ -6,6 +6,7 @@ import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessm
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { useClearOnEvent } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useClearLiveExamUserAnswers";
 
 interface Props {
   q: StrataSessionQuestionFull;
@@ -86,6 +87,8 @@ export const OpenEndedQuestion = ({
 
   // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+  useClearOnEvent(q.id, () => setText(""));
+
   const handleChange = (value: string) => {
     setText(value);
 
@@ -112,16 +115,6 @@ export const OpenEndedQuestion = ({
         metaQuestionText={q.metaQuestionText}
         hideQuestionHeader={hideQuestionHeader}
       />
-{/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
-
-      {!hideQuestionHeader &&
-        q.metaQuestionText &&
-        q.metaQuestionText.trim().toLowerCase() !== "null" && (
-          <div
-            className="text-sm px-2 text-gray-500 italic"
-            dangerouslySetInnerHTML={{ __html: q.metaQuestionText }}
-          />
-        )}
 
       {/* ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── */}
 

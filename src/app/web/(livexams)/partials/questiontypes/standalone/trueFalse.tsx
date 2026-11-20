@@ -8,6 +8,7 @@ import type {
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
 import { useLiveExamActionContext } from "@/lib/contexts/web/assessment/live/useLiveExamActionContext";
+import { useClearOnEvent } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useClearLiveExamUserAnswers";
 
 interface Props {
   q: StrataSessionQuestionFull;
@@ -88,6 +89,8 @@ export const TrueFalseQuestion = ({
 
   // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
+  useClearOnEvent(q.id, () => setPicked(null));
+
   const handlePick = (optId: number) => {
     setPicked(optId);
 
@@ -111,10 +114,8 @@ export const TrueFalseQuestion = ({
   };
 
   const getState = (optId: number): "correct" | "wrong" | "idle" => {
-    if (!showFeedback) return "idle";
-    if (correctIds.includes(optId)) return "correct";
-    if (picked === optId) return "wrong";
-    return "idle";
+    if (!showFeedback || picked !== optId) return "idle";
+    return correctIds.includes(optId) ? "correct" : "wrong";
   };
 
   return (
@@ -129,7 +130,7 @@ export const TrueFalseQuestion = ({
         hideQuestionHeader={hideQuestionHeader}
       />
 
-      <div className="mt-3 space-y-2">
+      <div className="mt-2 sm:mt-2.5 space-y-1 sm:space-y-1.5">
         {q.questionOptions?.map((opt: StrataSessionQuestionOption) => {
           const isPicked = picked === opt.id;
           const state = getState(opt.id);
@@ -147,7 +148,7 @@ export const TrueFalseQuestion = ({
           return (
             <label
               key={opt.id}
-              className={`flex items-start gap-3 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-md border transition cursor-pointer select-none shadow-2xs ${rowColorClasses}`}
+              className={`flex items-start gap-2.5 sm:gap-3 px-3 py-1 sm:px-3.5 sm:py-1 rounded-md border transition cursor-pointer select-none shadow-2xs ${rowColorClasses}`}
             >
               <input
                 type="radio"
@@ -157,7 +158,7 @@ export const TrueFalseQuestion = ({
                 className="w-4 h-4 cursor-pointer shrink-0 mt-0.5 accent-blue-600 dark:accent-blue-500"
                 onChange={() => handlePick(opt.id)}
               />
-              <span className="flex-1 text-sm sm:text-base font-normal leading-normal">
+              <span className="flex-1 text-sm sm:text-base font-normal leading-snug">
                 {opt.answerContent || opt.option}
               </span>
               {state === "correct" && <span className="text-xs font-bold text-emerald-600 shrink-0">✓</span>}

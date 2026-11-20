@@ -144,9 +144,9 @@ export default function Hero() {
 
             {/* Action CTA Buttons */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              {/* Start Free Practice - Direct Link to Courses Page */}
+              {/* Start Free Practice - Moves to Subjects page with Med-Surg Collection First */}
               <Link
-                href="/courses"
+                href="/subjects"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-[#0A2540] hover:bg-[#06182a] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
               >
                 <span>Start Free Practice</span>

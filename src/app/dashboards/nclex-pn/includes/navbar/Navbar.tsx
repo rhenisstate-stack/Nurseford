@@ -78,13 +78,15 @@ const Navbar: React.FC = () => {
       <div className="flex-1 min-w-0" />
 
       {/* RIGHT ACTIONS: Search + Theme + Account */}
-      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 shrink-0 ml-auto">
         <div className="hidden lg:block">
           <DashboardNavbarSearch />
         </div>
         <ThemeModeToggle />
         {!userLoading && user && <HeedMessageBell />}
-        <UserDropdown />
+        <div className="hidden sm:block">
+          <UserDropdown />
+        </div>
       </div>
     </header>
   );

@@ -158,9 +158,10 @@ export default function CoursesPage() {
         const normalized: DynamicCourse[] = [];
 
         for (const item of rawList) {
-          const name = (item.name || item.title || "").trim();
-          if (!name) continue;
+          const rawName = (item.name || item.title || "").trim();
+          if (!rawName) continue;
 
+          const name = rawName.replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify");
           const slug = item.slug || toSlug(name);
           const id = String(item.guidId || item.id || slug);
 
@@ -210,7 +211,7 @@ export default function CoursesPage() {
             id,
             guidId: item.guidId,
             name,
-            description: (item.description || item.summary || item.details || "").trim(),
+            description: (item.description || item.summary || item.details || "").replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify").trim(),
             slug,
             programName,
             category: isExit ? "exit" : "core",
@@ -387,7 +388,7 @@ export default function CoursesPage() {
           <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 px-1">
             Filter Curriculum:
           </div>
-          <div className="overflow-x-auto pb-1">
+          <div className="flex flex-wrap gap-2 pb-1">
             <CoursesNavbarFilters />
           </div>
         </div>

@@ -41,25 +41,25 @@ export type ExamFontSizes = {
 
 // ── Preset scales ─────────────────────────────────────────────────────────────
 const buildScale = (base: number): SectionFontSizes => ({
-  base,
-  sm: Math.round(base * 0.8),
-  lg: Math.round(base * 1.25),
-  xl: Math.round(base * 1.5),
+  base: Number(base.toFixed(1)),
+  sm: Number((base * 0.81).toFixed(1)),
+  lg: Number((base * 1.22).toFixed(1)),
+  xl: Number((base * 1.48).toFixed(1)),
 });
 
 const PRESET_BASES: Record<Exclude<FontSizePreset, "custom">, number> = {
-  xs: 11,
-  sm: 13,
-  md: 15,
-  lg: 17,
-  xl: 20,
+  xs: 9.5,
+  sm: 11,
+  md: 12.5,
+  lg: 14.5,
+  xl: 16.5,
 };
 
 const buildExamSizes = (base: number): ExamFontSizes => ({
   upperNavbar: buildScale(base),
   lowerNavbar: buildScale(base),
   nonStickyNavbar: buildScale(base),
-  content: buildScale(base + 1), // +1px for readability on exam body
+  content: buildScale(base + 1), // +1px for readability on exam body (12.5 + 1 = 13.5px)
   footer: buildScale(base),
   leftSidebar: buildScale(base),
   rightSidebar: buildScale(base),
@@ -67,8 +67,8 @@ const buildExamSizes = (base: number): ExamFontSizes => ({
 
 export const DEFAULT_EXAM_FONT_SIZES: ExamFontSizes = buildExamSizes(PRESET_BASES.md);
 
-export const EXAM_FONT_SIZES_KEY = "examFontSizes";
-export const EXAM_FONT_PRESET_KEY = "examFontPreset";
+export const EXAM_FONT_SIZES_KEY = "examFontSizes_v2";
+export const EXAM_FONT_PRESET_KEY = "examFontPreset_v2";
 
 // ── CSS variable map ──────────────────────────────────────────────────────────
 const CSS_SECTION_PREFIX: Record<keyof ExamFontSizes, string> = {
@@ -131,6 +131,10 @@ export const ExamFontSizeProvider = ({ children }: { children: ReactNode }) => {
     if (!hasHydrated.current) {
       hasHydrated.current = true;
       try {
+        // Clear legacy v1 keys so users automatically get the improved proportional sizing
+        localStorage.removeItem("examFontSizes");
+        localStorage.removeItem("examFontPreset");
+
         const storedPreset = localStorage.getItem(EXAM_FONT_PRESET_KEY) as FontSizePreset | null;
         const storedSizes = localStorage.getItem(EXAM_FONT_SIZES_KEY);
 
@@ -187,10 +191,12 @@ export const ExamFontSizeProvider = ({ children }: { children: ReactNode }) => {
     try {
       localStorage.removeItem(EXAM_FONT_SIZES_KEY);
       localStorage.removeItem(EXAM_FONT_PRESET_KEY);
+      localStorage.removeItem("examFontSizes");
+      localStorage.removeItem("examFontPreset");
     } catch { /* noop */ }
   };
 
-  const clampBase = (v: number) => Math.min(32, Math.max(8, v));
+  const clampBase = (v: number) => Math.min(26, Math.max(7, v));
 
   const scaleSection = (section: keyof ExamFontSizes, delta: number) => {
     setPreset("custom");

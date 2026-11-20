@@ -668,6 +668,7 @@ export function matchesStatus(
 
 export const useLiveStrataExam = ({
   examIdentifier,
+  isDiy = false,
   page = 1,
   perPage = 500,
   sortColumn = null,
@@ -684,6 +685,7 @@ export const useLiveStrataExam = ({
   status = null,
 }: {
   examIdentifier: string;
+  isDiy?: boolean;
 
   page?: number;
   perPage?: number;
@@ -728,7 +730,7 @@ export const useLiveStrataExam = ({
   const [skewTotalPages, setSkewTotalPages] =
     useState<number>(1);
 
-  const FETCH_TYPE = "LiveFetch";
+  const FETCH_TYPE = "LiveFetch" as const;
 
   // ─────────────────────────────────────────────────────────────
   // FETCH
@@ -1259,6 +1261,7 @@ export const useLiveStrataExam = ({
 
     fetchExam();
   }, [
+    FETCH_TYPE,
     examIdentifier,
     examSearch,
     page,

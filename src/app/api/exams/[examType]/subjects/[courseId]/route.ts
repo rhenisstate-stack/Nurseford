@@ -278,7 +278,10 @@ export async function GET(
               String(c.id) === effectiveCourseId || c.guidId === effectiveCourseId
           );
           if (found?.name) {
-            courseName = found.name;
+            courseName = found.name
+              .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
+              .replace(/rhenis\s*/gi, "")
+              .trim();
             courseNameCache.set(effectiveCourseId, courseName);
           }
         }
@@ -333,7 +336,10 @@ export async function GET(
     );
 
     const subjects: BackendSubject[] = items.map((c, i) => {
-      const name = c.name?.trim() || "";
+      const name = (c.name?.trim() || "")
+        .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
+        .replace(/rhenis\s*/gi, "")
+        .trim();
       const live = liveSubjectData[i] || { examCount: 0, questionCount: 0, subCategories: [] };
       const guid = c.guidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : undefined);
 

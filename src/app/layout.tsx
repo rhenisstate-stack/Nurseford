@@ -1,38 +1,41 @@
 // This is the root layout
 import './globals.css';
-import { Inter, JetBrains_Mono, Plus_Jakarta_Sans } from 'next/font/google';
+import { Outfit } from 'next/font/google';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { LeftSidebarProvider } from '@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext';
 import { RightSidebarProvider } from '@/lib/contexts/panel/layout/includes/sidebar/RightSidebarContext';
 import { ThemeProvider } from '@/lib/contexts/panel/layout/theme/PanelThemeContext';
 import { CoursesFilterProvider } from '@/lib/contexts/courses/CoursesFilterContext';
-import { APP_NAME } from '@/lib/config/config';
+import { APP_NAME, SEO } from '@/lib/config/config';
 
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-inter',
-  display: 'swap',
-});
+const outfit = Outfit({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
-  variable: '--font-plus-jakarta',
-  display: 'swap',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-jetbrains-mono',
-  display: 'swap',
-});
+const siteUrl = SEO.siteUrl || "https://www.nurseford.com";
 
 export const metadata: Metadata = {
-  title: APP_NAME,
-  description: `${APP_NAME} Systems`,
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: `${APP_NAME} – NCLEX-RN/PN, TEAS 7, HESI A2 Exam Prep`,
+    template: `%s | ${APP_NAME}`,
+  },
+  description: `${APP_NAME} is a premier online platform for nursing exam preparation: NCLEX-RN/PN, TEAS 7, HESI A2, and RN and LPN Q-Banks.`,
+  applicationName: APP_NAME,
+  robots: { index: true, follow: true },
+  openGraph: {
+    siteName: APP_NAME,
+    type: 'website',
+    url: siteUrl,
+    title: APP_NAME,
+    description: `${APP_NAME} is a premier online platform for nursing exam preparation: NCLEX-RN/PN, TEAS 7, HESI A2, and RN and LPN Q-Banks.`,
+    images: ['/logo/logo.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: APP_NAME,
+    description: `${APP_NAME} is a premier online platform for nursing exam preparation: NCLEX-RN/PN, TEAS 7, HESI A2, and RN and LPN Q-Banks.`,
+    images: ['/logo/logo.png'],
+  },
   icons: {
     icon: '/logo/logo.png',
     shortcut: '/logo/logo.png',
@@ -48,7 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`light ${inter.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable}`}
+      className="light"
       suppressHydrationWarning
     >
       <head>
@@ -69,8 +72,8 @@ export default function RootLayout({
                     if (examMode === 'dark') {
                       document.documentElement.classList.remove('light');
                       document.documentElement.classList.add('dark');
-                      document.documentElement.style.setProperty('--content-bg', '#171C27');
-                      document.documentElement.style.setProperty('--text-color', '#e2e8f0');
+                      document.documentElement.style.setProperty('--content-bg', '#000f25');
+                      document.documentElement.style.setProperty('--text-color', '#ffffff');
                     } else {
                       document.documentElement.classList.remove('dark');
                       document.documentElement.classList.add('light');
@@ -87,13 +90,13 @@ export default function RootLayout({
                     if (mode === 'dark') {
                       document.documentElement.classList.remove('light');
                       document.documentElement.classList.add('dark');
-                      document.documentElement.style.setProperty('--card-bg', '#1E293B');
+                      document.documentElement.style.setProperty('--card-bg', '#15273e');
                       document.documentElement.style.setProperty('--card-border', 'rgba(255, 255, 255, 0.1)');
-                      document.documentElement.style.setProperty('--content-bg', '#0b1329');
-                      document.documentElement.style.setProperty('--navbar-bg', '#0f172a');
-                      document.documentElement.style.setProperty('--leftSidebar-bg', '#0f172a');
-                      document.documentElement.style.setProperty('--rightSidebar-bg', '#0f172a');
-                      document.documentElement.style.setProperty('--text-color', '#f8fafc');
+                      document.documentElement.style.setProperty('--content-bg', '#000f25');
+                      document.documentElement.style.setProperty('--navbar-bg', '#000f25');
+                      document.documentElement.style.setProperty('--leftSidebar-bg', '#000f25');
+                      document.documentElement.style.setProperty('--rightSidebar-bg', '#000f25');
+                      document.documentElement.style.setProperty('--text-color', '#ffffff');
                     } else {
                       document.documentElement.classList.remove('dark');
                       document.documentElement.classList.add('light');
@@ -113,7 +116,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.className} transition-colors duration-300`}
+        className={`${outfit.className} transition-colors duration-300`}
         style={{
           backgroundColor: "var(--content-bg, #f8fafc)",
           color: "var(--text-color, #0f172a)",
