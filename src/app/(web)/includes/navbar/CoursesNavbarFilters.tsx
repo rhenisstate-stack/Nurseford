@@ -12,6 +12,11 @@ import {
 import { useCoursesFilter } from "@/lib/contexts/courses/CoursesFilterContext";
 import { useNursingSchools } from "@/lib/data/nursingSchools";
 import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
+import {
+  CANONICAL_PROGRAM_ORDER,
+  getProgramRank,
+  formatProgramDropdownName,
+} from "@/lib/utils/exams/formatProgramDropdownName";
 
 export default function CoursesNavbarFilters() {
   const {
@@ -36,8 +41,33 @@ export default function CoursesNavbarFilters() {
   const { schools } = useNursingSchools();
 
   const availableProgramOptions = useMemo(() => {
-    return Array.from(new Set(["All Programmes", ...(dynamicPrograms || [])]));
+    const set = new Set<string>();
+    CANONICAL_PROGRAM_ORDER.forEach((p) => set.add(p));
+
+    if (Array.isArray(dynamicPrograms)) {
+      dynamicPrograms.forEach((p) => {
+        if (p && p !== "All Programmes") {
+          set.add(formatProgramDropdownName(p));
+        }
+      });
+    }
+
+    const sorted = Array.from(set).sort((a, b) => {
+      const rankA = getProgramRank(a);
+      const rankB = getProgramRank(b);
+      if (rankA !== rankB) return rankA - rankB;
+      return a.localeCompare(b);
+    });
+
+    return ["All Programmes", ...sorted];
   }, [dynamicPrograms]);
+
+  const selectedProgramDisplay = useMemo(() => {
+    if (!selectedProgram || selectedProgram === "All Programmes" || selectedProgram === "all") {
+      return "All Programmes";
+    }
+    return formatProgramDropdownName(selectedProgram);
+  }, [selectedProgram]);
 
   const availableCourses = useMemo(() => {
     const list = Array.isArray(dynamicCourses) ? dynamicCourses : [];
@@ -76,7 +106,7 @@ export default function CoursesNavbarFilters() {
           }`}
         />
         <select
-          value={selectedProgram || "All Programmes"}
+          value={selectedProgramDisplay}
           onChange={(e) => setSelectedProgram(e.target.value)}
           className={`pl-8 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer appearance-none focus:outline-none max-w-[130px] sm:max-w-[160px] truncate ${
             isProgramActive

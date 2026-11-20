@@ -18,6 +18,11 @@ import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/Lef
 import { setAvailableSchools } from "@/lib/data/nursingSchools";
 import CoursesNavbarFilters from "@/app/(web)/includes/navbar/CoursesNavbarFilters";
 import CoursesLeftSidebar from "@/app/(web)/includes/sidebar/CoursesLeftSidebar";
+import {
+  getProgramRank,
+  formatProgramDropdownName,
+  matchesProgram,
+} from "@/lib/utils/exams/formatProgramDropdownName";
 
 export interface DynamicCourse {
   id: string;
@@ -183,14 +188,14 @@ export default function CoursesPage() {
 
           const panelSlug: "rn-nursing" | "lpn-nursing" = isLpn ? "lpn-nursing" : "rn-nursing";
 
-          // Map strictly to the discussed RN and LPN nursing programs
+          // Map strictly to the canonical RN and LPN nursing programs
           const programName = isLpn
             ? isExit
-              ? "LPN Exit Exams"
-              : "LPN Nursing Exams"
+              ? "PN Exit"
+              : "LPN Nursing Exam"
             : isExit
-            ? "RN Exit Exams"
-            : "RN Nursing Exams";
+            ? "RN Exit"
+            : "RN Nursing Exam";
 
           const year = extractExamYear(name, undefined, item.year, item.createdAt);
           const season = resolveExamSeason(item.season, name, item.description);
@@ -250,7 +255,14 @@ export default function CoursesPage() {
           if (c.school) schoolsSet.add(c.school);
         });
 
-        setDynamicPrograms(Array.from(programsSet).sort((a, b) => a.localeCompare(b)));
+        setDynamicPrograms(
+          Array.from(programsSet).sort((a, b) => {
+            const rankA = getProgramRank(a);
+            const rankB = getProgramRank(b);
+            if (rankA !== rankB) return rankA - rankB;
+            return a.localeCompare(b);
+          })
+        );
         setDynamicYears(Array.from(yearsSet).sort((a, b) => b - a));
         setDynamicSeasons(Array.from(seasonsSet).sort((a, b) => a.localeCompare(b)));
         if (schoolsSet.size > 0) {
@@ -304,7 +316,7 @@ export default function CoursesPage() {
 
       // 2. Programme Filter
       if (selectedProgram && selectedProgram !== "All Programmes") {
-        if ((course.programName || "").trim().toLowerCase() !== selectedProgram.trim().toLowerCase()) {
+        if (!matchesProgram(course.programName, selectedProgram)) {
           return false;
         }
       }

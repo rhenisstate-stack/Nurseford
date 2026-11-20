@@ -19,6 +19,11 @@ import { setAvailableSchools } from "@/lib/data/nursingSchools";
 import CoursesNavbarFilters from "@/app/(web)/includes/navbar/CoursesNavbarFilters";
 import CoursesLeftSidebar from "@/app/(web)/includes/sidebar/CoursesLeftSidebar";
 import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
+import {
+  getProgramRank,
+  formatProgramDropdownName,
+  matchesProgram,
+} from "@/lib/utils/exams/formatProgramDropdownName";
 import type { UnifiedSubject } from "@/app/api/exams/all-subjects/route";
 
 export default function SubjectsCatalogView() {
@@ -46,7 +51,7 @@ export default function SubjectsCatalogView() {
   const [subjects, setSubjects] = useState<UnifiedSubject[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const cached = sessionStorage.getItem("nurseford_unified_subjects_v3");
+        const cached = sessionStorage.getItem("nurseford_unified_subjects_v4");
         if (cached) {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -57,6 +62,7 @@ export default function SubjectsCatalogView() {
                 .replace(/rhenis\s*/gi, "")
                 .trim(),
               name: (s.name || "").replace(/rhenis\s*/gi, "").trim(),
+              programName: formatProgramDropdownName(s.programName),
             }));
           }
         }
@@ -127,6 +133,7 @@ export default function SubjectsCatalogView() {
             .replace(/rhenis\s*/gi, "")
             .trim(),
           name: (s.name || "").replace(/rhenis\s*/gi, "").trim(),
+          programName: formatProgramDropdownName(s.programName),
         }));
 
         if (isMountedRef.current && list.length > 0) {
@@ -134,7 +141,7 @@ export default function SubjectsCatalogView() {
           setTotalCoursesCount(list.length);
 
           try {
-            sessionStorage.setItem("nurseford_unified_subjects_v3", JSON.stringify(list));
+            sessionStorage.setItem("nurseford_unified_subjects_v4", JSON.stringify(list));
           } catch {}
 
           // Populate dynamic options
@@ -145,14 +152,23 @@ export default function SubjectsCatalogView() {
           const schSet = new Set<string>();
 
           list.forEach((sub) => {
-            if (sub.programName) pSet.add(sub.programName);
+            if (sub.programName) pSet.add(formatProgramDropdownName(sub.programName));
             if (sub.courseName) cSet.add(sub.courseName.replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify"));
             if (sub.year) ySet.add(sub.year);
             if (sub.season) snSet.add(sub.season);
             if (sub.school) schSet.add(sub.school);
           });
 
-          if (pSet.size > 0) setDynamicPrograms(Array.from(pSet).sort((a, b) => a.localeCompare(b)));
+          if (pSet.size > 0) {
+            setDynamicPrograms(
+              Array.from(pSet).sort((a, b) => {
+                const rankA = getProgramRank(a);
+                const rankB = getProgramRank(b);
+                if (rankA !== rankB) return rankA - rankB;
+                return a.localeCompare(b);
+              })
+            );
+          }
           if (cSet.size > 0) setDynamicCourses(Array.from(cSet).sort((a, b) => a.localeCompare(b)));
           if (ySet.size > 0) setDynamicYears(Array.from(ySet).sort((a, b) => b - a));
           if (snSet.size > 0) {
@@ -222,7 +238,7 @@ export default function SubjectsCatalogView() {
 
       // 2. Programme Filter
       if (selectedProgram && selectedProgram !== "All Programmes") {
-        if ((sub.programName || "").trim().toLowerCase() !== selectedProgram.trim().toLowerCase()) {
+        if (!matchesProgram(sub.programName, selectedProgram)) {
           return false;
         }
       }
@@ -275,10 +291,9 @@ export default function SubjectsCatalogView() {
 
     filteredSubjects.forEach((sub) => {
       const isExit =
-        sub.programName === "RN Exit Exams" ||
-        sub.programName === "LPN Exit Exams" ||
-        /exit/i.test(sub.courseName) ||
-        /exit/i.test(sub.name);
+        /exit/i.test(sub.programName || "") ||
+        /exit/i.test(sub.courseName || "") ||
+        /exit/i.test(sub.name || "");
 
       if (isExit) {
         if (sub.panelSlug === "lpn-nursing" || /lpn|pn/i.test(sub.programName)) {

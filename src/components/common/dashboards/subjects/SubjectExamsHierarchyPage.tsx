@@ -717,10 +717,10 @@ export function SubjectExamsHierarchyPage({
   // Programme filter options
   const availableProgramOptions = useMemo(() => {
     const defaultPrograms = [
-      "RN Nursing",
-      "LPN Nursing",
-      "RN Exit Exams",
-      "LPN Exit Exams",
+      "RN Nursing Exam",
+      "LPN Nursing Exam",
+      "RN Exit",
+      "PN Exit",
     ];
     const set = new Set<string>(defaultPrograms);
     if (Array.isArray(programs)) {
@@ -732,8 +732,8 @@ export function SubjectExamsHierarchyPage({
   }, [programs]);
 
   const currentProgramDisplay = useMemo(() => {
-    if (panelSlug === "lpn-nursing") return "LPN Nursing";
-    if (panelSlug === "rn-nursing") return "RN Nursing";
+    if (panelSlug === "lpn-nursing") return "LPN Nursing Exam";
+    if (panelSlug === "rn-nursing") return "RN Nursing Exam";
     return panelLabel || "Programme";
   }, [panelSlug, panelLabel]);
 
@@ -741,7 +741,7 @@ export function SubjectExamsHierarchyPage({
     const found = availableProgramOptions.find(
       (p) =>
         p.toLowerCase() === currentProgramDisplay.toLowerCase() ||
-        p.toLowerCase().replace(/\s+exams$/i, "") === currentProgramDisplay.toLowerCase().replace(/\s+exams$/i, "")
+        p.toLowerCase().replace(/\s+exams?$/i, "") === currentProgramDisplay.toLowerCase().replace(/\s+exams?$/i, "")
     );
     return found || "all";
   }, [availableProgramOptions, currentProgramDisplay]);
@@ -751,7 +751,7 @@ export function SubjectExamsHierarchyPage({
       router.push("/subjects");
       return;
     }
-    if (/lpn.*exit/i.test(prog)) {
+    if (/pn.*exit|lpn.*exit/i.test(prog)) {
       router.push("/dashboards/lpn-nursing?track=exit");
     } else if (/lpn/i.test(prog)) {
       router.push("/dashboards/lpn-nursing");

@@ -170,11 +170,11 @@ export async function GET(req: NextRequest) {
         const programName =
           panel === "lpn-nursing"
             ? isExit
-              ? "LPN Exit Exams"
-              : "LPN Nursing Exams"
+              ? "PN Exit"
+              : "LPN Nursing Exam"
             : isExit
-            ? "RN Exit Exams"
-            : "RN Nursing Exams";
+            ? "RN Exit"
+            : "RN Nursing Exam";
 
         const subSlug = sub.slug || toSlug(subName);
         const targetHref = `/dashboards/${panel}/exams/${courseSlug}/${courseId}/exams/${subId}?subjectName=${encodeURIComponent(
