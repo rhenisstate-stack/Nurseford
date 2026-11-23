@@ -8,13 +8,13 @@ const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || SEO.siteUrl || "https://www
 const pageUrl = `${siteUrl}/pages/sample-questions`;
 
 export const metadata: Metadata = {
-  title: "Free RN, LPN & Exit Exam Sample Questions with Clinical Rationales",
+  title: "Free Nursing Practice Sample Questions with Clinical Rationales",
   description:
-    "Practice free board-standard RN Nursing, LPN Nursing, and Exit Exam sample questions with detailed step-by-step clinical rationales across Med-Surg, Pharmacology, Pediatrics, Dosage Calculation, and Priority Setting.",
+    "Practice board-standard nursing sample questions with detailed step-by-step clinical rationales across Med-Surg, Pharmacology, Scope of Practice, Dosage Calculation, and Priority Setting.",
   keywords: [
     "RN practice questions",
     "LPN sample questions",
-    "NCLEX sample questions",
+    "NCLEX practice questions",
     "Nursing exit exam practice",
     "HESI exit questions",
     "ATI predictor practice",
@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: pageUrl },
   openGraph: {
-    title: `Free RN, LPN & Exit Exam Sample Questions | ${APP_NAME}`,
+    title: `Free Nursing Practice Sample Questions | ${APP_NAME}`,
     description:
-      "Practice board-standard RN, LPN, and Exit Exam questions with deep clinical rationales. Test your clinical judgment before starting a full Q-Bank session.",
+      "Practice board-standard nursing sample questions with deep clinical rationales. Test your clinical judgment before starting a full Q-Bank session.",
     url: pageUrl,
     siteName: APP_NAME,
     type: "website",
@@ -62,7 +62,7 @@ export default function SampleQuestionsPage() {
             Free Board-Standard Practice Preview
           </span>
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight">
-            RN, LPN &amp; Exit Exam Sample Questions
+            Free Nursing Practice Sample Questions
           </h1>
           <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
             Test your clinical judgment with high-yield nursing practice questions and comprehensive step-by-step rationales across Med-Surg, Pharmacology, Pediatrics, and Prioritization.

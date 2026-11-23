@@ -41,10 +41,7 @@ export default function SampleQuestionCard({
           <span className="rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-500/20 px-2.5 py-0.5 text-teal-800 dark:text-[#2FD9C4] font-bold">
             Question {index + 1}
           </span>
-          <span className="rounded-full border border-slate-200 dark:border-slate-700 px-2.5 py-0.5 text-slate-700 dark:text-slate-300">
-            {item.track}
-          </span>
-          <span className="text-slate-500 dark:text-slate-400 font-medium">
+          <span className="rounded-full border border-slate-200 dark:border-slate-700 px-2.5 py-0.5 text-slate-700 dark:text-slate-300 font-medium">
             {item.subject}
           </span>
         </div>

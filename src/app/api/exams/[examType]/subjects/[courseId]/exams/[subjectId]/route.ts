@@ -5,9 +5,6 @@ export const dynamic = "force-dynamic";
 import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
-import {
-  COURSE_ID_ALIASES,
-} from "@/lib/data/php-exam-counts";
 
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
@@ -55,7 +52,7 @@ export async function GET(
   let subjectName = searchParams.get("subjectName") || "";
   const dynamicSearch = searchParams.get("search") || "";
 
-  const effectiveCourseId = COURSE_ID_ALIASES[courseId] || courseId;
+  const effectiveCourseId = courseId;
   const effectiveSubjectId = subjectId;
 
   const castoLine = req.headers.get("x-casto-line");

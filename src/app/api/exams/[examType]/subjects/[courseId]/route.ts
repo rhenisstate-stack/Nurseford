@@ -12,9 +12,6 @@ import type { DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
 import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
-import {
-  COURSE_ID_ALIASES,
-} from "@/lib/data/php-exam-counts";
 import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
 
 const EXAM_SEGMENTS: Record<string, string> = {
@@ -158,7 +155,7 @@ export async function GET(
     });
   }
 
-  const effectiveCourseId = COURSE_ID_ALIASES[courseId] || courseId;
+  const effectiveCourseId = courseId;
   const segment = EXAM_SEGMENTS[examType] ?? null;
 
   // Forward the caller's session headers so the backend accepts the request.

@@ -15,6 +15,7 @@ import {
 import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext";
 import { APP_TITLE } from "@/lib/config/config";
 import SidebarUserProfile from "@/components/common/user/SidebarUserProfile";
+import PerformanceIndexGauge from "@/components/common/dashboards/PerformanceIndexGauge";
 
 const VISTA_RN = "/dashboards/rn-nursing/vista";
 
@@ -129,6 +130,17 @@ export default function CoursesLeftSidebar() {
               <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Need Help / Assistance</span>
             </div>
           </Link>
+
+          <div className="my-2.5 border-t border-slate-100 dark:border-slate-800" />
+
+          {/* Syringe Performance Index Gauge at the bottom (borderless / unboxed) */}
+          <div className="my-2 px-1">
+            <PerformanceIndexGauge
+              bare
+              scope="rn-nursing"
+              className="w-full bg-transparent"
+            />
+          </div>
         </nav>
 
         {/* Profile Dropdown Below All Other Components */}

@@ -48,41 +48,9 @@ export default function SubjectsCatalogView() {
     setFilteredCount,
   } = useCoursesFilter();
 
-  const [subjects, setSubjects] = useState<UnifiedSubject[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("nurseford_unified_subjects_v7");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed.map((s: UnifiedSubject) => ({
-              ...s,
-              courseName: (s.courseName || "")
-                .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
-                .replace(/rhenis\s*/gi, "")
-                .trim(),
-              name: (s.name || "").replace(/rhenis\s*/gi, "").trim(),
-              programName: formatProgramDropdownName(s.programName),
-            }));
-          }
-        }
-      } catch {}
-    }
-    return [];
-  });
-
-  const [isLoading, setIsLoading] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("nurseford_unified_subjects_v7");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) return false;
-        }
-      } catch {}
-    }
-    return true;
-  });
+  // Initial state matches on both server (SSR) and client initial render to prevent hydration mismatch
+  const [subjects, setSubjects] = useState<UnifiedSubject[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
@@ -105,8 +73,32 @@ export default function SubjectsCatalogView() {
   useEffect(() => {
     isMountedRef.current = true;
 
+    // Fast-hydrate from sessionStorage on client mount (runs after initial HTML hydration)
+    let hasCachedData = false;
+    try {
+      const cached = sessionStorage.getItem("nurseford_unified_subjects_v7");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          hasCachedData = true;
+          const cachedList: UnifiedSubject[] = parsed.map((s: UnifiedSubject) => ({
+            ...s,
+            courseName: (s.courseName || "")
+              .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
+              .replace(/rhenis\s*/gi, "")
+              .trim(),
+            name: (s.name || "").replace(/rhenis\s*/gi, "").trim(),
+            programName: formatProgramDropdownName(s.programName),
+          }));
+          setSubjects(cachedList);
+          setIsLoading(false);
+          setTotalCoursesCount(cachedList.length);
+        }
+      }
+    } catch {}
+
     async function loadSubjects() {
-      if (subjects.length === 0) {
+      if (!hasCachedData) {
         setIsLoading(true);
       }
       setError(null);

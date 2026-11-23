@@ -1,6 +1,6 @@
 export interface SampleQuestion {
   id: string;
-  track: "RN Nursing" | "LPN Nursing" | "Exit Exam";
+  track: "RN Nursing Exam" | "LPN Nursing Exam" | "RN Exit" | "PN Exit";
   subject: string;
   difficulty?: "Easy" | "Medium" | "Hard";
   question: string;
@@ -10,10 +10,10 @@ export interface SampleQuestion {
 }
 
 export const SAMPLE_QUESTIONS: SampleQuestion[] = [
-  // ─── RN NURSING QUESTIONS ───
+  // ─── 1. RN NURSING EXAM (2 Questions) ───
   {
     id: "rn-medsurg-heart-failure",
-    track: "RN Nursing",
+    track: "RN Nursing Exam",
     subject: "Med-Surg / Adult Health",
     difficulty: "Hard",
     question:
@@ -30,7 +30,7 @@ export const SAMPLE_QUESTIONS: SampleQuestion[] = [
   },
   {
     id: "rn-pharm-heparin-protamine",
-    track: "RN Nursing",
+    track: "RN Nursing Exam",
     subject: "Pharmacology",
     difficulty: "Medium",
     question:
@@ -45,28 +45,11 @@ export const SAMPLE_QUESTIONS: SampleQuestion[] = [
     rationale:
       "Protamine sulfate is the specific chemical antagonist that rapidly neutralizes the anticoagulant effect of unfractionated heparin by forming a stable, inactive salt complex. The therapeutic aPTT target is 1.5 to 2.5 times the control (typically 45–75 seconds); an aPTT of 138 seconds accompanied by overt bleeding constitutes heparin toxicity. Vitamin K reverses warfarin, not heparin. Enoxaparin is a low-molecular-weight heparin that would worsen bleeding. FFP is used for mass coagulopathy or urgent warfarin reversal.",
   },
-  {
-    id: "rn-pediatrics-epiglottitis",
-    track: "RN Nursing",
-    subject: "Pediatrics & Child Health",
-    difficulty: "Hard",
-    question:
-      "A 4-year-old child presents to the emergency department with acute high fever, severe inspiratory stridor, drooling, and sitting upright in a 'tripod' position. What action must the nurse avoid taking?",
-    options: [
-      "Preparing equipment for immediate emergency endotracheal intubation",
-      "Visualizing the pharynx using a tongue depressor to inspect the throat",
-      "Maintaining a calm environment and keeping the child in the caregiver's lap",
-      "Administering humidified oxygen via blow-by mask without causing agitation",
-    ],
-    correctIndex: 1,
-    rationale:
-      "In suspected acute epiglottitis (indicated by the hallmark triad of drooling, dysphagia, and distress in a tripod position), direct visualization of the posterior pharynx with a tongue depressor or throat swab can provoke immediate, complete laryngospasm and catastrophic airway obstruction. Pharyngeal examination should only occur in the operating room with an anesthesiologist and surgical airway team ready. Keeping the child calm, preparing intubation equipment, and blow-by oxygen are all indicated.",
-  },
 
-  // ─── LPN / LVN NURSING QUESTIONS ───
+  // ─── 2. LPN NURSING EXAM (2 Questions) ───
   {
     id: "lpn-fundamentals-ppe-removal",
-    track: "LPN Nursing",
+    track: "LPN Nursing Exam",
     subject: "Fundamentals of Nursing",
     difficulty: "Easy",
     question:
@@ -83,7 +66,7 @@ export const SAMPLE_QUESTIONS: SampleQuestion[] = [
   },
   {
     id: "lpn-dosage-calc-iv-rate",
-    track: "LPN Nursing",
+    track: "LPN Nursing Exam",
     subject: "Dosage Calculation",
     difficulty: "Medium",
     question:
@@ -93,28 +76,11 @@ export const SAMPLE_QUESTIONS: SampleQuestion[] = [
     rationale:
       "Formula: Flow rate (gtt/min) = [Total Volume (mL) × Drop Factor (gtt/mL)] ÷ [Time in Minutes]. Here: Total volume = 1,000 mL, Drop factor = 15 gtt/mL, Time = 8 hours × 60 min/hr = 480 minutes. Calculation: (1,000 × 15) ÷ 480 = 15,000 ÷ 480 = 31.25. Rounding to the nearest whole drop yields 31 gtt/min. (125 mL/hr is the infusion pump rate, not the gravity drip rate).",
   },
-  {
-    id: "lpn-mental-health-lithium",
-    track: "LPN Nursing",
-    subject: "Mental Health & Psych",
-    difficulty: "Medium",
-    question:
-      "A client diagnosed with Bipolar I Disorder has been taking lithium carbonate 300 mg TID for two weeks. Which clinical manifestation should the nurse recognize as an early indicator of lithium toxicity?",
-    options: [
-      "Coarse hand tremors, ataxia, and persistent diarrhea",
-      "Mild transient nausea and fine resting hand tremors",
-      "Weight gain of 2 pounds over one month",
-      "Slight metallic taste in the mouth after doses",
-    ],
-    correctIndex: 0,
-    rationale:
-      "Coarse hand tremors, ataxia, muscle weakness, confusion, persistent nausea/vomiting, and watery diarrhea are early to moderate signs of lithium toxicity (blood levels > 1.5 mEq/L). Mild fine tremors, slight nausea, and mild thirst are common benign side effects during early therapeutic initiation (0.6–1.2 mEq/L) but coarse tremors signal neurotoxicity requiring immediate blood level check and withholding the dose.",
-  },
 
-  // ─── EXIT EXAMS & CAPSTONE CLINICAL JUDGMENT ───
+  // ─── 3. RN EXIT (2 Questions) ───
   {
-    id: "exit-triage-priority-delegation",
-    track: "Exit Exam",
+    id: "rn-exit-triage-priority-delegation",
+    track: "RN Exit",
     subject: "Exit Exams & Capstone",
     difficulty: "Hard",
     question:
@@ -130,8 +96,8 @@ export const SAMPLE_QUESTIONS: SampleQuestion[] = [
       "The post-thyroidectomy client is exhibiting classic signs of acute hypocalcemia (circumoral paresthesia and positive Trousseau/Chvostek sign) due to accidental parathyroid gland trauma or excision during surgery. Acute hypocalcemia can rapidly deteriorate into laryngeal spasm, tetany, seizures, and fatal airway obstruction. Calcium gluconate must be available. Pain in pancreatitis is expected (assess second). SpO2 of 90% is acceptable in COPD. 40 mL serosanguinous drainage is an expected postoperative finding.",
   },
   {
-    id: "exit-clinical-judgment-sepsis",
-    track: "Exit Exam",
+    id: "rn-exit-clinical-judgment-sepsis",
+    track: "RN Exit",
     subject: "Critical Care",
     difficulty: "Hard",
     question:
@@ -145,5 +111,41 @@ export const SAMPLE_QUESTIONS: SampleQuestion[] = [
     correctIndex: 1,
     rationale:
       "The client meets criteria for septic shock (hypotension refractory to baseline and serum lactate > 4.0 mmol/L). In the 1-hour sepsis resuscitation bundle, the immediate priority is rapid volume expansion with 30 mL/kg of crystalloid fluid (e.g., Lactated Ringer's or Normal Saline) to restore intravascular volume and tissue perfusion. Blood cultures and broad-spectrum IV antibiotics are administered within the first hour. Vasopressors (norepinephrine) are added only if mean arterial pressure (MAP) remains < 65 mmHg despite adequate fluid resuscitation.",
+  },
+
+  // ─── 4. PN EXIT (2 Questions) ───
+  {
+    id: "pn-exit-scope-client-assignment",
+    track: "PN Exit",
+    subject: "Exit Exams & Capstone",
+    difficulty: "Medium",
+    question:
+      "The charge nurse is making shift client assignments. Which client is most appropriate to assign to the Licensed Practical Nurse (LPN / LVN)?",
+    options: [
+      "A client admitted 2 hours ago with chest pain scheduled for an emergency cardiac catheterization",
+      "A client who underwent laparoscopic cholecystectomy 2 days ago requiring dressing care and established colostomy irrigation",
+      "A client with newly diagnosed Type 1 diabetes requiring initial insulin self-administration education",
+      "A client transferred from the ICU 1 hour ago following stabilization of acute respiratory distress syndrome",
+    ],
+    correctIndex: 1,
+    rationale:
+      "LPN/LVN scope of practice is best suited for stable clients with predictable clinical outcomes who require routine care, standard wound/ostomy maintenance, and administration of scheduled medications. The client 2 days postoperative following laparoscopic cholecystectomy is stable. Newly admitted clients, clients transferred from the ICU within the hour, and clients requiring initial discharge/disease education require comprehensive registered nurse (RN) assessment, clinical judgment, and direct teaching.",
+  },
+  {
+    id: "pn-exit-focused-assessment-hypoglycemia",
+    track: "PN Exit",
+    subject: "General Clinical",
+    difficulty: "Medium",
+    question:
+      "A practical nurse (LPN) is monitoring a post-surgical client with diabetes mellitus. Two hours after receiving morning insulin, the client reports feeling shaky, nervous, and diaphoresis is observed. The bedside capillary glucose reading is 54 mg/dL. The client is alert and oriented. Which action should the nurse take first?",
+    options: [
+      "Administer 1 mg of glucagon intramuscularly into the deltoid",
+      "Provide 4 ounces (120 mL) of fruit juice or regular soda",
+      "Notify the healthcare provider and wait for a stat intravenous dextrose order",
+      "Encourage the client to eat their scheduled lunch tray immediately",
+    ],
+    correctIndex: 1,
+    rationale:
+      "According to the American Diabetes Association 'Rule of 15', an alert client with acute hypoglycemia (glucose < 70 mg/dL) should immediately receive 15 grams of fast-acting simple carbohydrate (e.g., 4 oz fruit juice, 4 oz regular soda, or 3–4 glucose tablets). The blood glucose is rechecked in 15 minutes. Intramuscular glucagon or IV 50% dextrose is indicated only if the client is unconscious, unable to swallow, or NPO. Waiting for the physician or waiting for lunch causes dangerous delays.",
   },
 ];

@@ -26,6 +26,7 @@ import { useSidebarAutoScroll } from "@/lib/hooks/nexus/includes/sidebars/useSid
 import { Tooltip } from "@/components/dashboards/includes/sidebar/tooltips/SidebarTooltip";
 import { APP_TITLE, APP_ACRONYM } from "@/lib/config/config";
 import SidebarUserProfile from "@/components/common/user/SidebarUserProfile";
+import PerformanceIndexGauge from "@/components/common/dashboards/PerformanceIndexGauge";
 
 const PANEL = "nclex-pn";
 const VISTA = `/dashboards/${PANEL}/vista`;
@@ -587,6 +588,19 @@ export default function LeftSidebar() {
               )}
             </div>
           </Link>
+
+          {isOpened && (
+            <div className="pt-2">
+              <div className="my-2 border-t border-slate-200/80 dark:border-slate-800" />
+              <div className="px-1">
+                <PerformanceIndexGauge
+                  bare
+                  scope="nclex-pn"
+                  className="w-full bg-transparent"
+                />
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Profile Dropdown Below All Other Components */}

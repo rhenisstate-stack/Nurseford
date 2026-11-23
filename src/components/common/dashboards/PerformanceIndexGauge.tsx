@@ -62,12 +62,14 @@ export interface PerformanceIndexGaugeProps {
   score?: number;
   scope?: DashboardScope;
   className?: string;
+  bare?: boolean;
 }
 
 export default function PerformanceIndexGauge({
   score,
   scope,
   className = "",
+  bare = false,
 }: PerformanceIndexGaugeProps) {
   const hasProvidedScore = typeof score === "number";
   const live = useDashboardPerformanceScore(scope, { enabled: !hasProvidedScore });
@@ -86,20 +88,24 @@ export default function PerformanceIndexGauge({
 
   return (
     <div
-      className={`rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[var(--card-bg,#15273e)] px-4 py-2.5 flex flex-col justify-between items-center h-[180px] shadow-xs hover:shadow-md transition-all duration-200 ${className}`}
+      className={
+        bare
+          ? `w-full flex flex-col justify-between items-center py-2 px-1 bg-transparent border-0 shadow-none ${className}`
+          : `rounded-2xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-[var(--card-bg,#15273e)] px-4 py-2.5 flex flex-col justify-between items-center h-[180px] shadow-xs hover:shadow-md transition-all duration-200 ${className}`
+      }
     >
       {/* Top Header */}
-      <div className="w-full flex items-center justify-between gap-2 shrink-0">
+      <div className="w-full flex items-center justify-between gap-1.5 shrink-0">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded-md bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-300 shrink-0">
-            <TrendingUp className="w-3 h-3" />
+          <span className="inline-flex items-center justify-center w-4 h-4 rounded bg-sky-50 dark:bg-sky-500/15 text-sky-600 dark:text-sky-300 shrink-0">
+            <TrendingUp className="w-2.5 h-2.5" />
           </span>
-          <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+          <h2 className={`${bare ? "text-[11px] font-semibold" : "text-xs font-bold"} text-slate-900 dark:text-white whitespace-nowrap`}>
             Performance Index
           </h2>
         </div>
 
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30 shrink-0">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-500/15 dark:text-sky-300 dark:border-sky-500/30 shrink-0 whitespace-nowrap">
           <Target className="w-2.5 h-2.5 shrink-0" />
           Target 100%
         </span>
@@ -336,9 +342,9 @@ export default function PerformanceIndexGauge({
 
       {/* Bottom Status Pill */}
       <div
-        className={`w-full rounded-xl border px-2.5 py-1 flex items-center justify-center gap-1.5 text-[11px] shrink-0 ${status.pillClass}`}
+        className={`w-full rounded-xl border ${bare ? "px-1.5 py-0.5 text-[10px]" : "px-2.5 py-1 text-[11px]"} flex items-center justify-center gap-1.5 shrink-0 ${status.pillClass}`}
       >
-        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+        <CheckCircle2 className={`${bare ? "w-3 h-3" : "w-3.5 h-3.5"} shrink-0`} />
         <span className="font-medium truncate">{status.subtext}</span>
       </div>
     </div>
