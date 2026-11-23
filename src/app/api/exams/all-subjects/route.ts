@@ -10,6 +10,7 @@ import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelC
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
 import { resolveExamSchool } from "@/lib/utils/exams/resolveExamSchool";
+import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
 
 export interface UnifiedSubject {
   id: string | number;
@@ -32,16 +33,21 @@ export interface UnifiedSubject {
   targetHref: string;
 }
 
-// In-memory cache for fast repeated responses (TTL: 15 minutes)
-let cachedSubjects: UnifiedSubject[] | null = null;
-let cacheTimestamp = 0;
-const CACHE_TTL_MS = 15 * 60 * 1000;
-let pendingRefreshPromise: Promise<void> | null = null;
+// Global in-memory cache surviving HMR reloads (TTL: 30 minutes)
+const globalCache = globalThis as unknown as {
+  __allSubjectsCache?: UnifiedSubject[];
+  __allSubjectsTimestamp?: number;
+  __allSubjectsRefreshPromise?: Promise<void> | null;
+};
+const CACHE_TTL_MS = 30 * 60 * 1000;
 
 function categorizeSubject(name: string): { category: string; isMedSurg: boolean } {
   const s = (name || "").toLowerCase();
-  if (/med.*surg|adult\s*health/i.test(s)) {
+  if (/med.*surg/i.test(s)) {
     return { category: "Med-Surg / Adult Health", isMedSurg: true };
+  }
+  if (/adult\s*health/i.test(s)) {
+    return { category: "Med-Surg / Adult Health", isMedSurg: false };
   }
   if (/pharm/i.test(s)) {
     return { category: "Pharmacology", isMedSurg: false };
@@ -86,14 +92,36 @@ export async function GET(req: NextRequest) {
   const forceRefresh = req.nextUrl.searchParams.get("forceRefresh") === "true";
   const now = Date.now();
 
+  let cachedSubjects = globalCache.__allSubjectsCache ?? null;
+  let cacheTimestamp = globalCache.__allSubjectsTimestamp ?? 0;
+
+  // Invalidate cache if it contains broken/incomplete counts (e.g. less than 40% of subjects having counts)
+  const hasIncompleteCounts =
+    cachedSubjects &&
+    cachedSubjects.length > 0 &&
+    cachedSubjects.filter((s) => (s.examCount || 0) > 0).length < cachedSubjects.length * 0.4;
+  if (hasIncompleteCounts) {
+    globalCache.__allSubjectsCache = undefined;
+    globalCache.__allSubjectsTimestamp = 0;
+    cachedSubjects = null;
+    cacheTimestamp = 0;
+  }
+
   // 1. Fresh cache: return immediately in < 1ms
   if (!forceRefresh && cachedSubjects && now - cacheTimestamp < CACHE_TTL_MS) {
-    return NextResponse.json({
-      success: true,
-      subjects: cachedSubjects,
-      total: cachedSubjects.length,
-      cached: true,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        subjects: cachedSubjects,
+        total: cachedSubjects.length,
+        cached: true,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      }
+    );
   }
 
   const origin = req.nextUrl.origin || "http://localhost:3001";
@@ -102,35 +130,48 @@ export async function GET(req: NextRequest) {
   };
   const cookieHeader = req.headers.get("cookie");
   if (cookieHeader) reqHeaders["cookie"] = cookieHeader;
+  const castoLine = req.headers.get("x-casto-line");
+  const castoBadge = req.headers.get("x-casto-badge");
+  const authHeader = req.headers.get("authorization");
+  if (castoLine) reqHeaders["x-casto-line"] = castoLine;
+  if (castoBadge) reqHeaders["x-casto-badge"] = castoBadge;
+  if (authHeader) reqHeaders["authorization"] = authHeader;
 
   // 2. Stale cache: return stale immediately so user is never blocked, refresh in background
   if (!forceRefresh && cachedSubjects && cachedSubjects.length > 0) {
-    if (!pendingRefreshPromise) {
-      pendingRefreshPromise = (async () => {
+    if (!globalCache.__allSubjectsRefreshPromise) {
+      globalCache.__allSubjectsRefreshPromise = (async () => {
         try {
           const fresh = await fetch(`${origin}/api/exams/all-subjects?forceRefresh=true`, {
             headers: reqHeaders,
             cache: "no-store",
           }).then((r) => (r.ok ? r.json() : null));
           if (Array.isArray(fresh?.subjects) && fresh.subjects.length > 0) {
-            cachedSubjects = fresh.subjects;
-            cacheTimestamp = Date.now();
+            globalCache.__allSubjectsCache = fresh.subjects;
+            globalCache.__allSubjectsTimestamp = Date.now();
           }
         } catch {
           // background refresh failure ignored
         } finally {
-          pendingRefreshPromise = null;
+          globalCache.__allSubjectsRefreshPromise = null;
         }
       })();
     }
 
-    return NextResponse.json({
-      success: true,
-      subjects: cachedSubjects,
-      total: cachedSubjects.length,
-      cached: true,
-      stale: true,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        subjects: cachedSubjects,
+        total: cachedSubjects.length,
+        cached: true,
+        stale: true,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      }
+    );
   }
 
   try {
@@ -156,22 +197,28 @@ export async function GET(req: NextRequest) {
       ...lpnCourses.map((c: any) => ({ panel: "lpn-nursing" as const, course: c })),
     ];
 
-    // 2. Fetch all course subjects in parallel with Promise.allSettled
-    const results = await Promise.allSettled(
-      tasks.map(async ({ panel, course }) => {
-        const courseId = String(course.guidId || course.id || "");
-        if (!courseId) return null;
+    // 2. Fetch all course subjects with controlled concurrency (batches of 2 courses)
+    const results: Array<PromiseSettledResult<{ panel: "rn-nursing" | "lpn-nursing"; course: any; subsData: any } | null>> = [];
+    const COURSE_BATCH = 2;
+    for (let i = 0; i < tasks.length; i += COURSE_BATCH) {
+      const chunk = tasks.slice(i, i + COURSE_BATCH);
+      const chunkResults = await Promise.allSettled(
+        chunk.map(async ({ panel, course }) => {
+          const courseId = String(course.guidId || course.id || "");
+          if (!courseId) return null;
 
-        const subsRes = await fetch(`${origin}/api/exams/${panel}/subjects/${courseId}`, {
-          headers: reqHeaders,
-          cache: "no-store",
-        }).catch(() => null);
+          const subsRes = await fetch(`${origin}/api/exams/${panel}/subjects/${courseId}?forceRefresh=true`, {
+            headers: reqHeaders,
+            cache: "no-store",
+          }).catch(() => null);
 
-        if (!subsRes || !subsRes.ok) return null;
-        const subsData = await subsRes.json().catch(() => ({}));
-        return { panel, course, subsData };
-      })
-    );
+          if (!subsRes || !subsRes.ok) return null;
+          const subsData = await subsRes.json().catch(() => ({}));
+          return { panel, course, subsData };
+        })
+      );
+      results.push(...chunkResults);
+    }
 
     const aggregated: UnifiedSubject[] = [];
 
@@ -179,10 +226,9 @@ export async function GET(req: NextRequest) {
       if (res.status !== "fulfilled" || !res.value) continue;
       const { panel, course, subsData } = res.value;
       const subjectsList = Array.isArray(subsData?.subjects) ? subsData.subjects : [];
-      const resolvedCourseName = (subsData?.courseName || course.name || "Nursing Course")
-        .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
-        .replace(/rhenis\s*/gi, "")
-        .trim();
+      const resolvedCourseName = formatCourseDropdownName(
+        subsData?.courseName || course.name || "Nursing Course"
+      );
       const courseSlug = course.slug || toSlug(resolvedCourseName);
       const courseId = String(course.guidId || course.id || "");
 
@@ -250,28 +296,31 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Sort: ALL Med-Surg subjects FIRST (sorted by question count descending),
-    // followed by other subjects grouped alphabetically by category
+    // Dynamic Sort: Purely by dynamic exam count descending, then by question count descending
     aggregated.sort((a, b) => {
-      if (a.isMedSurg && !b.isMedSurg) return -1;
-      if (!a.isMedSurg && b.isMedSurg) return 1;
-      if (a.isMedSurg && b.isMedSurg) {
-        return (b.questionCount || 0) - (a.questionCount || 0);
-      }
-      if (a.category !== b.category) {
-        return a.category.localeCompare(b.category);
-      }
+      const examDiff = (b.examCount || 0) - (a.examCount || 0);
+      if (examDiff !== 0) return examDiff;
       return (b.questionCount || 0) - (a.questionCount || 0);
     });
 
-    cachedSubjects = aggregated;
-    cacheTimestamp = now;
+    const validCount = aggregated.filter((s) => s.examCount > 0).length;
+    if (validCount > 10) {
+      globalCache.__allSubjectsCache = aggregated;
+      globalCache.__allSubjectsTimestamp = now;
+    }
 
-    return NextResponse.json({
-      success: true,
-      subjects: aggregated,
-      total: aggregated.length,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        subjects: aggregated,
+        total: aggregated.length,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      }
+    );
   } catch (err: any) {
     console.error("[all-subjects] Error aggregating subjects:", err);
     return NextResponse.json(

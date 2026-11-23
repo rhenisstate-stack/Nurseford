@@ -64,21 +64,26 @@ function extractExamQuestionCount(e: LooseRecord): number {
   return 0;
 }
 
-const courseNameCache = new Map<string, string>();
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache to eliminate remote latency
+const globalNominalStore = globalThis as unknown as {
+  __subjectNominalDataCache?: Map<
+    string,
+    {
+      data: {
+        examCount: number;
+        questionCount: number;
+        subCategories: DashboardSubCategory[];
+      };
+      timestamp: number;
+    }
+  >;
+  __courseNameCache?: Map<string, string>;
+};
 
-const subjectNominalDataCache = new Map<
-  string,
-  {
-    data: {
-      examCount: number;
-      questionCount: number;
-      subCategories: DashboardSubCategory[];
-    };
-    timestamp: number;
-  }
->();
-const SUBJECT_NOMINAL_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const courseNameCache = (globalNominalStore.__courseNameCache ??= new Map<string, string>());
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes cache to eliminate remote latency
+
+const subjectNominalDataCache = (globalNominalStore.__subjectNominalDataCache ??= new Map());
+const SUBJECT_NOMINAL_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 const pendingCourseFetches = new Map<string, Promise<CourseSubjectsResponseData>>();
 
@@ -115,7 +120,13 @@ interface CourseSubjectsResponseData {
   subjects: BackendSubject[];
 }
 
-const courseSubjectsResponseCache = new Map<string, { data: CourseSubjectsResponseData; timestamp: number }>();
+const globalCourseStore = globalThis as unknown as {
+  __courseSubjectsResponseCache?: Map<string, { data: CourseSubjectsResponseData; timestamp: number }>;
+};
+const courseSubjectsResponseCache = (globalCourseStore.__courseSubjectsResponseCache ??= new Map<
+  string,
+  { data: CourseSubjectsResponseData; timestamp: number }
+>());
 
 export async function GET(
   req: NextRequest,
@@ -135,10 +146,11 @@ export async function GET(
   }
 
   // Check in-memory cache first
+  const forceRefresh = req.nextUrl.searchParams.get("forceRefresh") === "true";
   const cacheKey = `${examType}:${courseId}`;
   const now = Date.now();
   const cachedCourse = courseSubjectsResponseCache.get(cacheKey);
-  if (cachedCourse && now - cachedCourse.timestamp < CACHE_TTL_MS) {
+  if (!forceRefresh && cachedCourse && now - cachedCourse.timestamp < CACHE_TTL_MS) {
     return NextResponse.json(cachedCourse.data, {
       headers: {
         "Cache-Control": "no-store, no-cache, must-revalidate",
@@ -305,63 +317,86 @@ export async function GET(
     }
 
 
-    // Fetch true live exams and question count per subject directly from backend nominal endpoint (cached with SWR)
-    const liveSubjectData = await Promise.all(
-      items.map(async (c) => {
-        const subGuid = c.guidId || (c as { GuidId?: string }).GuidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : "");
-        const subId = subGuid || c.id;
-        if (!subId) return { examCount: 0, questionCount: 0, subCategories: [] };
+    // Fetch true live exams and question count per subject directly from backend nominal endpoint
+    // Batch in chunks of 4 with 15s timeout to prevent overwhelming backend and prevent timeouts
+    const liveSubjectData: Array<{
+      examCount: number;
+      questionCount: number;
+      subCategories: DashboardSubCategory[];
+    }> = new Array(items.length);
 
-        const cacheSubKey = String(subId);
-        const cachedNominal = subjectNominalDataCache.get(cacheSubKey);
-        if (cachedNominal && Date.now() - cachedNominal.timestamp < SUBJECT_NOMINAL_TTL_MS) {
-          return cachedNominal.data;
-        }
+    const BATCH_SIZE = 4;
+    for (let i = 0; i < items.length; i += BATCH_SIZE) {
+      const chunk = items.slice(i, i + BATCH_SIZE);
+      const chunkResults = await Promise.all(
+        chunk.map(async (c) => {
+          const subGuid = c.guidId || (c as { GuidId?: string }).GuidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : "");
+          const subId = subGuid || c.id;
+          if (!subId) return { examCount: 0, questionCount: 0, subCategories: [] };
 
-        try {
-          const nominalUrl = `${getBackendBaseUrl()}/api/castoline/strata/assessment/exams/list/nominal?fetchtype=nominal&identifier=${subId}&dynamicLearningStrataName=subject&dynamicPage=1&dynamicPerPage=100&dynamicSortColumn=updatedAt&dynamicSortDirection=desc`;
-          const res = await fetch(nominalUrl, {
-            headers,
-            cache: "no-store",
-            signal: AbortSignal.timeout(4000),
-          });
-          if (res.ok) {
-            const rawData = await res.json();
-            const convertedData = convertBackendKeysToCamel(rawData) as LooseRecord;
-            const rawItems: LooseRecord[] = convertedData?.data?.items || rawData?.data?.items || rawData?.Data?.Items || [];
-            const examCount = convertedData?.data?.skewTotal ?? rawData?.data?.skewTotal ?? rawItems.length;
-
-            const subCategories: DashboardSubCategory[] = rawItems.map((e, index) => {
-              const qCount = extractExamQuestionCount(e);
-              const examId = String(e.guidId || e.id || e.GuidId || e.Id);
-              const examTitle = e.title || e.Title || "";
-              return {
-                id: examId,
-                title: examTitle,
-                questionCount: qCount,
-                difficulty: e.difficulty || e.Difficulty || null,
-                usedCount: 0,
-                order: index + 1,
-              };
-            });
-
-            const totalQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
-
-            const result = {
-              examCount: Math.max(typeof examCount === "number" ? examCount : 0, subCategories.length),
-              questionCount: totalQuestions,
-              subCategories,
-            };
-            subjectNominalDataCache.set(cacheSubKey, { data: result, timestamp: Date.now() });
-            return result;
+          const cacheSubKey = String(subId);
+          const cachedNominal = subjectNominalDataCache.get(cacheSubKey);
+          if (!forceRefresh && cachedNominal && Date.now() - cachedNominal.timestamp < SUBJECT_NOMINAL_TTL_MS) {
+            return cachedNominal.data;
           }
-        } catch (err) {
-          console.warn(`[subjects route] Failed to load exams for subject ${subId}:`, err);
-        }
-        const fallbackCount = toNumber(c.examsCount ?? c.unitsCount ?? 0, 0);
-        return { examCount: fallbackCount, questionCount: 0, subCategories: [] };
-      })
-    );
+
+          try {
+            const nominalUrl = `${getBackendBaseUrl()}/api/castoline/strata/assessment/exams/list/nominal?fetchtype=nominal&identifier=${subId}&dynamicLearningStrataName=subject&dynamicPage=1&dynamicPerPage=20&dynamicSortColumn=updatedAt&dynamicSortDirection=desc`;
+            const res = await fetch(nominalUrl, {
+              headers,
+              cache: "no-store",
+              signal: AbortSignal.timeout(15000),
+            });
+            if (res.ok) {
+              const rawData = await res.json();
+              const convertedData = convertBackendKeysToCamel(rawData) as LooseRecord;
+              const rawItems: LooseRecord[] = convertedData?.data?.items || rawData?.data?.items || rawData?.Data?.Items || [];
+              const rawSkewTotal = convertedData?.data?.skewTotal ?? rawData?.data?.skewTotal ?? convertedData?.data?.totalResults ?? rawData?.data?.totalResults;
+              const examCount = typeof rawSkewTotal === "number" && rawSkewTotal > 0 ? rawSkewTotal : rawItems.length;
+
+              const subCategories: DashboardSubCategory[] = rawItems.map((e, index) => {
+                const qCount = extractExamQuestionCount(e);
+                const examId = String(e.guidId || e.id || e.GuidId || e.Id);
+                const examTitle = e.title || e.Title || "";
+                return {
+                  id: examId,
+                  title: examTitle,
+                  questionCount: qCount,
+                  difficulty: e.difficulty || e.Difficulty || null,
+                  usedCount: 0,
+                  order: index + 1,
+                };
+              });
+
+              const sampleQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
+              const avgQuestionsPerExam = subCategories.length > 0 ? Math.round(sampleQuestions / subCategories.length) : 50;
+              const estimatedTotalQuestions = examCount > subCategories.length
+                ? sampleQuestions + (examCount - subCategories.length) * avgQuestionsPerExam
+                : sampleQuestions;
+
+              const result = {
+                examCount: Math.max(examCount, subCategories.length),
+                questionCount: estimatedTotalQuestions,
+                subCategories,
+              };
+              if (result.examCount > 0) {
+                subjectNominalDataCache.set(cacheSubKey, { data: result, timestamp: Date.now() });
+              }
+              return result;
+            } else {
+              console.warn(`[subjects route] Nominal HTTP ${res.status} for subId: "${subId}", name: "${c.name}"`);
+            }
+          } catch (err) {
+            console.warn(`[subjects route] Failed to load exams for subject ${subId}:`, err);
+          }
+          const fallbackCount = toNumber(c.examsCount ?? c.unitsCount ?? 0, 0);
+          return { examCount: fallbackCount, questionCount: 0, subCategories: [] };
+        })
+      );
+      for (let j = 0; j < chunkResults.length; j++) {
+        liveSubjectData[i + j] = chunkResults[j];
+      }
+    }
 
     const subjects: BackendSubject[] = items.map((c, i) => {
       const name = (c.name?.trim() || "")
@@ -397,7 +432,10 @@ export async function GET(
       segment,
       subjects: finalSubjects,
     };
-    courseSubjectsResponseCache.set(cacheKey, { data: responseData, timestamp: Date.now() });
+    const hasValidCounts = finalSubjects.some((s) => (s.examCount ?? 0) > 0);
+    if (hasValidCounts) {
+      courseSubjectsResponseCache.set(cacheKey, { data: responseData, timestamp: Date.now() });
+    }
 
     return NextResponse.json(responseData, {
       headers: {

@@ -51,7 +51,7 @@ export default function SubjectsCatalogView() {
   const [subjects, setSubjects] = useState<UnifiedSubject[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const cached = sessionStorage.getItem("nurseford_unified_subjects_v4");
+        const cached = sessionStorage.getItem("nurseford_unified_subjects_v7");
         if (cached) {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -74,7 +74,7 @@ export default function SubjectsCatalogView() {
   const [isLoading, setIsLoading] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
       try {
-        const cached = sessionStorage.getItem("nurseford_unified_subjects_v3");
+        const cached = sessionStorage.getItem("nurseford_unified_subjects_v7");
         if (cached) {
           const parsed = JSON.parse(cached);
           if (Array.isArray(parsed) && parsed.length > 0) return false;
@@ -141,7 +141,7 @@ export default function SubjectsCatalogView() {
           setTotalCoursesCount(list.length);
 
           try {
-            sessionStorage.setItem("nurseford_unified_subjects_v4", JSON.stringify(list));
+            sessionStorage.setItem("nurseford_unified_subjects_v7", JSON.stringify(list));
           } catch {}
 
           // Populate dynamic options
@@ -245,7 +245,9 @@ export default function SubjectsCatalogView() {
 
       // 3. Course Filter
       if (selectedCourse && selectedCourse !== "All Courses") {
-        if ((sub.courseName || "").trim().toLowerCase() !== selectedCourse.trim().toLowerCase()) {
+        const scNorm = formatCourseDropdownName(selectedCourse).toLowerCase().trim();
+        const subCourseNorm = formatCourseDropdownName(sub.courseName || "").toLowerCase().trim();
+        if (scNorm !== subCourseNorm && !subCourseNorm.includes(scNorm) && !scNorm.includes(subCourseNorm)) {
           return false;
         }
       }
@@ -314,7 +316,7 @@ export default function SubjectsCatalogView() {
         return { key: "med-surg", name: "Med-Surg Nursing", category: "Med-Surg / Adult Health", isMedSurg: true };
       }
       if (/adult\s*health/i.test(n)) {
-        return { key: "adult-health", name: "Adult Health Nursing", category: "Med-Surg / Adult Health", isMedSurg: true };
+        return { key: "adult-health", name: "Adult Health Nursing", category: "Med-Surg / Adult Health", isMedSurg: false };
       }
       if (/pharm(?:acol)?/i.test(n)) {
         return { key: "pharmacology", name: "Pharmacology Nursing", category: "Pharmacology", isMedSurg: false };
@@ -361,6 +363,14 @@ export default function SubjectsCatalogView() {
       if (/(?:capstone|comprehensive\s*clinical)/i.test(n)) {
         return { key: "capstone", name: "Comprehensive Capstone Nursing", category: "General Clinical", isMedSurg: false };
       }
+      if (/milestone/i.test(n)) {
+        return {
+          key: "milestone-hesi",
+          name: "Milestone Hesi Exams",
+          category: "General Clinical",
+          isMedSurg: false,
+        };
+      }
       if (/(?:gerontol|geriatric)/i.test(n)) {
         return { key: "gerontology", name: "Gerontological Nursing", category: "General Clinical", isMedSurg: false };
       }
@@ -388,7 +398,7 @@ export default function SubjectsCatalogView() {
           isMedSurg: false,
         };
       }
-      const cleanName = name
+      const cleanName = formatCourseDropdownName(name)
         .replace(/rhenis\s*/gi, "")
         .replace(/\s*\((?:general\s*)?(?:rn|lpn)\)/i, "")
         .replace(/-?(?:rn|lpn)$/i, "")
@@ -412,7 +422,14 @@ export default function SubjectsCatalogView() {
 
       groups.forEach((subs) => {
         if (subs.length === 1) {
-          merged.push(subs[0]);
+          const s = subs[0];
+          const info = getCanonicalSubjectInfo(s.name);
+          merged.push({
+            ...s,
+            name: info.name,
+            category: info.category,
+            isMedSurg: info.isMedSurg,
+          });
           return;
         }
 
@@ -459,18 +476,25 @@ export default function SubjectsCatalogView() {
         });
       });
 
-      // Sort: Med-Surg first, then by exam count descending
+      // Dynamic Sort: Purely by dynamic exam count descending, then by question count descending
       return merged.sort((a, b) => {
-        if (a.isMedSurg && !b.isMedSurg) return -1;
-        if (!a.isMedSurg && b.isMedSurg) return 1;
-        return (b.examCount || 0) - (a.examCount || 0);
+        const diff = (b.examCount || 0) - (a.examCount || 0);
+        if (diff !== 0) return diff;
+        return (b.questionCount || 0) - (a.questionCount || 0);
       });
     }
 
-    const rn = isCourseFiltered ? rawRn : mergeSubjectsAcrossCourses(rawRn);
-    const lpn = isCourseFiltered ? rawLpn : mergeSubjectsAcrossCourses(rawLpn);
-    const rnExitMerged = isCourseFiltered ? rnExit : mergeSubjectsAcrossCourses(rnExit);
-    const lpnExitMerged = isCourseFiltered ? lpnExit : mergeSubjectsAcrossCourses(lpnExit);
+    const sortByDynamicRank = (list: UnifiedSubject[]) =>
+      [...list].sort((a, b) => {
+        const diff = (b.examCount || 0) - (a.examCount || 0);
+        if (diff !== 0) return diff;
+        return (b.questionCount || 0) - (a.questionCount || 0);
+      });
+
+    const rn = isCourseFiltered ? sortByDynamicRank(rawRn) : mergeSubjectsAcrossCourses(rawRn);
+    const lpn = isCourseFiltered ? sortByDynamicRank(rawLpn) : mergeSubjectsAcrossCourses(rawLpn);
+    const rnExitMerged = isCourseFiltered ? sortByDynamicRank(rnExit) : mergeSubjectsAcrossCourses(rnExit);
+    const lpnExitMerged = isCourseFiltered ? sortByDynamicRank(lpnExit) : mergeSubjectsAcrossCourses(lpnExit);
 
     return {
       rnSubjects: rn,
