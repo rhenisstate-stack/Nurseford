@@ -69,38 +69,21 @@ export default function SubjectsCatalogView() {
     }
   }, [selectedProgram]);
 
-  // Fetch unified subjects from parallel API route
+  // Clear any legacy sessionStorage cache so subjects are always 100% dynamic
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.removeItem("nurseford_unified_subjects_v7");
+      } catch {}
+    }
+  }, []);
+
+  // Fetch unified subjects dynamically from live API route
   useEffect(() => {
     isMountedRef.current = true;
 
-    // Fast-hydrate from sessionStorage on client mount (runs after initial HTML hydration)
-    let hasCachedData = false;
-    try {
-      const cached = sessionStorage.getItem("nurseford_unified_subjects_v7");
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          hasCachedData = true;
-          const cachedList: UnifiedSubject[] = parsed.map((s: UnifiedSubject) => ({
-            ...s,
-            courseName: (s.courseName || "")
-              .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
-              .replace(/rhenis\s*/gi, "")
-              .trim(),
-            name: (s.name || "").replace(/rhenis\s*/gi, "").trim(),
-            programName: formatProgramDropdownName(s.programName),
-          }));
-          setSubjects(cachedList);
-          setIsLoading(false);
-          setTotalCoursesCount(cachedList.length);
-        }
-      }
-    } catch {}
-
     async function loadSubjects() {
-      if (!hasCachedData) {
-        setIsLoading(true);
-      }
+      setIsLoading(true);
       setError(null);
 
       const controller = new AbortController();
@@ -131,10 +114,6 @@ export default function SubjectsCatalogView() {
         if (isMountedRef.current && list.length > 0) {
           setSubjects(list);
           setTotalCoursesCount(list.length);
-
-          try {
-            sessionStorage.setItem("nurseford_unified_subjects_v7", JSON.stringify(list));
-          } catch {}
 
           // Populate dynamic options
           const pSet = new Set<string>();
