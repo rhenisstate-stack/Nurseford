@@ -62,9 +62,8 @@ export const LeftSidebarProvider: React.FC<{ children: React.ReactNode }> = ({
         // PHONE MODE: Always closed by default
         setState("closed");
       } else {
-        // COMPUTER MODE: Default is opened (respect user desktop preference if saved)
-        const saved = localStorage.getItem("leftSidebarDesktopState") as SidebarState | null;
-        setState(saved === "closed" ? "closed" : "opened");
+        // COMPUTER MODE: Always default to opened
+        setState("opened");
       }
     };
 

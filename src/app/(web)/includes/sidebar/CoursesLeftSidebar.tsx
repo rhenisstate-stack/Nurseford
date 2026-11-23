@@ -11,6 +11,8 @@ import {
   HelpCircle,
   Settings,
   X,
+  Zap,
+  ArrowRight,
 } from "lucide-react";
 import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext";
 import { APP_TITLE } from "@/lib/config/config";
@@ -72,6 +74,26 @@ export default function CoursesLeftSidebar() {
               <span className={`ml-3 font-semibold ${isMobile ? "text-xs" : "text-sm"}`}>Return Home</span>
             </div>
           </Link>
+
+          {/* Quick Practice Hero Button */}
+          <div className="py-1">
+            <Link
+              href="/pages/sample-questions"
+              onClick={handleItemClick}
+              className="group relative flex items-center justify-between gap-2 w-full px-3 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 via-teal-700 to-sky-700 hover:from-teal-500 hover:to-sky-600 text-white shadow-xs hover:shadow-md transition-all duration-200 active:scale-[0.98]"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-white/20 text-white shrink-0 group-hover:scale-105 transition-transform">
+                  <Zap className="w-4 h-4 fill-amber-300 text-amber-300" />
+                </span>
+                <div className="text-left min-w-0">
+                  <div className="text-xs font-bold leading-tight truncate">Quick Practice</div>
+                  <div className="text-[10px] text-teal-100/90 leading-tight truncate">Daily Practice Drill</div>
+                </div>
+              </div>
+              <ArrowRight className="w-3.5 h-3.5 text-white/80 group-hover:translate-x-0.5 transition-transform shrink-0" />
+            </Link>
+          </div>
 
           <div className="my-2 border-t border-slate-100 dark:border-slate-800" />
 
