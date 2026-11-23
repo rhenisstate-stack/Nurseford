@@ -14,8 +14,6 @@ import {
   ChevronDown,
   User,
 } from "lucide-react";
-import PulseLine from "./PulseLine";
-import Stats from "./Stats";
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
 import { useUserExamProgress } from "@/lib/hooks/nexus/strata/assessment/progress/useUserExamProgress";
 import UserAccountDropdown from "@/components/common/user/UserAccountDropdown";
@@ -382,12 +380,6 @@ export default function Hero() {
                 </span>
               </div>
             </div>
-          </div>
-
-          <Stats />
-
-          <div className="mt-8 sm:mt-10">
-            <PulseLine showWaypoints variant="hero" />
           </div>
         </div>
       </div>

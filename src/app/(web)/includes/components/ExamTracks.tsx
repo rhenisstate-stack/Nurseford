@@ -35,7 +35,7 @@ const tracks: TrackItem[] = [
     category: "rn",
     type: "nursing",
     icon: HeartPulse,
-    image: "/images/cards/rn-nursing-core.png",
+    image: "/images/cards/rn-nursing-core.jpg",
     eyebrow: "RN Core Q-Bank",
     title: "RN Nursing Exams",
     description:
@@ -57,7 +57,7 @@ const tracks: TrackItem[] = [
     category: "rn",
     type: "exit",
     icon: Award,
-    image: "/images/cards/rn-exit-exam.png",
+    image: "/images/cards/rn-exit-exam.jpg",
     eyebrow: "RN Graduation Readiness",
     title: "RN Exit Exams",
     description:
@@ -79,7 +79,7 @@ const tracks: TrackItem[] = [
     category: "lpn",
     type: "nursing",
     icon: Syringe,
-    image: "/images/cards/pn-nursing-core.png",
+    image: "/images/cards/pn-nursing-core.jpg",
     eyebrow: "PN Core Q-Bank",
     title: "LPN Nursing Exams",
     description:
@@ -101,7 +101,7 @@ const tracks: TrackItem[] = [
     category: "lpn",
     type: "exit",
     icon: GraduationCap,
-    image: "/images/cards/pn-exit-exam.png",
+    image: "/images/cards/pn-exit-exam.jpg",
     eyebrow: "PN Graduation Readiness",
     title: "LPN Exit Exams",
     description:
