@@ -638,7 +638,7 @@ export function SubjectExamsHierarchyPage({
       .join(" ")
       .trim() ||
     `Course ${courseId}`;
-  const courseName = isMerged ? "RN Nursing Subjects" : rawCourseName.replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify");
+  const courseName = isMerged ? "RN Nursing Subjects" : formatCourseDropdownName(rawCourseName);
 
   const currentSubjectTitle = dynamicSubjectName || subjectName || "Examinations";
   const backHref = isMerged ? "/subjects" : `/dashboards/${panelSlug}/exams/${courseSlug}/${courseId}`;
@@ -1128,8 +1128,8 @@ export function SubjectExamsHierarchyPage({
           examCourse.includes(target) ||
           examTitle.includes(target) ||
           examDesc.includes(target) ||
-          (target.includes("a-t") && (examCourse.includes("a-t") || examTitle.includes("a-t") || examCourse.includes("ati") || examTitle.includes("ati"))) ||
-          (target.includes("h-s") && (examCourse.includes("h-s") || examTitle.includes("h-s") || examCourse.includes("hesi") || examTitle.includes("hesi"))) ||
+          ((target.includes("a-t") || target.includes("ati")) && (examCourse.includes("a-t") || examTitle.includes("a-t") || examCourse.includes("ati") || examTitle.includes("ati"))) ||
+          ((target.includes("h-s") || target.includes("hesi")) && (examCourse.includes("h-s") || examTitle.includes("h-s") || examCourse.includes("hesi") || examTitle.includes("hesi"))) ||
           ((target.includes("exemplify") || target.includes("rhem")) &&
             (examCourse.includes("exemplify") || examCourse.includes("rhem") || examTitle.includes("exemplify") || examTitle.includes("rhem"))) ||
           (target.includes("general") && (examCourse.includes("general") || examTitle.includes("general")));

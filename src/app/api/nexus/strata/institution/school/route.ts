@@ -16,6 +16,9 @@ const STRATA_GROUP = "institution";
 const STRATA_NAME = "schools";
 const BASE_ROUTE = `/api/castoline/strata/${STRATA_GROUP}/${STRATA_NAME}`;
 
+const schoolsResponseCache = new Map<string, { data: unknown; status: number; timestamp: number }>();
+const SCHOOLS_CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
+
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 // Helper function to Forward Requests to  Backend ⚓
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -25,13 +28,27 @@ async function forwardToBackend(
   backendPath: string
 ): Promise<NextResponse> {
   try {
+    if (method !== "GET") {
+      schoolsResponseCache.clear();
+    }
+
+    const queryParams = method === "GET" ? new URL(req.url).searchParams.toString() : "";
+    const cacheKey = `${backendPath}?${queryParams}`;
+    const now = Date.now();
+
+    if (method === "GET") {
+      const cached = schoolsResponseCache.get(cacheKey);
+      if (cached && now - cached.timestamp < SCHOOLS_CACHE_TTL_MS) {
+        return NextResponse.json(cached.data, { status: cached.status });
+      }
+    }
+
     let body: unknown = {};
     if (method !== "GET") {
       body = await req.json().catch(() => ({}));
     }
 
     const backendBaseUrl = getBackendBaseUrl();
-    const queryParams = method === "GET" ? new URL(req.url).searchParams.toString() : "";
     const url = `${backendBaseUrl}${backendPath}${queryParams ? `?${queryParams}` : ""}`;
 
     console.log(`🌿 [${STRATA_NAME} Route] Forwarding ${method} To :`, url);
@@ -65,6 +82,10 @@ async function forwardToBackend(
     }
 
     console.log("📌 Backend Response Body : ", responseBody);
+
+    if (method === "GET" && backendResponse.ok) {
+      schoolsResponseCache.set(cacheKey, { data: responseBody, status: backendResponse.status, timestamp: now });
+    }
 
     return NextResponse.json(responseBody, { status: backendResponse.status });
   } catch (err: unknown) {

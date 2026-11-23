@@ -64,7 +64,22 @@ function extractExamQuestionCount(e: LooseRecord): number {
 }
 
 const courseNameCache = new Map<string, string>();
-const CACHE_TTL_MS = 0;
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache to eliminate remote latency
+
+const subjectNominalDataCache = new Map<
+  string,
+  {
+    data: {
+      examCount: number;
+      questionCount: number;
+      subCategories: DashboardSubCategory[];
+    };
+    timestamp: number;
+  }
+>();
+const SUBJECT_NOMINAL_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
+const pendingCourseFetches = new Map<string, Promise<CourseSubjectsResponseData>>();
 
 interface BackendSubjectItem {
   id?: number | string;
@@ -291,15 +306,26 @@ export async function GET(
     }
 
 
-    // Fetch true live exams and question count per subject directly from backend nominal endpoint
+    // Fetch true live exams and question count per subject directly from backend nominal endpoint (cached with SWR)
     const liveSubjectData = await Promise.all(
       items.map(async (c) => {
         const subGuid = c.guidId || (c as { GuidId?: string }).GuidId || (typeof c.id === "string" && c.id.includes("-") ? c.id : "");
         const subId = subGuid || c.id;
         if (!subId) return { examCount: 0, questionCount: 0, subCategories: [] };
+
+        const cacheSubKey = String(subId);
+        const cachedNominal = subjectNominalDataCache.get(cacheSubKey);
+        if (cachedNominal && Date.now() - cachedNominal.timestamp < SUBJECT_NOMINAL_TTL_MS) {
+          return cachedNominal.data;
+        }
+
         try {
           const nominalUrl = `${getBackendBaseUrl()}/api/castoline/strata/assessment/exams/list/nominal?fetchtype=nominal&identifier=${subId}&dynamicLearningStrataName=subject&dynamicPage=1&dynamicPerPage=100&dynamicSortColumn=updatedAt&dynamicSortDirection=desc`;
-          const res = await fetch(nominalUrl, { headers, cache: "no-store" });
+          const res = await fetch(nominalUrl, {
+            headers,
+            cache: "no-store",
+            signal: AbortSignal.timeout(4000),
+          });
           if (res.ok) {
             const rawData = await res.json();
             const convertedData = convertBackendKeysToCamel(rawData) as LooseRecord;
@@ -322,16 +348,19 @@ export async function GET(
 
             const totalQuestions = subCategories.reduce((sum, sc) => sum + sc.questionCount, 0);
 
-            return {
+            const result = {
               examCount: Math.max(typeof examCount === "number" ? examCount : 0, subCategories.length),
               questionCount: totalQuestions,
               subCategories,
             };
+            subjectNominalDataCache.set(cacheSubKey, { data: result, timestamp: Date.now() });
+            return result;
           }
         } catch (err) {
           console.warn(`[subjects route] Failed to load exams for subject ${subId}:`, err);
         }
-        return { examCount: 0, questionCount: 0, subCategories: [] };
+        const fallbackCount = toNumber(c.examsCount ?? c.unitsCount ?? 0, 0);
+        return { examCount: fallbackCount, questionCount: 0, subCategories: [] };
       })
     );
 

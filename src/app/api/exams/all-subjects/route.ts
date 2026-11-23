@@ -32,10 +32,11 @@ export interface UnifiedSubject {
   targetHref: string;
 }
 
-// In-memory cache for fast repeated responses (TTL: 10 minutes)
+// In-memory cache for fast repeated responses (TTL: 15 minutes)
 let cachedSubjects: UnifiedSubject[] | null = null;
 let cacheTimestamp = 0;
-const CACHE_TTL_MS = 10 * 60 * 1000;
+const CACHE_TTL_MS = 15 * 60 * 1000;
+let pendingRefreshPromise: Promise<void> | null = null;
 
 function categorizeSubject(name: string): { category: string; isMedSurg: boolean } {
   const s = (name || "").toLowerCase();
@@ -82,8 +83,11 @@ function categorizeSubject(name: string): { category: string; isMedSurg: boolean
 }
 
 export async function GET(req: NextRequest) {
+  const forceRefresh = req.nextUrl.searchParams.get("forceRefresh") === "true";
   const now = Date.now();
-  if (cachedSubjects && now - cacheTimestamp < CACHE_TTL_MS) {
+
+  // 1. Fresh cache: return immediately in < 1ms
+  if (!forceRefresh && cachedSubjects && now - cacheTimestamp < CACHE_TTL_MS) {
     return NextResponse.json({
       success: true,
       subjects: cachedSubjects,
@@ -98,6 +102,36 @@ export async function GET(req: NextRequest) {
   };
   const cookieHeader = req.headers.get("cookie");
   if (cookieHeader) reqHeaders["cookie"] = cookieHeader;
+
+  // 2. Stale cache: return stale immediately so user is never blocked, refresh in background
+  if (!forceRefresh && cachedSubjects && cachedSubjects.length > 0) {
+    if (!pendingRefreshPromise) {
+      pendingRefreshPromise = (async () => {
+        try {
+          const fresh = await fetch(`${origin}/api/exams/all-subjects?forceRefresh=true`, {
+            headers: reqHeaders,
+            cache: "no-store",
+          }).then((r) => (r.ok ? r.json() : null));
+          if (Array.isArray(fresh?.subjects) && fresh.subjects.length > 0) {
+            cachedSubjects = fresh.subjects;
+            cacheTimestamp = Date.now();
+          }
+        } catch {
+          // background refresh failure ignored
+        } finally {
+          pendingRefreshPromise = null;
+        }
+      })();
+    }
+
+    return NextResponse.json({
+      success: true,
+      subjects: cachedSubjects,
+      total: cachedSubjects.length,
+      cached: true,
+      stale: true,
+    });
+  }
 
   try {
     // 1. Fetch courses in parallel across both RN and LPN panels

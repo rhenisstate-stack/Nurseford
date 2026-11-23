@@ -88,8 +88,8 @@ interface CoursesCacheEntry {
   timestamp: number;
 }
 const coursesResponseCache = new Map<string, CoursesCacheEntry>();
-// 0ms TTL for 100% dynamic loading so admin reordering & updates reflect immediately
-const CACHE_TTL_MS = 0;
+// High-performance server-side cache (TTL: 5 minutes) with instant response
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 function toNumber(value: unknown, fallback = 0): number {
   if (typeof value === "number") return value;

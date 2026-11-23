@@ -9,10 +9,35 @@ import { SubjectExamsPopup } from "@/components/common/dashboards/subjects/Subje
 import { toSlug, type BackendSubject } from "@/lib/data/exam-subjects";
 import { useExamCourses, type DashboardCourse } from "@/lib/hooks/home/useExamCourses";
 import { renderSystemSessionHeaders } from "@/lib/services/partial/helper/systemSessionHeaders";
-import { Command, Flame } from "lucide-react";
+import {
+  BookOpen,
+  Calendar,
+  ChevronDown,
+  Command,
+  Flame,
+  GraduationCap,
+  RotateCcw,
+  School,
+  Sun,
+} from "lucide-react";
 import { registerSearchSubjects } from "@/lib/services/search/searchRegistry";
+import { useNursingSchools } from "@/lib/data/nursingSchools";
+import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
 
 const cleanSubjectStr = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const FALLBACK_NURSING_SCHOOLS = [
+  "Chamberlain University",
+  "Grand Canyon University",
+  "Rasmussen University",
+  "Galen College of Nursing",
+  "West Coast University",
+  "Capella University",
+  "Walden University",
+  "Western Governors University",
+  "UT Health San Antonio",
+  "Emory University School of Nursing",
+];
 
 const courseSubjectsClientCache = new Map<
   string,
@@ -79,7 +104,7 @@ export function CourseSubjectsPage({
   const cacheKey = `${panelSlug}:${courseId}`;
   const cached = courseSubjectsClientCache.get(cacheKey);
 
-  const hasValidCached = Boolean(cached?.subjects?.length && cached.subjects.some((s) => (s.questionCount || 0) > 0));
+  const hasValidCached = Boolean(cached?.subjects && cached.subjects.length > 0);
   const [subjects, setSubjects] = useState<BackendSubject[]>(() => (hasValidCached ? (cached?.subjects ?? []) : []));
   const [dynamicCourseName, setDynamicCourseName] = useState<string>(() => cached?.courseName ?? "");
   const [isLoading, setIsLoading] = useState<boolean>(() => !hasValidCached);
@@ -236,10 +261,7 @@ export function CourseSubjectsPage({
       .join(" ")
       .trim() ||
     `Course ${courseId}`;
-  const courseName = rawCourseName
-    .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
-    .replace(/rhenis\s*/gi, "")
-    .trim();
+  const courseName = formatCourseDropdownName(rawCourseName);
 
   const panelLabel =
     panelSlug === "rn-nursing"
@@ -256,6 +278,189 @@ export function CourseSubjectsPage({
                 .join(" ");
 
   const backHref = `/dashboards/${panelSlug}`;
+
+  // ─── Filter Options & Handlers ───
+  const { schools } = useNursingSchools(panelSlug);
+
+  const availableSchools = useMemo(() => {
+    const combined = Array.isArray(schools) && schools.length > 0 ? schools : FALLBACK_NURSING_SCHOOLS;
+    return Array.from(new Set(combined)).filter(Boolean).sort((a, b) => a.localeCompare(b));
+  }, [schools]);
+
+  const availableYears = useMemo(() => {
+    const cur = new Date().getFullYear();
+    const list: string[] = [];
+    for (let y = cur; y >= 2018; y--) {
+      list.push(String(y));
+    }
+    return list;
+  }, []);
+
+  const availableSeasons = useMemo(() => ["Fall", "Spring", "Summer", "Winter"], []);
+
+  const availableProgramOptions = useMemo(
+    () => ["RN Nursing Exam", "LPN Nursing Exam", "RN Exit", "PN Exit"],
+    []
+  );
+
+  const isExit = searchParams?.get("track") === "exit" || courseSlug?.includes("exit");
+
+  const currentProgramDisplay = useMemo(() => {
+    if (panelSlug === "lpn-nursing") return isExit ? "PN Exit" : "LPN Nursing Exam";
+    if (panelSlug === "rn-nursing") return isExit ? "RN Exit" : "RN Nursing Exam";
+    return panelLabel || "Programme";
+  }, [panelSlug, isExit, panelLabel]);
+
+  const selectedProgramValue = useMemo(() => {
+    const found = availableProgramOptions.find(
+      (p) =>
+        p.toLowerCase() === currentProgramDisplay.toLowerCase() ||
+        p.toLowerCase().replace(/\s+exams?$/i, "") === currentProgramDisplay.toLowerCase().replace(/\s+exams?$/i, "")
+    );
+    return found || "all";
+  }, [availableProgramOptions, currentProgramDisplay]);
+
+  const handleProgramChange = (prog: string) => {
+    if (!prog || prog === "all" || prog === "All Programmes") {
+      router.push("/subjects");
+      return;
+    }
+    if (/pn.*exit|lpn.*exit/i.test(prog)) {
+      router.push("/dashboards/lpn-nursing?track=exit");
+    } else if (/lpn/i.test(prog)) {
+      router.push("/dashboards/lpn-nursing");
+    } else if (/rn.*exit/i.test(prog)) {
+      router.push("/dashboards/rn-nursing?track=exit");
+    } else if (/rn/i.test(prog)) {
+      router.push("/dashboards/rn-nursing");
+    } else if (/hesi/i.test(prog)) {
+      router.push("/dashboards/hesi-a2");
+    } else if (/teas/i.test(prog)) {
+      router.push("/dashboards/ati-teas");
+    } else if (/nclex.*rn/i.test(prog)) {
+      router.push("/dashboards/nclex-rn");
+    } else if (/nclex.*pn/i.test(prog)) {
+      router.push("/dashboards/nclex-pn");
+    } else {
+      router.push(`/subjects?program=${encodeURIComponent(prog)}`);
+    }
+  };
+
+  const availableCourseOptions = useMemo(() => {
+    const list: { title: string; slug: string; id: string }[] = [];
+    const seen = new Set<string>();
+
+    const makeSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+    // 1. Current course if present
+    if (courseName && courseId) {
+      const curSlug = courseSlug || makeSlug(courseName);
+      list.push({ title: courseName, slug: curSlug, id: courseId });
+      seen.add(courseName.toLowerCase());
+      seen.add(curSlug.toLowerCase());
+    }
+
+    // 2. Dashboard courses
+    if (Array.isArray(dashboardCourses)) {
+      dashboardCourses.forEach((c) => {
+        if (c.title && !seen.has(c.title.toLowerCase())) {
+          const s = (c as any).slug || makeSlug(c.title);
+          const cid = c.guidId || String(c.id);
+          list.push({ title: c.title, slug: s, id: cid });
+          seen.add(c.title.toLowerCase());
+          seen.add(s.toLowerCase());
+        }
+      });
+    }
+
+    return list;
+  }, [dashboardCourses, courseName, courseId, courseSlug]);
+
+  const selectedCourseValue = useMemo(() => {
+    const found = availableCourseOptions.find(
+      (c) =>
+        c.title.toLowerCase() === courseName.toLowerCase() ||
+        c.slug.toLowerCase() === courseSlug.toLowerCase() ||
+        c.id === courseId
+    );
+    return found ? found.title : (courseName || "all");
+  }, [availableCourseOptions, courseName, courseSlug, courseId]);
+
+  const handleCourseChange = (selectedTitle: string) => {
+    if (!selectedTitle || selectedTitle === "all" || selectedTitle === "All Courses") {
+      router.push("/subjects");
+      return;
+    }
+    const found = availableCourseOptions.find(
+      (c) => c.title.toLowerCase() === selectedTitle.toLowerCase()
+    );
+    if (found) {
+      const qParams = new URLSearchParams(searchParams?.toString() || "");
+      const targetUrl = `/dashboards/${panelSlug}/exams/${found.slug}/${found.id}${
+        qParams.toString() ? `?${qParams.toString()}` : ""
+      }`;
+      router.push(targetUrl);
+    }
+  };
+
+  const applySchool = (sch: string) => {
+    const val = sch === "all" ? "All Schools" : sch;
+    setSelectedSchool(val);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("nurseford-school-change", {
+          detail: { school: sch },
+        })
+      );
+      const currentUrl = new URL(window.location.href);
+      if (sch === "all" || sch === "All Schools") currentUrl.searchParams.delete("school");
+      else currentUrl.searchParams.set("school", sch);
+      window.history.replaceState({}, "", currentUrl.toString());
+    }
+  };
+
+  const applyYear = (yr: string) => {
+    const val = yr === "all" ? "All Years" : yr;
+    setSelectedYear(val);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("nurseford-year-change", {
+          detail: { year: yr },
+        })
+      );
+      const currentUrl = new URL(window.location.href);
+      if (yr === "all" || yr === "All Years") currentUrl.searchParams.delete("year");
+      else currentUrl.searchParams.set("year", yr);
+      window.history.replaceState({}, "", currentUrl.toString());
+    }
+  };
+
+  const applySeason = (sn: string) => {
+    const val = sn === "all" ? "All Seasons" : sn;
+    setSelectedSeason(val);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("nurseford-season-change", {
+          detail: { season: sn },
+        })
+      );
+      const currentUrl = new URL(window.location.href);
+      if (sn === "all" || sn === "All Seasons") currentUrl.searchParams.delete("season");
+      else currentUrl.searchParams.set("season", sn);
+      window.history.replaceState({}, "", currentUrl.toString());
+    }
+  };
+
+  const isSchoolActive = selectedSchool !== "all" && selectedSchool !== "All Schools";
+  const isYearActive = selectedYear !== "all" && selectedYear !== "All Years";
+  const isSeasonActive = selectedSeason !== "all" && selectedSeason !== "All Seasons";
+  const hasAnyActiveFilter = isSchoolActive || isYearActive || isSeasonActive;
+
+  const handleResetFilters = () => {
+    applySchool("all");
+    applyYear("all");
+    applySeason("all");
+  };
 
   const openSubjectExams = (card: BackendSubject) => {
     const identifier = card.guidId || card.id;
@@ -293,18 +498,132 @@ export function CourseSubjectsPage({
       }}
     >
       <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-5 md:space-y-5 w-full flex-1 flex flex-col">
-        {/* Breadcrumb */}
-        <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 min-w-0 max-w-full overflow-hidden whitespace-nowrap">
-          <Link
-            href={backHref}
-            className="hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
-          >
-            {panelLabel}
-          </Link>
-          <span className="text-slate-400 dark:text-slate-600 shrink-0">/</span>
-          <span className="text-slate-800 dark:text-slate-200 font-semibold truncate min-w-0">
-            {courseName}
-          </span>
+        {/* Header: Breadcrumb & 5 Dropdown Filters */}
+        <div className="flex flex-col gap-3">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400 min-w-0 max-w-full overflow-hidden whitespace-nowrap">
+            <Link
+              href={backHref}
+              className="hover:text-slate-900 dark:hover:text-white transition-colors shrink-0"
+            >
+              {panelLabel}
+            </Link>
+            <span className="text-slate-400 dark:text-slate-600 shrink-0">/</span>
+            <span className="text-slate-800 dark:text-slate-200 font-semibold truncate min-w-0">
+              {courseName}
+            </span>
+          </div>
+
+          {/* 5 Filters Toolbar: Programme, Course, School, Year, Season */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* 1. Programme Filter */}
+            <div className="relative inline-flex items-center">
+              <GraduationCap className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
+              <select
+                value={selectedProgramValue}
+                onChange={(e) => handleProgramChange(e.target.value)}
+                className="pl-8 pr-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer appearance-none focus:outline-none max-w-[140px] sm:max-w-[160px] truncate shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+                title="Programme"
+              >
+                <option value="all">Programme</option>
+                {availableProgramOptions.map((prog) => (
+                  <option key={prog} value={prog}>
+                    {prog}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 2. Course Filter */}
+            <div className="relative inline-flex items-center">
+              <BookOpen className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
+              <select
+                value={selectedCourseValue}
+                onChange={(e) => handleCourseChange(e.target.value)}
+                className="pl-8 pr-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer appearance-none focus:outline-none max-w-[140px] sm:max-w-[180px] truncate shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+                title={selectedCourseValue !== "all" ? `Course: ${formatCourseDropdownName(selectedCourseValue)}` : "Course"}
+              >
+                <option value="all">Course</option>
+                {availableCourseOptions.map((c) => (
+                  <option key={c.title} value={c.title}>
+                    {formatCourseDropdownName(c.title)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 3. School Filter */}
+            {availableSchools.length > 0 && (
+              <div className="relative inline-flex items-center">
+                <School className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
+                <select
+                  value={selectedSchool === "All Schools" ? "all" : selectedSchool}
+                  onChange={(e) => applySchool(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer appearance-none focus:outline-none max-w-[160px] truncate shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+                  title={selectedSchool !== "all" && selectedSchool !== "All Schools" ? `School: ${selectedSchool}` : "School"}
+                >
+                  <option value="all">All Schools</option>
+                  {availableSchools.map((sch) => (
+                    <option key={sch} value={sch}>
+                      {sch}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* 4. Year Filter */}
+            {availableYears.length > 0 && (
+              <div className="relative inline-flex items-center">
+                <Calendar className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
+                <select
+                  value={selectedYear === "All Years" ? "all" : selectedYear}
+                  onChange={(e) => applyYear(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer appearance-none focus:outline-none shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+                  title={selectedYear !== "all" && selectedYear !== "All Years" ? `Year: ${selectedYear}` : "Year"}
+                >
+                  <option value="all">All Years</option>
+                  {availableYears.map((yr) => (
+                    <option key={yr} value={yr}>
+                      {yr}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* 5. Season Filter */}
+            {availableSeasons.length > 0 && (
+              <div className="relative inline-flex items-center">
+                <Sun className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
+                <select
+                  value={selectedSeason === "All Seasons" ? "all" : selectedSeason}
+                  onChange={(e) => applySeason(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer appearance-none focus:outline-none shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+                  title={selectedSeason !== "all" && selectedSeason !== "All Seasons" ? `Season: ${selectedSeason}` : "Season"}
+                >
+                  <option value="all">All Seasons</option>
+                  {availableSeasons.map((sn) => (
+                    <option key={sn} value={sn}>
+                      {sn}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Reset Filters Button */}
+            {hasAnyActiveFilter && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50/80 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/60 border border-rose-200 dark:border-rose-900/50 transition-colors cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Reset</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ─── Subjects Grid ─── */}

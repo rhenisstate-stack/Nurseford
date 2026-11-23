@@ -221,7 +221,8 @@ async function fetchBackendSubjects(examType: string, req: NextRequest): Promise
 }
 
 const examSubjectsCache = new Map<string, { subjects: BackendSubject[]; timestamp: number }>();
-const CACHE_TTL_MS = 15000;
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache to eliminate latency
+const pendingSubjectFetches = new Map<string, Promise<BackendSubject[]>>();
 
 export async function GET(
   _req: NextRequest,
@@ -251,7 +252,7 @@ export async function GET(
     });
   }
 
-  // Check in-memory cache first
+  // Check in-memory cache first (instant response)
   const now = Date.now();
   const cached = examSubjectsCache.get(examType);
   if (cached && now - cached.timestamp < CACHE_TTL_MS) {
@@ -265,8 +266,44 @@ export async function GET(
     );
   }
 
+  // If cached but slightly stale, return stale immediately and revalidate in background
+  if (cached && cached.subjects?.length > 0) {
+    if (!pendingSubjectFetches.has(examType)) {
+      const bgPromise = fetchBackendSubjects(examType, _req)
+        .then((fresh) => {
+          examSubjectsCache.set(examType, { subjects: fresh, timestamp: Date.now() });
+          return fresh;
+        })
+        .catch((err) => {
+          console.warn(`[subjects route] Background revalidation failed:`, err);
+          return cached.subjects;
+        })
+        .finally(() => {
+          pendingSubjectFetches.delete(examType);
+        });
+      pendingSubjectFetches.set(examType, bgPromise);
+    }
+
+    return NextResponse.json(
+      { examType, segment, subjects: cached.subjects },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+          "X-Cache": "STALE",
+        },
+      }
+    );
+  }
+
   try {
-    const subjects = await fetchBackendSubjects(examType, _req);
+    let fetchPromise = pendingSubjectFetches.get(examType);
+    if (!fetchPromise) {
+      fetchPromise = fetchBackendSubjects(examType, _req).finally(() => {
+        pendingSubjectFetches.delete(examType);
+      });
+      pendingSubjectFetches.set(examType, fetchPromise);
+    }
+    const subjects = await fetchPromise;
     examSubjectsCache.set(examType, { subjects, timestamp: now });
     console.log(`🌿 [/api/exams/${examType}/subjects] Fetched ${subjects.length} subjects from backend`);
     return NextResponse.json(

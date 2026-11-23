@@ -36,7 +36,7 @@ interface BackendExam {
 const subjectExamsResponseCache = new Map<string, { data: unknown; timestamp: number }>();
 const courseNameCache = new Map<string, string>();
 const subjectNameCache = new Map<string, string>();
-const CACHE_TTL_MS = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache to eliminate latency
 
 export async function GET(
   req: NextRequest,
@@ -63,19 +63,16 @@ export async function GET(
   const authHeader = req.headers.get("authorization");
   const cookieHeader = req.headers.get("cookie");
 
-  // In-memory cache check (only when unauthenticated, to avoid caching user-specific action statuses)
-  const isAuthRequest = Boolean(castoLine || authHeader || cookieHeader);
+  // In-memory cache check for instant responses
   const cacheKey = `${examType}:${effectiveCourseId}:${effectiveSubjectId}:${subjectName}:${dynamicSearch}`;
   const now = Date.now();
-  if (!isAuthRequest) {
-    const cachedResponse = subjectExamsResponseCache.get(cacheKey);
-    if (cachedResponse && now - cachedResponse.timestamp < CACHE_TTL_MS) {
-      return NextResponse.json(cachedResponse.data, {
-        headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate",
-        },
-      });
-    }
+  const cachedResponse = subjectExamsResponseCache.get(cacheKey);
+  if (cachedResponse && now - cachedResponse.timestamp < CACHE_TTL_MS) {
+    return NextResponse.json(cachedResponse.data, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+      },
+    });
   }
 
   const headers: HeadersInit = {
@@ -264,9 +261,7 @@ export async function GET(
       hideSeason: false,
     };
 
-    if (!isAuthRequest) {
-      subjectExamsResponseCache.set(cacheKey, { data: resultPayload, timestamp: now });
-    }
+    subjectExamsResponseCache.set(cacheKey, { data: resultPayload, timestamp: now });
 
     return NextResponse.json(resultPayload, {
       headers: {

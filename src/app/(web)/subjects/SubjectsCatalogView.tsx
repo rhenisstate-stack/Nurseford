@@ -367,7 +367,7 @@ export default function SubjectsCatalogView() {
       if (/h[\s\-]*s.*exit|hesi.*exit/i.test(n)) {
         return {
           key: "hs-exit",
-          name: /lpn|pn/i.test(n) ? "H-S Exit Exams (PN)" : "H-S Exit Exams (RN)",
+          name: /lpn|pn/i.test(n) ? "Hesi Exit Exams (PN)" : "Hesi Exit Exams (RN)",
           category: "Exit Exams & Capstone",
           isMedSurg: false,
         };
@@ -375,7 +375,7 @@ export default function SubjectsCatalogView() {
       if (/predictor|a[\s\-]*t.*exit|ati.*exit/i.test(n)) {
         return {
           key: "at-predictor",
-          name: /lpn|pn/i.test(n) ? "A-T Comprehensive Predictor Exams (PN)" : "A-T Comprehensive Predictor Exams (RN)",
+          name: /lpn|pn/i.test(n) ? "ATI Comprehensive Predictor Exams (PN)" : "ATI Comprehensive Predictor Exams (RN)",
           category: "Exit Exams & Capstone",
           isMedSurg: false,
         };
