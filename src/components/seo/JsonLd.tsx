@@ -54,6 +54,55 @@ export function buildFaqPageSchema(faqs: FaqItem[]) {
   };
 }
 
+export function buildQuizSchema(
+  questions: Array<{
+    id: string;
+    question: string;
+    options: [string, string, string, string];
+    correctIndex: number;
+    rationale: string;
+    subject?: string;
+  }>
+) {
+  const baseUrl = resolveBaseUrl();
+  return {
+    "@context": "https://schema.org",
+    "@type": "Quiz",
+    name: "RN, LPN & Exit Exam Sample Practice Questions",
+    description:
+      "Free board-standard nursing practice questions with comprehensive clinical rationales across Med-Surg, Pharmacology, Pediatrics, and Prioritization.",
+    url: `${baseUrl}/pages/sample-questions`,
+    educationalLevel: "Professional Nursing Licensure Preparation",
+    hasPart: questions.map((q) => ({
+      "@type": "Question",
+      name: q.question,
+      text: q.question,
+      learningResourceType: "Practice problem",
+      eduQuestionType: "Multiple choice",
+      suggestedAnswer: q.options.map((opt, idx) => ({
+        "@type": "Answer",
+        position: idx + 1,
+        text: opt,
+        encodingFormat: "text/plain",
+        comment: {
+          "@type": "Comment",
+          text: idx === q.correctIndex ? q.rationale : "Incorrect choice for this scenario.",
+        },
+      })),
+      acceptedAnswer: {
+        "@type": "Answer",
+        position: q.correctIndex + 1,
+        text: q.options[q.correctIndex],
+        encodingFormat: "text/plain",
+        comment: {
+          "@type": "Comment",
+          text: q.rationale,
+        },
+      },
+    })),
+  };
+}
+
 export default function JsonLd({
   data,
 }: {

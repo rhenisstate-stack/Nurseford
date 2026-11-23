@@ -17,7 +17,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }> = [
     { path: "/", changeFrequency: "daily", priority: 1.0 },
     { path: "/courses", changeFrequency: "daily", priority: 0.95 },
-    { path: "/pages/sample-questions", changeFrequency: "weekly", priority: 0.85 },
+    { path: "/subjects", changeFrequency: "daily", priority: 0.95 },
+    { path: "/pages/sample-questions", changeFrequency: "daily", priority: 0.9 },
     { path: "/pages/entrance", changeFrequency: "weekly", priority: 0.8 },
     { path: "/pages/resources", changeFrequency: "weekly", priority: 0.8 },
     { path: "/pages/subscription/package", changeFrequency: "weekly", priority: 0.75 },

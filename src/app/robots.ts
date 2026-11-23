@@ -16,6 +16,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: [
           "/",
           "/courses",
+          "/subjects",
           "/pages/sample-questions",
           "/pages/resources",
           "/pages/entrance",

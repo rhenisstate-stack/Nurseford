@@ -10,9 +10,11 @@ const quickLinks = [
   { href: '/pages/about', label: 'About Us' },
   { href: '/#how-it-works', label: 'How We Help' },
   { href: '/#exams', label: 'Exam Tracks' },
+  { href: '/subjects', label: 'All Subjects & Exams' },
 ];
 
 const resourceLinks = [
+  { href: '/pages/sample-questions', label: 'Free Sample Questions' },
   { href: '/pages/resources', label: 'Resources' },
   { href: '/pages/contact-us', label: 'Contact Us' },
   { href: '/pages/terms', label: 'Terms of Service' },

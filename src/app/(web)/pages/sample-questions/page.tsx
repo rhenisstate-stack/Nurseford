@@ -1,73 +1,76 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { SAMPLE_QUESTIONS } from "@/lib/data/sample-questions";
-import SampleQuestionCard from "./SampleQuestionCard";
+import SampleQuestionsClient from "./SampleQuestionsClient";
+import JsonLd, { buildQuizSchema } from "@/components/seo/JsonLd";
+import { APP_NAME, SEO } from "@/lib/config/config";
+
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || SEO.siteUrl || "https://www.nurseford.com").trim().replace(/\/+$/, "");
+const pageUrl = `${siteUrl}/pages/sample-questions`;
 
 export const metadata: Metadata = {
-  title: "Free RN, LPN & Exit Exam Sample Questions",
+  title: "Free RN, LPN & Exit Exam Sample Questions with Clinical Rationales",
   description:
-    "Practice free RN Nursing, LPN Nursing, and Exit Exam sample questions with detailed clinical rationales across Med-Surg, Pharmacology, Pediatrics, Dosage Calculation, and Priority Setting.",
-  alternates: { canonical: "/pages/sample-questions" },
+    "Practice free board-standard RN Nursing, LPN Nursing, and Exit Exam sample questions with detailed step-by-step clinical rationales across Med-Surg, Pharmacology, Pediatrics, Dosage Calculation, and Priority Setting.",
+  keywords: [
+    "RN practice questions",
+    "LPN sample questions",
+    "NCLEX sample questions",
+    "Nursing exit exam practice",
+    "HESI exit questions",
+    "ATI predictor practice",
+    "Med-Surg sample questions",
+    "pharmacology practice questions",
+    "nursing clinical rationales",
+  ],
+  alternates: { canonical: pageUrl },
+  openGraph: {
+    title: `Free RN, LPN & Exit Exam Sample Questions | ${APP_NAME}`,
+    description:
+      "Practice board-standard RN, LPN, and Exit Exam questions with deep clinical rationales. Test your clinical judgment before starting a full Q-Bank session.",
+    url: pageUrl,
+    siteName: APP_NAME,
+    type: "website",
+    images: [
+      {
+        url: `${siteUrl}/logo/logo.png`,
+        width: 800,
+        height: 600,
+        alt: `${APP_NAME} Sample Practice Questions`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `Free RN, LPN & Exit Exam Sample Questions | ${APP_NAME}`,
+    description:
+      "Test your clinical judgment with free board-standard nursing practice questions and clinical rationales.",
+    images: [`${siteUrl}/logo/logo.png`],
+  },
 };
 
 export default function SampleQuestionsPage() {
+  const quizJsonLd = buildQuizSchema(SAMPLE_QUESTIONS);
+
   return (
-    <main style={{ backgroundColor: "var(--content-bg)" }}>
-      <section className="mx-auto max-w-4xl px-5 pt-24 pb-16">
-        <div className="text-center mb-10">
-          <span className="inline-block font-mono text-xs tracking-widest uppercase text-coral mb-3">
-            Free Practice Preview
+    <main style={{ backgroundColor: "var(--content-bg)" }} className="min-h-screen">
+      <JsonLd data={quizJsonLd} />
+
+      <section className="mx-auto max-w-4xl px-4 sm:px-6 pt-24 sm:pt-28 pb-16">
+        {/* Header */}
+        <div className="text-center mb-8 sm:mb-10 space-y-3">
+          <span className="inline-block font-mono text-xs tracking-widest uppercase text-teal-600 dark:text-[#2FD9C4] font-bold">
+            Free Board-Standard Practice Preview
           </span>
-          <h1 className="font-serif text-3xl md:text-5xl font-semibold text-navy tracking-tight mb-4">
+          <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight">
             RN, LPN &amp; Exit Exam Sample Questions
           </h1>
-          <p className="text-sm md:text-base text-navy/65 max-w-2xl mx-auto">
-            Test your clinical judgment with representative nursing practice
-            questions and step-by-step rationales before starting a full Q-Bank
-            session.
+          <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed">
+            Test your clinical judgment with high-yield nursing practice questions and comprehensive step-by-step rationales across Med-Surg, Pharmacology, Pediatrics, and Prioritization.
           </p>
         </div>
 
-        {SAMPLE_QUESTIONS.length > 0 ? (
-          <div className="space-y-6">
-            {SAMPLE_QUESTIONS.map((item, idx) => (
-              <SampleQuestionCard key={item.id} item={item} index={idx} />
-            ))}
-          </div>
-        ) : (
-          <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-slate-500">
-            Practice questions load dynamically from your active exam banks.
-          </div>
-        )}
-
-        <div className="mt-10 rounded-2xl border border-coral/30 bg-coral/10 p-6 text-center">
-          <h2 className="font-serif text-xl font-semibold text-navy mb-2">
-            Ready for Full Practice Exams?
-          </h2>
-          <p className="text-sm text-navy/70 mb-4">
-            Unlock timed exams, progress tracking, and subject-level analytics.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <Link
-              href="/dashboards/rn-nursing"
-              className="rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-700 transition"
-            >
-              Open RN Dashboard
-            </Link>
-            <Link
-              href="/dashboards/lpn-nursing"
-              className="rounded-xl border border-border bg-paper px-5 py-2.5 text-sm font-semibold text-navy hover:border-teal-500 transition"
-            >
-              Open LPN Dashboard
-            </Link>
-            <Link
-              href="/dashboards/rn-nursing/vista/subscriptions/items"
-              className="rounded-xl border border-border bg-paper px-5 py-2.5 text-sm font-semibold text-navy hover:border-coral transition"
-            >
-              View Subscription Plans
-            </Link>
-          </div>
-        </div>
+        {/* Client Component with interactive filters, answer selection, and score stats */}
+        <SampleQuestionsClient questions={SAMPLE_QUESTIONS} />
       </section>
     </main>
   );

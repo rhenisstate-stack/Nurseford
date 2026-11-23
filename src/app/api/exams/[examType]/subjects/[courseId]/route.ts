@@ -15,6 +15,7 @@ import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelC
 import {
   COURSE_ID_ALIASES,
 } from "@/lib/data/php-exam-counts";
+import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
 
 const EXAM_SEGMENTS: Record<string, string> = {
   "ati-teas": "ATI_TEAS",
@@ -200,9 +201,10 @@ export async function GET(
           courseGuid = found.guidId;
         }
         if (found?.name) {
-          courseNameCache.set(effectiveCourseId, found.name);
+          const formattedName = formatCourseDropdownName(found.name);
+          courseNameCache.set(effectiveCourseId, formattedName);
           if (found.guidId) {
-            courseNameCache.set(found.guidId, found.name);
+            courseNameCache.set(found.guidId, formattedName);
           }
         }
       }
@@ -293,10 +295,7 @@ export async function GET(
               String(c.id) === effectiveCourseId || c.guidId === effectiveCourseId
           );
           if (found?.name) {
-            courseName = found.name
-              .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
-              .replace(/rhenis\s*/gi, "")
-              .trim();
+            courseName = formatCourseDropdownName(found.name);
             courseNameCache.set(effectiveCourseId, courseName);
           }
         }
@@ -394,7 +393,7 @@ export async function GET(
     const responseData: CourseSubjectsResponseData = {
       examType,
       courseId,
-      courseName,
+      courseName: formatCourseDropdownName(courseName),
       segment,
       subjects: finalSubjects,
     };

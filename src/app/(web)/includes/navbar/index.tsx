@@ -190,8 +190,8 @@ export default function Navbar() {
         {/* Desktop nav: ONLY rendered on Home Page */}
         {isHomePage && (
           <nav className="hidden lg:flex items-center gap-3.5 xl:gap-6 2xl:gap-8 shrink-0">
-            {/* Courses dropdown */}
-            <div className="relative" ref={coursesRef}>
+            {/* Courses dropdown (hidden) */}
+            <div className="hidden" ref={coursesRef}>
               <button
                 type="button"
                 onClick={() => toggleDropdown('courses')}
@@ -371,7 +371,9 @@ export default function Navbar() {
               </div>
               <Link
                 href="/dashboards/rn-nursing"
-                className="px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-sm font-semibold bg-[#0A2540] hover:bg-[#071829] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white transition-all duration-200 shadow-2xs active:scale-[0.98] shrink-0 whitespace-nowrap"
+                className={`px-3 xl:px-4 py-2 rounded-lg text-xs xl:text-sm font-semibold bg-[#0A2540] hover:bg-[#071829] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white transition-all duration-200 shadow-2xs active:scale-[0.98] shrink-0 whitespace-nowrap ${
+                  isHomePage ? "hidden" : ""
+                }`}
               >
                 Dashboard
               </Link>
@@ -423,19 +425,21 @@ export default function Navbar() {
             {/* ONLY ON HOME PAGE */}
             {isHomePage && (
               <>
-                <div className="pt-2 pb-1 text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-[#2FD9C4]">
-                  Courses & Subjects
+                <div className="hidden">
+                  <div className="pt-2 pb-1 text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-[#2FD9C4]">
+                    Courses & Subjects
+                  </div>
+                  {courseLinks.map((item) => (
+                    <Link
+                      key={item.href + item.label}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="py-1.5 text-sm font-medium text-navy/80 dark:text-white/80 hover:text-teal-600 transition-colors pl-2"
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
                 </div>
-                {courseLinks.map((item) => (
-                  <Link
-                    key={item.href + item.label}
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="py-1.5 text-sm font-medium text-navy/80 dark:text-white/80 hover:text-teal-600 transition-colors pl-2"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
 
                 <div className="pt-3 pb-1 text-xs font-bold uppercase tracking-wider text-navy/40 dark:text-white/40">
                   Nursing School
@@ -498,7 +502,9 @@ export default function Navbar() {
                   <Link
                     href="/dashboards/rn-nursing"
                     onClick={() => setMobileOpen(false)}
-                    className="px-5 py-2.5 rounded-lg text-sm font-semibold bg-[#0A2540] dark:bg-[#1E3A8A] text-white text-center shadow-2xs transition-all duration-200 active:scale-[0.98]"
+                    className={`px-5 py-2.5 rounded-lg text-sm font-semibold bg-[#0A2540] dark:bg-[#1E3A8A] text-white text-center shadow-2xs transition-all duration-200 active:scale-[0.98] ${
+                      isHomePage ? "hidden" : ""
+                    }`}
                   >
                     Dashboard
                   </Link>
