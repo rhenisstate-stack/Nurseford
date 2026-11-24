@@ -2,8 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   GraduationCap,
+  Stethoscope,
+  Sparkles,
   TrendingUp,
   BarChart3,
   CheckCircle2,
@@ -26,8 +29,16 @@ const pathButtons = [
 ];
 
 export default function Hero() {
+  const router = useRouter();
+  const [openPracticeDropdown, setOpenPracticeDropdown] = useState(false);
+  const practiceDropdownRef = useRef<HTMLDivElement>(null);
   const [openProgressDropdown, setOpenProgressDropdown] = useState(false);
   const progressDropdownRef = useRef<HTMLDivElement>(null);
+
+  const handleSelectTrack = (href: string) => {
+    setOpenPracticeDropdown(false);
+    router.push(href);
+  };
 
   const desktopVideoRef = useRef<HTMLVideoElement>(null);
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
@@ -58,12 +69,16 @@ export default function Hero() {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
+      if (practiceDropdownRef.current && !practiceDropdownRef.current.contains(e.target as Node)) {
+        setOpenPracticeDropdown(false);
+      }
       if (progressDropdownRef.current && !progressDropdownRef.current.contains(e.target as Node)) {
         setOpenProgressDropdown(false);
       }
     }
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
+        setOpenPracticeDropdown(false);
         setOpenProgressDropdown(false);
       }
     }
@@ -127,14 +142,102 @@ export default function Hero() {
 
             {/* Action CTA Buttons */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              {/* Start Practice - Moves to Subjects page with Med-Surg Collection First */}
-              <Link
-                href="/subjects"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-[#0A2540] hover:bg-[#06182a] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
-              >
-                <span>Start Practice</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              {/* Start Practice Dropdown - Select RN or LPN Dashboard Subjects */}
+              <div className="relative inline-block text-left z-40" ref={practiceDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setOpenPracticeDropdown((prev) => !prev)}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-[#0A2540] hover:bg-[#06182a] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                  aria-expanded={openPracticeDropdown}
+                  aria-haspopup="true"
+                >
+                  <span>Start Practice</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openPracticeDropdown ? "rotate-180" : ""}`} />
+                </button>
+
+                {openPracticeDropdown && (
+                  <div className="absolute left-0 top-full mt-2 w-72 sm:w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 dark:border-white/15 bg-white dark:bg-[#001326] p-2.5 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 z-50 animate-in fade-in zoom-in-95 duration-150 space-y-1">
+                    <div className="px-3 py-1.5 text-[11px] font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-white/10 mb-1">
+                      Choose Practice Track
+                    </div>
+
+                    {/* RN Nursing Option */}
+                    <Link
+                      href="/subjects?track=rn"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleSelectTrack("/subjects?track=rn");
+                      }}
+                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all cursor-pointer"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-[#2FD9C4] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <GraduationCap className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-navy dark:text-white group-hover:text-teal-600 dark:group-hover:text-[#2FD9C4] transition-colors">
+                            RN Nursing Subjects
+                          </span>
+                          <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 block truncate">
+                          Explore RN clinical courses & exams
+                        </span>
+                      </div>
+                    </Link>
+
+                    {/* LPN Nursing Option */}
+                    <Link
+                      href="/subjects?track=lpn"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleSelectTrack("/subjects?track=lpn");
+                      }}
+                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all cursor-pointer"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Stethoscope className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-navy dark:text-white group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors">
+                            LPN Nursing Subjects
+                          </span>
+                          <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 block truncate">
+                          Explore LPN clinical courses & exams
+                        </span>
+                      </div>
+                    </Link>
+
+                    {/* All Subjects Option */}
+                    <Link
+                      href="/subjects?track=all"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleSelectTrack("/subjects?track=all");
+                      }}
+                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all cursor-pointer border-t border-slate-100 dark:border-white/10 mt-1 pt-2"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Sparkles className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-bold text-navy dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                            All Subjects
+                          </span>
+                          <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 block truncate">
+                          Combined view across RN & LPN tracks
+                        </span>
+                      </div>
+                    </Link>
+                  </div>
+                )}
+              </div>
 
               {/* Track My Progress Dropdown */}
               <div className="relative inline-block text-left z-40" ref={progressDropdownRef}>

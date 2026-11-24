@@ -74,6 +74,18 @@ export default function CoursesNavbarFilters() {
     return Array.from(new Set(["All Courses", ...list]));
   }, [dynamicCourses]);
 
+  const selectedCourseDisplay = useMemo(() => {
+    if (!selectedCourse || selectedCourse === "All Courses" || selectedCourse === "all") {
+      return "All Courses";
+    }
+    const match = availableCourses.find(
+      (c) =>
+        c === selectedCourse ||
+        formatCourseDropdownName(c).toLowerCase().trim() === formatCourseDropdownName(selectedCourse).toLowerCase().trim()
+    );
+    return match || selectedCourse;
+  }, [selectedCourse, availableCourses]);
+
   const availableSchools = useMemo(() => {
     const list = Array.isArray(schools) ? schools : [];
     return Array.from(new Set(["All Schools", ...list]));
@@ -136,7 +148,7 @@ export default function CoursesNavbarFilters() {
           }`}
         />
         <select
-          value={selectedCourse || "All Courses"}
+          value={selectedCourseDisplay}
           onChange={(e) => setSelectedCourse(e.target.value)}
           className={`pl-8 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer appearance-none focus:outline-none max-w-[120px] sm:max-w-[160px] truncate ${
             isCourseActive

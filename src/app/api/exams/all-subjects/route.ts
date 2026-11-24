@@ -31,6 +31,7 @@ export interface UnifiedSubject {
   season?: string;
   description?: string;
   targetHref: string;
+  trackBadge?: string;
 }
 
 // Global in-memory cache surviving HMR reloads (TTL: 30 minutes)

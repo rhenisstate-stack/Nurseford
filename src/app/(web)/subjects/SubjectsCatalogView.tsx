@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   RefreshCw,
   Stethoscope,
@@ -26,6 +27,102 @@ import {
 } from "@/lib/utils/exams/formatProgramDropdownName";
 import type { UnifiedSubject } from "@/app/api/exams/all-subjects/route";
 
+export function getCanonicalSubjectInfo(name: string): { key: string; name: string; category: string; isMedSurg: boolean } {
+  const n = (name || "").toLowerCase().trim();
+  if (/(?:med[\s\-]*surg|medical[\s\-]*surgical)/i.test(n)) {
+    return { key: "med-surg", name: "Med-Surg Nursing", category: "Med-Surg / Adult Health", isMedSurg: true };
+  }
+  if (/adult\s*health/i.test(n)) {
+    return { key: "adult-health", name: "Adult Health Nursing", category: "Med-Surg / Adult Health", isMedSurg: false };
+  }
+  if (/pharm(?:acol)?/i.test(n)) {
+    return { key: "pharmacology", name: "Pharmacology Nursing", category: "Pharmacology", isMedSurg: false };
+  }
+  if (/fundament|foundation/i.test(n)) {
+    return { key: "fundamentals", name: "Fundamentals of Nursing", category: "Fundamentals of Nursing", isMedSurg: false };
+  }
+  if (/(?:matern|newborn|obstetric|perinatal)/i.test(n)) {
+    return { key: "maternal-newborn", name: "Maternal & Newborn Care", category: "Maternal & Newborn Care", isMedSurg: false };
+  }
+  if (/(?:pediatric|peds|child)/i.test(n)) {
+    return { key: "pediatrics", name: "Pediatrics & Child Health", category: "Pediatrics & Child Health", isMedSurg: false };
+  }
+  if (/(?:mental|psych)/i.test(n)) {
+    return { key: "mental-health", name: "Mental Health & Psychiatric Nursing", category: "Mental Health & Psych", isMedSurg: false };
+  }
+  if (/(?:dosage|calc(?:ulat)?)/i.test(n)) {
+    return { key: "dosage-calc", name: "Dosage Calculation", category: "Dosage Calculation", isMedSurg: false };
+  }
+  if (/(?:health\s*assessment|physical\s*assessment|\bassessment\b)/i.test(n)) {
+    return { key: "health-assessment", name: "Health Assessment", category: "Health Assessment", isMedSurg: false };
+  }
+  if (/(?:leadership|management)/i.test(n)) {
+    return { key: "leadership", name: "Leadership & Management", category: "Leadership & Management", isMedSurg: false };
+  }
+  if (/(?:community|public\s*health)/i.test(n)) {
+    return { key: "community-health", name: "Community Health Nursing", category: "Community Health", isMedSurg: false };
+  }
+  if (/nutrition/i.test(n)) {
+    return { key: "nutrition", name: "Nutrition in Nursing", category: "Nutrition", isMedSurg: false };
+  }
+  if (/(?:critical\s*care|intensive\s*care|emergency|icu)/i.test(n)) {
+    return { key: "critical-care", name: "Critical Care Nursing", category: "Critical Care", isMedSurg: false };
+  }
+  if (/(?:pathophysiol|pathology)/i.test(n)) {
+    return { key: "pathophysiology", name: "Pathophysiology", category: "Pathophysiology", isMedSurg: false };
+  }
+  if (/(?:anatom|physiol)/i.test(n)) {
+    return { key: "anatomy-physiology", name: "Anatomy & Physiology", category: "General Clinical", isMedSurg: false };
+  }
+  if (/concept/i.test(n)) {
+    return { key: "concept-based", name: "Concept-Based Clinical Nursing", category: "General Clinical", isMedSurg: false };
+  }
+  if (/(?:capstone|comprehensive\s*clinical)/i.test(n)) {
+    return { key: "capstone", name: "Comprehensive Capstone Nursing", category: "General Clinical", isMedSurg: false };
+  }
+  if (/milestone/i.test(n)) {
+    return {
+      key: "milestone-hesi",
+      name: "Milestone Hesi Exams",
+      category: "General Clinical",
+      isMedSurg: false,
+    };
+  }
+  if (/(?:gerontol|geriatric)/i.test(n)) {
+    return { key: "gerontology", name: "Gerontological Nursing", category: "General Clinical", isMedSurg: false };
+  }
+  if (/h[\s\-]*s.*exit|hesi.*exit/i.test(n)) {
+    return {
+      key: "hs-exit",
+      name: /lpn|pn/i.test(n) ? "Hesi Exit Exams (PN)" : "Hesi Exit Exams (RN)",
+      category: "Exit Exams & Capstone",
+      isMedSurg: false,
+    };
+  }
+  if (/predictor|a[\s\-]*t.*exit|ati.*exit/i.test(n)) {
+    return {
+      key: "at-predictor",
+      name: /lpn|pn/i.test(n) ? "ATI Comprehensive Predictor Exams (PN)" : "ATI Comprehensive Predictor Exams (RN)",
+      category: "Exit Exams & Capstone",
+      isMedSurg: false,
+    };
+  }
+  if (/exit/i.test(n)) {
+    return {
+      key: "general-exit",
+      name: /lpn|pn/i.test(n) ? "Comprehensive Exit Exams (PN)" : "Comprehensive Exit Exams (RN)",
+      category: "Exit Exams & Capstone",
+      isMedSurg: false,
+    };
+  }
+  const cleanName = formatCourseDropdownName(name)
+    .replace(/rhenis\s*/gi, "")
+    .replace(/\s*\((?:general\s*)?(?:rn|lpn)\)/i, "")
+    .replace(/-?(?:rn|lpn)$/i, "")
+    .trim();
+  return { key: cleanName.toLowerCase(), name: cleanName, category: "General Clinical", isMedSurg: false };
+}
+
 export default function SubjectsCatalogView() {
   const { isOpened: isSidebarOpened } = useLeftSidebar();
 
@@ -35,11 +132,13 @@ export default function SubjectsCatalogView() {
     selectedProgram,
     setSelectedProgram,
     selectedCourse,
+    setSelectedCourse,
     selectedSchool,
     selectedYear,
     selectedSeason,
     clearAllFilters,
     hasActiveFilters,
+    dynamicCourses,
     setDynamicPrograms,
     setDynamicCourses,
     setDynamicYears,
@@ -55,8 +154,46 @@ export default function SubjectsCatalogView() {
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
 
-  // Toggle button state between RN Nursing Subjects and LPN
-  const [activeTrack, setActiveTrack] = useState<"rn" | "lpn" | "all">("rn");
+  const searchParams = useSearchParams();
+  const trackParam = searchParams?.get("track");
+
+  // Toggle button state between RN Nursing Subjects, LPN, and All Subjects (View Both)
+  const [activeTrack, setActiveTrack] = useState<"rn" | "lpn" | "all">(() => {
+    if (trackParam === "lpn") return "lpn";
+    if (trackParam === "all" || trackParam === "both") return "all";
+    return "rn";
+  });
+
+  // Sync active track from URL query parameter ?track=rn | lpn | all
+  useEffect(() => {
+    if (trackParam === "lpn") {
+      setActiveTrack("lpn");
+    } else if (trackParam === "all" || trackParam === "both") {
+      setActiveTrack("all");
+    } else if (trackParam === "rn") {
+      setActiveTrack("rn");
+    }
+  }, [trackParam]);
+
+  const handleTrackSwitch = (track: "rn" | "lpn" | "all") => {
+    setActiveTrack(track);
+    // If a course is selected that does not belong to the newly selected track, reset to "All Courses"
+    if (selectedCourse && selectedCourse !== "All Courses" && selectedCourse !== "all") {
+      const currentNorm = formatCourseDropdownName(selectedCourse).toLowerCase();
+      const isStillValid =
+        (track === "rn" && (/rn\b/i.test(currentNorm) || !/lpn|pn\b/i.test(currentNorm))) ||
+        (track === "lpn" && (/lpn|pn\b/i.test(currentNorm) || /kap-?lan/i.test(currentNorm))) ||
+        track === "all";
+      if (!isStillValid) {
+        setSelectedCourse("All Courses");
+      }
+    }
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("track", track);
+      window.history.replaceState({}, "", url.toString());
+    }
+  };
 
   // Sync active track if programme filter is selected
   useEffect(() => {
@@ -254,7 +391,14 @@ export default function SubjectsCatalogView() {
   // Partition subjects into RN Nursing, LPN Nursing, and Exit Exam tracks
   // When no specific course filter is active, merge subjects belonging to the same clinical specialty
   // into a single card (e.g. Med-Surg 4 course cards merged into 1 card with all 339 exams).
-  const { rnSubjects, lpnSubjects, rnExitSubjects, lpnExitSubjects } = useMemo(() => {
+  const {
+    rnSubjects,
+    lpnSubjects,
+    rnExitSubjects,
+    lpnExitSubjects,
+    combinedSubjects,
+    combinedExitSubjects,
+  } = useMemo(() => {
     const isCourseFiltered = Boolean(selectedCourse && selectedCourse !== "All Courses" && selectedCourse !== "all");
 
     const rawRn: UnifiedSubject[] = [];
@@ -281,108 +425,12 @@ export default function SubjectsCatalogView() {
       }
     });
 
-    function getCanonicalSubjectInfo(name: string): { key: string; name: string; category: string; isMedSurg: boolean } {
-      const n = (name || "").toLowerCase().trim();
-      if (/(?:med[\s\-]*surg|medical[\s\-]*surgical)/i.test(n)) {
-        return { key: "med-surg", name: "Med-Surg Nursing", category: "Med-Surg / Adult Health", isMedSurg: true };
-      }
-      if (/adult\s*health/i.test(n)) {
-        return { key: "adult-health", name: "Adult Health Nursing", category: "Med-Surg / Adult Health", isMedSurg: false };
-      }
-      if (/pharm(?:acol)?/i.test(n)) {
-        return { key: "pharmacology", name: "Pharmacology Nursing", category: "Pharmacology", isMedSurg: false };
-      }
-      if (/fundament|foundation/i.test(n)) {
-        return { key: "fundamentals", name: "Fundamentals of Nursing", category: "Fundamentals of Nursing", isMedSurg: false };
-      }
-      if (/(?:matern|newborn|obstetric|perinatal)/i.test(n)) {
-        return { key: "maternal-newborn", name: "Maternal & Newborn Care", category: "Maternal & Newborn Care", isMedSurg: false };
-      }
-      if (/(?:pediatric|peds|child)/i.test(n)) {
-        return { key: "pediatrics", name: "Pediatrics & Child Health", category: "Pediatrics & Child Health", isMedSurg: false };
-      }
-      if (/(?:mental|psych)/i.test(n)) {
-        return { key: "mental-health", name: "Mental Health & Psychiatric Nursing", category: "Mental Health & Psych", isMedSurg: false };
-      }
-      if (/(?:dosage|calc(?:ulat)?)/i.test(n)) {
-        return { key: "dosage-calc", name: "Dosage Calculation", category: "Dosage Calculation", isMedSurg: false };
-      }
-      if (/(?:health\s*assessment|physical\s*assessment|\bassessment\b)/i.test(n)) {
-        return { key: "health-assessment", name: "Health Assessment", category: "Health Assessment", isMedSurg: false };
-      }
-      if (/(?:leadership|management)/i.test(n)) {
-        return { key: "leadership", name: "Leadership & Management", category: "Leadership & Management", isMedSurg: false };
-      }
-      if (/(?:community|public\s*health)/i.test(n)) {
-        return { key: "community-health", name: "Community Health Nursing", category: "Community Health", isMedSurg: false };
-      }
-      if (/nutrition/i.test(n)) {
-        return { key: "nutrition", name: "Nutrition in Nursing", category: "Nutrition", isMedSurg: false };
-      }
-      if (/(?:critical\s*care|intensive\s*care|emergency|icu)/i.test(n)) {
-        return { key: "critical-care", name: "Critical Care Nursing", category: "Critical Care", isMedSurg: false };
-      }
-      if (/(?:pathophysiol|pathology)/i.test(n)) {
-        return { key: "pathophysiology", name: "Pathophysiology", category: "Pathophysiology", isMedSurg: false };
-      }
-      if (/(?:anatom|physiol)/i.test(n)) {
-        return { key: "anatomy-physiology", name: "Anatomy & Physiology", category: "General Clinical", isMedSurg: false };
-      }
-      if (/concept/i.test(n)) {
-        return { key: "concept-based", name: "Concept-Based Clinical Nursing", category: "General Clinical", isMedSurg: false };
-      }
-      if (/(?:capstone|comprehensive\s*clinical)/i.test(n)) {
-        return { key: "capstone", name: "Comprehensive Capstone Nursing", category: "General Clinical", isMedSurg: false };
-      }
-      if (/milestone/i.test(n)) {
-        return {
-          key: "milestone-hesi",
-          name: "Milestone Hesi Exams",
-          category: "General Clinical",
-          isMedSurg: false,
-        };
-      }
-      if (/(?:gerontol|geriatric)/i.test(n)) {
-        return { key: "gerontology", name: "Gerontological Nursing", category: "General Clinical", isMedSurg: false };
-      }
-      if (/h[\s\-]*s.*exit|hesi.*exit/i.test(n)) {
-        return {
-          key: "hs-exit",
-          name: /lpn|pn/i.test(n) ? "Hesi Exit Exams (PN)" : "Hesi Exit Exams (RN)",
-          category: "Exit Exams & Capstone",
-          isMedSurg: false,
-        };
-      }
-      if (/predictor|a[\s\-]*t.*exit|ati.*exit/i.test(n)) {
-        return {
-          key: "at-predictor",
-          name: /lpn|pn/i.test(n) ? "ATI Comprehensive Predictor Exams (PN)" : "ATI Comprehensive Predictor Exams (RN)",
-          category: "Exit Exams & Capstone",
-          isMedSurg: false,
-        };
-      }
-      if (/exit/i.test(n)) {
-        return {
-          key: "general-exit",
-          name: /lpn|pn/i.test(n) ? "Comprehensive Exit Exams (PN)" : "Comprehensive Exit Exams (RN)",
-          category: "Exit Exams & Capstone",
-          isMedSurg: false,
-        };
-      }
-      const cleanName = formatCourseDropdownName(name)
-        .replace(/rhenis\s*/gi, "")
-        .replace(/\s*\((?:general\s*)?(?:rn|lpn)\)/i, "")
-        .replace(/-?(?:rn|lpn)$/i, "")
-        .trim();
-      return { key: cleanName.toLowerCase(), name: cleanName, category: "General Clinical", isMedSurg: false };
-    }
-
-    function mergeSubjectsAcrossCourses(list: UnifiedSubject[]): UnifiedSubject[] {
+    function mergeSubjectsAcrossCourses(list: UnifiedSubject[], crossTrack = false): UnifiedSubject[] {
       const groups = new Map<string, UnifiedSubject[]>();
 
       list.forEach((sub) => {
         const info = getCanonicalSubjectInfo(sub.name);
-        const groupKey = `${sub.panelSlug}:::${info.key}`;
+        const groupKey = crossTrack ? info.key : `${sub.panelSlug}:::${info.key}`;
         if (!groups.has(groupKey)) {
           groups.set(groupKey, []);
         }
@@ -392,7 +440,7 @@ export default function SubjectsCatalogView() {
       const merged: UnifiedSubject[] = [];
 
       groups.forEach((subs) => {
-        if (subs.length === 1) {
+        if (subs.length === 1 && !crossTrack) {
           const s = subs[0];
           const info = getCanonicalSubjectInfo(s.name);
           merged.push({
@@ -413,10 +461,23 @@ export default function SubjectsCatalogView() {
         const mergedIds = Array.from(new Set(subs.map((s) => String(s.id || s.guidId || "")))).filter(Boolean);
 
         const info = getCanonicalSubjectInfo(primary.name);
+        const displayName = crossTrack && (info.key.includes("exit") || info.key.includes("predictor"))
+          ? info.name.replace(/\s*\((?:RN|PN)\)/i, "")
+          : info.name;
+
+        const hasRn = subs.some((s) => s.panelSlug === "rn-nursing" || /rn/i.test(s.programName || ""));
+        const hasLpn = subs.some((s) => s.panelSlug === "lpn-nursing" || /lpn|pn/i.test(s.programName || ""));
+        const trackBadge = crossTrack
+          ? hasRn && hasLpn
+            ? "RN + LPN"
+            : hasRn
+            ? "RN"
+            : "LPN"
+          : undefined;
 
         const targetHref = `/dashboards/${primary.panelSlug}/exams/${primary.courseSlug}/${primary.courseId}/exams/${primary.id}?subjectName=${encodeURIComponent(
-          info.name
-        )}&mergedIds=${mergedIds.join(",")}`;
+          displayName
+        )}&mergedIds=${mergedIds.join(",")}${crossTrack ? "&combined=true" : ""}`;
 
         const schools = Array.from(new Set(subs.map((s) => s.school).filter(Boolean)));
         const years = Array.from(new Set(subs.map((s) => s.year).filter((y): y is number => typeof y === "number")));
@@ -427,14 +488,16 @@ export default function SubjectsCatalogView() {
           info.key.includes("exit") ||
           info.key.includes("predictor");
 
-        const courseBadge = isExitGroup
+        const courseBadge = crossTrack
+          ? `RN & LPN Combined (${totalExams} Exams)`
+          : isExitGroup
           ? `All Years (${subs.length} Combined)`
           : `All Courses (${subs.length} Combined)`;
 
         merged.push({
           ...primary,
-          id: `merged_${primary.panelSlug}_${info.key}`,
-          name: info.name,
+          id: crossTrack ? `combined_${info.key}` : `merged_${primary.panelSlug}_${info.key}`,
+          name: displayName,
           category: info.category,
           isMedSurg: info.isMedSurg,
           questionCount: totalQuestions,
@@ -444,6 +507,7 @@ export default function SubjectsCatalogView() {
           year: years.length === 1 ? years[0] : undefined,
           season: seasons.length === 1 ? seasons[0] : undefined,
           targetHref,
+          trackBadge,
         });
       });
 
@@ -462,16 +526,27 @@ export default function SubjectsCatalogView() {
         return (b.questionCount || 0) - (a.questionCount || 0);
       });
 
-    const rn = isCourseFiltered ? sortByDynamicRank(rawRn) : mergeSubjectsAcrossCourses(rawRn);
-    const lpn = isCourseFiltered ? sortByDynamicRank(rawLpn) : mergeSubjectsAcrossCourses(rawLpn);
-    const rnExitMerged = isCourseFiltered ? sortByDynamicRank(rnExit) : mergeSubjectsAcrossCourses(rnExit);
-    const lpnExitMerged = isCourseFiltered ? sortByDynamicRank(lpnExit) : mergeSubjectsAcrossCourses(lpnExit);
+    const rn = isCourseFiltered ? sortByDynamicRank(rawRn) : mergeSubjectsAcrossCourses(rawRn, false);
+    const lpn = isCourseFiltered ? sortByDynamicRank(rawLpn) : mergeSubjectsAcrossCourses(rawLpn, false);
+    const rnExitMerged = isCourseFiltered ? sortByDynamicRank(rnExit) : mergeSubjectsAcrossCourses(rnExit, false);
+    const lpnExitMerged = isCourseFiltered ? sortByDynamicRank(lpnExit) : mergeSubjectsAcrossCourses(lpnExit, false);
+
+    // Cross-track combined subjects for "View Both"
+    const combined = isCourseFiltered
+      ? sortByDynamicRank([...rawRn, ...rawLpn])
+      : mergeSubjectsAcrossCourses([...rawRn, ...rawLpn], true);
+
+    const combinedExit = isCourseFiltered
+      ? sortByDynamicRank([...rnExit, ...lpnExit])
+      : mergeSubjectsAcrossCourses([...rnExit, ...lpnExit], true);
 
     return {
       rnSubjects: rn,
       lpnSubjects: lpn,
       rnExitSubjects: rnExitMerged,
       lpnExitSubjects: lpnExitMerged,
+      combinedSubjects: combined,
+      combinedExitSubjects: combinedExit,
     };
   }, [filteredSubjects, selectedCourse]);
 
@@ -479,12 +554,148 @@ export default function SubjectsCatalogView() {
   const totalVisibleCards = useMemo(() => {
     if (activeTrack === "rn") return rnSubjects.length + rnExitSubjects.length;
     if (activeTrack === "lpn") return lpnSubjects.length + lpnExitSubjects.length;
-    return rnSubjects.length + rnExitSubjects.length + lpnSubjects.length + lpnExitSubjects.length;
-  }, [activeTrack, rnSubjects.length, rnExitSubjects.length, lpnSubjects.length, lpnExitSubjects.length]);
+    return combinedSubjects.length + combinedExitSubjects.length;
+  }, [activeTrack, rnSubjects.length, rnExitSubjects.length, lpnSubjects.length, lpnExitSubjects.length, combinedSubjects.length, combinedExitSubjects.length]);
 
   useEffect(() => {
     setFilteredCount(totalVisibleCards);
   }, [totalVisibleCards, setFilteredCount]);
+
+  // Dynamic courses available for the current active track / program
+  const availableTrackCourses = useMemo(() => {
+    const matchingSubs = subjects.filter((s) => {
+      if (selectedProgram && selectedProgram !== "All Programmes" && selectedProgram !== "all") {
+        return matchesProgram(s.programName, selectedProgram);
+      }
+      if (activeTrack === "rn") {
+        return (
+          s.panelSlug === "rn-nursing" ||
+          /rn/i.test(s.programName || "") ||
+          (!/lpn|pn/i.test(s.programName || "") && s.panelSlug !== "lpn-nursing")
+        );
+      }
+      if (activeTrack === "lpn") {
+        return s.panelSlug === "lpn-nursing" || /lpn|pn/i.test(s.programName || "");
+      }
+      return true;
+    });
+
+    const map = new Map<string, { rawValue: string; displayName: string; examCount: number; subjectCount: number }>();
+
+    matchingSubs.forEach((s) => {
+      const raw = s.courseName || "";
+      if (!raw) return;
+      const display = formatCourseDropdownName(raw);
+      if (!display || display === "All Courses" || display === "Course") return;
+
+      const existing = map.get(display);
+      if (existing) {
+        existing.examCount += s.examCount || 0;
+        existing.subjectCount += 1;
+      } else {
+        const matchedDynamic = (dynamicCourses || []).find(
+          (dc) => formatCourseDropdownName(dc).toLowerCase().trim() === display.toLowerCase().trim()
+        );
+        map.set(display, {
+          rawValue: matchedDynamic || raw,
+          displayName: display,
+          examCount: s.examCount || 0,
+          subjectCount: 1,
+        });
+      }
+    });
+
+    const priority = (name: string) => {
+      const n = name.toLowerCase();
+      if (n.startsWith("ati exams")) return 1;
+      if (n.startsWith("hesi exams")) return 2;
+      if (n.includes("exemplify")) return 3;
+      if (n.includes("general")) return 4;
+      if (n.includes("kap-lan") || n.includes("kaplan")) return 5;
+      if (n.includes("ati exit")) return 6;
+      if (n.includes("hesi exit")) return 7;
+      if (n.includes("exit")) return 8;
+      return 10;
+    };
+
+    return Array.from(map.values()).sort((a, b) => {
+      const pA = priority(a.displayName);
+      const pB = priority(b.displayName);
+      if (pA !== pB) return pA - pB;
+      return a.displayName.localeCompare(b.displayName);
+    });
+  }, [subjects, activeTrack, selectedProgram, dynamicCourses]);
+
+  // Base count of unique specialties for the track
+  const baseTrackCount = useMemo(() => {
+    const list = subjects.filter((s) => {
+      if (selectedProgram && selectedProgram !== "All Programmes" && selectedProgram !== "all") {
+        return matchesProgram(s.programName, selectedProgram);
+      }
+      if (activeTrack === "rn") {
+        return (
+          s.panelSlug === "rn-nursing" ||
+          /rn/i.test(s.programName || "") ||
+          (!/lpn|pn/i.test(s.programName || "") && s.panelSlug !== "lpn-nursing")
+        );
+      }
+      if (activeTrack === "lpn") {
+        return s.panelSlug === "lpn-nursing" || /lpn|pn/i.test(s.programName || "");
+      }
+      return true;
+    });
+    const set = new Set(list.map((s) => getCanonicalSubjectInfo(s.name).key));
+    return set.size;
+  }, [subjects, activeTrack, selectedProgram]);
+
+  // Total unique specialty counts per track (stable across course filtering)
+  const totalTrackCounts = useMemo(() => {
+    const rnSubs = subjects.filter(
+      (s) =>
+        s.panelSlug === "rn-nursing" ||
+        /rn/i.test(s.programName || "") ||
+        (!/lpn|pn/i.test(s.programName || "") && s.panelSlug !== "lpn-nursing")
+    );
+    const lpnSubs = subjects.filter((s) => s.panelSlug === "lpn-nursing" || /lpn|pn/i.test(s.programName || ""));
+
+    const rnKeySet = new Set(rnSubs.map((s) => getCanonicalSubjectInfo(s.name).key));
+    const lpnKeySet = new Set(lpnSubs.map((s) => getCanonicalSubjectInfo(s.name).key));
+    const allKeySet = new Set(subjects.map((s) => getCanonicalSubjectInfo(s.name).key));
+
+    return {
+      rn: rnKeySet.size,
+      lpn: lpnKeySet.size,
+      all: allKeySet.size,
+    };
+  }, [subjects]);
+
+  // Course toggle helpers
+  const isCourseActive = (courseItem: { rawValue: string; displayName: string }) => {
+    if (!selectedCourse || selectedCourse === "All Courses" || selectedCourse === "all") return false;
+    const currentNorm = formatCourseDropdownName(selectedCourse).toLowerCase().trim();
+    const displayNorm = courseItem.displayName.toLowerCase().trim();
+    return (
+      selectedCourse === courseItem.rawValue ||
+      selectedCourse === courseItem.displayName ||
+      currentNorm === displayNorm ||
+      currentNorm.includes(displayNorm) ||
+      displayNorm.includes(currentNorm)
+    );
+  };
+
+  const isAllCoursesActive = !selectedCourse || selectedCourse === "All Courses" || selectedCourse === "all";
+
+  const handleCourseToggle = (courseItem: { rawValue: string; displayName: string }) => {
+    if (isCourseActive(courseItem)) {
+      setSelectedCourse("All Courses");
+    } else {
+      setSelectedCourse(courseItem.rawValue);
+    }
+  };
+
+  const handleAllCoursesToggle = () => {
+    setSelectedCourse("All Courses");
+  };
 
   // Render a clean, compact subject card
   const renderSubjectCard = (sub: UnifiedSubject) => (
@@ -559,7 +770,7 @@ export default function SubjectsCatalogView() {
               UNIFIED HEADER BAR: Track Title (Left) + Track Switcher Buttons (Right)
           ────────────────────────────────────────────────────────────────────────────────── */}
           {!isLoading && !error && filteredSubjects.length > 0 && (
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3 mb-3.5 sm:mb-4">
               {/* Left: Active Track Title & Count */}
               <div className="flex items-center gap-2.5">
                 {activeTrack === "rn" && (
@@ -591,7 +802,7 @@ export default function SubjectsCatalogView() {
                       All Nursing Subjects
                     </h2>
                     <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300">
-                      {totalVisibleCards} subjects
+                      {combinedSubjects.length + combinedExitSubjects.length} subjects
                     </span>
                   </>
                 )}
@@ -601,7 +812,7 @@ export default function SubjectsCatalogView() {
               <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-800/90 rounded-xl border border-slate-200/80 dark:border-slate-700/80 shadow-2xs shrink-0 self-start md:self-auto">
                 <button
                   type="button"
-                  onClick={() => setActiveTrack("rn")}
+                  onClick={() => handleTrackSwitch("rn")}
                   className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     activeTrack === "rn"
                       ? "bg-white dark:bg-[#0A2540] text-teal-700 dark:text-[#2FD9C4] shadow-xs border border-teal-500/20"
@@ -617,13 +828,13 @@ export default function SubjectsCatalogView() {
                         : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                     }`}
                   >
-                    {rnSubjects.length + rnExitSubjects.length}
+                    {totalTrackCounts.rn}
                   </span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setActiveTrack("lpn")}
+                  onClick={() => handleTrackSwitch("lpn")}
                   className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     activeTrack === "lpn"
                       ? "bg-white dark:bg-[#0A2540] text-blue-700 dark:text-sky-300 shadow-xs border border-blue-500/20"
@@ -639,13 +850,13 @@ export default function SubjectsCatalogView() {
                         : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                     }`}
                   >
-                    {lpnSubjects.length + lpnExitSubjects.length}
+                    {totalTrackCounts.lpn}
                   </span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setActiveTrack("all")}
+                  onClick={() => handleTrackSwitch("all")}
                   className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     activeTrack === "all"
                       ? "bg-white dark:bg-[#0A2540] text-purple-700 dark:text-purple-300 shadow-xs border border-purple-500/20"
@@ -654,7 +865,84 @@ export default function SubjectsCatalogView() {
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>View Both</span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                      activeTrack === "all"
+                        ? "bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300"
+                        : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
+                    }`}
+                  >
+                    {totalTrackCounts.all}
+                  </span>
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* ────────────────────────────────────────────────────────────────────────────────
+              COURSE TOGGLE BUTTONS (All Courses, ATI Exams-RN, Hesi Exams-RN, etc.)
+          ────────────────────────────────────────────────────────────────────────────────── */}
+          {!isLoading && !error && filteredSubjects.length > 0 && availableTrackCourses.length > 0 && (
+            <div className="mb-5 sm:mb-6">
+              <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-2 pt-0.5 scrollbar-thin">
+                {/* All Courses Toggle Button */}
+                <button
+                  type="button"
+                  onClick={handleAllCoursesToggle}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                    isAllCoursesActive
+                      ? activeTrack === "rn"
+                        ? "bg-teal-600 text-white shadow-xs border border-teal-600 font-bold"
+                        : activeTrack === "lpn"
+                        ? "bg-blue-600 text-white shadow-xs border border-blue-600 font-bold"
+                        : "bg-purple-600 text-white shadow-xs border border-purple-600 font-bold"
+                      : "bg-white dark:bg-[#1E293B] text-slate-700 dark:text-slate-300 border border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>All Courses</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      isAllCoursesActive
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    {baseTrackCount}
+                  </span>
+                </button>
+
+                {/* Course Toggle Buttons */}
+                {availableTrackCourses.map((course) => {
+                  const active = isCourseActive(course);
+                  return (
+                    <button
+                      key={course.displayName}
+                      type="button"
+                      onClick={() => handleCourseToggle(course)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                        active
+                          ? activeTrack === "rn"
+                            ? "bg-teal-600 text-white shadow-xs border border-teal-600 font-bold"
+                            : activeTrack === "lpn"
+                            ? "bg-blue-600 text-white shadow-xs border border-blue-600 font-bold"
+                            : "bg-purple-600 text-white shadow-xs border border-purple-600 font-bold"
+                          : "bg-white dark:bg-[#1E293B] text-slate-700 dark:text-slate-300 border border-slate-200/90 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      <span>{course.displayName}</span>
+                      <span
+                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                          active
+                            ? "bg-white/20 text-white"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                        }`}
+                      >
+                        {course.subjectCount}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -814,62 +1102,46 @@ export default function SubjectsCatalogView() {
               {/* === ALL TRACKS VIEW (VIEW BOTH) === */}
               {activeTrack === "all" && (
                 <>
-                  {/* 1. RN NURSING SUBJECTS */}
-                  {rnSubjects.length > 0 && (
-                    <section className="space-y-4">
-                      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
-                        <div className="flex items-center gap-2">
-                          <GraduationCap className="w-5 h-5 text-teal-600 dark:text-[#2FD9C4]" />
-                          <h2 className="font-serif text-xl sm:text-2xl font-bold text-navy dark:text-white">
-                            RN Nursing Subjects
-                          </h2>
+                  {combinedSubjects.length === 0 && combinedExitSubjects.length === 0 ? (
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1E293B] p-8 text-center max-w-lg mx-auto space-y-3">
+                      <Sparkles className="w-8 h-8 text-purple-400 mx-auto" />
+                      <h3 className="font-bold text-navy dark:text-white">No Subjects Match Current Filters</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Try resetting your active filters to view all subjects.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={clearAllFilters}
+                        className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition cursor-pointer"
+                      >
+                        Reset Filters
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Combined Core Subjects (RN & LPN Combined into unified cards) */}
+                      {combinedSubjects.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
+                          {combinedSubjects.map(renderSubjectCard)}
                         </div>
-                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-[#2FD9C4]">
-                          {rnSubjects.length} {rnSubjects.length === 1 ? "subject" : "subjects"}
-                        </span>
-                      </div>
+                      )}
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
-                        {rnSubjects.map(renderSubjectCard)}
-                      </div>
-                    </section>
-                  )}
+                      {/* Combined Exit Simulators */}
+                      {combinedExitSubjects.length > 0 && (
+                        <section className="space-y-4 pt-4 sm:pt-6">
+                          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2.5">
+                            <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                            <h2 className="font-serif text-xl sm:text-2xl font-bold text-navy dark:text-white">
+                              All Exit Exam Simulators
+                            </h2>
+                          </div>
 
-                  {/* 2. LPN NURSING SUBJECTS */}
-                  {lpnSubjects.length > 0 && (
-                    <section className="space-y-4">
-                      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
-                        <div className="flex items-center gap-2">
-                          <Stethoscope className="w-5 h-5 text-blue-600 dark:text-sky-400" />
-                          <h2 className="font-serif text-xl sm:text-2xl font-bold text-navy dark:text-white">
-                            LPN Nursing Subjects
-                          </h2>
-                        </div>
-                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-sky-300">
-                          {lpnSubjects.length} {lpnSubjects.length === 1 ? "subject" : "subjects"}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
-                        {lpnSubjects.map(renderSubjectCard)}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* 3. EXIT EXAM SUBJECTS */}
-                  {(rnExitSubjects.length > 0 || lpnExitSubjects.length > 0) && (
-                    <section className="space-y-4">
-                      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2.5">
-                        <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                        <h2 className="font-serif text-xl sm:text-2xl font-bold text-navy dark:text-white">
-                          Exit Exam Simulators
-                        </h2>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
-                        {[...rnExitSubjects, ...lpnExitSubjects].map(renderSubjectCard)}
-                      </div>
-                    </section>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-3.5">
+                            {combinedExitSubjects.map(renderSubjectCard)}
+                          </div>
+                        </section>
+                      )}
+                    </>
                   )}
                 </>
               )}

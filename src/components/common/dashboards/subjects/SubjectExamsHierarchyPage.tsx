@@ -125,6 +125,7 @@ export function SubjectExamsHierarchyPage({
   }, [mergedIdsParam, subjectId]);
 
   const isMerged = targetSubjectIds.length > 1;
+  const isCombined = searchParams?.get("combined") === "true";
   const cacheKey = `${panelSlug}:${courseId}:${targetSubjectIds.slice().sort().join("_")}`;
   const cached = subjectExamsHierarchyClientCache.get(cacheKey);
 
@@ -528,8 +529,10 @@ export function SubjectExamsHierarchyPage({
           .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
           .replace(/rhenis\s*/gi, "")
           .trim();
-        const resolvedCourseName = isMerged
-          ? "RN Nursing Subjects"
+        const resolvedCourseName = isCombined
+          ? "All Nursing Subjects"
+          : isMerged
+          ? (panelSlug === "lpn-nursing" ? "LPN Nursing Subjects" : "RN Nursing Subjects")
           : (firstItem?.courseName || currentCached?.courseName || "")
               .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
               .replace(/rhenis\s*/gi, "")
@@ -574,8 +577,18 @@ export function SubjectExamsHierarchyPage({
   }, [panelSlug, courseId, subjectId, subjectName, cacheKey, searchParams, targetSubjectIds, isMerged]);
 
   const launchExam = (examTarget: (StrataItem & { modes?: string[] }) | string, mode: string) => {
+    const targetObj = typeof examTarget === "string" ? exams.find((e) => e.guidId === examTarget || String(e.id) === examTarget) : examTarget;
     const idToUse = typeof examTarget === "string" ? examTarget : (examTarget.guidId ?? String(examTarget.id));
-    router.push(`/web/${livePanelSlug}/vista/exam/generic?mode=${mode}&identifier=${idToUse}`);
+    let effectivePanel = livePanelSlug;
+    if (targetObj) {
+      const pName = ((targetObj as any).programName || (targetObj as ExamWithParentNames).courseName || targetObj.title || "").toLowerCase();
+      if (/lpn|pn\b/i.test(pName)) {
+        effectivePanel = "lpn-nursing";
+      } else if (/rn\b/i.test(pName)) {
+        effectivePanel = "rn-nursing";
+      }
+    }
+    router.push(`/web/${effectivePanel}/vista/exam/generic?mode=${mode}&identifier=${idToUse}`);
   };
 
   const startExam = (examTarget: (StrataItem & { modes?: string[] }) | string, mode: string) => {
@@ -594,10 +607,14 @@ export function SubjectExamsHierarchyPage({
       .join(" ")
       .trim() ||
     `Course ${courseId}`;
-  const courseName = isMerged ? "RN Nursing Subjects" : formatCourseDropdownName(rawCourseName);
+  const courseName = isCombined
+    ? "All Nursing Subjects"
+    : isMerged
+    ? (panelSlug === "lpn-nursing" ? "LPN Nursing Subjects" : "RN Nursing Subjects")
+    : formatCourseDropdownName(rawCourseName);
 
   const currentSubjectTitle = dynamicSubjectName || subjectName || "Examinations";
-  const backHref = isMerged ? "/subjects" : `/dashboards/${panelSlug}/exams/${courseSlug}/${courseId}`;
+  const backHref = isCombined || isMerged ? "/subjects" : `/dashboards/${panelSlug}/exams/${courseSlug}/${courseId}`;
 
   const customCoursesForBuilder: DashboardCourse[] = useMemo(() => {
     const subCategoriesMap = new Map<string, DashboardSubCategory>();
@@ -754,10 +771,11 @@ export function SubjectExamsHierarchyPage({
   }, [programs]);
 
   const currentProgramDisplay = useMemo(() => {
+    if (isCombined) return "Programme";
     if (panelSlug === "lpn-nursing") return "LPN Nursing Exam";
     if (panelSlug === "rn-nursing") return "RN Nursing Exam";
     return panelLabel || "Programme";
-  }, [panelSlug, panelLabel]);
+  }, [panelSlug, panelLabel, isCombined]);
 
   const selectedProgramValue = useMemo(() => {
     const found = availableProgramOptions.find(
@@ -834,9 +852,9 @@ export function SubjectExamsHierarchyPage({
     if (selectedCourseFilter && selectedCourseFilter !== "all" && selectedCourseFilter !== "All Courses") {
       return selectedCourseFilter;
     }
-    if (isMerged) return "all";
+    if (isMerged || isCombined) return "all";
     return courseName || "all";
-  }, [selectedCourseFilter, isMerged, courseName]);
+  }, [selectedCourseFilter, isMerged, isCombined, courseName]);
 
   const handleCourseChange = async (selectedTitle: string) => {
     // 1. If selecting "All Courses" or "all":
@@ -847,9 +865,9 @@ export function SubjectExamsHierarchyPage({
 
     const toSlug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
-    // 2. If on a merged subject (exams from all courses are loaded in memory),
+    // 2. If on a merged or combined subject (exams from all courses are loaded in memory),
     // filter in-place immediately without navigating away!
-    if (isMerged) {
+    if (isMerged || isCombined) {
       applyCourse(selectedTitle);
       return;
     }
@@ -1171,10 +1189,10 @@ export function SubjectExamsHierarchyPage({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 pb-1">
           <div className="flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base text-slate-600 dark:text-white/70 min-w-0 max-w-full overflow-hidden whitespace-nowrap">
             <Link
-              href={`/dashboards/${panelSlug}`}
+              href={isCombined ? "/subjects" : `/dashboards/${panelSlug}`}
               className="hover:text-slate-950 dark:hover:text-white transition-colors font-medium shrink-0"
             >
-              {panelLabel}
+              {isCombined ? "All Nursing" : panelLabel}
             </Link>
             <span className="text-slate-400 dark:text-white/40 font-normal shrink-0">/</span>
             <Link
@@ -1393,11 +1411,13 @@ export function SubjectExamsHierarchyPage({
                     cleanSubjectStr(sc.title) === cleanSubjectStr(exam.title)
                 );
                 const resolvedQCount =
-                  exam.questionsCount && exam.questionsCount > 0
+                  typeof exam.questionsCount === "number"
                     ? exam.questionsCount
-                    : matchingSub?.questionCount && matchingSub.questionCount > 0
-                      ? matchingSub.questionCount
-                      : extractExamQuestionCount(exam);
+                    : typeof (exam as any).questionCount === "number"
+                      ? (exam as any).questionCount
+                      : matchingSub?.questionCount !== undefined && matchingSub.questionCount !== null
+                        ? matchingSub.questionCount
+                        : extractExamQuestionCount(exam);
 
                 const examYr = extractExamYear(exam.title, currentSubjectTitle, exam.year);
                 const resolvedSeason = resolveExamSeason(exam.season, exam.title, exam.description) || exam.season;
@@ -1414,20 +1434,40 @@ export function SubjectExamsHierarchyPage({
                     )}
 
                     {/* Top Badges */}
-                    <div className="flex flex-wrap items-center gap-1 mb-1">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60">
-                        {resolvedSeason ? `${resolvedSeason} ` : ""}{examYr ? `${examYr}` : courseName}
-                      </span>
-                      {isCompleted ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 ml-auto">
-                          <Check className="w-2.5 h-2.5" />
-                          Done
+                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 truncate">
+                          {resolvedSeason ? `${resolvedSeason} ` : ""}{examYr ? `${examYr}` : courseName}
                         </span>
-                      ) : hasFreeAccess ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/60 ml-auto">
-                          Free
+                        {isCombined && (
+                          <span
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold shrink-0 ${
+                              /lpn|pn\b/i.test((exam as any).programName || (exam as ExamWithParentNames).courseName || exam.title || "")
+                                ? "bg-blue-100 text-blue-700 dark:bg-blue-950/70 dark:text-sky-300"
+                                : "bg-teal-100 text-teal-700 dark:bg-teal-950/70 dark:text-teal-300"
+                            }`}
+                          >
+                            {/lpn|pn\b/i.test((exam as any).programName || (exam as ExamWithParentNames).courseName || exam.title || "") ? "LPN" : "RN"}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 ml-auto">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+                          <FileQuestion className="w-2.5 h-2.5 text-teal-600 dark:text-[#2FD9C4]" />
+                          <span>{resolvedQCount ?? 0} {resolvedQCount === 1 ? "Question" : "Questions"}</span>
                         </span>
-                      ) : null}
+                        {isCompleted ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60">
+                            <Check className="w-2.5 h-2.5" />
+                            Done
+                          </span>
+                        ) : hasFreeAccess ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/60">
+                            Free
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
 
                     {/* Card Title */}
