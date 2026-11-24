@@ -711,19 +711,32 @@ export default function ExamQuestionsReview({
 
                           // Formatting classes
                           let rowClasses =
-                            "border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/30 text-slate-700 dark:text-slate-300";
+                            "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 text-slate-700 dark:text-slate-300";
+                          let letterClasses =
+                            "border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400";
                           let fontClass = "text-slate-700 dark:text-slate-300";
 
-                          if (isOptionCorrect) {
-                            // Green border, green background, green font
+                          if (isOptionCorrect && isUserPick) {
+                            // User selected this and it's correct (Emerald Accent)
                             rowClasses =
-                              "border-emerald-500/90 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 ring-1 ring-emerald-400/30";
-                            fontClass = "font-bold text-emerald-900 dark:text-emerald-200";
+                              "border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/20 border-l-4 border-l-emerald-500 shadow-2xs";
+                            letterClasses =
+                              "border-emerald-300 dark:border-emerald-700 bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 font-bold";
+                            fontClass = "font-semibold text-slate-900 dark:text-white";
+                          } else if (isOptionCorrect && !isUserPick) {
+                            // Correct answer key, but user did not select it (Teal Accent)
+                            rowClasses =
+                              "border-teal-200 dark:border-teal-900/60 bg-teal-50/20 dark:bg-teal-950/20 border-l-4 border-l-teal-500 shadow-2xs";
+                            letterClasses =
+                              "border-teal-300 dark:border-teal-700 bg-teal-100 dark:bg-teal-900/60 text-teal-800 dark:text-teal-200 font-bold";
+                            fontClass = "font-semibold text-slate-900 dark:text-white";
                           } else if (isUserPick && !isOptionCorrect) {
-                            // Red border, red background, red font
+                            // User selected this and it's incorrect (Rose Accent)
                             rowClasses =
-                              "border-red-500/90 dark:border-red-600 bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-200 ring-1 ring-red-400/30";
-                            fontClass = "font-bold text-red-900 dark:text-red-200";
+                              "border-rose-200 dark:border-rose-900/60 bg-rose-50/30 dark:bg-rose-950/20 border-l-4 border-l-rose-500 shadow-2xs";
+                            letterClasses =
+                              "border-rose-300 dark:border-rose-700 bg-rose-100 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 font-bold";
+                            fontClass = "font-medium text-slate-900 dark:text-white";
                           }
 
                           const contentToRender = opt.answerContent || opt.option || "";
@@ -731,16 +744,16 @@ export default function ExamQuestionsReview({
                           return (
                             <div
                               key={opt.id}
-                              className={`flex items-start justify-between gap-3 p-3 rounded-xl border transition ${rowClasses}`}
+                              className={`flex items-start justify-between gap-3 p-3.5 rounded-xl border transition ${rowClasses}`}
                             >
                               <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                                <span className="w-6 h-6 rounded-md font-bold text-xs flex items-center justify-center shrink-0 border border-slate-300/70 dark:border-slate-600 bg-slate-100 dark:bg-slate-700">
+                                <span className={`w-6 h-6 rounded-md font-bold text-xs flex items-center justify-center shrink-0 border transition-colors ${letterClasses}`}>
                                   {optionLetter}
                                 </span>
                                 <div className={`text-sm ${fontClass} pt-0.5 leading-snug`}>
                                   {parse(contentToRender)}
                                   {showRationale && isCleanText(opt.explanation) && (
-                                    <div className="text-xs opacity-80 mt-1 font-normal">
+                                    <div className="text-xs opacity-80 mt-1.5 font-normal text-slate-600 dark:text-slate-400">
                                       {opt.explanation}
                                     </div>
                                   )}
@@ -748,18 +761,26 @@ export default function ExamQuestionsReview({
                               </div>
 
                               <div className="flex items-center gap-2 shrink-0 pt-0.5">
-                                {/* CORRECT OPTION CHECKMARK */}
-                                {isOptionCorrect && (
-                                  <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-900/60 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700">
-                                    <Check size={14} className="text-emerald-600 font-black" />
-                                    {isUserPick ? "Your Correct Answer" : "Correct Answer"}
+                                {/* USER CORRECT PICK */}
+                                {isOptionCorrect && isUserPick && (
+                                  <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700 shadow-2xs">
+                                    <Check size={13} className="text-emerald-600 dark:text-emerald-400 stroke-[3]" />
+                                    Your Correct Answer
                                   </span>
                                 )}
 
-                                {/* USER WRONG PICK X-MARK */}
+                                {/* CORRECT ANSWER KEY (NOT SELECTED BY USER) */}
+                                {isOptionCorrect && !isUserPick && (
+                                  <span className="flex items-center gap-1.5 text-xs font-bold text-teal-800 dark:text-teal-300 bg-teal-100/90 dark:bg-teal-950/80 px-2.5 py-0.5 rounded-full border border-teal-300 dark:border-teal-700 shadow-2xs">
+                                    <Check size={13} className="text-teal-600 dark:text-teal-400 stroke-[3]" />
+                                    Correct Answer
+                                  </span>
+                                )}
+
+                                {/* USER WRONG PICK */}
                                 {isUserPick && !isOptionCorrect && (
-                                  <span className="flex items-center gap-1 text-xs font-bold text-red-700 dark:text-red-300 bg-red-100/90 dark:bg-red-900/60 px-2.5 py-0.5 rounded-full border border-red-300 dark:border-red-700">
-                                    <X size={14} className="text-red-600 font-black" />
+                                  <span className="flex items-center gap-1.5 text-xs font-bold text-rose-800 dark:text-rose-300 bg-rose-100/90 dark:bg-rose-950/80 px-2.5 py-0.5 rounded-full border border-rose-300 dark:border-rose-700 shadow-2xs">
+                                    <X size={13} className="text-rose-600 dark:text-rose-400 stroke-[3]" />
                                     Your Answer
                                   </span>
                                 )}
@@ -769,31 +790,74 @@ export default function ExamQuestionsReview({
                         })}
                       </div>
                     ) : (
-                      // NON-MULTIPLE-CHOICE FALLBACK (Open ended, numeric, etc.)
-                      <div className="space-y-2 mt-2">
+                      // NON-MULTIPLE-CHOICE FALLBACK (Open ended, numeric, fill-in-the-blank, etc.)
+                      <div className="space-y-2.5 mt-2">
+                        {/* USER'S SUBMITTED ANSWER */}
                         {q.userRawAnswer && (
-                          <div className={`p-3 rounded-lg border text-xs font-semibold ${
+                          <div className={`flex items-center justify-between p-3.5 rounded-xl border transition shadow-2xs ${
                             isCorrect
-                              ? "border-emerald-300 bg-emerald-50 text-emerald-900"
-                              : "border-red-300 bg-red-50 text-red-900"
+                              ? "border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/30 dark:bg-emerald-950/20 border-l-4 border-l-emerald-500"
+                              : "border-rose-200 dark:border-rose-900/60 bg-rose-50/30 dark:bg-rose-950/20 border-l-4 border-l-rose-500"
                           }`}>
-                            <span className="font-bold">
-                              {isCorrect ? "✓ Your Answer (Correct):" : "✗ Your Answer (Incorrect):"}
-                            </span>{" "}
-                            {(() => {
-                              try {
-                                const parsed = JSON.parse(q.userRawAnswer);
-                                const val = parsed.answerContent || parsed.value || parsed.optionText;
-                                if (val && String(val).toLowerCase() !== "null") return String(val);
-                              } catch {}
-                              const raw = String(q.userRawAnswer).trim();
-                              if (raw && raw.toLowerCase() !== "null" && raw.toLowerCase() !== "undefined") {
-                                return raw;
-                              }
-                              return "";
-                            })()}
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-bold ${
+                                isCorrect ? "text-emerald-800 dark:text-emerald-300" : "text-rose-800 dark:text-rose-300"
+                              }`}>
+                                {isCorrect ? "✓ Your Answer (Correct):" : "✕ Your Answer (Incorrect):"}
+                              </span>
+                              <span className="text-sm font-black text-slate-900 dark:text-white">
+                                {(() => {
+                                  try {
+                                    const parsed = JSON.parse(q.userRawAnswer);
+                                    const val = parsed.answerContent || parsed.value || parsed.optionText;
+                                    if (val && String(val).toLowerCase() !== "null") return String(val);
+                                  } catch {}
+                                  const raw = String(q.userRawAnswer).trim();
+                                  if (raw && raw.toLowerCase() !== "null" && raw.toLowerCase() !== "undefined") {
+                                    return raw;
+                                  }
+                                  return "";
+                                })()}
+                              </span>
+                            </div>
+                            <span className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-full border shadow-2xs ${
+                              isCorrect
+                                ? "text-emerald-800 dark:text-emerald-300 bg-emerald-100/90 dark:bg-emerald-950/80 border-emerald-300 dark:border-emerald-700"
+                                : "text-rose-800 dark:text-rose-300 bg-rose-100/90 dark:bg-rose-950/80 border-rose-300 dark:border-rose-700"
+                            }`}>
+                              {isCorrect ? <Check size={13} className="stroke-[3]" /> : <X size={13} className="stroke-[3]" />}
+                              {isCorrect ? "Your Correct Answer" : "Your Answer"}
+                            </span>
                           </div>
                         )}
+
+                        {/* EXPECTED CORRECT ANSWER KEY (IF AVAILABLE IN QUESTION DATA) */}
+                        {(() => {
+                          const correctKey =
+                            q.questionCorrectAnswers?.find((ca) => isCleanText(ca.openEndedAnswer))?.openEndedAnswer ||
+                            q.questionCorrectAnswers?.find((ca) => isCleanText(ca.description))?.description ||
+                            q.questionCorrectAnswers?.find((ca) => isCleanText(ca.hint))?.hint ||
+                            null;
+
+                          if (!correctKey) return null;
+
+                          return (
+                            <div className="flex items-center justify-between p-3.5 rounded-xl border border-teal-200 dark:border-teal-900/60 bg-teal-50/20 dark:bg-teal-950/20 border-l-4 border-l-teal-500 shadow-2xs">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-teal-800 dark:text-teal-300">
+                                  ✓ Correct Answer Key:
+                                </span>
+                                <span className="text-sm font-black text-slate-900 dark:text-white">
+                                  {correctKey}
+                                </span>
+                              </div>
+                              <span className="flex items-center gap-1.5 text-xs font-bold text-teal-800 dark:text-teal-300 bg-teal-100/90 dark:bg-teal-950/80 px-2.5 py-0.5 rounded-full border border-teal-300 dark:border-teal-700 shadow-2xs">
+                                <Check size={13} className="text-teal-600 dark:text-teal-400 stroke-[3]" />
+                                Correct Answer
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 

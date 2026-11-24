@@ -9,10 +9,6 @@ import { renderSystemSessionHeaders } from "@/lib/services/partial/helper/system
 import { useNominalStrataExams, type StrataItem } from "@/lib/hooks/nexus/strata/assessment/learning/exams/nominal/useNominalStrataExams";
 import { ArrowLeft, BookOpen, Calendar, Check, ChevronLeft, ChevronRight, FileQuestion, Flame, GraduationCap, Loader2, Lock, Play, RefreshCw, School, Search, Sun, X } from "lucide-react";
 import { useRelativeStrataPrograms } from "@/lib/hooks/nexus/strata/learning/programs/relative/useRelativeStrataPrograms";
-import {
-  useDiscreteDominionSubscriptionPackages,
-  type DiscreteSubscriptionPackage,
-} from "@/lib/hooks/nexus/subscription/packages/dicreate/useDiscreteDominionSubscriptionPackages";
 import { NclexCustomTestPopup } from "@/components/common/dashboards/nclex/NclexDashboardSections";
 import { useRelativeStrataAssessmentResults } from "@/lib/hooks/nexus/strata/assessment/results/relative/useRelativeStrataAssessmentResults";
 import { useExamCourses, type DashboardCourse, type DashboardSubCategory } from "@/lib/hooks/home/useExamCourses";
@@ -22,6 +18,7 @@ import { resolveExamSchool } from "@/lib/utils/exams/resolveExamSchool";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
 import { registerSearchExams } from "@/lib/services/search/searchRegistry";
 import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
+import { useExamAccessGuard } from "@/components/common/dashboards/modals/useExamAccessGuard";
 
 const PER_PAGE = 100;
 
@@ -279,50 +276,10 @@ export function SubjectExamsHierarchyPage({
 
   const { courses: dashboardCourses } = useExamCourses(normalizedExamType);
 
-  // ─── Subscription gate ───
-  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
-  const subscriptionsHref = `/dashboards/${panelSlug}/vista/subscriptions/items`;
-  const panelSegment = panelSlug.toUpperCase().replace(/-/g, "_");
-
+  // ─── Access guard ───
   const { programs } = useRelativeStrataPrograms();
-  const { filteredSubscriptionPackages: mySubscriptionPackages } = useDiscreteDominionSubscriptionPackages({
-    page: 1,
-    perPage: 100,
-    sortColumn: null,
-    sortDirection: "asc",
-  });
-
-  const hasActiveSubscription = useMemo(() => {
-    type PackageWithCluster = DiscreteSubscriptionPackage & {
-      terminalClusterTableName?: string;
-      terminalClusterGuidId?: string;
-    };
-    const panelProgramGuids = new Set(
-      programs.filter((p) => p.segment === panelSegment).map((p) => p.guidId)
-    );
-    if (panelProgramGuids.size === 0) return false;
-
-    return mySubscriptionPackages.some((pkg) => {
-      const p = pkg as PackageWithCluster;
-      const belongsToPanel =
-        p.terminalClusterTableName === "strata_programs" &&
-        !!p.terminalClusterGuidId &&
-        panelProgramGuids.has(p.terminalClusterGuidId);
-      if (!belongsToPanel) return false;
-      return (pkg.userSubscriptions ?? []).some((sub) => sub.subscriptionStatus === "Active");
-    });
-  }, [programs, panelSegment, mySubscriptionPackages]);
-
-  // Only enforce once programs have loaded (avoids a false "not subscribed" flash)
-  const needsSubscription = programs.length > 0 && !hasActiveSubscription;
-
-  // Builder opened without a subscription → show subscribe modal instead
-  useEffect(() => {
-    if (isBuilderOpen && needsSubscription) {
-      setIsBuilderOpen(false);
-      setShowSubscribeModal(true);
-    }
-  }, [isBuilderOpen, needsSubscription]);
+  const { guard, modal: accessModal } = useExamAccessGuard(panelSlug, panelLabel);
+  const openBuilder = () => guard(true, () => setIsBuilderOpen(true));
 
   const matchingDashboardCourse = useMemo(() => {
     if (!dashboardCourses || dashboardCourses.length === 0) return null;
@@ -616,18 +573,17 @@ export function SubjectExamsHierarchyPage({
     };
   }, [panelSlug, courseId, subjectId, subjectName, cacheKey, searchParams, targetSubjectIds, isMerged]);
 
+  const launchExam = (examTarget: (StrataItem & { modes?: string[] }) | string, mode: string) => {
+    const idToUse = typeof examTarget === "string" ? examTarget : (examTarget.guidId ?? String(examTarget.id));
+    router.push(`/web/${livePanelSlug}/vista/exam/generic?mode=${mode}&identifier=${idToUse}`);
+  };
+
   const startExam = (examTarget: (StrataItem & { modes?: string[] }) | string, mode: string) => {
     const gateTarget =
       typeof examTarget === "string"
         ? exams.find((e) => e.guidId === examTarget || String(e.id) === examTarget)
         : examTarget;
-    if (needsSubscription && gateTarget?.accessType !== "Public") {
-      setShowSubscribeModal(true);
-      return;
-    }
-
-    const idToUse = typeof examTarget === "string" ? examTarget : (examTarget.guidId ?? String(examTarget.id));
-    router.push(`/web/${livePanelSlug}/vista/exam/generic?mode=${mode}&identifier=${idToUse}`);
+    guard(gateTarget?.accessType !== "Public", () => launchExam(examTarget, mode));
   };
 
   const rawCourseName =
@@ -1575,50 +1531,7 @@ export function SubjectExamsHierarchyPage({
         )}
       </div>
 
-      {showSubscribeModal && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          onClick={() => setShowSubscribeModal(false)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-sm rounded-2xl border border-[var(--card-border,#CBDCF8)] dark:border-white/10 bg-white dark:bg-[var(--card-bg,#15273e)] p-6 text-center shadow-2xl"
-          >
-            <button
-              type="button"
-              onClick={() => setShowSubscribeModal(false)}
-              aria-label="Close"
-              className="absolute right-3 top-3 text-slate-400 hover:text-slate-700 dark:hover:text-white"
-            >
-              <X className="w-4 h-4" />
-            </button>
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-purple-500/15">
-              <Lock className="w-6 h-6 text-purple-600 dark:text-purple-300" />
-            </div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">Subscription Required</h2>
-            <p className="mt-1.5 text-sm text-slate-600 dark:text-white/70">
-              Subscribe to unlock all {panelLabel} exams and the custom exam builder.
-            </p>
-            <div className="mt-5 flex flex-col gap-2">
-              <Link
-                href={subscriptionsHref}
-                className="inline-flex items-center justify-center rounded-lg border border-teal-500/80 bg-teal-500/25 px-4 py-2 text-sm font-semibold text-teal-800 dark:text-teal-300 hover:bg-teal-500/35 transition-colors"
-              >
-                View Subscription Plans
-              </Link>
-              <button
-                type="button"
-                onClick={() => setShowSubscribeModal(false)}
-                className="rounded-lg px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-white/60 dark:hover:text-white transition-colors"
-              >
-                Maybe later
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {accessModal}
 
       <NclexCustomTestPopup
         isOpen={isBuilderOpen}

@@ -715,20 +715,12 @@ export default function DistinctExamResultsPage() {
 
         {/* STAT CARD GRID */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          <StatCard icon={Target} label="Exam Pass Mark" value={`${displayValue(exam.passMark)}%`} tone="indigo" />
-          <StatCard icon={ListChecks} label="Total Questions" value={displayValue(totalQuestions)} tone="slate" />
           <StatCard icon={CheckCircle2} label="Correct Answers" value={displayValue(correctCount)} tone="emerald" />
           <StatCard icon={XCircle} label="Incorrect Answers" value={displayValue(incorrectCount)} tone="red" />
-          <StatCard icon={Layers3} label="Unanswered Questions [ Never ]" value={displayValue(unansweredCount)} tone="slate" />
           <StatCard icon={GraduationCap} label="Your Grade" value={displayValue(exam.grade)} tone="amber" />
-          <StatCard icon={Timer} label="Duration Allowed" value={exam.duration ? `${exam.duration} min` : VOID} tone="slate" />
           <StatCard icon={Calendar} label="Attempted At" value={formatDateTime(exam.attemptedAt)} tone="slate" />
           <StatCard icon={History} label="Attempt Number" value={`${attemptDisplayNumber}${exam.attemptsAllowed ? ` of ${exam.attemptsAllowed}` : ""}`} tone="indigo" />
-          <StatCard icon={Star} label="Eaxm Rating" value={`${displayValue(exam.rating)}%`} tone="amber" />
-          <StatCard icon={Percent} label="Total Score" value={`${displayValue(exam.score)}`} tone="indigo" />
-          <StatCard icon={Award} label="Overall GPA" value={`${gpa}%`} tone="emerald" />
           <StatCard icon={Star} label="Highest Score" value={`${highestScore}%`} tone="emerald" />
-          <StatCard icon={Target} label="Lowest Score" value={`${lowestScore}%`} tone="red" />
           <StatCard icon={CheckCircle2} label="Passed Attempts" value={`${passedAttempts}`} tone="emerald" />
           <StatCard icon={XCircle} label="Failed Attempts" value={`${failedAttempts}`} tone="red" />
         </div>

@@ -1,36 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClasp";
-import Annex from "@/app/(web)/auth/modals/Annex";
 import { APP_NAME } from "@/lib/config/config";
-import { Sparkles, BookOpen, Headset, Phone, Mail } from "lucide-react";
+import { Compass, Headset, Phone, Mail } from "lucide-react";
 
 const quickLinks = [
   { href: "/pages/about", label: "About Us" },
-  { href: "/#how-it-works", label: "How We Help" },
-  { href: "/#exams", label: "Exam Tracks" },
   { href: "/subjects", label: "All Subjects & Exams" },
 ];
 
-const resourceLinks = [
-  { href: "/pages/sample-questions", label: "Free Sample Questions" },
-  { href: "/pages/resources", label: "Resources" },
-  { href: "/pages/contact-us", label: "Contact Us" },
+const legalLinks = [
   { href: "/pages/terms", label: "Terms of Service" },
   { href: "/pages/privacy-policy", label: "Privacy Policy" },
 ];
 
 export default function DashboardFooter() {
   const { leftWidth, rightWidth } = useFlexPageClasp();
-  const [annexOpen, setAnnexOpen] = useState(false);
   const currentYear = new Date().getFullYear();
 
   return (
-    <>
-      <footer
+    <footer
         className="border-t border-[var(--text-color)]/10 transition-all duration-300 ease-in-out text-[var(--text-color)]"
         style={{
           marginLeft: leftWidth,
@@ -38,8 +30,8 @@ export default function DashboardFooter() {
           backgroundColor: "var(--content-bg)",
         }}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 py-8 md:py-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 py-8 md:py-10 pb-16 md:pb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-10">
             {/* Col 1: Brand */}
             <div>
               <Link href="/" className="inline-flex items-center gap-2 mb-3 group">
@@ -70,11 +62,11 @@ export default function DashboardFooter() {
               </p>
             </div>
 
-            {/* Col 2: QUICK LINKS */}
+            {/* Col 2: EXPLORE & LEGAL */}
             <div>
               <h4 className="font-mono text-xs tracking-widest uppercase font-bold mb-3.5 flex items-center gap-1.5 opacity-90">
-                <Sparkles className="w-3.5 h-3.5 text-[#ff6b35]" />
-                <span>Quick Links</span>
+                <Compass className="w-3.5 h-3.5 text-[#ff6b35]" />
+                <span>Explore &amp; Legal</span>
               </h4>
               <ul className="space-y-2 text-xs sm:text-sm">
                 {quickLinks.map((link) => (
@@ -87,26 +79,7 @@ export default function DashboardFooter() {
                     </Link>
                   </li>
                 ))}
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setAnnexOpen(true)}
-                    className="text-xs sm:text-sm text-left opacity-60 hover:opacity-100 transition-colors cursor-pointer"
-                  >
-                    Powered by {APP_NAME} Team
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-            {/* Col 3: RESOURCES & LEGAL */}
-            <div>
-              <h4 className="font-mono text-xs tracking-widest uppercase font-bold mb-3.5 flex items-center gap-1.5 opacity-90">
-                <BookOpen className="w-3.5 h-3.5 text-teal-600 dark:text-[#2FD9C4]" />
-                <span>Resources &amp; Legal</span>
-              </h4>
-              <ul className="space-y-2 text-xs sm:text-sm">
-                {resourceLinks.map((link) => (
+                {legalLinks.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
@@ -119,7 +92,7 @@ export default function DashboardFooter() {
               </ul>
             </div>
 
-            {/* Col 4: CONTACT */}
+            {/* Col 3: CONTACT */}
             <div>
               <h4 className="font-mono text-xs tracking-widest uppercase font-bold mb-3.5 flex items-center gap-1.5 opacity-90">
                 <Headset className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -159,8 +132,5 @@ export default function DashboardFooter() {
           </div>
         </div>
       </footer>
-
-      <Annex isOpen={annexOpen} onClose={() => setAnnexOpen(false)} />
-    </>
   );
 }

@@ -7,6 +7,7 @@ import type { StrataItem } from "@/lib/hooks/nexus/strata/assessment/learning/ex
 import type { BackendSubject } from "@/lib/data/exam-subjects";
 import { ArrowRight, FileQuestion, FolderOpen, Loader2, X } from "lucide-react";
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
+import { useExamAccessGuard } from "@/components/common/dashboards/modals/useExamAccessGuard";
 
 interface SubjectExamsPopupProps {
   isOpen: boolean;
@@ -116,13 +117,18 @@ export function SubjectExamsPopup({
     };
   }, [isOpen, subject]);
 
+  const panelTitle = panelSlug.replace(/-/g, " ").toUpperCase();
+  const { guard, modal: accessModal } = useExamAccessGuard(panelSlug, panelTitle);
+
   const startExam = (exam: StrataItem) => {
-    const params = new URLSearchParams({
-      mode: "Exam",
-      identifier: String(exam.guidId ?? exam.id),
+    guard(exam.accessType !== "Public", () => {
+      const params = new URLSearchParams({
+        mode: "Exam",
+        identifier: String(exam.guidId ?? exam.id),
+      });
+      router.push(`/web/${livePanelSlug ?? panelSlug}/vista/exam/generic?${params.toString()}`);
+      onClose();
     });
-    router.push(`/web/${livePanelSlug ?? panelSlug}/vista/exam/generic?${params.toString()}`);
-    onClose();
   };
 
   if (!isOpen || !subject) return null;
@@ -219,6 +225,7 @@ export function SubjectExamsPopup({
           </button>
         </div>
       </div>
+      {accessModal}
     </div>
   );
 }

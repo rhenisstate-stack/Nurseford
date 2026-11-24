@@ -1,36 +1,27 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import Annex from '@/app/(web)/auth/modals/Annex';
 import { APP_NAME } from "@/lib/config/config";
-import { Phone, Mail, Sparkles, BookOpen, Headset } from 'lucide-react';
+import { Phone, Mail, Compass, Headset } from 'lucide-react';
 
 const quickLinks = [
   { href: '/pages/about', label: 'About Us' },
-  { href: '/#how-it-works', label: 'How We Help' },
-  { href: '/#exams', label: 'Exam Tracks' },
   { href: '/subjects', label: 'All Subjects & Exams' },
 ];
 
-const resourceLinks = [
-  { href: '/pages/sample-questions', label: 'Free Sample Questions' },
-  { href: '/pages/resources', label: 'Resources' },
-  { href: '/pages/contact-us', label: 'Contact Us' },
+const legalLinks = [
   { href: '/pages/terms', label: 'Terms of Service' },
   { href: '/pages/privacy-policy', label: 'Privacy Policy' },
 ];
 
 export default function Footer() {
-  const [annexOpen, setAnnexOpen] = useState(false);
   const currentYear = new Date().getFullYear();
 
   return (
-    <>
-      <footer className="bg-slate-50 dark:bg-[#0c1524] text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-white/10 transition-colors">
+    <footer className="bg-slate-50 dark:bg-[#0c1524] text-slate-600 dark:text-slate-400 border-t border-slate-200 dark:border-white/10 transition-colors">
         {/* Main Footer Content */}
-        <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14 xl:px-18 py-8 md:py-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
+        <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14 xl:px-18 py-8 md:py-10 pb-16 md:pb-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 md:gap-10">
             {/* Col 1: Brand */}
             <div>
               <Link href="/" className="inline-flex items-center gap-2.5 mb-4 group">
@@ -60,11 +51,11 @@ export default function Footer() {
               </p>
             </div>
 
-            {/* Col 2: QUICK LINKS */}
+            {/* Col 2: EXPLORE & LEGAL */}
             <div>
               <h4 className="font-mono text-xs tracking-widest uppercase text-navy dark:text-white font-bold mb-4 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#ff6b35]" />
-                <span>Quick Links</span>
+                <Compass className="w-3.5 h-3.5 text-[#ff6b35]" />
+                <span>Explore &amp; Legal</span>
               </h4>
               <ul className="space-y-2.5 text-xs sm:text-sm">
                 {quickLinks.map((link) => (
@@ -77,26 +68,7 @@ export default function Footer() {
                     </Link>
                   </li>
                 ))}
-                <li>
-                  <button
-                    type="button"
-                    onClick={() => setAnnexOpen(true)}
-                    className="text-xs sm:text-sm text-left hover:text-navy dark:hover:text-white text-navy/60 dark:text-white/60 transition-colors cursor-pointer"
-                  >
-                    Powered by {APP_NAME} Team
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-            {/* Col 3: RESOURCES & LEGAL */}
-            <div>
-              <h4 className="font-mono text-xs tracking-widest uppercase text-navy dark:text-white font-bold mb-4 flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-teal-600 dark:text-[#2FD9C4]" />
-                <span>Resources &amp; Legal</span>
-              </h4>
-              <ul className="space-y-2.5 text-xs sm:text-sm">
-                {resourceLinks.map((link) => (
+                {legalLinks.map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
@@ -109,7 +81,7 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Col 4: CONTACT */}
+            {/* Col 3: CONTACT */}
             <div>
               <h4 className="font-mono text-xs tracking-widest uppercase text-navy dark:text-white font-bold mb-4 flex items-center gap-1.5">
                 <Headset className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -149,8 +121,5 @@ export default function Footer() {
           </div>
         </div>
       </footer>
-
-      <Annex isOpen={annexOpen} onClose={() => setAnnexOpen(false)} />
-    </>
   );
 }
