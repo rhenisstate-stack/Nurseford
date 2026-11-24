@@ -31,7 +31,7 @@ const stats = [
     border: "border-amber-500/20",
   },
   {
-    value: "Free Notes",
+    value: "Clinical Notes",
     label: "Essential Study Guides",
     subtext: "Quick-reference summaries",
     icon: FileCheck,

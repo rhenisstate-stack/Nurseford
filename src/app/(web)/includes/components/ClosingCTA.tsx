@@ -29,7 +29,7 @@ export default function ClosingCTA() {
           {/* Subtitle */}
           <p className="text-sm sm:text-base text-navy/70 dark:text-white/70 leading-relaxed max-w-xl mx-auto mb-8">
             Join thousands of nursing students preparing for their exams with Nurseford.
-            Start with a free account — no credit card required.
+            Choose your study track and unlock comprehensive question banks with detailed clinical rationales.
           </p>
 
           {/* Buttons */}
@@ -38,7 +38,7 @@ export default function ClosingCTA() {
               href="/auth/register"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full text-sm font-bold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] shadow-xs hover:shadow-md transition-all duration-200 active:scale-[0.98] cursor-pointer"
             >
-              <span>Create Free Account</span>
+              <span>Get Started Today</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <a
@@ -53,7 +53,7 @@ export default function ClosingCTA() {
           <div className="flex items-center justify-center gap-4 sm:gap-6 flex-wrap text-xs font-medium text-navy/60 dark:text-white/60 pt-2 border-t border-slate-200/60 dark:border-white/10">
             <span className="inline-flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>No Credit Card Required</span>
+              <span>Flexible Subscription Plans</span>
             </span>
             <span className="inline-flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />

@@ -16,11 +16,8 @@ import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelC
 // Subject cards for the non-NCLEX dashboards, e.g. GET /api/exams/ati-teas/subjects
 // → { examType, segment, subjects: [...] }.
 //
-// The subjects are fetched exactly from the backend (strata course feed filtered
-// by the exam's segment), mirroring GET /api/courses. NCLEX is excluded here —
-// its dashboards are already fed by GET /api/courses — and keeps the static
-// catalog. When the backend is unreachable, the static catalog is used as a
-// guaranteed fallback so the card row never renders empty.
+// The subjects are fetched dynamically from the live backend (strata course feed filtered
+// by the exam's segment), mirroring GET /api/courses. Pure live dynamic data, no static fallbacks.
 const EXAM_SEGMENTS: Record<string, string> = {
   "ati-teas": "ATI_TEAS",
   "hesi-a2": "HESI_A2",

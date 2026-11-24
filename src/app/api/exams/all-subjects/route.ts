@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const origin = req.nextUrl.origin || "http://localhost:3001";
+  const origin = req.nextUrl.origin || process.env.SKEW_LINE_APP_DOMAIN || "http://localhost:3000";
   const reqHeaders: HeadersInit = {
     "Content-Type": "application/json",
   };

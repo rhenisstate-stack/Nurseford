@@ -45,7 +45,7 @@ const steps = [
     accentColor: "coral",
     badgeBg: "bg-[#ff6b35]/15 text-[#ea580c] dark:text-[#ff8a65] border-[#ff6b35]/30",
     link: {
-      label: "Take a Free Practice Test",
+      label: "Start Practice Exams",
       href: "/dashboards/rn-nursing",
     },
   },

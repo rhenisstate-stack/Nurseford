@@ -29,7 +29,6 @@ export default function Hero() {
   const [openProgressDropdown, setOpenProgressDropdown] = useState(false);
   const progressDropdownRef = useRef<HTMLDivElement>(null);
 
-  const [videoError, setVideoError] = useState(false);
   const desktopVideoRef = useRef<HTMLVideoElement>(null);
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -55,7 +54,7 @@ export default function Hero() {
 
     playVideo(desktopVideoRef.current);
     playVideo(mobileVideoRef.current);
-  }, [videoError]);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -87,30 +86,16 @@ export default function Hero() {
           <div className="absolute inset-0 z-0 lg:hidden pointer-events-none overflow-hidden rounded-3xl">
             <video
               ref={mobileVideoRef}
-              key={videoError ? "hero-video-mobile-fallback" : "hero-video-mobile-af417f73"}
+              key="hero-video-mobile-af417f73"
               autoPlay
               loop
               muted
               playsInline
               preload="auto"
               poster="/images/home-bg/hero-animated-poster.png"
-              onError={() => {
-                console.warn("Mobile hero video load error, switching to fallback");
-                setVideoError(true);
-              }}
               className="w-full h-full object-cover object-center scale-105"
             >
-              {!videoError ? (
-                <>
-                  <source src="/videos/gemini_generated_video_af417f73.mp4" type="video/mp4" />
-                  <source src="/images/home-bg/vid_hp/gemini_generated_video_af417f73.mp4" type="video/mp4" />
-                </>
-              ) : (
-                <>
-                  <source src="/images/home-bg/vid_hp/gemini_generated_video_4a7f1909.mp4" type="video/mp4" />
-                  <source src="/videos/hero-books.mp4" type="video/mp4" />
-                </>
-              )}
+              <source src="/videos/gemini_generated_video_af417f73.mp4" type="video/mp4" />
             </video>
 
             {/* Readability Frost Overlay for Mobile (reduced opacity by 10% to reveal video) */}
@@ -142,12 +127,12 @@ export default function Hero() {
 
             {/* Action CTA Buttons */}
             <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-              {/* Start Free Practice - Moves to Subjects page with Med-Surg Collection First */}
+              {/* Start Practice - Moves to Subjects page with Med-Surg Collection First */}
               <Link
                 href="/subjects"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg text-sm sm:text-base font-semibold bg-[#0A2540] hover:bg-[#06182a] dark:bg-[#1E3A8A] dark:hover:bg-[#1d4ed8] text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
               >
-                <span>Start Free Practice</span>
+                <span>Start Practice</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
 
@@ -262,30 +247,16 @@ export default function Hero() {
             <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] rounded-2xl overflow-hidden shadow-lg bg-slate-900 group">
               <video
                 ref={desktopVideoRef}
-                key={videoError ? "hero-video-desktop-fallback" : "hero-video-desktop-af417f73"}
+                key="hero-video-desktop-af417f73"
                 autoPlay
                 loop
                 muted
                 playsInline
                 preload="auto"
                 poster="/images/home-bg/hero-animated-poster.png"
-                onError={() => {
-                  console.warn("Desktop hero video load error, switching to fallback");
-                  setVideoError(true);
-                }}
                 className="w-full h-full object-cover object-center scale-[1.01] transition-transform duration-700 group-hover:scale-105"
               >
-                {!videoError ? (
-                  <>
-                    <source src="/videos/gemini_generated_video_af417f73.mp4" type="video/mp4" />
-                    <source src="/images/home-bg/vid_hp/gemini_generated_video_af417f73.mp4" type="video/mp4" />
-                  </>
-                ) : (
-                  <>
-                    <source src="/images/home-bg/vid_hp/gemini_generated_video_4a7f1909.mp4" type="video/mp4" />
-                    <source src="/videos/hero-books.mp4" type="video/mp4" />
-                  </>
-                )}
+                <source src="/videos/gemini_generated_video_af417f73.mp4" type="video/mp4" />
               </video>
 
               {/* Subtle ambient gradient overlay for clinical depth */}

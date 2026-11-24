@@ -128,15 +128,15 @@ export default function AboutPage() {
                         Join Thousands of Nursing Students
                     </h2>
                     <p className="text-navy/60 leading-relaxed max-w-xl mx-auto mb-8">
-                        Start with a free account and get instant access to practice questions,
-                        study guides, and more.
+                        Create your account to unlock comprehensive practice questions,
+                        study guides, and clinical rationales.
                     </p>
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                         <Link
                             href="/auth/register"
                             className="inline-flex items-center justify-center px-7 py-3 rounded-full text-sm font-semibold border border-[#ff6b35]/80 dark:border-[#ff6b35]/60 bg-[#ff6b35]/15 dark:bg-[#ff6b35]/20 hover:bg-[#ff6b35]/25 dark:hover:bg-[#ff6b35]/30 text-[#ea580c] dark:text-[#ff8a65] shadow-2xs transition-all duration-200 active:scale-[0.98]"
                         >
-                            Get Started Free
+                            Get Started Today
                         </Link>
                         <Link
                             href="/pages/contact-us"

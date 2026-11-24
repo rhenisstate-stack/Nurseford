@@ -617,7 +617,7 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
         if (typeof window !== "undefined") {
             try {
                 const stored = new Set<string | number>(
-                    JSON.parse(localStorage.getItem("nurseford_bookmarked_questions") || localStorage.getItem("rhenis_bookmarked_questions") || "[]")
+                    JSON.parse(localStorage.getItem("nurseford_bookmarked_questions") || "[]")
                 );
                 const qIds = [q.id, q.guidId].filter(Boolean);
                 if (next) {
@@ -638,7 +638,7 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
                 const examKeys = [examId, examGuidId].filter(Boolean);
                 for (const ek of examKeys) {
                     const examStored = new Set<string | number>(
-                        JSON.parse(localStorage.getItem(`nurseford_exam_bookmarked_${ek}`) || localStorage.getItem(`rhenis_exam_bookmarked_${ek}`) || "[]")
+                        JSON.parse(localStorage.getItem(`nurseford_exam_bookmarked_${ek}`) || "[]")
                     );
                     if (next) {
                         for (const qid of qIds) {

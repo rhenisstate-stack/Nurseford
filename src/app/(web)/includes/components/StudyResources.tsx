@@ -45,10 +45,10 @@ const features = [
   {
     icon: Target,
     image: "/images/cards/free-practice-tests.png",
-    eyebrow: "Free Tools",
-    title: "Free Practice Tests & CATs",
+    eyebrow: "Board Simulation",
+    title: "Clinical Practice Tests & CATs",
     description:
-      "Test your knowledge with free practice exams and Clinical Assessment Tests that simulate real exam conditions.",
+      "Test your clinical judgment with comprehensive practice exams and Clinical Assessment Tests that simulate real board conditions.",
     href: "/dashboards/rn-nursing",
     accent: "green" as const,
   },

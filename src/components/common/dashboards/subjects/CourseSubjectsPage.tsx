@@ -26,19 +26,6 @@ import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdown
 
 const cleanSubjectStr = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-const FALLBACK_NURSING_SCHOOLS = [
-  "Chamberlain University",
-  "Grand Canyon University",
-  "Rasmussen University",
-  "Galen College of Nursing",
-  "West Coast University",
-  "Capella University",
-  "Walden University",
-  "Western Governors University",
-  "UT Health San Antonio",
-  "Emory University School of Nursing",
-];
-
 const courseSubjectsClientCache = new Map<
   string,
   { subjects: BackendSubject[]; courseName: string }
@@ -283,7 +270,7 @@ export function CourseSubjectsPage({
   const { schools } = useNursingSchools(panelSlug);
 
   const availableSchools = useMemo(() => {
-    const combined = Array.isArray(schools) && schools.length > 0 ? schools : FALLBACK_NURSING_SCHOOLS;
+    const combined = Array.isArray(schools) ? schools : [];
     return Array.from(new Set(combined)).filter(Boolean).sort((a, b) => a.localeCompare(b));
   }, [schools]);
 
