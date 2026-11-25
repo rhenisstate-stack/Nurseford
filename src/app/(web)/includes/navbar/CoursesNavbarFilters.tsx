@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useCoursesFilter } from "@/lib/contexts/courses/CoursesFilterContext";
 import { useNursingSchools } from "@/lib/data/nursingSchools";
-import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
+import { formatCourseDropdownName, compareCourses } from "@/lib/utils/exams/formatCourseDropdownName";
 import {
   CANONICAL_PROGRAM_ORDER,
   getProgramRank,
@@ -118,27 +118,7 @@ export default function CoursesNavbarFilters({ activeTrack }: CoursesNavbarFilte
       return true;
     });
 
-    const priority = (name: string) => {
-      const n = name.toLowerCase();
-      if (n.startsWith("ati exams")) return 1;
-      if (n.startsWith("hesi exams")) return 2;
-      if (n.includes("exemplify")) return 3;
-      if (n.includes("general")) return 4;
-      if (n.includes("kap-lan") || n.includes("kaplan")) return 5;
-      if (n.includes("ati exit")) return 6;
-      if (n.includes("hesi exit")) return 7;
-      if (n.includes("exit")) return 8;
-      return 10;
-    };
-
-    const sorted = [...new Set(filtered)].sort((a, b) => {
-      const dispA = formatCourseDropdownName(a);
-      const dispB = formatCourseDropdownName(b);
-      const pA = priority(dispA);
-      const pB = priority(dispB);
-      if (pA !== pB) return pA - pB;
-      return dispA.localeCompare(dispB);
-    });
+    const sorted = [...new Set(filtered)].sort((a, b) => compareCourses(a, b));
 
     return ["All Courses", ...sorted];
   }, [dynamicCourses, effectiveTrack]);

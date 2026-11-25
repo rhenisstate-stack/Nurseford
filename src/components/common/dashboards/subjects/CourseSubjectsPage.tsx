@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { registerSearchSubjects } from "@/lib/services/search/searchRegistry";
 import { useNursingSchools } from "@/lib/data/nursingSchools";
-import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
+import { formatCourseDropdownName, compareCourses } from "@/lib/utils/exams/formatCourseDropdownName";
 
 const cleanSubjectStr = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -360,7 +360,7 @@ export function CourseSubjectsPage({
       });
     }
 
-    return list;
+    return list.sort((a, b) => compareCourses(a.title, b.title));
   }, [dashboardCourses, courseName, courseId, courseSlug]);
 
   const selectedCourseValue = useMemo(() => {

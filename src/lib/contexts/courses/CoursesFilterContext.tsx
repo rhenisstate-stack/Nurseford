@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
 import { isAllowedNursingCourse } from "@/lib/utils/exams/nursingProgramScope";
+import { compareCourses } from "@/lib/utils/exams/formatCourseDropdownName";
 
 export interface CoursesFilterContextType {
   searchQuery: string;
@@ -246,7 +247,7 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
 
         if (!cancelled) {
           if (pSet.size > 0) setDynamicPrograms(Array.from(pSet).sort((a, b) => a.localeCompare(b)));
-          if (cSet.size > 0) setDynamicCourses(Array.from(cSet).sort((a, b) => a.localeCompare(b)));
+          if (cSet.size > 0) setDynamicCourses(Array.from(cSet).sort((a, b) => compareCourses(a, b)));
           if (ySet.size > 0) setDynamicYears(Array.from(ySet).sort((a, b) => b - a));
           if (sSet.size > 0) {
             const seasonOrder = ["Fall", "Spring", "Summer", "Winter"];
@@ -382,7 +383,7 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
       if (Array.isArray(custom.detail?.courses) && custom.detail.courses.length > 0) {
         const unique = Array.from(
           new Set(custom.detail.courses.map((c) => c.trim()).filter(Boolean))
-        ).sort((a, b) => a.localeCompare(b));
+        ).sort((a, b) => compareCourses(a, b));
         if (unique.length > 0) setDynamicCourses(unique);
       }
     };

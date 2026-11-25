@@ -19,7 +19,11 @@ import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/Lef
 import { setAvailableSchools } from "@/lib/data/nursingSchools";
 import CoursesNavbarFilters from "@/app/(web)/includes/navbar/CoursesNavbarFilters";
 import CoursesLeftSidebar from "@/app/(web)/includes/sidebar/CoursesLeftSidebar";
-import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
+import {
+  formatCourseDropdownName,
+  compareCourses,
+  getCourseRank,
+} from "@/lib/utils/exams/formatCourseDropdownName";
 import {
   getProgramRank,
   formatProgramDropdownName,
@@ -277,7 +281,7 @@ export default function SubjectsCatalogView() {
               })
             );
           }
-          if (cSet.size > 0) setDynamicCourses(Array.from(cSet).sort((a, b) => a.localeCompare(b)));
+          if (cSet.size > 0) setDynamicCourses(Array.from(cSet).sort((a, b) => compareCourses(a, b)));
           if (ySet.size > 0) setDynamicYears(Array.from(ySet).sort((a, b) => b - a));
           if (snSet.size > 0) {
             const seasonOrder = ["Fall", "Spring", "Summer", "Winter"];
@@ -605,25 +609,7 @@ export default function SubjectsCatalogView() {
       }
     });
 
-    const priority = (name: string) => {
-      const n = name.toLowerCase();
-      if (n.startsWith("ati exams")) return 1;
-      if (n.startsWith("hesi exams")) return 2;
-      if (n.includes("exemplify")) return 3;
-      if (n.includes("general")) return 4;
-      if (n.includes("kap-lan") || n.includes("kaplan")) return 5;
-      if (n.includes("ati exit")) return 6;
-      if (n.includes("hesi exit")) return 7;
-      if (n.includes("exit")) return 8;
-      return 10;
-    };
-
-    return Array.from(map.values()).sort((a, b) => {
-      const pA = priority(a.displayName);
-      const pB = priority(b.displayName);
-      if (pA !== pB) return pA - pB;
-      return a.displayName.localeCompare(b.displayName);
-    });
+    return Array.from(map.values()).sort((a, b) => compareCourses(a.displayName, b.displayName));
   }, [subjects, activeTrack, selectedProgram, dynamicCourses]);
 
   // Total unique specialty counts per track (stable across course filtering)

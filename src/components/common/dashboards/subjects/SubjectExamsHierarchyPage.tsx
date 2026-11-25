@@ -17,7 +17,7 @@ import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
 import { resolveExamSchool } from "@/lib/utils/exams/resolveExamSchool";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
 import { registerSearchExams } from "@/lib/services/search/searchRegistry";
-import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
+import { formatCourseDropdownName, compareCourses } from "@/lib/utils/exams/formatCourseDropdownName";
 import { useExamAccessGuard } from "@/components/common/dashboards/modals/useExamAccessGuard";
 
 const PER_PAGE = 100;
@@ -845,7 +845,7 @@ export function SubjectExamsHierarchyPage({
       });
     }
 
-    return list;
+    return list.sort((a, b) => compareCourses(a.title, b.title));
   }, [dashboardCourses, courseName, courseId, courseSlug, exams, isMerged]);
 
   const selectedCourseValue = useMemo(() => {
