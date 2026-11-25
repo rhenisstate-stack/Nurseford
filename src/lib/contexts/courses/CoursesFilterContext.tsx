@@ -281,7 +281,7 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     setSelectedSchoolState(s);
     if (typeof window !== "undefined") {
       const val = s === "All Schools" ? "all" : s;
-      window.dispatchEvent(new CustomEvent("nurseford-school-change", { detail: { school: val } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-school-change", { detail: { school: val } }));
     }
   }, []);
 
@@ -289,7 +289,7 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     setSelectedCourseState(c);
     if (typeof window !== "undefined") {
       const val = c === "All Courses" ? "all" : c;
-      window.dispatchEvent(new CustomEvent("nurseford-course-change", { detail: { course: val } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-course-change", { detail: { course: val } }));
     }
   }, []);
 
@@ -297,7 +297,7 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     setSelectedSubjectState(sub);
     if (typeof window !== "undefined") {
       const val = sub === "All Subjects" ? "all" : sub;
-      window.dispatchEvent(new CustomEvent("nurseford-subject-change", { detail: { subject: val } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-subject-change", { detail: { subject: val } }));
     }
   }, []);
 
@@ -305,7 +305,7 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     setSelectedYearState(y);
     if (typeof window !== "undefined") {
       const val = y === "All Years" ? "all" : y;
-      window.dispatchEvent(new CustomEvent("nurseford-year-change", { detail: { year: val } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-year-change", { detail: { year: val } }));
     }
   }, []);
 
@@ -313,7 +313,7 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     setSelectedSeasonState(s);
     if (typeof window !== "undefined") {
       const val = s === "All Seasons" ? "all" : s;
-      window.dispatchEvent(new CustomEvent("nurseford-season-change", { detail: { season: val } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-season-change", { detail: { season: val } }));
     }
   }, []);
 
@@ -387,24 +387,24 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
       }
     };
 
-    window.addEventListener("nurseford-school-change", handleSchoolChange);
-    window.addEventListener("nurseford-course-change", handleCourseChange);
-    window.addEventListener("nurseford-subject-change", handleSubjectChange);
-    window.addEventListener("nurseford-year-change", handleYearChange);
-    window.addEventListener("nurseford-season-change", handleSeasonChange);
-    window.addEventListener("nurseford-available-years-update", handleAvailableYears);
-    window.addEventListener("nurseford-available-seasons-update", handleAvailableSeasons);
-    window.addEventListener("nurseford-available-courses-update", handleAvailableCourses);
+    window.addEventListener("pubnurse-school-change", handleSchoolChange);
+    window.addEventListener("pubnurse-course-change", handleCourseChange);
+    window.addEventListener("pubnurse-subject-change", handleSubjectChange);
+    window.addEventListener("pubnurse-year-change", handleYearChange);
+    window.addEventListener("pubnurse-season-change", handleSeasonChange);
+    window.addEventListener("pubnurse-available-years-update", handleAvailableYears);
+    window.addEventListener("pubnurse-available-seasons-update", handleAvailableSeasons);
+    window.addEventListener("pubnurse-available-courses-update", handleAvailableCourses);
 
     return () => {
-      window.removeEventListener("nurseford-school-change", handleSchoolChange);
-      window.removeEventListener("nurseford-course-change", handleCourseChange);
-      window.removeEventListener("nurseford-subject-change", handleSubjectChange);
-      window.removeEventListener("nurseford-year-change", handleYearChange);
-      window.removeEventListener("nurseford-season-change", handleSeasonChange);
-      window.removeEventListener("nurseford-available-years-update", handleAvailableYears);
-      window.removeEventListener("nurseford-available-seasons-update", handleAvailableSeasons);
-      window.removeEventListener("nurseford-available-courses-update", handleAvailableCourses);
+      window.removeEventListener("pubnurse-school-change", handleSchoolChange);
+      window.removeEventListener("pubnurse-course-change", handleCourseChange);
+      window.removeEventListener("pubnurse-subject-change", handleSubjectChange);
+      window.removeEventListener("pubnurse-year-change", handleYearChange);
+      window.removeEventListener("pubnurse-season-change", handleSeasonChange);
+      window.removeEventListener("pubnurse-available-years-update", handleAvailableYears);
+      window.removeEventListener("pubnurse-available-seasons-update", handleAvailableSeasons);
+      window.removeEventListener("pubnurse-available-courses-update", handleAvailableCourses);
     };
   }, []);
 
@@ -522,11 +522,11 @@ export function CoursesFilterProvider({ children }: { children: React.ReactNode 
     setSelectedSeasonState("All Seasons");
 
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("nurseford-school-change", { detail: { school: "all" } }));
-      window.dispatchEvent(new CustomEvent("nurseford-course-change", { detail: { course: "all" } }));
-      window.dispatchEvent(new CustomEvent("nurseford-subject-change", { detail: { subject: "all" } }));
-      window.dispatchEvent(new CustomEvent("nurseford-year-change", { detail: { year: "all" } }));
-      window.dispatchEvent(new CustomEvent("nurseford-season-change", { detail: { season: "all" } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-school-change", { detail: { school: "all" } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-course-change", { detail: { course: "all" } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-subject-change", { detail: { subject: "all" } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-year-change", { detail: { year: "all" } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-season-change", { detail: { season: "all" } }));
     }
   }, []);
 

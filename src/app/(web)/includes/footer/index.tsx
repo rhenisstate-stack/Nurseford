@@ -28,11 +28,11 @@ export default function Footer() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/logo/logo.webp"
-                  alt="Nurseford"
+                  alt="PubNurse"
                   className="w-8 h-8 shrink-0 object-contain group-hover:scale-105 transition-transform"
                 />
                 <span className="font-serif text-2xl font-bold tracking-tight text-navy dark:text-white">
-                  Nurseford
+                  PubNurse
                 </span>
               </Link>
 
@@ -99,11 +99,11 @@ export default function Footer() {
                 </li>
                 <li>
                   <a
-                    href="mailto:support@nurseford.com"
+                    href="mailto:support@pubnurse.com"
                     className="inline-flex items-center gap-2 hover:text-navy dark:hover:text-white transition-colors break-words"
                   >
                     <Mail className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                    <span>support@nurseford.com</span>
+                    <span>support@pubnurse.com</span>
                   </a>
                 </li>
               </ul>
@@ -116,7 +116,7 @@ export default function Footer() {
               &copy; {currentYear} {APP_NAME}. All rights reserved.
             </p>
             <p className="max-w-md">
-              Nurseford is an independent test-preparation resource and is not affiliated with, endorsed by, or sponsored by NCSBN, ATI, Elsevier, or Examplify.
+              PubNurse is an independent test-preparation resource and is not affiliated with, endorsed by, or sponsored by NCSBN, ATI, Elsevier, or Examplify.
             </p>
           </div>
         </div>

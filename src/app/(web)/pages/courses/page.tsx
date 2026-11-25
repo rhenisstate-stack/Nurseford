@@ -88,7 +88,7 @@ export default function CoursesPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        sessionStorage.removeItem("nurseford_cached_courses");
+        sessionStorage.removeItem("pubnurse_cached_courses");
       } catch {}
     }
   }, []);

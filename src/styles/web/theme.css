@@ -1,3 +1,4 @@
+.pubnurse-web,
 .nurseford-web {
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-serif: var(--font-plus-jakarta), system-ui, sans-serif;
@@ -23,7 +24,9 @@
 }
 
 /* Light mode: clean off-white background, dark typography, light tinted card surfaces */
+html.light .pubnurse-web,
 html.light .nurseford-web,
+.pubnurse-web.light,
 .nurseford-web.light {
   --background: #f8fafc;
   --navbar-bg: #ffffff;
@@ -42,7 +45,9 @@ html.light .nurseford-web,
 }
 
 /* Dark mode: concentrated midnight navy */
+html.dark .pubnurse-web,
 html.dark .nurseford-web,
+.pubnurse-web.dark,
 .nurseford-web.dark {
   --background: #171C27;
   --navbar-bg: #171C27;
@@ -60,6 +65,12 @@ html.dark .nurseford-web,
   color: #ffffff;
 }
 
+.pubnurse-web h1,
+.pubnurse-web h2,
+.pubnurse-web h3,
+.pubnurse-web h4,
+.pubnurse-web h5,
+.pubnurse-web h6,
 .nurseford-web h1,
 .nurseford-web h2,
 .nurseford-web h3,

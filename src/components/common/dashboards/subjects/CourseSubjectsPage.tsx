@@ -77,14 +77,14 @@ export function CourseSubjectsPage({
       }
     };
 
-    window.addEventListener("nurseford-school-change", handleSchoolChange);
-    window.addEventListener("nurseford-year-change", handleYearChange);
-    window.addEventListener("nurseford-season-change", handleSeasonChange);
+    window.addEventListener("pubnurse-school-change", handleSchoolChange);
+    window.addEventListener("pubnurse-year-change", handleYearChange);
+    window.addEventListener("pubnurse-season-change", handleSeasonChange);
 
     return () => {
-      window.removeEventListener("nurseford-school-change", handleSchoolChange);
-      window.removeEventListener("nurseford-year-change", handleYearChange);
-      window.removeEventListener("nurseford-season-change", handleSeasonChange);
+      window.removeEventListener("pubnurse-school-change", handleSchoolChange);
+      window.removeEventListener("pubnurse-year-change", handleYearChange);
+      window.removeEventListener("pubnurse-season-change", handleSeasonChange);
     };
   }, []);
 
@@ -395,7 +395,7 @@ export function CourseSubjectsPage({
     setSelectedSchool(val);
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("nurseford-school-change", {
+        new CustomEvent("pubnurse-school-change", {
           detail: { school: sch },
         })
       );
@@ -411,7 +411,7 @@ export function CourseSubjectsPage({
     setSelectedYear(val);
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("nurseford-year-change", {
+        new CustomEvent("pubnurse-year-change", {
           detail: { year: yr },
         })
       );
@@ -427,7 +427,7 @@ export function CourseSubjectsPage({
     setSelectedSeason(val);
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("nurseford-season-change", {
+        new CustomEvent("pubnurse-season-change", {
           detail: { season: sn },
         })
       );

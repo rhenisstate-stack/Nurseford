@@ -3,26 +3,38 @@
 import Link from "next/link";
 import {
   LayoutDashboard,
-  BarChart3,
-  ClipboardList,
-  Receipt,
-  CreditCard,
-  LifeBuoy,
-  HelpCircle,
-  Settings,
+  TrendingUp,
+  FileCheck2,
+  Crown,
+  BadgeCheck,
+  UserCog,
+  Headphones,
+  MessageCircleQuestion,
   X,
   Zap,
   ArrowRight,
 } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext";
 import { APP_TITLE } from "@/lib/config/config";
 import SidebarUserProfile from "@/components/common/user/SidebarUserProfile";
 import PerformanceIndexGauge from "@/components/common/dashboards/PerformanceIndexGauge";
 
-const VISTA_RN = "/dashboards/rn-nursing/vista";
-
 export default function CoursesLeftSidebar() {
   const { isOpened, close, isMobile = false } = useLeftSidebar();
+  const pathname = usePathname() || "";
+  const searchParams = useSearchParams();
+  const track = searchParams?.get("track") || "";
+
+  const isLpn =
+    pathname.includes("lpn") ||
+    pathname.includes("nclex-pn") ||
+    track === "lpn" ||
+    track === "exit";
+
+  const vistaPath = isLpn
+    ? "/dashboards/lpn-nursing/vista"
+    : "/dashboards/rn-nursing/vista";
 
   const handleItemClick = () => {
     if (isMobile) {
@@ -69,9 +81,13 @@ export default function CoursesLeftSidebar() {
         <nav className="flex-1 overflow-y-auto space-y-1 p-2.5 pb-4 left-sidebar-scroll">
           {/* Return Home */}
           <Link href="/" onClick={handleItemClick}>
-            <div className="flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none cursor-pointer">
-              <LayoutDashboard className="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400" />
-              <span className={`ml-3 font-semibold ${isMobile ? "text-xs" : "text-sm"}`}>Return Home</span>
+            <div className="group flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 text-slate-800 dark:text-slate-100 select-none cursor-pointer">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-500/10 text-slate-700 dark:text-slate-300 group-hover:scale-105 transition-transform shrink-0">
+                <LayoutDashboard className="w-4 h-4" />
+              </span>
+              <span className={`ml-3 font-bold tracking-tight text-slate-900 dark:text-white ${isMobile ? "text-xs" : "text-sm"}`}>
+                Return Home
+              </span>
             </div>
           </Link>
 
@@ -104,52 +120,90 @@ export default function CoursesLeftSidebar() {
             </span>
           </div>
 
-          <Link href="/dashboards/rn-nursing/auth/account/edit" onClick={handleItemClick}>
-            <div className="flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 select-none cursor-pointer">
-              <Settings className="w-4 h-4 shrink-0 text-slate-500" />
-              <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Account Settings</span>
+          {/* 1. Daily Analytics & Clinical Progress */}
+          <Link href={`${vistaPath}/stats/progress`} onClick={handleItemClick}>
+            <div className="group flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform shrink-0">
+                <TrendingUp className="w-4 h-4" />
+              </span>
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors ${isMobile ? "text-xs" : "text-sm"}`}>
+                My Progress
+              </span>
             </div>
           </Link>
 
-          <Link href={`${VISTA_RN}/stats/progress`} onClick={handleItemClick}>
-            <div className="flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 select-none cursor-pointer">
-              <BarChart3 className="w-4 h-4 shrink-0 text-slate-500" />
-              <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Progress</span>
+          {/* 2. Exam Diagnostic Reports & Scorecards */}
+          <Link href={`${vistaPath}/stats/reports`} onClick={handleItemClick}>
+            <div className="group flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform shrink-0">
+                <FileCheck2 className="w-4 h-4" />
+              </span>
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors ${isMobile ? "text-xs" : "text-sm"}`}>
+                My Reports
+              </span>
             </div>
           </Link>
 
-          <Link href={`${VISTA_RN}/stats/reports`} onClick={handleItemClick}>
-            <div className="flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 select-none cursor-pointer">
-              <ClipboardList className="w-4 h-4 shrink-0 text-slate-500" />
-              <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Reports</span>
+          {/* 3. Browse & Unlock Subscription Plans */}
+          <Link href={`${vistaPath}/subscriptions/items`} onClick={handleItemClick}>
+            <div className="group flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform shrink-0">
+                <Crown className="w-4 h-4" />
+              </span>
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors ${isMobile ? "text-xs" : "text-sm"}`}>
+                Subscription Packages
+              </span>
             </div>
           </Link>
 
-          <Link href={`${VISTA_RN}/subscriptions/packages`} onClick={handleItemClick}>
-            <div className="flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 select-none cursor-pointer">
-              <Receipt className="w-4 h-4 shrink-0 text-slate-500" />
-              <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Subscriptions</span>
+          {/* 4. Active Subscriptions & Invoices */}
+          <Link href={`${vistaPath}/subscriptions/packages`} onClick={handleItemClick}>
+            <div className="group flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 group-hover:scale-105 transition-transform shrink-0">
+                <BadgeCheck className="w-4 h-4" />
+              </span>
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors ${isMobile ? "text-xs" : "text-sm"}`}>
+                My Subscriptions
+              </span>
             </div>
           </Link>
 
-          <Link href={`${VISTA_RN}/subscriptions/items`} onClick={handleItemClick}>
-            <div className="flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 select-none cursor-pointer">
-              <CreditCard className="w-4 h-4 shrink-0 text-slate-500" />
-              <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Subscription Packages</span>
+          {/* 5. User Account Credentials & Profile */}
+          <Link
+            href={isLpn ? "/dashboards/lpn-nursing/auth/account/edit" : "/dashboards/rn-nursing/auth/account/edit"}
+            onClick={handleItemClick}
+          >
+            <div className="group flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 group-hover:scale-105 transition-transform shrink-0">
+                <UserCog className="w-4 h-4" />
+              </span>
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors ${isMobile ? "text-xs" : "text-sm"}`}>
+                Account Settings
+              </span>
             </div>
           </Link>
 
+          {/* 6. Contact Support */}
           <Link href="/pages/contact-us" onClick={handleItemClick}>
-            <div className="flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 select-none cursor-pointer">
-              <LifeBuoy className="w-4 h-4 shrink-0 text-slate-500" />
-              <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Contact Us</span>
+            <div className="group flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:scale-105 transition-transform shrink-0">
+                <Headphones className="w-4 h-4" />
+              </span>
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors ${isMobile ? "text-xs" : "text-sm"}`}>
+                Contact Us
+              </span>
             </div>
           </Link>
 
+          {/* 7. Need Help / Assistance */}
           <Link href="/pages/contact-us" onClick={handleItemClick}>
-            <div className="flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/80 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 select-none cursor-pointer">
-              <HelpCircle className="w-4 h-4 shrink-0 text-slate-500" />
-              <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Need Help / Assistance</span>
+            <div className="group flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:scale-105 transition-transform shrink-0">
+                <MessageCircleQuestion className="w-4 h-4" />
+              </span>
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors ${isMobile ? "text-xs" : "text-sm"}`}>
+                Need Help / Assistance
+              </span>
             </div>
           </Link>
 
@@ -159,7 +213,7 @@ export default function CoursesLeftSidebar() {
           <div className="my-2 px-1">
             <PerformanceIndexGauge
               bare
-              scope="rn-nursing"
+              scope="all"
               className="w-full bg-transparent"
             />
           </div>

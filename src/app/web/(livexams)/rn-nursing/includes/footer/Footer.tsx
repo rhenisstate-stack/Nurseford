@@ -45,7 +45,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           {/* Copyright */}
           <div className="text-center md:text-left">
-            &copy; {new Date().getFullYear()} Nurseford. All rights reserved.
+            &copy; {new Date().getFullYear()} PubNurse. All rights reserved.
           </div>
 
           {/* Links */}

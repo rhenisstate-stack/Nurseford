@@ -39,14 +39,14 @@ export function useNursingSchools(panelSlug?: string): {
     };
 
     window.addEventListener(
-      "nurseford-available-schools-update",
+      "pubnurse-available-schools-update",
       handleAvailableSchoolsUpdate
     );
 
     // 3. Ask active page if it already has schools ready
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("nurseford-request-available-schools")
+        new CustomEvent("pubnurse-request-available-schools")
       );
     }
 
@@ -99,7 +99,7 @@ export function useNursingSchools(panelSlug?: string): {
       cancelled = true;
       schoolListeners.delete(onUpdate);
       window.removeEventListener(
-        "nurseford-available-schools-update",
+        "pubnurse-available-schools-update",
         handleAvailableSchoolsUpdate
       );
     };

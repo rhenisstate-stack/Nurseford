@@ -36,7 +36,7 @@ export const SingleChoiceQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const correctIds = q.questionCorrectAnswers
     ?.filter((ca) => ca.isCorrect)
@@ -128,7 +128,7 @@ export const SingleChoiceQuestion = ({
         {q.questionOptions?.map((opt: StrataSessionQuestionOption) => {
           const isPicked = picked === opt.id;
           const state = getState(opt.id);
-          const display = resolveOptionDisplay(opt, showFeedback);
+          const display = resolveOptionDisplay(opt, showFeedback && picked !== null);
 
           let rowColorClasses = "border-slate-300 dark:border-slate-700 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-800 dark:text-slate-200";
 

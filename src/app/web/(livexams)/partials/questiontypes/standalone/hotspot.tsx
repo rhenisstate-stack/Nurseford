@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionToolbar } from "../../components/QuestionToolbar";
@@ -37,7 +37,7 @@ export const HotspotQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const bgMedia = q.questionMedias?.find((med) => med.type === "hotspot-background");
 
@@ -125,8 +125,21 @@ export const HotspotQuestion = ({
     });
   };
 
+  const expectedCount = useMemo(() => {
+    if (correctOptionIds.size > 0) return correctOptionIds.size;
+    const text = `${q.questionText ?? ""} ${q.metaQuestionText ?? ""}`;
+    const match = text.match(/select\s+(\d+)/i);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (n > 0) return n;
+    }
+    return 1;
+  }, [correctOptionIds.size, q.questionText, q.metaQuestionText]);
+
+  const isComplete = picked.size >= expectedCount;
+
   const getMarkerState = (optId: number, isCorrect: boolean) => {
-    if (!showFeedback) return picked.has(optId) ? "selected" : "idle";
+    if (!showFeedback || !isComplete) return picked.has(optId) ? "selected" : "idle";
     if (picked.has(optId)) return isCorrect ? "correct" : "wrong";
     if (isCorrect) return "missed";
     return "idle";
@@ -216,7 +229,7 @@ export const HotspotQuestion = ({
         <div className="text-xs text-gray-400 italic">No Hotspot Image Available</div>
       )}
 
-      {showFeedback && (
+      {showFeedback && isComplete && (
         <div className="flex flex-wrap gap-3 text-[11px] text-gray-500">
           <span className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-full bg-emerald-400 inline-block" /> Correct

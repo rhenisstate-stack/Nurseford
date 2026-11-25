@@ -204,16 +204,16 @@ export function SubjectExamsHierarchyPage({
       }
     };
 
-    window.addEventListener("nurseford-course-change", handleCourseChangeEvt);
-    window.addEventListener("nurseford-school-change", handleSchoolChange);
-    window.addEventListener("nurseford-year-change", handleYearChange);
-    window.addEventListener("nurseford-season-change", handleSeasonChange);
+    window.addEventListener("pubnurse-course-change", handleCourseChangeEvt);
+    window.addEventListener("pubnurse-school-change", handleSchoolChange);
+    window.addEventListener("pubnurse-year-change", handleYearChange);
+    window.addEventListener("pubnurse-season-change", handleSeasonChange);
 
     return () => {
-      window.removeEventListener("nurseford-course-change", handleCourseChangeEvt);
-      window.removeEventListener("nurseford-school-change", handleSchoolChange);
-      window.removeEventListener("nurseford-year-change", handleYearChange);
-      window.removeEventListener("nurseford-season-change", handleSeasonChange);
+      window.removeEventListener("pubnurse-course-change", handleCourseChangeEvt);
+      window.removeEventListener("pubnurse-school-change", handleSchoolChange);
+      window.removeEventListener("pubnurse-year-change", handleYearChange);
+      window.removeEventListener("pubnurse-season-change", handleSeasonChange);
     };
   }, []);
 
@@ -221,7 +221,7 @@ export function SubjectExamsHierarchyPage({
     currentCourseRef.current = crs;
     setSelectedCourseFilter(crs);
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("nurseford-course-change", { detail: { course: crs } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-course-change", { detail: { course: crs } }));
       const currentUrl = new URL(window.location.href);
       if (crs === "all" || crs === "All Courses") currentUrl.searchParams.delete("course");
       else currentUrl.searchParams.set("course", crs);
@@ -232,7 +232,7 @@ export function SubjectExamsHierarchyPage({
   const applyYear = (yr: string) => {
     setSelectedYear(yr);
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("nurseford-year-change", { detail: { year: yr } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-year-change", { detail: { year: yr } }));
       const currentUrl = new URL(window.location.href);
       if (yr === "all") currentUrl.searchParams.delete("year");
       else currentUrl.searchParams.set("year", yr);
@@ -243,7 +243,7 @@ export function SubjectExamsHierarchyPage({
   const applySeason = (sn: string) => {
     setSelectedSeason(sn);
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("nurseford-season-change", { detail: { season: sn } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-season-change", { detail: { season: sn } }));
       const currentUrl = new URL(window.location.href);
       if (sn === "all") currentUrl.searchParams.delete("season");
       else currentUrl.searchParams.set("season", sn);
@@ -254,7 +254,7 @@ export function SubjectExamsHierarchyPage({
   const applySchool = (sch: string) => {
     setSelectedSchool(sch);
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("nurseford-school-change", { detail: { school: sch } }));
+      window.dispatchEvent(new CustomEvent("pubnurse-school-change", { detail: { school: sch } }));
       const currentUrl = new URL(window.location.href);
       if (sch === "all") currentUrl.searchParams.delete("school");
       else currentUrl.searchParams.set("school", sch);
@@ -965,7 +965,7 @@ export function SubjectExamsHierarchyPage({
   useEffect(() => {
     if (typeof window !== "undefined" && availableCourseOptions.length > 0) {
       window.dispatchEvent(
-        new CustomEvent("nurseford-available-courses-update", {
+        new CustomEvent("pubnurse-available-courses-update", {
           detail: { courses: availableCourseOptions.map((c) => c.title) },
         })
       );
@@ -975,7 +975,7 @@ export function SubjectExamsHierarchyPage({
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("nurseford-available-schools-update", {
+        new CustomEvent("pubnurse-available-schools-update", {
           detail: { schools: availableSchools },
         })
       );
@@ -985,7 +985,7 @@ export function SubjectExamsHierarchyPage({
   useEffect(() => {
     if (typeof window !== "undefined" && availableYears.length > 0) {
       window.dispatchEvent(
-        new CustomEvent("nurseford-available-years-update", {
+        new CustomEvent("pubnurse-available-years-update", {
           detail: { years: availableYears },
         })
       );
@@ -995,7 +995,7 @@ export function SubjectExamsHierarchyPage({
   useEffect(() => {
     if (typeof window !== "undefined" && availableSeasons.length > 0) {
       window.dispatchEvent(
-        new CustomEvent("nurseford-available-seasons-update", {
+        new CustomEvent("pubnurse-available-seasons-update", {
           detail: { seasons: availableSeasons },
         })
       );
@@ -1008,35 +1008,35 @@ export function SubjectExamsHierarchyPage({
       if (typeof window !== "undefined") {
         if (availableCourseOptions.length > 0) {
           window.dispatchEvent(
-            new CustomEvent("nurseford-available-courses-update", {
+            new CustomEvent("pubnurse-available-courses-update", {
               detail: { courses: availableCourseOptions.map((c) => c.title) },
             })
           );
         }
         window.dispatchEvent(
-          new CustomEvent("nurseford-available-schools-update", {
+          new CustomEvent("pubnurse-available-schools-update", {
             detail: { schools: availableSchools },
           })
         );
         if (availableYears.length > 0) {
           window.dispatchEvent(
-            new CustomEvent("nurseford-available-years-update", {
+            new CustomEvent("pubnurse-available-years-update", {
               detail: { years: availableYears },
             })
           );
         }
         if (availableSeasons.length > 0) {
           window.dispatchEvent(
-            new CustomEvent("nurseford-available-seasons-update", {
+            new CustomEvent("pubnurse-available-seasons-update", {
               detail: { seasons: availableSeasons },
             })
           );
         }
       }
     };
-    window.addEventListener("nurseford-request-available-schools", handleRequest);
+    window.addEventListener("pubnurse-request-available-schools", handleRequest);
     return () => {
-      window.removeEventListener("nurseford-request-available-schools", handleRequest);
+      window.removeEventListener("pubnurse-request-available-schools", handleRequest);
     };
   }, [availableSchools, availableYears, availableSeasons, availableCourseOptions]);
 
@@ -1050,7 +1050,7 @@ export function SubjectExamsHierarchyPage({
       setSelectedSchool("all");
       if (typeof window !== "undefined") {
         window.dispatchEvent(
-          new CustomEvent("nurseford-school-change", { detail: { school: "all" } })
+          new CustomEvent("pubnurse-school-change", { detail: { school: "all" } })
         );
         const currentUrl = new URL(window.location.href);
         currentUrl.searchParams.delete("school");
@@ -1483,9 +1483,9 @@ export function SubjectExamsHierarchyPage({
                             type="button"
                             onClick={() => startExam(exam, "Practice")}
                             className="px-2 py-0.5 rounded-md text-[11px] font-semibold border border-teal-200/90 dark:border-teal-700/60 bg-teal-50/80 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 hover:border-teal-300 shadow-2xs transition-all cursor-pointer"
-                            title="Practice Mode (Immediate Feedback)"
+                            title="Tutor Mode (Immediate Feedback & Rationales)"
                           >
-                            Practice
+                            Tutor
                           </button>
                         )}
                         {allowedModes.includes("Exam") && (

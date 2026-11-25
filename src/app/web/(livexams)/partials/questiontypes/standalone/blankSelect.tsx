@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
@@ -31,7 +31,7 @@ export const BlankSelectQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   // The sentence template is the content tagged "BlankSelectData". In a
   // case-based question, [0] is a case, so never rely on position.
@@ -83,13 +83,23 @@ export const BlankSelectQuestion = ({
     if (!q.savedUserAnswer?.userAnswerData) return {};
     try {
       const parsed = JSON.parse(q.savedUserAnswer.userAnswerData);
-      if (!Array.isArray(parsed)) return {};
-      return Object.fromEntries(
-        parsed.map((item: { blank: string; optionId: number }) => [
-          item.blank,
-          item.optionId,
-        ])
-      );
+      if (Array.isArray(parsed)) {
+        return Object.fromEntries(
+          parsed.map((item: { blank: string; optionId: number }) => [
+            String(item.blank),
+            item.optionId,
+          ])
+        );
+      }
+      if (typeof parsed === "object" && parsed !== null) {
+        return Object.fromEntries(
+          Object.entries(parsed).map(([k, v]) => [
+            String(k),
+            typeof v === "number" ? v : (v as any)?.optionId ?? null,
+          ])
+        );
+      }
+      return {};
     } catch { return {}; }
   })();
 
@@ -152,10 +162,15 @@ export const BlankSelectQuestion = ({
     });
   };
 
+  const isAllBlanksSelected = useMemo(() => {
+    return groups.length > 0 && groups.every(([bn]) => selected[bn] != null);
+  }, [groups, selected]);
+
   const getState = (blankNumber: string): "correct" | "wrong" | "idle" => {
     if (!showFeedback) return "idle";
     const sel = selected[blankNumber];
     if (sel == null) return "idle";
+    if (!isAllBlanksSelected) return "idle";
     return correctByBlank.get(blankNumber)?.includes(sel) ? "correct" : "wrong";
   };
 
@@ -219,13 +234,8 @@ export const BlankSelectQuestion = ({
                     {state === "correct" ? "✓" : "✗"}
                   </span>
                 )}
-                {showFeedback && state === "wrong" && correctOpt && (
+                {showFeedback && isAllBlanksSelected && state === "wrong" && correctOpt && (
                   <span className="text-[10px] text-emerald-700 font-semibold whitespace-nowrap">
-                    → {correctOpt.answerContent}
-                  </span>
-                )}
-                {showFeedback && state === "idle" && correctOpt && (
-                  <span className="text-[10px] text-amber-600 font-semibold whitespace-nowrap">
                     → {correctOpt.answerContent}
                   </span>
                 )}
@@ -270,13 +280,8 @@ export const BlankSelectQuestion = ({
                     </span>
                   )}
                 </div>
-                {showFeedback && state === "wrong" && correctOpt && (
+                {showFeedback && isAllBlanksSelected && state === "wrong" && correctOpt && (
                   <span className="text-xs text-emerald-700 font-semibold shrink-0">
-                    → {correctOpt.answerContent}
-                  </span>
-                )}
-                {showFeedback && state === "idle" && correctOpt && (
-                  <span className="text-xs text-amber-600 font-semibold shrink-0">
                     → {correctOpt.answerContent}
                   </span>
                 )}

@@ -4,9 +4,14 @@
 // -----------------------------------------------------------------------------
 // APP INFO
 // -----------------------------------------------------------------------------
-export const APP_NAME = process.env.SKEW_LINE_APP_NAME || "Nurseford";
-export const APP_TITLE = process.env.SKEW_LINE_APP_TITLE || "Nurseford";
-export const APP_ACRONYM = process.env.SKEW_LINE_APP_ACRONNYM || "NF";
+const envAppName = process.env.SKEW_LINE_APP_NAME;
+export const APP_NAME = (envAppName && !/nurseford/i.test(envAppName)) ? envAppName : "PubNurse";
+
+const envAppTitle = process.env.SKEW_LINE_APP_TITLE;
+export const APP_TITLE = (envAppTitle && !/nurseford/i.test(envAppTitle)) ? envAppTitle : "PubNurse";
+
+const envAppAcronym = process.env.SKEW_LINE_APP_ACRONNYM;
+export const APP_ACRONYM = (envAppAcronym && !/nf/i.test(envAppAcronym)) ? envAppAcronym : "PN";
 export const APP_DESCRIPTION = process.env.SKEW_LINE_APP_DESCRIPTION || "Nursing Exam Preparation and Practice Platform";
 export const APP_VERSION = process.env.SKEW_LINE_APP_VERSION || "1.0.0";
 export const APP_ENV = process.env.SKEW_LINE_APP_ENV || "live";
@@ -53,10 +58,14 @@ export const CONTACT = {
 // -----------------------------------------------------------------------------
 // EMAILS CONFIGURATION
 // -----------------------------------------------------------------------------
+const envSupport = process.env.SKEW_LINE_SUPPORT_EMAIL;
+const envSystem = process.env.SKEW_LINE_SYSTEM_EMAIL;
+const envHelp = process.env.SKEW_LINE_HELP_EMAIL;
+
 export const EMAILS = {
-  SUPPORT: process.env.SKEW_LINE_SUPPORT_EMAIL || "support@nurseford.com",
-  SYSTEM: process.env.SKEW_LINE_SYSTEM_EMAIL || "support@nurseford.com",
-  HELP: process.env.SKEW_LINE_HELP_EMAIL || "support@nurseford.com",
+  SUPPORT: (envSupport && !/nurseford/i.test(envSupport)) ? envSupport : "support@pubnurse.com",
+  SYSTEM: (envSystem && !/nurseford/i.test(envSystem)) ? envSystem : "support@pubnurse.com",
+  HELP: (envHelp && !/nurseford/i.test(envHelp)) ? envHelp : "support@pubnurse.com",
 };
 
 // -----------------------------------------------------------------------------
@@ -93,8 +102,8 @@ export const DEVELOPER = {
 // SEO CONFIG
 // -----------------------------------------------------------------------------
 export const SEO = {
-  author: DEVELOPER.NAME || "Nurseford",
+  author: DEVELOPER.NAME || "PubNurse",
   keywords: "Nursing, Nursing Exams, RN Nursing, LPN Nursing, RN Exit Exams, LPN Exit Exams, Exam Prep, Study Resources",
-  ogImage: `${CONTACT.CANONICALLINK || "https://www.nurseford.com"}/logo/logo.png`,
-  siteUrl: CONTACT.CANONICALLINK || "https://www.nurseford.com",
+  ogImage: `${CONTACT.CANONICALLINK || "https://pubnurse.com"}/logo/logo.png`,
+  siteUrl: CONTACT.CANONICALLINK || "https://pubnurse.com",
 };

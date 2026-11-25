@@ -19,27 +19,27 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
     headerText: "text-coral",
     items: [
       {
-        question: "What is Nurseford?",
+        question: "What is PubNurse?",
         answer:
-          "Nurseford is an online platform providing comprehensive nursing exam preparation, including specialized RN Nursing, LPN Nursing, and RN/LPN Exit Exam Q-Banks. Our resources cover Med-Surg, Fundamentals, Maternal-Newborn, Mental Health, Pediatrics, Pharmacology, and more.",
+          "PubNurse is an online platform providing comprehensive nursing exam preparation, including specialized RN Nursing, LPN Nursing, and RN/LPN Exit Exam Q-Banks. Our resources cover Med-Surg, Fundamentals, Maternal-Newborn, Mental Health, Pediatrics, Pharmacology, and more.",
       },
       {
-        question: "Who can benefit from Nurseford?",
+        question: "Who can benefit from PubNurse?",
         answer:
           "RN and LPN nursing students, graduates preparing for exit exams, practicing nurses refreshing their knowledge, and educators seeking reliable question banks can all benefit.",
       },
       {
-        question: "What makes Nurseford different from other prep sites?",
+        question: "What makes PubNurse different from other prep sites?",
         answer:
           "We offer exam-blueprint-aligned content, rationales for every answer, adaptive practice modes, performance tracking, and coverage across multiple nursing specialties—all designed by experienced nurse educators.",
       },
       {
-        question: "Is Nurseford suitable for international nursing exams?",
+        question: "Is PubNurse suitable for international nursing exams?",
         answer:
-          "Yes! Many international nursing students use Nurseford to strengthen their knowledge of core RN/LPN nursing concepts, pharmacology, and clinical reasoning.",
+          "Yes! Many international nursing students use PubNurse to strengthen their knowledge of core RN/LPN nursing concepts, pharmacology, and clinical reasoning.",
       },
       {
-        question: "Does Nurseford offer guidance on study strategies?",
+        question: "Does PubNurse offer guidance on study strategies?",
         answer:
           "Absolutely. Alongside our practice questions, we provide expert tips, time-management strategies, and exam-day techniques to help you study smarter and boost your confidence.",
       },
@@ -118,7 +118,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
     headerText: "text-navy-light",
     items: [
       {
-        question: "Can I access Nurseford on mobile devices?",
+        question: "Can I access PubNurse on mobile devices?",
         answer:
           "Absolutely. The platform is mobile-responsive, so you can study on your phone or tablet anywhere.",
       },
@@ -133,14 +133,14 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
           "Reach our team through the Contact Us form on the website or by email. We aim to respond within 24–48 hours.",
       },
       {
-        question: "Does Nurseford work on tablets or mobile browsers?",
+        question: "Does PubNurse work on tablets or mobile browsers?",
         answer:
           "Yes. Our platform is fully responsive and optimized for desktops, tablets, and mobile devices so you can study on the go.",
       },
       {
         question: "Are my test scores and personal information secure?",
         answer:
-          "Absolutely. Nurseford uses industry-standard encryption and strict privacy practices to protect your data and exam results.",
+          "Absolutely. PubNurse uses industry-standard encryption and strict privacy practices to protect your data and exam results.",
       },
     ],
   },

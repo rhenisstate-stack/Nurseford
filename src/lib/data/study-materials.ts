@@ -5,4 +5,4 @@ export interface StudyDoc {
   formats: ("pdf" | "word")[];
 }
 
-export const NURSEFORD_SHOP_DOCS: StudyDoc[] = [];
+export const PUBNURSE_SHOP_DOCS: StudyDoc[] = [];

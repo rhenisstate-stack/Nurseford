@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
+import { useSearchParams, usePathname } from "next/navigation";
 import {
   GraduationCap,
   BookOpen,
@@ -18,7 +19,15 @@ import {
   formatProgramDropdownName,
 } from "@/lib/utils/exams/formatProgramDropdownName";
 
-export default function CoursesNavbarFilters() {
+interface CoursesNavbarFiltersProps {
+  activeTrack?: "rn" | "lpn" | "all";
+}
+
+export default function CoursesNavbarFilters({ activeTrack }: CoursesNavbarFiltersProps = {}) {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const trackParam = searchParams?.get("track");
+
   const {
     selectedProgram,
     setSelectedProgram,
@@ -37,6 +46,20 @@ export default function CoursesNavbarFilters() {
     dynamicYears,
     dynamicSeasons,
   } = useCoursesFilter();
+
+  // Determine current effective track (RN, LPN, or All)
+  const effectiveTrack: "rn" | "lpn" | "all" = useMemo(() => {
+    if (activeTrack) return activeTrack;
+    if (trackParam === "lpn") return "lpn";
+    if (trackParam === "all" || trackParam === "both") return "all";
+    if (trackParam === "rn") return "rn";
+    if (selectedProgram && selectedProgram !== "All Programmes" && selectedProgram !== "all") {
+      if (/lpn|pn/i.test(selectedProgram)) return "lpn";
+      if (/rn/i.test(selectedProgram)) return "rn";
+    }
+    if (pathname?.includes("/subjects")) return "rn";
+    return "all";
+  }, [activeTrack, trackParam, selectedProgram, pathname]);
 
   const { schools } = useNursingSchools();
 
@@ -69,10 +92,56 @@ export default function CoursesNavbarFilters() {
     return formatProgramDropdownName(selectedProgram);
   }, [selectedProgram]);
 
+  // Dynamically filter course options based on the active track (RN vs LPN vs All)
   const availableCourses = useMemo(() => {
     const list = Array.isArray(dynamicCourses) ? dynamicCourses : [];
-    return Array.from(new Set(["All Courses", ...list]));
-  }, [dynamicCourses]);
+
+    const isRnCourse = (c: string) => {
+      const norm = formatCourseDropdownName(c).toLowerCase().trim();
+      if (/lpn|pn\b/i.test(norm) || /kap-?lan/i.test(norm)) return false;
+      return /rn\b/i.test(norm) || /general/i.test(norm);
+    };
+
+    const isLpnCourse = (c: string) => {
+      const norm = formatCourseDropdownName(c).toLowerCase().trim();
+      if (/rn\b/i.test(norm) && !/lpn|pn\b/i.test(norm)) return false;
+      return /lpn|pn\b/i.test(norm) || /kap-?lan/i.test(norm);
+    };
+
+    const filtered = list.filter((course) => {
+      if (effectiveTrack === "rn") {
+        return isRnCourse(course);
+      }
+      if (effectiveTrack === "lpn") {
+        return isLpnCourse(course);
+      }
+      return true;
+    });
+
+    const priority = (name: string) => {
+      const n = name.toLowerCase();
+      if (n.startsWith("ati exams")) return 1;
+      if (n.startsWith("hesi exams")) return 2;
+      if (n.includes("exemplify")) return 3;
+      if (n.includes("general")) return 4;
+      if (n.includes("kap-lan") || n.includes("kaplan")) return 5;
+      if (n.includes("ati exit")) return 6;
+      if (n.includes("hesi exit")) return 7;
+      if (n.includes("exit")) return 8;
+      return 10;
+    };
+
+    const sorted = [...new Set(filtered)].sort((a, b) => {
+      const dispA = formatCourseDropdownName(a);
+      const dispB = formatCourseDropdownName(b);
+      const pA = priority(dispA);
+      const pB = priority(dispB);
+      if (pA !== pB) return pA - pB;
+      return dispA.localeCompare(dispB);
+    });
+
+    return ["All Courses", ...sorted];
+  }, [dynamicCourses, effectiveTrack]);
 
   const selectedCourseDisplay = useMemo(() => {
     if (!selectedCourse || selectedCourse === "All Courses" || selectedCourse === "all") {
@@ -83,8 +152,22 @@ export default function CoursesNavbarFilters() {
         c === selectedCourse ||
         formatCourseDropdownName(c).toLowerCase().trim() === formatCourseDropdownName(selectedCourse).toLowerCase().trim()
     );
-    return match || selectedCourse;
+    return match || "All Courses";
   }, [selectedCourse, availableCourses]);
+
+  // Safely reset selectedCourse if it does not belong to the newly active track's available courses
+  useEffect(() => {
+    if (!selectedCourse || selectedCourse === "All Courses" || selectedCourse === "all") return;
+    const isPresent = availableCourses.some(
+      (c) =>
+        c !== "All Courses" &&
+        (c === selectedCourse ||
+          formatCourseDropdownName(c).toLowerCase().trim() === formatCourseDropdownName(selectedCourse).toLowerCase().trim())
+    );
+    if (!isPresent && availableCourses.length > 1) {
+      setSelectedCourse("All Courses");
+    }
+  }, [availableCourses, selectedCourse, setSelectedCourse]);
 
   const availableSchools = useMemo(() => {
     const list = Array.isArray(schools) ? schools : [];

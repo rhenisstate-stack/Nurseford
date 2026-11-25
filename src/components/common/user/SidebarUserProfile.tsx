@@ -212,7 +212,7 @@ export default function SidebarUserProfile({
         <div className="absolute bottom-full left-2 right-2 mb-2 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-2xl p-2.5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-150 space-y-2">
           <div className="text-left px-1">
             <div className="font-bold text-xs text-navy dark:text-white">
-              Welcome to Nurseford
+              Welcome to PubNurse
             </div>
             <div className="text-[10px] text-slate-500 dark:text-slate-400">
               Sign in to save and access exams

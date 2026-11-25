@@ -167,7 +167,7 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
 
     //  Accordion state ─
     const [showHint, setShowHint] = useState(false);
-    const [showCorrect, setShowCorrect] = useState(m === "review"); // REVIEW mode shows correct answer by default
+    const [showCorrect, setShowCorrect] = useState(m === "review" || m === "preview" || m === "practice"); // REVIEW/PREVIEW/PRACTICE mode shows correct answer accordion by default
 
     //  Icon toggle state — hydrated from backend questionActions ─
     const parsedQuestionActions = (q.questionActions ?? []).map(a => {
@@ -617,7 +617,7 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
         if (typeof window !== "undefined") {
             try {
                 const stored = new Set<string | number>(
-                    JSON.parse(localStorage.getItem("nurseford_bookmarked_questions") || "[]")
+                    JSON.parse(localStorage.getItem("pubnurse_bookmarked_questions") || "[]")
                 );
                 const qIds = [q.id, q.guidId].filter(Boolean);
                 if (next) {
@@ -633,12 +633,12 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
                         else if (!isNaN(Number(qid))) stored.delete(Number(qid));
                     }
                 }
-                localStorage.setItem("nurseford_bookmarked_questions", JSON.stringify(Array.from(stored)));
+                localStorage.setItem("pubnurse_bookmarked_questions", JSON.stringify(Array.from(stored)));
 
                 const examKeys = [examId, examGuidId].filter(Boolean);
                 for (const ek of examKeys) {
                     const examStored = new Set<string | number>(
-                        JSON.parse(localStorage.getItem(`nurseford_exam_bookmarked_${ek}`) || "[]")
+                        JSON.parse(localStorage.getItem(`pubnurse_exam_bookmarked_${ek}`) || "[]")
                     );
                     if (next) {
                         for (const qid of qIds) {
@@ -653,7 +653,7 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
                             else if (!isNaN(Number(qid))) examStored.delete(Number(qid));
                         }
                     }
-                    localStorage.setItem(`nurseford_exam_bookmarked_${ek}`, JSON.stringify(Array.from(examStored)));
+                    localStorage.setItem(`pubnurse_exam_bookmarked_${ek}`, JSON.stringify(Array.from(examStored)));
                 }
             } catch {}
         }

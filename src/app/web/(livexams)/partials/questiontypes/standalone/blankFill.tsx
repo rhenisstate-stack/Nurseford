@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type { StrataSessionQuestionFull } from "@/lib/hooks/nexus/strata/assessment/learning/exams/live/useLiveStrataExamsHook";
 import { QuestionToolbar } from "../../components/QuestionToolbar";
 import { QuestionPromptHeader } from "@/components/panel/exam/QuestionPromptHeader";
@@ -37,7 +37,7 @@ export const BlankFillQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const sentenceOption = (q.questionOptions ?? []).find(
     (o) => o.label === "blank-fill-sentence" || (o.answerContent ?? "").includes("[blank")
@@ -150,10 +150,15 @@ export const BlankFillQuestion = ({
     });
   };
 
+  const isAllBlanksFilled = useMemo(() => {
+    return blanks.length > 0 && blanks.every((b) => (values[b.blankLabel] ?? "").trim().length > 0);
+  }, [blanks, values]);
+
   const getState = (blank: BlankMeta): "correct" | "wrong" | "idle" => {
     if (!showFeedback) return "idle";
     const userVal = (values[blank.blankLabel] ?? "").trim();
     if (!userVal) return "idle";
+    if (!isAllBlanksFilled) return "idle";
     return userVal.toLowerCase() === blank.correctAnswer.trim().toLowerCase()
       ? "correct"
       : "wrong";
@@ -220,13 +225,8 @@ export const BlankFillQuestion = ({
                   </span>
                 )}
               </span>
-              {showFeedback && state === "wrong" && (
+              {showFeedback && isAllBlanksFilled && state === "wrong" && (
                 <span className="text-[10px] text-emerald-700 font-semibold whitespace-nowrap">
-                  → {blank.correctAnswer}
-                </span>
-              )}
-              {showFeedback && state === "idle" && blank.correctAnswer && (
-                <span className="text-[10px] text-amber-600 font-semibold whitespace-nowrap">
                   → {blank.correctAnswer}
                 </span>
               )}
@@ -244,7 +244,7 @@ export const BlankFillQuestion = ({
             placeholder="Type your answer here..."
             className="w-full max-w-md rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#001326] px-3 py-2 text-sm sm:text-base text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition shadow-2xs"
           />
-          {showFeedback && q.questionCorrectAnswers?.[0]?.openEndedAnswer && (
+          {showFeedback && Boolean((values["blank1"] ?? values["answer"] ?? Object.values(values)[0] ?? "").trim()) && q.questionCorrectAnswers?.[0]?.openEndedAnswer && (
             <div className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
               Correct Answer: {q.questionCorrectAnswers[0].openEndedAnswer}
             </div>

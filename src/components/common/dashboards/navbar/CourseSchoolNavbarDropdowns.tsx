@@ -2,17 +2,23 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { CreditCard } from "lucide-react";
 
 export function CourseSchoolNavbarDropdowns() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const track = searchParams?.get("track") || "";
 
-  // Extract panel from pathname: /dashboards/[panelSlug]/...
+  // Extract panel from pathname or track param
   const panelSlug = useMemo(() => {
     const match = pathname?.match(/\/dashboards\/([^/]+)/);
-    return match ? match[1] : "rn-nursing";
-  }, [pathname]);
+    if (match) return match[1];
+    if (pathname?.includes("lpn") || pathname?.includes("nclex-pn") || track === "lpn" || track === "exit") {
+      return "lpn-nursing";
+    }
+    return "rn-nursing";
+  }, [pathname, track]);
 
   return (
     <div className="flex items-center shrink-0">

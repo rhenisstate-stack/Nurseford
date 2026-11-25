@@ -178,7 +178,7 @@ type LiveExamActionContextValue = {
 // CONTEXT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const LiveExamActionContext = createContext<LiveExamActionContextValue | null>(null);
+export const LiveExamActionContext = createContext<LiveExamActionContextValue | null>(null);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // PROVIDER

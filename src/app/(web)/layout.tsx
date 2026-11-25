@@ -9,7 +9,7 @@ import '@/styles/web/theme.css';
 
 const resolvedSiteUrl = /^https?:\/\//i.test((SEO.siteUrl || '').trim())
   ? SEO.siteUrl.trim().replace(/\/+$/, '')
-  : `https://${(SEO.siteUrl || 'www.nurseford.com').trim().replace(/\/+$/, '')}`;
+  : `https://${(SEO.siteUrl || 'pubnurse.com').trim().replace(/\/+$/, '')}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(resolvedSiteUrl),
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
 export default function WebLayout({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="nurseford-web flex min-h-screen flex-col"
+      className="pubnurse-web flex min-h-screen flex-col"
     >
       <Navbar />
       <main className="flex-grow">{children}</main>

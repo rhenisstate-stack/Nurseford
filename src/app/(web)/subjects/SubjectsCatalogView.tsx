@@ -210,7 +210,7 @@ export default function SubjectsCatalogView() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        sessionStorage.removeItem("nurseford_unified_subjects_v7");
+        sessionStorage.removeItem("pubnurse_unified_subjects_v7");
       } catch {}
     }
   }, []);
@@ -626,28 +626,6 @@ export default function SubjectsCatalogView() {
     });
   }, [subjects, activeTrack, selectedProgram, dynamicCourses]);
 
-  // Base count of unique specialties for the track
-  const baseTrackCount = useMemo(() => {
-    const list = subjects.filter((s) => {
-      if (selectedProgram && selectedProgram !== "All Programmes" && selectedProgram !== "all") {
-        return matchesProgram(s.programName, selectedProgram);
-      }
-      if (activeTrack === "rn") {
-        return (
-          s.panelSlug === "rn-nursing" ||
-          /rn/i.test(s.programName || "") ||
-          (!/lpn|pn/i.test(s.programName || "") && s.panelSlug !== "lpn-nursing")
-        );
-      }
-      if (activeTrack === "lpn") {
-        return s.panelSlug === "lpn-nursing" || /lpn|pn/i.test(s.programName || "");
-      }
-      return true;
-    });
-    const set = new Set(list.map((s) => getCanonicalSubjectInfo(s.name).key));
-    return set.size;
-  }, [subjects, activeTrack, selectedProgram]);
-
   // Total unique specialty counts per track (stable across course filtering)
   const totalTrackCounts = useMemo(() => {
     const rnSubs = subjects.filter(
@@ -763,7 +741,7 @@ export default function SubjectsCatalogView() {
               CURRICULUM FILTERS (Programme, Course, School, Year, Season, Reset)
           ────────────────────────────────────────────────────────────────────────────────── */}
           <div className="flex items-center gap-2 flex-wrap mb-4 sm:mb-6">
-            <CoursesNavbarFilters />
+            <CoursesNavbarFilters activeTrack={activeTrack} />
           </div>
 
           {/* ────────────────────────────────────────────────────────────────────────────────
@@ -884,12 +862,12 @@ export default function SubjectsCatalogView() {
           ────────────────────────────────────────────────────────────────────────────────── */}
           {!isLoading && !error && filteredSubjects.length > 0 && availableTrackCourses.length > 0 && (
             <div className="mb-5 sm:mb-6">
-              <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-2 pt-0.5 scrollbar-thin">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 {/* All Courses Toggle Button */}
                 <button
                   type="button"
                   onClick={handleAllCoursesToggle}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                     isAllCoursesActive
                       ? activeTrack === "rn"
                         ? "bg-teal-600 text-white shadow-xs border border-teal-600 font-bold"
@@ -901,15 +879,6 @@ export default function SubjectsCatalogView() {
                 >
                   <BookOpen className="w-3.5 h-3.5" />
                   <span>All Courses</span>
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      isAllCoursesActive
-                        ? "bg-white/20 text-white"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                    }`}
-                  >
-                    {baseTrackCount}
-                  </span>
                 </button>
 
                 {/* Course Toggle Buttons */}
@@ -920,7 +889,7 @@ export default function SubjectsCatalogView() {
                       key={course.displayName}
                       type="button"
                       onClick={() => handleCourseToggle(course)}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                         active
                           ? activeTrack === "rn"
                             ? "bg-teal-600 text-white shadow-xs border border-teal-600 font-bold"
@@ -931,15 +900,6 @@ export default function SubjectsCatalogView() {
                       }`}
                     >
                       <span>{course.displayName}</span>
-                      <span
-                        className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                          active
-                            ? "bg-white/20 text-white"
-                            : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                        }`}
-                      >
-                        {course.subjectCount}
-                      </span>
                     </button>
                   );
                 })}

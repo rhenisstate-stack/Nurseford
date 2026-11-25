@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import type {
   StrataSessionQuestionFull,
@@ -33,7 +33,7 @@ export const MultipleImageQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const correctMediaIds = q.questionCorrectAnswers
     ?.filter((ca) => ca.isCorrect)
@@ -113,12 +113,25 @@ export const MultipleImageQuestion = ({
     });
   };
 
+  const expectedCount = useMemo(() => {
+    if (correctMediaIds.length > 0) return correctMediaIds.length;
+    const text = `${q.questionText ?? ""} ${q.metaQuestionText ?? ""}`;
+    const match = text.match(/select\s+(\d+)/i);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (n > 0) return n;
+    }
+    return 1;
+  }, [correctMediaIds.length, q.questionText, q.metaQuestionText]);
+
+  const isComplete = picked.size >= expectedCount;
+
   const getState = (
     mediaId: number
-  ): "correct" | "wrong" | "missed" | "idle" => {
+  ): "correct" | "wrong" | "missed" | "idle" | "selected" => {
 
-    if (!showFeedback)
-      return "idle";
+    if (!showFeedback || !isComplete)
+      return picked.has(mediaId) ? "selected" : "idle";
 
     const isCorrect =
       correctMediaIds.includes(mediaId);
@@ -138,6 +151,7 @@ export const MultipleImageQuestion = ({
     correct: "ring-2 ring-emerald-400 border-emerald-400 bg-emerald-50/30",
     wrong: "ring-2 ring-red-400 border-red-400 bg-red-50/30",
     missed: "ring-2 ring-amber-400 border-amber-400 bg-amber-50/30",
+    selected: "ring-2 ring-indigo-400 border-indigo-400 bg-indigo-50/30",
     idle: "border-gray-200 hover:border-indigo-300 hover:ring-1 hover:ring-indigo-200",
   };
 
@@ -232,7 +246,7 @@ export const MultipleImageQuestion = ({
         })}
       </div>
 
-      {showFeedback && (
+      {showFeedback && isComplete && (
         <div className="flex flex-wrap gap-3 text-[11px] text-gray-500">
           <span className="flex items-center gap-1">
             <span className="w-3 h-3 rounded-full bg-emerald-400 inline-block" />

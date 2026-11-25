@@ -33,7 +33,7 @@ export const TrueFalseQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const correctIds = q.questionCorrectAnswers
     ?.filter((ca) => ca.isCorrect)

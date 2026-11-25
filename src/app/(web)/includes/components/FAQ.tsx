@@ -33,7 +33,7 @@ export default function FAQ() {
           </h2>
 
           <p className="mt-3.5 text-sm sm:text-base text-navy/65 dark:text-white/65 leading-relaxed">
-            Everything you need to know about Nurseford exam tracks, question banks, study materials, and subscriptions.
+            Everything you need to know about PubNurse exam tracks, question banks, study materials, and subscriptions.
           </p>
 
           {/* Category Filter Pills */}

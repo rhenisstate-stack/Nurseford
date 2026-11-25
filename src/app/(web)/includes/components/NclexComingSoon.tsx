@@ -35,7 +35,7 @@ export default function NclexComingSoon() {
             RN, LPN &amp; Exit Exams
           </h2>
           <p className="mt-4 text-navy/60 leading-relaxed">
-            With Nurseford, you&apos;ll access tailored nursing practice questions and illustrative
+            With PubNurse, you&apos;ll access tailored nursing practice questions and illustrative
             videos designed by a team of experts to ensure you study smarter and
             achieve success with confidence.
           </p>

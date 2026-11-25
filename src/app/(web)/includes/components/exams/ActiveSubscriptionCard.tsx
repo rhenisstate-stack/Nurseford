@@ -17,6 +17,10 @@ import {
   type UserSubscriptionPackage,
 } from "@/lib/hooks/nexus/subscription/packages/dicreate/useDiscreteDominionSubscriptionPackages";
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
+import {
+  packageMatchesExamSlug,
+  isPackageActiveAndPaid,
+} from "@/lib/hooks/nexus/subscription/packages/useExamSubscriptionAccess";
 
 const formatShortDate = (value?: string | null) => {
   if (!value) return "—";
@@ -80,9 +84,20 @@ export function useMyActiveSubscription(parentName: string) {
     sortDirection: "asc",
   });
 
+  const matchingSegments = useMemo(() => {
+    const p = (parentName ?? "").toUpperCase().trim();
+    if (p === "LPN_NURSING" || p === "NCLEX_PN" || p === "LPN_EXIT") {
+      return ["LPN_NURSING", "NCLEX_PN", "LPN_EXIT"];
+    }
+    if (p === "RN_NURSING" || p === "NCLEX_RN" || p === "RN_EXIT") {
+      return ["RN_NURSING", "NCLEX_RN", "RN_EXIT"];
+    }
+    return [p];
+  }, [parentName]);
+
   const currentProgramGuidIds = useMemo(
-    () => new Set(programs.filter((p) => p.segment === parentName).map((p) => p.guidId)),
-    [programs, parentName]
+    () => new Set(programs.filter((p) => matchingSegments.includes((p.segment ?? "").toUpperCase().trim())).map((p) => p.guidId)),
+    [programs, matchingSegments]
   );
 
   return useMemo(() => {
@@ -97,10 +112,16 @@ export function useMyActiveSubscription(parentName: string) {
 
     filteredSubscriptionPackages.forEach((pkg) => {
       const p = pkg as PackageWithCluster;
+      const isPaid = isPackageActiveAndPaid(pkg);
+      if (!isPaid) return;
+
+      const tbl = (p.terminalClusterTableName ?? "").toLowerCase();
+      const isProgramTbl = tbl === "strata_programs" || tbl === "programs" || tbl === "program";
+
       const matches =
-        p.terminalClusterTableName === "strata_programs" &&
-        !!p.terminalClusterGuidId &&
-        currentProgramGuidIds.has(p.terminalClusterGuidId);
+        (isProgramTbl && !!p.terminalClusterGuidId && currentProgramGuidIds.has(p.terminalClusterGuidId)) ||
+        matchingSegments.includes((pkg.target ?? "").toUpperCase().trim()) ||
+        packageMatchesExamSlug(pkg, parentName.toLowerCase().replace(/_/g, "-"));
 
       if (!matches) return;
 
@@ -111,7 +132,7 @@ export function useMyActiveSubscription(parentName: string) {
 
     if (active.length === 0) return null;
     return { ...active[0], activeCount: active.length };
-  }, [filteredSubscriptionPackages, currentProgramGuidIds, isAuthenticated]);
+  }, [filteredSubscriptionPackages, currentProgramGuidIds, matchingSegments, parentName, isAuthenticated]);
 }
 
 export default function ActiveSubscriptionCard({

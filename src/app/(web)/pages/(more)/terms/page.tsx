@@ -6,7 +6,7 @@ import BrandText from '../../../includes/components/BrandText';
 const sections = [
   {
     title: '1. Acceptance of Terms',
-    body: 'By accessing and using Nurseford ("the Platform"), you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please discontinue use of the Platform.',
+    body: 'By accessing and using PubNurse ("the Platform"), you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please discontinue use of the Platform.',
   },
   {
     title: '2. Use of the Platform',
@@ -18,11 +18,11 @@ const sections = [
   },
   {
     title: '4. Intellectual Property',
-    body: 'All content on the Platform, including practice questions, study guides, rationales, and design, is the property of Nurseford and is protected by applicable copyright laws. You may not reproduce, distribute, or resell any content without express written permission.',
+    body: 'All content on the Platform, including practice questions, study guides, rationales, and design, is the property of PubNurse and is protected by applicable copyright laws. You may not reproduce, distribute, or resell any content without express written permission.',
   },
   {
     title: '5. Limitation of Liability',
-    body: 'The Platform is provided "as is" without warranties of any kind. Nurseford is not liable for any exam outcomes or damages arising from your use of the Platform. Study materials are intended to supplement, not replace, formal nursing education.',
+    body: 'The Platform is provided "as is" without warranties of any kind. PubNurse is not liable for any exam outcomes or damages arising from your use of the Platform. Study materials are intended to supplement, not replace, formal nursing education.',
   },
   {
     title: '6. Termination',
@@ -47,7 +47,7 @@ export default function TermsPage() {
           </h1>
           <p className="text-navy/60 leading-relaxed">
             Last updated: January 2026. Please read these terms carefully before using{' '}
-            <BrandText text="Nurseford" />.
+            <BrandText text="PubNurse" />.
           </p>
         </div>
       </section>

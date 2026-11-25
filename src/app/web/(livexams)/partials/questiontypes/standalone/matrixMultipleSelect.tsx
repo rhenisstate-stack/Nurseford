@@ -30,7 +30,7 @@ export const MatrixMultipleSelectQuestion = ({
   hideQuestionHeader,
 }: Props) => {
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const matrix = useMemo(() => resolveQuestionMatrix(q), [q]);
 
@@ -108,11 +108,19 @@ export const MatrixMultipleSelectQuestion = ({
     });
   };
 
+  const targetRequired = useMemo(() => {
+    return rowCount || correctCellIds.length || 1;
+  }, [rowCount, correctCellIds.length]);
+
+  const isComplete = picked.size >= targetRequired;
+
   const getState = (cellId: number): "correct" | "wrong" | "selected" | "missed" | "idle" => {
     const isPicked = picked.has(cellId);
     const isCorrect = correctCellIds.includes(cellId);
 
-    if (!showFeedback) return isPicked ? "selected" : "idle";
+    if (!showFeedback || !isComplete) {
+      return isPicked ? "selected" : "idle";
+    }
 
     if (isPicked && isCorrect) return "correct";
     if (isPicked && !isCorrect) return "wrong";

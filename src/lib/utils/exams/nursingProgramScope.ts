@@ -40,8 +40,11 @@ export interface ResultScopeShape {
 }
 
 const EXCLUDED_SEGMENTS = new Set([
+  "ATI",
   "ATI_TEAS",
+  "HESI",
   "HESI_A2",
+  "NCLEX",
   "NCLEX_RN",
   "NCLEX_PN",
   "CNA",
@@ -53,7 +56,7 @@ const EXCLUDED_SEGMENTS = new Set([
 ]);
 
 const EXCLUDED_NAME_RE =
-  /\b(?:nclex|teas|ati[\s\-]*teas|hesi[\s\-]*a2|accuplacer|ged|cna|pre[-\s]*nursing|certification|explicit\s+dynamic)\b/i;
+  /\b(?:nclex|nclex[\s\-]*rn|nclex[\s\-]*pn|hesi|hesi[\s\-]*a2|teas|ati|ati[\s\-]*teas|accuplacer|ged|cna|pre[-\s]*nursing|certification|explicit\s+dynamic)\b/i;
 
 const RN_NURSING_OR_EXIT_RE =
   /^(?:RN[\s\-]*(?:Nursing|Exit)(?:\s*Exams?)?(?:\s*GROUP)?|EXIT[\s\-]*(?:ATI|HESI)?[\s\-]*(?:Exams?[\s\-]*)?RN|.*\bRN\b.*\bExit\b)$/i;
@@ -83,14 +86,20 @@ export function isAllowedNursingProgram(
   if (label && EXCLUDED_NAME_RE.test(label)) return false;
 
   const isRn =
-    seg === "RN_NURSING" ||
-    seg === "RN_EXIT" ||
-    RN_NURSING_OR_EXIT_RE.test(label);
+    (seg === "RN_NURSING" ||
+      seg === "RN_EXIT" ||
+      RN_NURSING_OR_EXIT_RE.test(label)) &&
+    !/\bnclex\b/i.test(label) &&
+    !/\bhesi\b/i.test(label) &&
+    !/\bati\b/i.test(label);
 
   const isLpn =
-    seg === "LPN_NURSING" ||
-    seg === "LPN_EXIT" ||
-    LPN_NURSING_OR_EXIT_RE.test(label);
+    (seg === "LPN_NURSING" ||
+      seg === "LPN_EXIT" ||
+      LPN_NURSING_OR_EXIT_RE.test(label)) &&
+    !/\bnclex\b/i.test(label) &&
+    !/\bhesi\b/i.test(label) &&
+    !/\bati\b/i.test(label);
 
   if (scope === "rn-nursing") return isRn;
   if (scope === "lpn-nursing") return isLpn;
@@ -110,8 +119,8 @@ export function isAllowedNursingAssessment(
   }
   const label = (item.name ?? "").trim();
   if (!label || EXCLUDED_NAME_RE.test(label)) return false;
-  const isRn = RN_NURSING_OR_EXIT_RE.test(label);
-  const isLpn = LPN_NURSING_OR_EXIT_RE.test(label);
+  const isRn = RN_NURSING_OR_EXIT_RE.test(label) && !/\b(?:nclex|hesi|ati|teas)\b/i.test(label);
+  const isLpn = LPN_NURSING_OR_EXIT_RE.test(label) && !/\b(?:nclex|hesi|ati|teas)\b/i.test(label);
   if (scope === "rn-nursing") return isRn;
   if (scope === "lpn-nursing") return isLpn;
   return isRn || isLpn || GENERIC_EXIT_RE.test(label);

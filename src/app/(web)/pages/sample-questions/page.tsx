@@ -4,7 +4,7 @@ import SampleQuestionsClient from "./SampleQuestionsClient";
 import JsonLd, { buildQuizSchema } from "@/components/seo/JsonLd";
 import { APP_NAME, SEO } from "@/lib/config/config";
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || SEO.siteUrl || "https://www.nurseford.com").trim().replace(/\/+$/, "");
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || SEO.siteUrl || "https://pubnurse.com").trim().replace(/\/+$/, "");
 const pageUrl = `${siteUrl}/pages/sample-questions`;
 
 export const metadata: Metadata = {

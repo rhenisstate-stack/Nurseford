@@ -1,7 +1,7 @@
 // src\app\web\(livexams)\ati-teas\vista\exam\(layout)\partials\questiontypes\standalone\highLight.tsx
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type {
   StrataSessionQuestionFull,
   StrataSessionQuestionOption,
@@ -40,7 +40,7 @@ export const HighLightQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   // Passage lives in the content tagged "HighLightData" (case-based questions also carry "CaseBasedData" entries first)
   const passage =
@@ -153,12 +153,25 @@ export const HighLightQuestion = ({
     });
   };
 
+  const expectedCount = useMemo(() => {
+    if (correctIds.length > 0) return correctIds.length;
+    const text = `${q.questionText ?? ""} ${q.metaQuestionText ?? ""}`;
+    const match = text.match(/select\s+(\d+)/i);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (n > 0) return n;
+    }
+    return 1;
+  }, [correctIds.length, q.questionText, q.metaQuestionText]);
+
+  const isComplete = picked.size >= expectedCount;
+
   const getState = (optionId: number | null): HighlightState => {
     if (optionId == null) return "idle";
     const isPicked = picked.has(optionId);
     const isCorrect = correctIds.includes(optionId);
 
-    if (!showFeedback) return isPicked ? "selected" : "idle";
+    if (!showFeedback || !isComplete) return isPicked ? "selected" : "idle";
 
     if (isPicked && isCorrect) return "correct";
     if (isPicked && !isCorrect) return "wrong";

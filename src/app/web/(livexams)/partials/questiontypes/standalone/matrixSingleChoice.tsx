@@ -30,7 +30,7 @@ export const MatrixSingleChoiceQuestion = ({
   hideQuestionHeader,
 }: Props) => {
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const matrix = useMemo(() => resolveQuestionMatrix(q), [q]);
 
@@ -106,7 +106,7 @@ export const MatrixSingleChoiceQuestion = ({
     const isPicked = picked === cellId;
     const isCorrect = correctCellIds.includes(cellId);
 
-    if (!showFeedback) return isPicked ? "selected" : "idle";
+    if (!showFeedback || picked === null) return isPicked ? "selected" : "idle";
 
     if (isPicked && isCorrect) return "correct";
     if (isPicked && !isCorrect) return "wrong";

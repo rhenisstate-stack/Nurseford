@@ -67,7 +67,7 @@ export interface PerformanceIndexGaugeProps {
 
 export default function PerformanceIndexGauge({
   score,
-  scope,
+  scope = "all",
   className = "",
   bare = false,
 }: PerformanceIndexGaugeProps) {

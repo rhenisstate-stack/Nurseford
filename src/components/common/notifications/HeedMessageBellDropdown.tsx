@@ -193,7 +193,7 @@ export default function HeedMessageBellDropdown({
 
     const email =
       user?.email ||
-      (user?.userName ? `${user.userName}@nurseford.com` : "support@nurseford.com");
+      (user?.userName ? `${user.userName}@pubnurse.com` : "support@pubnurse.com");
 
     try {
       setIsSending(true);
@@ -210,7 +210,7 @@ export default function HeedMessageBellDropdown({
       }
 
       setComposerText("");
-      setSendSuccess("Message sent to Nurseford Support ✅");
+      setSendSuccess("Message sent to PubNurse Support ✅");
       setIsComposerOpen(false);
       window.dispatchEvent(new CustomEvent(HEED_STATUS_EVENT));
       refetch();

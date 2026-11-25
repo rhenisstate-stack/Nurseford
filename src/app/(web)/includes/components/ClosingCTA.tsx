@@ -28,7 +28,7 @@ export default function ClosingCTA() {
 
           {/* Subtitle */}
           <p className="text-sm sm:text-base text-navy/70 dark:text-white/70 leading-relaxed max-w-xl mx-auto mb-8">
-            Join thousands of nursing students preparing for their exams with Nurseford.
+            Join thousands of nursing students preparing for their exams with PubNurse.
             Choose your study track and unlock comprehensive question banks with detailed clinical rationales.
           </p>
 

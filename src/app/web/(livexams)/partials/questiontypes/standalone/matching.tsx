@@ -33,7 +33,7 @@ export const MatchingQuestion = ({
 }: Props) => {
 
     const m = (mode ?? "").toLowerCase().trim();
-    const showFeedback = m === "review" || m === "tutor";
+    const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
     const allMatchingPairs: StrataSessionQuestionOption[] = useMemo(
         () =>
@@ -129,8 +129,12 @@ export const MatchingQuestion = ({
         });
     };
 
+    const isAllMatched = useMemo(() => {
+        return allMatchingPairs.length > 0 && allMatchingPairs.every((opt) => Boolean(selections[opt.id]));
+    }, [allMatchingPairs, selections]);
+
     const getRowState = (opt: StrataSessionQuestionOption): "correct" | "wrong" | "idle" => {
-        if (!showFeedback) return "idle";
+        if (!showFeedback || !isAllMatched) return "idle";
         const chosen = selections[opt.id];
         if (!chosen) return "idle";
         const correctAnswer = q.questionCorrectAnswers?.find(

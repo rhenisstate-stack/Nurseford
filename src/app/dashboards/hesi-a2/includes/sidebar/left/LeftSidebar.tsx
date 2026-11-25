@@ -9,14 +9,14 @@ import {
   ChevronRight,
   ClipboardCheck,
   Sparkles,
-  BarChart3,
-  ClipboardList,
-  Receipt,
-  CreditCard,
-  LifeBuoy,
-  HelpCircle,
-  Settings,
-  type LucideIcon,
+                type LucideIcon,
+  TrendingUp,
+  FileCheck2,
+  Crown,
+  BadgeCheck,
+  UserCog,
+  Headphones,
+  MessageCircleQuestion,
 } from "lucide-react";
 import { useLeftSidebar } from "@/lib/contexts/panel/layout/includes/sidebar/LeftSidebarContext";
 import { useThemeContext } from "@/lib/contexts/panel/layout/theme/PanelThemeContext";
@@ -430,45 +430,32 @@ export default function LeftSidebar() {
 
         <div className="my-2 border-t border-[var(--text-color)]/10" />
 
+                {/* MY ACCOUNT DATA MANAGEMENT */}
         {isOpened && (
-          <div className="flex justify-center p-0">
-            <span className="text-[10px] font-semibold tracking-widest uppercase opacity-50 select-none">
+          <div className="flex justify-center pt-1 pb-0.5">
+            <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400 dark:text-slate-400 select-none">
               My Account Data Management
             </span>
           </div>
         )}
 
-        <Link href={`/dashboards/${DASHBOARD_NAME}/auth/account/edit`} onClick={handleItemClick}>
-          <div
-            onClick={handleItemClick}
-            onMouseEnter={(e) => handleItemHover("Account Settings", e)}
-            onMouseLeave={handleMouseLeave}
-            className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
-              ${!isOpened && "justify-center"}`}
-          >
-            <Settings className="w-5 h-5 shrink-0" />
-            {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Account Settings</span>}
-
-            {isCollapsed && hoveredItem === "Account Settings" && (
-              <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
-                Account Settings
-              </Tooltip>
-            )}
-          </div>
-        </Link>
-
-        <Link href={`${VISTA}/stats/progress`}>
+        {/* 1. My Progress */}
+        <Link href={`${VISTA}/stats/progress`} onClick={handleItemClick}>
           <div
             onClick={handleItemClick}
             onMouseEnter={(e) => handleItemHover("My Progress", e)}
             onMouseLeave={handleMouseLeave}
-            className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+            className={`group relative flex items-center py-1.5 px-2 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer
               ${!isOpened && "justify-center"}`}
           >
-            <BarChart3 className="w-5 h-5 shrink-0" />
-            {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Progress</span>}
+            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform shrink-0">
+              <TrendingUp className="w-4 h-4" />
+            </span>
+            {isOpened && (
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors truncate ${isMobile ? "text-xs" : "text-sm"}`}>
+                My Progress
+              </span>
+            )}
 
             {isCollapsed && hoveredItem === "My Progress" && (
               <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
@@ -478,17 +465,23 @@ export default function LeftSidebar() {
           </div>
         </Link>
 
-        <Link href={`${VISTA}/stats/reports`}>
+        {/* 2. My Reports */}
+        <Link href={`${VISTA}/stats/reports`} onClick={handleItemClick}>
           <div
             onClick={handleItemClick}
             onMouseEnter={(e) => handleItemHover("My Reports", e)}
             onMouseLeave={handleMouseLeave}
-            className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+            className={`group relative flex items-center py-1.5 px-2 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer
               ${!isOpened && "justify-center"}`}
           >
-            <ClipboardList className="w-5 h-5 shrink-0" />
-            {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Reports</span>}
+            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 group-hover:scale-105 transition-transform shrink-0">
+              <FileCheck2 className="w-4 h-4" />
+            </span>
+            {isOpened && (
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors truncate ${isMobile ? "text-xs" : "text-sm"}`}>
+                My Reports
+              </span>
+            )}
 
             {isCollapsed && hoveredItem === "My Reports" && (
               <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
@@ -498,37 +491,23 @@ export default function LeftSidebar() {
           </div>
         </Link>
 
-        <Link href={`${VISTA}/subscriptions/packages`}>
-          <div
-            onClick={handleItemClick}
-            onMouseEnter={(e) => handleItemHover("My Subscriptions", e)}
-            onMouseLeave={handleMouseLeave}
-            className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
-              ${!isOpened && "justify-center"}`}
-          >
-            <Receipt className="w-5 h-5 shrink-0" />
-            {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>My Subscriptions</span>}
-
-            {isCollapsed && hoveredItem === "My Subscriptions" && (
-              <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
-                My Subscriptions
-              </Tooltip>
-            )}
-          </div>
-        </Link>
-
-        <Link href={`${VISTA}/subscriptions/items`}>
+        {/* 3. Subscription Packages */}
+        <Link href={`${VISTA}/subscriptions/items`} onClick={handleItemClick}>
           <div
             onClick={handleItemClick}
             onMouseEnter={(e) => handleItemHover("Subscription Packages", e)}
             onMouseLeave={handleMouseLeave}
-            className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+            className={`group relative flex items-center py-1.5 px-2 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer
               ${!isOpened && "justify-center"}`}
           >
-            <CreditCard className="w-5 h-5 shrink-0" />
-            {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Subscription Packages</span>}
+            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:scale-105 transition-transform shrink-0">
+              <Crown className="w-4 h-4" />
+            </span>
+            {isOpened && (
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors truncate ${isMobile ? "text-xs" : "text-sm"}`}>
+                Subscription Packages
+              </span>
+            )}
 
             {isCollapsed && hoveredItem === "Subscription Packages" && (
               <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
@@ -538,17 +517,75 @@ export default function LeftSidebar() {
           </div>
         </Link>
 
-        <Link href="/contact">
+        {/* 4. My Subscriptions */}
+        <Link href={`${VISTA}/subscriptions/packages`} onClick={handleItemClick}>
+          <div
+            onClick={handleItemClick}
+            onMouseEnter={(e) => handleItemHover("My Subscriptions", e)}
+            onMouseLeave={handleMouseLeave}
+            className={`group relative flex items-center py-1.5 px-2 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer
+              ${!isOpened && "justify-center"}`}
+          >
+            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 group-hover:scale-105 transition-transform shrink-0">
+              <BadgeCheck className="w-4 h-4" />
+            </span>
+            {isOpened && (
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors truncate ${isMobile ? "text-xs" : "text-sm"}`}>
+                My Subscriptions
+              </span>
+            )}
+
+            {isCollapsed && hoveredItem === "My Subscriptions" && (
+              <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
+                My Subscriptions
+              </Tooltip>
+            )}
+          </div>
+        </Link>
+
+        {/* 5. Account Settings */}
+        <Link href={`/dashboards/${DASHBOARD_NAME}/auth/account/edit`} onClick={handleItemClick}>
+          <div
+            onClick={handleItemClick}
+            onMouseEnter={(e) => handleItemHover("Account Settings", e)}
+            onMouseLeave={handleMouseLeave}
+            className={`group relative flex items-center py-1.5 px-2 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer
+              ${!isOpened && "justify-center"}`}
+          >
+            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 group-hover:scale-105 transition-transform shrink-0">
+              <UserCog className="w-4 h-4" />
+            </span>
+            {isOpened && (
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors truncate ${isMobile ? "text-xs" : "text-sm"}`}>
+                Account Settings
+              </span>
+            )}
+
+            {isCollapsed && hoveredItem === "Account Settings" && (
+              <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
+                Account Settings
+              </Tooltip>
+            )}
+          </div>
+        </Link>
+
+        {/* 6. Contact Us */}
+        <Link href="/contact" onClick={handleItemClick}>
           <div
             onClick={handleItemClick}
             onMouseEnter={(e) => handleItemHover("Contact Us", e)}
             onMouseLeave={handleMouseLeave}
-            className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+            className={`group relative flex items-center py-1.5 px-2 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer
               ${!isOpened && "justify-center"}`}
           >
-            <LifeBuoy className="w-5 h-5 shrink-0" />
-            {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Contact Us</span>}
+            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 group-hover:scale-105 transition-transform shrink-0">
+              <Headphones className="w-4 h-4" />
+            </span>
+            {isOpened && (
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors truncate ${isMobile ? "text-xs" : "text-sm"}`}>
+                Contact Us
+              </span>
+            )}
 
             {isCollapsed && hoveredItem === "Contact Us" && (
               <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
@@ -558,17 +595,23 @@ export default function LeftSidebar() {
           </div>
         </Link>
 
-        <Link href="/support">
+        {/* 7. Need Help / Assistance */}
+        <Link href="/support" onClick={handleItemClick}>
           <div
             onClick={handleItemClick}
             onMouseEnter={(e) => handleItemHover("Need Help / Assistance", e)}
             onMouseLeave={handleMouseLeave}
-            className={`relative flex items-center py-2 px-1 rounded-lg transition
-              border border-transparent hover:border-[var(--text-color)]/40 select-none
+            className={`group relative flex items-center py-1.5 px-2 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 select-none cursor-pointer
               ${!isOpened && "justify-center"}`}
           >
-            <HelpCircle className="w-5 h-5 shrink-0" />
-            {isOpened && <span className={`ml-3 font-medium ${isMobile ? "text-xs" : "text-sm"}`}>Need Help / Assistance</span>}
+            <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:scale-105 transition-transform shrink-0">
+              <MessageCircleQuestion className="w-4 h-4" />
+            </span>
+            {isOpened && (
+              <span className={`ml-3 font-semibold tracking-tight text-slate-800 dark:text-slate-100 group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors truncate ${isMobile ? "text-xs" : "text-sm"}`}>
+                Need Help / Assistance
+              </span>
+            )}
 
             {isCollapsed && hoveredItem === "Need Help / Assistance" && (
               <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
@@ -584,7 +627,7 @@ export default function LeftSidebar() {
             <div className="px-1">
               <PerformanceIndexGauge
                 bare
-                scope="hesi-a2"
+                scope="all"
                 className="w-full bg-transparent"
               />
             </div>

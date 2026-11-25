@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import type {
   StrataSessionQuestionFull,
   StrataSessionQuestionOption,
@@ -34,7 +34,7 @@ export const OrderingNumberQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const correctOrderIds: number[] = (() => {
     const raw = q.questionCorrectAnswers?.[0]?.correctOrder ?? "";
@@ -135,14 +135,22 @@ export const OrderingNumberQuestion = ({
     });
   };
 
+  const maxPosition = displayOptions.length;
+
+  const isAllAssigned = useMemo(() => {
+    if (displayOptions.length === 0) return false;
+    return displayOptions.every((opt) => {
+      const v = parseInt(assignments[opt.id] ?? "", 10);
+      return !isNaN(v) && v >= 1 && v <= maxPosition;
+    });
+  }, [displayOptions, assignments, maxPosition]);
+
   const getState = (opt: StrataSessionQuestionOption): "correct" | "wrong" | "idle" => {
-    if (!showFeedback) return "idle";
+    if (!showFeedback || !isAllAssigned) return "idle";
     const assigned = parseInt(assignments[opt.id] ?? "", 10);
     if (isNaN(assigned)) return "idle";
     return correctOrderIds[assigned - 1] === opt.id ? "correct" : "wrong";
   };
-
-  const maxPosition = displayOptions.length;
 
   return (
     <div className="pt-0.5 space-y-1">

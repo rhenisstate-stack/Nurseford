@@ -11,15 +11,15 @@ import { APP_NAME, SEO } from '@/lib/config/config';
 
 const outfit = Outfit({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
-const siteUrl = SEO.siteUrl || "https://www.nurseford.com";
+const siteUrl = SEO.siteUrl || "https://pubnurse.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: `${APP_NAME} – NCLEX-RN/PN, TEAS 7, HESI A2 Exam Prep`,
+    default: `${APP_NAME} – RN & LPN Nursing Exam Prep & Exit Q-Bank`,
     template: `%s | ${APP_NAME}`,
   },
-  description: `${APP_NAME} is a premier online platform for nursing exam preparation: NCLEX-RN/PN, TEAS 7, HESI A2, and RN and LPN Q-Banks.`,
+  description: `${APP_NAME} is a premier online platform for nursing exam preparation: RN Nursing, LPN Nursing, and RN/LPN Exit Exam Q-Banks.`,
   applicationName: APP_NAME,
   robots: { index: true, follow: true },
   openGraph: {
@@ -27,13 +27,13 @@ export const metadata: Metadata = {
     type: 'website',
     url: siteUrl,
     title: APP_NAME,
-    description: `${APP_NAME} is a premier online platform for nursing exam preparation: NCLEX-RN/PN, TEAS 7, HESI A2, and RN and LPN Q-Banks.`,
+    description: `${APP_NAME} is a premier online platform for nursing exam preparation: RN Nursing, LPN Nursing, and RN/LPN Exit Exam Q-Banks.`,
     images: ['/logo/logo.png'],
   },
   twitter: {
     card: 'summary_large_image',
     title: APP_NAME,
-    description: `${APP_NAME} is a premier online platform for nursing exam preparation: NCLEX-RN/PN, TEAS 7, HESI A2, and RN and LPN Q-Banks.`,
+    description: `${APP_NAME} is a premier online platform for nursing exam preparation: RN Nursing, LPN Nursing, and RN/LPN Exit Exam Q-Banks.`,
     images: ['/logo/logo.png'],
   },
   icons: {

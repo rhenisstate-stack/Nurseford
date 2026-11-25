@@ -152,7 +152,7 @@ export default function UserProfileEdit({
             Sign In Required
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            You need to be signed in to edit your Nurseford profile.
+            You need to be signed in to edit your PubNurse profile.
           </p>
           <Link
             href={`/dashboards/${panel}/auth/login`}

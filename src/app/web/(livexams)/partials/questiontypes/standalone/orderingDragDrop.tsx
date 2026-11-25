@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { GripVertical } from "lucide-react";
 import type {
   StrataSessionQuestionFull,
@@ -35,7 +35,7 @@ export const OrderingDragDropQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const correctOrderIds: number[] = (() => {
     const raw = q.questionCorrectAnswers?.[0]?.correctOrder ?? "";
@@ -272,8 +272,13 @@ export const OrderingDragDropQuestion = ({
     touchSrc.current = null;
   };
 
+  const isComplete = useMemo(() => {
+    const target = correctOrderIds.length > 0 ? correctOrderIds.length : (q.questionOptions ?? []).length;
+    return target > 0 && rightItems.length >= target;
+  }, [correctOrderIds.length, q.questionOptions, rightItems.length]);
+
   const getState = (opt: StrataSessionQuestionOption, position: number): "correct" | "wrong" | "idle" => {
-    if (!showFeedback) return "idle";
+    if (!showFeedback || !isComplete) return "idle";
     return correctOrderIds[position] === opt.id ? "correct" : "wrong";
   };
 

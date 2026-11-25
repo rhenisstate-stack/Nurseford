@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import type {
   StrataSessionQuestionFull,
@@ -35,7 +35,7 @@ export const DynamicImageQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const correctIds = q.questionCorrectAnswers
     ?.filter((ca) => ca.isCorrect)
@@ -112,8 +112,21 @@ export const DynamicImageQuestion = ({
     });
   };
 
+  const expectedCount = useMemo(() => {
+    if (correctIds.length > 0) return correctIds.length;
+    const text = `${q.questionText ?? ""} ${q.metaQuestionText ?? ""}`;
+    const match = text.match(/select\s+(\d+)/i);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (n > 0) return n;
+    }
+    return 1;
+  }, [correctIds.length, q.questionText, q.metaQuestionText]);
+
+  const isComplete = picked.size >= expectedCount;
+
   const getState = (optId: number): "correct" | "wrong" | "idle" => {
-    if (!showFeedback || !picked.has(optId)) return "idle";
+    if (!showFeedback || !isComplete || !picked.has(optId)) return "idle";
     return correctIds.includes(optId) ? "correct" : "wrong";
   };
 

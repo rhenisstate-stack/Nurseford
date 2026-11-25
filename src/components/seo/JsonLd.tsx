@@ -2,7 +2,7 @@ import { APP_DESCRIPTION, APP_NAME, CONTACT, SEO } from "@/lib/config/config";
 import type { FaqItem } from "@/lib/data/faqs";
 
 function resolveBaseUrl(): string {
-  const raw = (process.env.NEXT_PUBLIC_SITE_URL || SEO.siteUrl || "https://www.nurseford.com").trim().replace(/\/+$/, "");
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL || SEO.siteUrl || "https://pubnurse.com").trim().replace(/\/+$/, "");
   return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 }
 

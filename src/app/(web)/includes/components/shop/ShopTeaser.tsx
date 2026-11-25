@@ -10,7 +10,7 @@ export default function ShopTeaser() {
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-teal-600 dark:text-[#2FD9C4] mb-3">
-            NURSEFORD SHOP
+            PUBNURSE SHOP
           </p>
           <h2 className="font-serif text-3xl sm:text-4xl lg:text-[2.6rem] font-bold text-navy dark:text-white tracking-tight leading-tight">
             Study Materials You Can Own

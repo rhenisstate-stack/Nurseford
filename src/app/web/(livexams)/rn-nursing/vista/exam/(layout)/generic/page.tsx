@@ -974,6 +974,12 @@ export default function LiveExamPage() {
     if (showSubscriptionModal) router.prefetch(packagesHref);
   }, [showSubscriptionModal, packagesHref, router]);
 
+  const handleCloseSubscriptionModal = useCallback(() => {
+    setShowSubscriptionModal(false);
+    setNavigatingPackages(false);
+    router.push(`/dashboards/${programSlug}`);
+  }, [router, programSlug]);
+
   // Modals
   const [calcOpen, setCalcOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -1072,14 +1078,17 @@ export default function LiveExamPage() {
   }, [examSession]);
   const flatTotal = flat.length;
 
-  // Access is 100% dynamic and governed by ASP.NET backend
+  // Allowed max index: if not subscribed and subscriptions finished loading, limit preview to 0
   const allowedMaxIndex = useMemo(() => {
+    if (!isSubscribed && !subscriptionsLoading) {
+      return 0;
+    }
     return flatTotal > 0 ? flatTotal - 1 : 0;
-  }, [flatTotal]);
+  }, [flatTotal, isSubscribed, subscriptionsLoading]);
 
   const registeredLimitCount = useMemo(() => {
-    return flatTotal;
-  }, [flatTotal]);
+    return isSubscribed || subscriptionsLoading ? flatTotal : 1;
+  }, [flatTotal, isSubscribed, subscriptionsLoading]);
 
   // Set in-progress markers in storage on exam load
   useEffect(() => {
@@ -1332,10 +1341,15 @@ export default function LiveExamPage() {
       window.dispatchEvent(new CustomEvent("exam:paused:intercept"));
       if (!examSession?.exam) return;
     }
+    if (!subscriptionsLoading && !isSubscribed && currentIndex >= allowedMaxIndex) {
+      setShowSubscriptionModal(true);
+      return;
+    }
     const maxTotal = typeof total === "number" && total > 0 ? total : flatTotal;
+    const cappedLimit = !subscriptionsLoading && !isSubscribed ? allowedMaxIndex : maxTotal - 1;
 
-    setCurrentIndex((i) => Math.min(maxTotal - 1, i + 1));
-  }, [flatTotal, examSession?.exam]);
+    setCurrentIndex((i) => Math.min(cappedLimit, i + 1));
+  }, [flatTotal, examSession?.exam, isSubscribed, subscriptionsLoading, currentIndex, allowedMaxIndex]);
 
   // Listen for navigation window events
   useEffect(() => {
@@ -1349,7 +1363,12 @@ export default function LiveExamPage() {
         if (!examSession?.exam) return;
       }
       const idx = (e as CustomEvent<{ index: number }>).detail.index;
-      setCurrentIndex(Math.min(Math.max(0, idx), flatTotal - 1));
+      if (!subscriptionsLoading && !isSubscribed && idx > allowedMaxIndex) {
+        setShowSubscriptionModal(true);
+        return;
+      }
+      const cappedLimit = !subscriptionsLoading && !isSubscribed ? allowedMaxIndex : flatTotal - 1;
+      setCurrentIndex(Math.min(Math.max(0, idx), cappedLimit));
     };
 
     window.addEventListener("exam:prev", onPrev);
@@ -1647,13 +1666,13 @@ export default function LiveExamPage() {
               <div className="relative w-5 h-5 sm:w-6 sm:h-6 shrink-0 group-hover:scale-105 transition-transform">
                 <Image
                   src="/logo/logo.png"
-                  alt="Nurseford"
+                  alt="PubNurse"
                   fill
                   className="object-contain"
                 />
               </div>
               <span className="font-bold text-sm sm:text-base text-[#1E3A8A] dark:text-[#60A5FA] tracking-tight group-hover:underline">
-                Nurseford
+                PubNurse
               </span>
             </Link>
 
@@ -2383,18 +2402,14 @@ export default function LiveExamPage() {
           className="fixed inset-0 z-[10010] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) {
-              setShowSubscriptionModal(false);
-              setNavigatingPackages(false);
+              handleCloseSubscriptionModal();
             }
           }}
         >
           <div className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-[#0c1929] p-6 text-center shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <button
               type="button"
-              onClick={() => {
-                setShowSubscriptionModal(false);
-                setNavigatingPackages(false);
-              }}
+              onClick={handleCloseSubscriptionModal}
               aria-label="Close"
               className="absolute top-3 right-3 text-slate-500 hover:text-slate-800 dark:text-slate-300 dark:hover:text-white cursor-pointer"
             >

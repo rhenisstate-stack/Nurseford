@@ -31,7 +31,7 @@ export const NumericResponseQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const correctValue = q.questionCorrectAnswers
     ?.map((ca) => ca.openEndedAnswer)

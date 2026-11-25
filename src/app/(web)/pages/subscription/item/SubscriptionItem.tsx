@@ -15,6 +15,19 @@ interface SubscriptionItemProps {
     onSubscribe?: (item: { guidId?: string; id: number; name: string }) => void;
 }
 
+export interface ProgramOption {
+    key: string;
+    label: string;
+    parentName: string;
+    dashboardName: string;
+    badge: string;
+}
+
+export const SUBSCRIPTION_PROGRAM_OPTIONS: ProgramOption[] = [
+    { key: "rn-nursing", label: "RN Nursing Plans", parentName: "RN_NURSING", dashboardName: "rn-nursing", badge: "RN" },
+    { key: "lpn-nursing", label: "LPN / PN Nursing Plans", parentName: "LPN_NURSING", dashboardName: "lpn-nursing", badge: "PN" },
+];
+
 export default function SubscriptionItem({
     parentTableName,
     parentName,
@@ -25,7 +38,16 @@ export default function SubscriptionItem({
     showSearch = true,
     onSubscribe,
 }: SubscriptionItemProps) {
-    // ── Data Hook: untouched, purely dynamic ──
+    // ── Active Program Selection for seamless multi-track switching ──
+    const [selectedProgram, setSelectedProgram] = useState<ProgramOption>(() => {
+        const norm = (parentName || "").toUpperCase().trim();
+        if (norm.includes("PN") || norm.includes("LPN") || dashboardName.includes("pn") || dashboardName.includes("lpn")) {
+            return SUBSCRIPTION_PROGRAM_OPTIONS[1];
+        }
+        return SUBSCRIPTION_PROGRAM_OPTIONS[0];
+    });
+
+    // ── Data Hook: dynamically scoped to currently selected track ──
     const {
         filteredSubscriptionItems,
         subscriptionItemSearch,
@@ -33,7 +55,7 @@ export default function SubscriptionItem({
         skewTotal,
     } = useDistinctDominionSubscriptionItems({
         parentTableName,
-        parentName,
+        parentName: selectedProgram.parentName,
         page: 1,
         perPage,
         sortDirection: "asc",
@@ -48,7 +70,7 @@ export default function SubscriptionItem({
         [filteredSubscriptionItems]
     );
 
-    // ── Checkout / Subscription action: untouched ──
+    // ── Checkout / Subscription action: uses active selected track dashboard ──
     const handleSubscribe = async (item: (typeof sortedItems)[number]) => {
         if (onSubscribe) {
             onSubscribe(item);
@@ -57,7 +79,7 @@ export default function SubscriptionItem({
 
         setErrorMessage(null);
 
-        const returnUrl = `${window.location.origin}/pages/subscription/package?dashboard=${encodeURIComponent(dashboardName)}`;
+        const returnUrl = `${window.location.origin}/pages/subscription/package?dashboard=${encodeURIComponent(selectedProgram.dashboardName)}`;
 
         const result = await dominionService("SubscriptionPackage", "Store", {
             subscriptionItemId: item.id,
@@ -117,7 +139,7 @@ export default function SubscriptionItem({
     return (
         <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
             {/* Header: Visible in both Light and Dark mode */}
-            <div className="mb-8 text-center max-w-2xl mx-auto">
+            <div className="mb-6 text-center max-w-2xl mx-auto">
                 <span className="inline-block font-mono text-xs tracking-widest uppercase text-teal-600 dark:text-teal-400 font-semibold mb-1.5">
                     SUBSCRIPTION PLANS
                 </span>
@@ -125,8 +147,38 @@ export default function SubscriptionItem({
                     {heading}
                 </h2>
                 <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300 font-normal">
-                    {subheading ?? `Choose the Package that Fits your Prime Timeline. ${skewTotal} Plan${skewTotal !== 1 ? "s" : ""} Available.`}
+                    {subheading ?? `Choose the Package that Fits your Prime Timeline. ${skewTotal} Plan${skewTotal !== 1 ? "s" : ""} Available for ${selectedProgram.label}.`}
                 </p>
+            </div>
+
+            {/* Track Switcher Pills: Switch between RN, LPN / PN, NCLEX plans directly */}
+            <div className="mb-8 flex flex-wrap items-center justify-center gap-2">
+                {SUBSCRIPTION_PROGRAM_OPTIONS.map((prog) => {
+                    const isActive = prog.key === selectedProgram.key;
+                    return (
+                        <button
+                            key={prog.key}
+                            type="button"
+                            onClick={() => setSelectedProgram(prog)}
+                            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                                isActive
+                                    ? "bg-teal-600 text-white shadow-md shadow-teal-600/30 ring-2 ring-teal-400 scale-[1.02]"
+                                    : "bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
+                            }`}
+                        >
+                            <span>{prog.label}</span>
+                            <span
+                                className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold ${
+                                    isActive
+                                        ? "bg-white/20 text-white"
+                                        : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                                }`}
+                            >
+                                {prog.badge}
+                            </span>
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Error Message */}

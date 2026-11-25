@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { SEO } from "@/lib/config/config";
 
 function resolveBaseUrl(): string {
-  const raw = (process.env.NEXT_PUBLIC_SITE_URL || SEO.siteUrl || "https://www.nurseford.com").trim().replace(/\/+$/, "");
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL || SEO.siteUrl || "https://pubnurse.com").trim().replace(/\/+$/, "");
   return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 }
 

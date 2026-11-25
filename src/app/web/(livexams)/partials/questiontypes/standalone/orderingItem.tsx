@@ -35,7 +35,7 @@ export const OrderingItemQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const correctOrderIds: number[] = (() => {
     const raw = q.questionCorrectAnswers?.[0]?.correctOrder ?? "";
@@ -99,13 +99,19 @@ export const OrderingItemQuestion = ({
   const [items, setItems] = useState<StrataSessionQuestionOption[]>(
     () => shouldClear ? initial : resolveInitial()
   );
+  const [hasInteracted, setHasInteracted] = useState(
+    () => !shouldClear && (savedOrder !== null || (persistedOrder !== null && persistedOrder.length > 0))
+  );
 
   useEffect(() => {
     const order = savedOrder ?? persistedOrder;
     if (order && order.length > 0) {
       const map = Object.fromEntries((q.questionOptions ?? []).map((o) => [o.id, o]));
       const restored = order.map((id) => map[id]).filter(Boolean) as StrataSessionQuestionOption[];
-      if (restored.length === initial.length) setItems(restored);
+      if (restored.length === initial.length) {
+        setItems(restored);
+        setHasInteracted(true);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [saved?.answer]);
@@ -113,14 +119,21 @@ export const OrderingItemQuestion = ({
   // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
   // NEW ATTEMPT GUARD
   useEffect(() => {
-    const onFresh = () => setItems(initial);
+    const onFresh = () => {
+      setItems(initial);
+      setHasInteracted(false);
+    };
     const onPrior = () => {
       if (persistedOrder && persistedOrder.length > 0) {
         const map = Object.fromEntries((q.questionOptions ?? []).map((o) => [o.id, o]));
         const restored = persistedOrder.map((id) => map[id]).filter(Boolean) as StrataSessionQuestionOption[];
-        if (restored.length === initial.length) setItems(restored);
+        if (restored.length === initial.length) {
+          setItems(restored);
+          setHasInteracted(true);
+        }
       } else {
         setItems(initial);
+        setHasInteracted(false);
       }
     };
     window.addEventListener("exam:attempt:fresh", onFresh);
@@ -138,7 +151,10 @@ export const OrderingItemQuestion = ({
   const dragIndex = useRef<number | null>(null);
   const dragOverIndex = useRef<number | null>(null);
 
-  useClearOnEvent(q.id, () => setItems(initial));
+  useClearOnEvent(q.id, () => {
+    setItems(initial);
+    setHasInteracted(false);
+  });
 
   const onDragStart = (index: number) => { dragIndex.current = index; };
   const onDragEnter = (index: number) => { dragOverIndex.current = index; };
@@ -151,6 +167,7 @@ export const OrderingItemQuestion = ({
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
     setItems(next);
+    setHasInteracted(true);
     dragIndex.current = null;
     dragOverIndex.current = null;
 
@@ -186,6 +203,7 @@ export const OrderingItemQuestion = ({
     const [moved] = next.splice(from, 1);
     next.splice(to, 0, moved);
     setItems(next);
+    setHasInteracted(true);
     touchDragIndex.current = null;
 
     // only user-picked data goes to backend — q data is never mutated
@@ -201,7 +219,7 @@ export const OrderingItemQuestion = ({
   };
 
   const getState = (opt: StrataSessionQuestionOption, position: number): "correct" | "wrong" | "idle" => {
-    if (!showFeedback) return "idle";
+    if (!showFeedback || !hasInteracted) return "idle";
     return correctOrderIds[position] === opt.id ? "correct" : "wrong";
   };
 

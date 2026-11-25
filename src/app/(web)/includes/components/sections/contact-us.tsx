@@ -22,7 +22,7 @@ const contactMethods = [
     title: "Email Support Desk",
     subtitle: "Fast response within 24h",
     details: [
-      { type: "mailto" as const, value: "support@nurseford.com", href: "mailto:support@nurseford.com" },
+      { type: "mailto" as const, value: "support@pubnurse.com", href: "mailto:support@pubnurse.com" },
     ],
   },
   {
@@ -53,7 +53,7 @@ export default function ContactUs() {
           </h2>
 
           <p className="mt-3.5 text-sm sm:text-base text-navy/65 dark:text-white/65 leading-relaxed">
-            <BrandText text="Unlock your potential in nursing education with Nurseford. Have questions about our Q-Banks, Exit Exam predictors, or study packs? Reach out to our team." />
+            <BrandText text="Unlock your potential in nursing education with PubNurse. Have questions about our Q-Banks, Exit Exam predictors, or study packs? Reach out to our team." />
           </p>
         </div>
 

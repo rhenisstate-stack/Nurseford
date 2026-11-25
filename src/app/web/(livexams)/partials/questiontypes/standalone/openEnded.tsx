@@ -32,7 +32,7 @@ export const OpenEndedQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   // Model answer lives on the correct-answer row's OpenEndedAnswer field — there is no
   // "option" to mark correct/wrong against, so feedback here just surfaces the model answer.
@@ -121,7 +121,7 @@ export const OpenEndedQuestion = ({
       <textarea
         value={text}
         onChange={(e) => handleChange(e.target.value)}
-        disabled={showFeedback}
+        disabled={showFeedback && Boolean(text.trim())}
         rows={5}
         placeholder="Type your answer here..."
         className="w-full border rounded-md px-3 py-2 text-sm leading-relaxed resize-y
@@ -129,7 +129,7 @@ export const OpenEndedQuestion = ({
           disabled:bg-gray-50 disabled:text-gray-600"
       />
 
-      {showFeedback && modelAnswer && (
+      {showFeedback && Boolean(text.trim()) && modelAnswer && (
         <div className="border border-emerald-300 bg-emerald-50 text-emerald-800 rounded-md px-3 py-2 text-sm">
           <span className="font-bold text-xs uppercase tracking-wide block mb-1">Model Answer</span>
           <div dangerouslySetInnerHTML={{ __html: modelAnswer }} />

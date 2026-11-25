@@ -1,7 +1,7 @@
 'use client';
 import { cleanOptionText, isValidExamText, cleanExamText, resolveOptionDisplay } from "@/lib/utils/exams/cleanExamText";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type {
   StrataSessionQuestionFull,
   StrataSessionQuestionOption,
@@ -34,7 +34,7 @@ export const MultipleSelectQuestion = ({
 }: Props) => {
 
   const m = (mode ?? "").toLowerCase().trim();
-  const showFeedback = m === "review" || m === "tutor";
+  const showFeedback = m === "review" || m === "preview" || m === "practice" || m === "tutor";
 
   const correctIds = q.questionCorrectAnswers
     ?.filter((ca) => ca.isCorrect)
@@ -110,8 +110,23 @@ export const MultipleSelectQuestion = ({
     });
   };
 
+  const expectedCount = useMemo(() => {
+    if (correctIds.length > 0) return correctIds.length;
+    const text = `${q.questionText ?? ""} ${q.metaQuestionText ?? ""}`;
+    const match = text.match(/select\s+(\d+)/i);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (n > 0) return n;
+    }
+    return 1;
+  }, [correctIds.length, q.questionText, q.metaQuestionText]);
+
+  const isSataComplete = picked.size >= expectedCount;
+
   const getState = (optId: number): "correct" | "wrong" | "idle" => {
     if (!showFeedback || !picked.has(optId)) return "idle";
+    // In feedback mode, blur/hide correctness feedback until student chooses up to expected number of answers
+    if (!isSataComplete) return "idle";
     return correctIds.includes(optId) ? "correct" : "wrong";
   };
 
@@ -131,7 +146,10 @@ export const MultipleSelectQuestion = ({
         {q.questionOptions?.map((opt: StrataSessionQuestionOption) => {
           const isPicked = picked.has(opt.id);
           const state = getState(opt.id);
-          const display = resolveOptionDisplay(opt, showFeedback);
+          const display = resolveOptionDisplay(
+            opt,
+            showFeedback && isSataComplete
+          );
 
           let rowColorClasses = "border-slate-300 dark:border-slate-700 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-800 dark:text-slate-200";
 
