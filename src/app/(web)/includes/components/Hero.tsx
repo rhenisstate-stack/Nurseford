@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,6 +21,7 @@ import {
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
 import { useUserExamProgress } from "@/lib/hooks/nexus/strata/assessment/progress/useUserExamProgress";
 import UserAccountDropdown from "@/components/common/user/UserAccountDropdown";
+import HeroVisualShowcase from "./HeroVisualShowcase";
 
 const pathButtons = [
   { label: "RN Nursing Exams", href: "/dashboards/rn-nursing" },
@@ -40,32 +42,10 @@ export default function Hero() {
     router.push(href);
   };
 
-  const desktopVideoRef = useRef<HTMLVideoElement>(null);
-  const mobileVideoRef = useRef<HTMLVideoElement>(null);
-
   const { user, authenticated, loading } = useCurrentSystemUser();
   const signedIn = !loading && authenticated && !!user;
   const userName = (user?.userName ?? "").trim();
   const progress = useUserExamProgress();
-
-  // Ensure DOM element properties (muted, playsInline) are explicitly set to allow autoplay without user interaction
-  useEffect(() => {
-    const playVideo = (video: HTMLVideoElement | null) => {
-      if (!video) return;
-      video.defaultMuted = true;
-      video.muted = true;
-      const promise = video.play();
-      if (promise !== undefined) {
-        promise.catch((err) => {
-          // Deferred by browser autoplay policy until interaction or user navigation
-          console.debug("Hero video autoplay deferred:", err);
-        });
-      }
-    };
-
-    playVideo(desktopVideoRef.current);
-    playVideo(mobileVideoRef.current);
-  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -97,25 +77,19 @@ export default function Hero() {
         {/* Two-Column on Desktop (lg+), Video-Behind-Text on Mobile (<lg) */}
         <div className="relative overflow-visible rounded-3xl lg:rounded-none p-6 sm:p-10 lg:p-0 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-14 items-center mb-6 sm:mb-8 md:mb-10">
           
-          {/* Mobile-Only Background Video (< lg) */}
+          {/* Mobile-Only Background Backdrop (< lg) */}
           <div className="absolute inset-0 z-0 lg:hidden pointer-events-none overflow-hidden rounded-3xl">
-            <video
-              ref={mobileVideoRef}
-              key="hero-video-mobile-af417f73"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="auto"
-              poster="/images/home-bg/hero-animated-poster.png"
-              className="w-full h-full object-cover object-center scale-105"
-            >
-              <source src="/videos/gemini_generated_video_af417f73.mp4" type="video/mp4" />
-            </video>
+            <Image
+              src="/images/home-bg/pubnurse-hero-poster.jpg"
+              alt="PubNurse Clinical Learning"
+              fill
+              priority
+              className="object-cover object-center scale-105"
+            />
 
-            {/* Readability Frost Overlay for Mobile (reduced opacity by 10% to reveal video) */}
-            <div className="absolute inset-0 bg-white/75 dark:bg-[#0b1329]/80 backdrop-blur-[1.5px]" />
-            <div className="absolute inset-0 bg-gradient-to-t from-white/85 via-transparent to-white/60 dark:from-[#0b1329]/85 dark:via-transparent dark:to-[#0b1329]/60" />
+            {/* Readability Frost Overlay for Mobile */}
+            <div className="absolute inset-0 bg-white/80 dark:bg-[#000f25]/85 backdrop-blur-[1.5px]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-transparent to-white/70 dark:from-[#000f25]/90 dark:via-transparent dark:to-[#000f25]/70" />
           </div>
 
           {/* Left Column (Text & CTAs) */}
@@ -343,28 +317,16 @@ export default function Hero() {
                 )}
               </div>
             </div>
+
+            {/* Mobile Interactive Showcase (< lg) */}
+            <div className="lg:hidden mt-6 pt-2 relative z-10 w-full max-w-lg mx-auto">
+              <HeroVisualShowcase />
+            </div>
           </div>
 
-          {/* Right Column: Desktop Video Card (>= lg) */}
+          {/* Right Column: Desktop Showcase (>= lg) */}
           <div className="hidden lg:block lg:col-span-5 xl:col-span-6 relative z-10">
-            <div className="relative w-full aspect-[4/3] sm:aspect-[16/11] rounded-2xl overflow-hidden shadow-lg bg-slate-900 group">
-              <video
-                ref={desktopVideoRef}
-                key="hero-video-desktop-af417f73"
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="auto"
-                poster="/images/home-bg/hero-animated-poster.png"
-                className="w-full h-full object-cover object-center scale-[1.01] transition-transform duration-700 group-hover:scale-105"
-              >
-                <source src="/videos/gemini_generated_video_af417f73.mp4" type="video/mp4" />
-              </video>
-
-              {/* Subtle ambient gradient overlay for clinical depth */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0A2540]/30 via-transparent to-transparent pointer-events-none" />
-            </div>
+            <HeroVisualShowcase />
           </div>
         </div>
 

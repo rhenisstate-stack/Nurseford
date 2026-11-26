@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Deep Authoritative Sapphire Navy Gradient -->
+    <linearGradient id="bgSapphire" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06182B"/>
+      <stop offset="45%" stop-color="#0A243F"/>
+      <stop offset="100%" stop-color="#03101C"/>
+    </linearGradient>
+
+    <!-- Vibrant PubNurse Emerald/Teal Gradient -->
+    <linearGradient id="pubTeal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2DD4BF"/>
+      <stop offset="100%" stop-color="#0D9488"/>
+    </linearGradient>
+
+    <!-- Pure Medical Mint Cross Gradient -->
+    <linearGradient id="mintCross" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5EEAD4"/>
+      <stop offset="100%" stop-color="#14B8A6"/>
+    </linearGradient>
+
+    <!-- Ambient Core Glow -->
+    <filter id="coreGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="30" result="blur"/>
+    </filter>
+
+    <!-- Drop Shadow for Squircle Container -->
+    <filter id="containerShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="14" stdDeviation="20" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <!-- Container Squircle (Apple/iOS standard rx = 114) -->
+  <rect x="20" y="20" width="472" height="472" rx="114" fill="url(#bgSapphire)" stroke="#14B8A6" stroke-opacity="0.4" stroke-width="3.5" filter="url(#containerShadow)"/>
+
+  <!-- Subtle Radial Backlight behind the central axis -->
+  <circle cx="256" cy="256" r="130" fill="#0D9488" opacity="0.16" filter="url(#coreGlow)"/>
+
+  <!-- 1. TOP CREST: The Sacred Medical Cross Badge (Nursing) -->
+  <g transform="translate(256, 82)">
+    <circle cx="0" cy="0" r="32" fill="#06182A" stroke="#2DD4BF" stroke-width="3.5"/>
+    <rect x="-5.5" y="-17" width="11" height="34" rx="3.5" fill="url(#mintCross)"/>
+    <rect x="-17" y="-5.5" width="34" height="11" rx="3.5" fill="url(#mintCross)"/>
+  </g>
+
+  <!-- 2. CENTRAL MONOGRAM: PN -->
+  <g id="monogram-pn">
+    <!-- LETTER P (Left: Vibrant PubNurse Teal) -->
+    <path d="M 122 148
+             C 113 148 106 155 106 164
+             V 362
+             C 106 371 113 378 122 378
+             C 131 378 138 371 138 362
+             V 270
+             H 194
+             C 228 270 246 248 246 209
+             C 246 170 228 148 194 148
+             H 122
+             Z
+             M 152 184
+             H 190
+             C 208 184 218 194 218 209
+             C 218 224 208 234 190 234
+             H 152
+             V 184
+             Z"
+          fill="url(#pubTeal)"
+          fill-rule="evenodd"/>
+
+    <!-- LETTER N (Right: Pure Crisp White) -->
+    <path d="M 282 148
+             C 273 148 266 155 266 164
+             V 362
+             C 266 371 273 378 282 378
+             C 291 378 298 371 298 362
+             V 230
+             L 374 372
+             C 378 376 384 378 390 378
+             C 399 378 406 371 406 362
+             V 164
+             C 406 155 399 148 390 148
+             C 381 148 374 155 374 164
+             V 296
+             L 298 154
+             C 294 150 288 148 282 148
+             Z"
+          fill="#FFFFFF"/>
+  </g>
+
+  <!-- 3. BOTTOM BASELINE: Clinical ECG Vital Signs Track -->
+  <path d="M 106 414
+           H 216
+           L 230 398
+           L 246 434
+           L 262 414
+           H 406"
+        stroke="#2DD4BF"
+        stroke-width="5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-opacity="0.9"/>
+</svg>

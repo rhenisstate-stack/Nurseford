@@ -36,8 +36,10 @@ export default function SEOHead({
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={SEO.ogImage} />
 
-      {/* Favicon */}
-      <link rel="icon" href="/favicons/favicon.png" />
+      {/* Favicon & App Icons */}
+      <link rel="icon" href="/favicon.ico" sizes="any" />
+      <link rel="icon" type="image/png" sizes="32x32" href="/logo/logo.png" />
+      <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       <link rel="canonical" href={url} />
     </Head>
   )

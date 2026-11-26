@@ -1,8 +1,8 @@
 module.exports = {
   apps: [
     {
-      name: "rhenis-next",
-      cwd: "/var/www/rhenis",
+      name: "pubnurse-next",
+      cwd: "/var/www/pubnurse",
       script: "node_modules/.bin/next",
       args: "start -p 3000",
       instances: 1,
