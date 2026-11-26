@@ -242,7 +242,7 @@ export const BlankFillQuestion = ({
             value={values["blank1"] ?? values["answer"] ?? Object.values(values)[0] ?? ""}
             onChange={(e) => setValue("blank1", e.target.value)}
             placeholder="Type your answer here..."
-            className="w-full max-w-md rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#001326] px-3 py-2 text-sm sm:text-base text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 transition shadow-2xs"
+            className="w-full max-w-md rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#001326] px-3 py-2 text-sm sm:text-base text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500 transition shadow-2xs"
           />
           {showFeedback && Boolean((values["blank1"] ?? values["answer"] ?? Object.values(values)[0] ?? "").trim()) && q.questionCorrectAnswers?.[0]?.openEndedAnswer && (
             <div className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">

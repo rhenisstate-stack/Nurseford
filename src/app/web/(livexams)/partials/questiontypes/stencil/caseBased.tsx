@@ -89,8 +89,8 @@ export const CaseBasedStencil = ({
                   onClick={() => setActiveTab(c.id)}
                   className={`exhibit-tab-btn px-3 py-1 sm:px-3.5 sm:py-1 whitespace-nowrap transition cursor-pointer ${
                     isActive
-                      ? "font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-[#001326] border-t border-l border-r border-slate-300 dark:border-slate-600 rounded-t-md border-b-0"
-                      : "font-medium text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 bg-transparent border-b border-slate-300 dark:border-slate-700 border-t-0 border-l-0 border-r-0 rounded-none hover:bg-slate-50 dark:hover:bg-slate-800/20"
+                      ? "font-bold text-teal-700 dark:text-teal-300 bg-white dark:bg-[#001326] border-t-2 border-t-teal-600 border-l border-r border-slate-300 dark:border-slate-600 rounded-t-md border-b-0"
+                      : "font-medium text-slate-700 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 bg-transparent border-b border-slate-300 dark:border-slate-700 border-t-0 border-l-0 border-r-0 rounded-none hover:bg-slate-50 dark:hover:bg-slate-800/20"
                   }`}
                 >
                   {cleanTabTitle(c.title) || "Clinical Notes"}
@@ -117,7 +117,7 @@ export const CaseBasedStencil = ({
       {q.metaQuestionText && q.metaQuestionText.toLowerCase().trim() !== "null" && (
         <div className="pt-0.5 pb-1">
           <div
-            className="exam-title-heading text-base sm:text-lg text-blue-700 dark:text-blue-400 font-bold italic leading-snug [&_*]:!text-inherit [&_*]:!font-inherit [&_*]:!leading-snug"
+            className="exam-title-heading text-base sm:text-lg text-slate-900 dark:text-white font-bold leading-snug [&_*]:!text-inherit [&_*]:!font-inherit [&_*]:!leading-snug"
             dangerouslySetInnerHTML={{ __html: cleanPromptHtml(q.metaQuestionText, false) }}
           />
         </div>

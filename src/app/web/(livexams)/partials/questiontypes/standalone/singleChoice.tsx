@@ -137,7 +137,7 @@ export const SingleChoiceQuestion = ({
           } else if (state === "wrong") {
             rowColorClasses = "border-red-400 bg-red-50 dark:bg-red-950/40 text-red-900 dark:text-red-200 ring-1 ring-red-300";
           } else if (isPicked) {
-            rowColorClasses = "border-blue-500/80 dark:border-blue-500/60 bg-blue-50/60 dark:bg-blue-950/40 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 text-blue-950 dark:text-blue-100 ring-1 ring-blue-500/20";
+            rowColorClasses = "border-teal-500/80 dark:border-teal-400/60 bg-teal-50/70 dark:bg-teal-950/40 hover:bg-teal-100/60 dark:hover:bg-teal-900/40 text-teal-950 dark:text-teal-100 ring-1 ring-teal-500/20";
           }
 
           return (
@@ -149,7 +149,7 @@ export const SingleChoiceQuestion = ({
                 type="radio"
                 name={`q-${q.id}`}
                 checked={isPicked}
-                className="w-4 h-4 cursor-pointer shrink-0 mt-0.5 accent-blue-600 dark:accent-blue-500"
+                className="w-4 h-4 cursor-pointer shrink-0 mt-0.5 accent-teal-600 dark:accent-teal-500"
                 onChange={() => handlePick(opt.id)}
               />
               <span className="flex-1 text-sm sm:text-base font-normal leading-snug">

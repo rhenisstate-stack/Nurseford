@@ -1661,40 +1661,41 @@ export default function LiveExamPage() {
             <Link
               href="/"
               title="Return to Home"
-              className="inline-flex items-center gap-2 group cursor-pointer hover:opacity-80 transition-opacity duration-150 w-fit"
+              className="inline-flex items-center gap-2 group cursor-pointer hover:opacity-90 transition-opacity duration-150 w-fit"
             >
-              <div className="relative w-5 h-5 sm:w-6 sm:h-6 shrink-0 group-hover:scale-105 transition-transform">
+              <div className="relative w-6 h-6 sm:w-7 sm:h-7 shrink-0 group-hover:scale-105 transition-transform">
                 <Image
-                  src="/logo/logo.png"
+                  src="/logo/logo.webp"
                   alt="PubNurse"
                   fill
                   className="object-contain"
                 />
               </div>
-              <span className="font-bold text-sm sm:text-base text-[#1E3A8A] dark:text-[#60A5FA] tracking-tight group-hover:underline">
-                PubNurse
+              <span className="font-serif font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                Pub<span className="text-teal-600 dark:text-teal-400">Nurse</span>
               </span>
             </Link>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-xs sm:text-sm text-[#0D9488] dark:text-teal-400 tracking-tight truncate max-w-[280px] sm:max-w-md">
+              <span className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 tracking-tight truncate max-w-[280px] sm:max-w-md">
                 {examSession?.exam?.title || "Exam"}
               </span>
               {(() => {
                 const s = resolveExamSeason(examSession?.exam?.season, examSession?.exam?.title, examSession?.exam?.description);
                 if (!s) return null;
                 return (
-                  <span className="hidden sm:inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                  <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/25">
                     {s} {examSession?.exam?.year ? examSession.exam.year : ""}
                   </span>
                 );
               })()}
             </div>
 
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200">
-              <span>Total Questions : <span>{flatTotal}</span></span>
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <span>Total Questions: <span className="font-bold text-slate-900 dark:text-white">{flatTotal}</span></span>
               {isSubscribed && (
-                <span className="hidden sm:inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Full Access
                 </span>
               )}
@@ -1711,46 +1712,46 @@ export default function LiveExamPage() {
                   <button
                     type="button"
                     onClick={toggle}
-                    className="group inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg hover:bg-blue-100/70 dark:hover:bg-white/10 transition-colors cursor-pointer text-left"
+                    className="group inline-flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer text-left"
                     aria-expanded={isOpen}
                     title="Account Menu"
                   >
-                    <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-300 text-[10px] font-bold shrink-0 border border-blue-300/60 dark:border-blue-700/60">
+                    <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 text-[11px] font-bold shrink-0 border border-teal-300/60 dark:border-teal-700/60">
                       {avatarSrc ? (
                         <Image
                           src={avatarSrc}
                           alt={uName || userName || "User"}
-                          width={20}
-                          height={20}
+                          width={24}
+                          height={24}
                           className="object-cover w-full h-full"
                         />
                       ) : (
                         uInitial || userInitial || "U"
                       )}
                     </div>
-                    <span className="font-bold text-xs sm:text-sm text-blue-600 dark:text-blue-400 uppercase tracking-wide truncate max-w-[120px] sm:max-w-[180px]">
+                    <span className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate max-w-[120px] sm:max-w-[180px]">
                       {uName || userName}
                     </span>
                     <FiChevronDown
-                      className={`w-3.5 h-3.5 text-blue-600 dark:text-blue-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+                      className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
                         }`}
                     />
                   </button>
                 )}
               />
               {isSubscribed && (
-                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
-                  Pro
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-gradient-to-r from-teal-500/15 via-emerald-500/15 to-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/40 shadow-xs">
+                  PubNurse Pro
                 </span>
               )}
             </div>
 
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-              Questions Left : <span>{questionsRemaining}</span>
+            <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              Questions Left: <span className="font-bold text-teal-600 dark:text-teal-400">{questionsRemaining}</span>
             </div>
 
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-              Time Left :{" "}
+            <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              Time Left:{" "}
               <span className="text-red-600 dark:text-red-400 font-bold font-mono whitespace-nowrap inline-block">
                 {totalSeconds > 0 ? formatCountdown(secondsLeft) : "Untimed"}
               </span>
@@ -1762,57 +1763,60 @@ export default function LiveExamPage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 2. ACTION BAR (ROW 2: NAVIGATOR, CALCULATOR, THEME TOGGLE, SETTINGS, PAUSE, END) */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <div className="w-full bg-[#C5D5F6] dark:bg-[#0C1A30] border-b border-blue-200/80 dark:border-white/10 px-6 sm:px-10 py-2 transition-colors">
+      <div className="w-full bg-slate-100/90 dark:bg-[#0A1E34] border-b border-slate-200/80 dark:border-white/10 px-4 sm:px-10 py-2 transition-colors">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-3">
           {/* Left: Question Navigator, Settings, Calculator */}
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              className="p-1.5 rounded border border-emerald-500/80 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40 transition cursor-pointer shadow-2xs"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-300/80 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/80 hover:border-teal-500 hover:text-teal-600 dark:hover:text-teal-300 hover:bg-teal-50/30 transition cursor-pointer shadow-2xs flex items-center gap-1.5 text-xs font-semibold"
               title="Open Question Navigator"
             >
-              <LayoutList size={16} />
+              <LayoutList size={15} />
+              <span className="hidden sm:inline">Navigator</span>
             </button>
 
             <button
               type="button"
               onClick={() => setHelpOpen(true)}
-              className="p-1.5 rounded border border-emerald-500/80 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/40 transition cursor-pointer shadow-2xs"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-300/80 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/80 hover:border-teal-500 hover:text-teal-600 dark:hover:text-teal-300 hover:bg-teal-50/30 transition cursor-pointer shadow-2xs flex items-center gap-1.5 text-xs font-semibold"
               title="Exam Settings & Help"
             >
               <Settings size={15} />
+              <span className="hidden sm:inline">Settings</span>
             </button>
 
             <button
               type="button"
               onClick={() => setCalcOpen(true)}
-              className="p-1.5 rounded border border-blue-500/80 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 transition cursor-pointer shadow-2xs"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-300/80 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/80 hover:border-teal-500 hover:text-teal-600 dark:hover:text-teal-300 hover:bg-teal-50/30 transition cursor-pointer shadow-2xs flex items-center gap-1.5 text-xs font-semibold"
               title="Open Calculator"
             >
-              <Calculator size={16} />
+              <Calculator size={15} />
+              <span className="hidden sm:inline">Calculator</span>
             </button>
           </div>
 
           {/* Right: Theme Toggle, Pause, End */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-1.5 rounded border border-slate-400/80 dark:border-slate-600 text-slate-700 dark:text-slate-300 bg-slate-100/60 dark:bg-slate-800/40 hover:bg-slate-200/60 dark:hover:bg-slate-700/50 transition cursor-pointer shadow-2xs"
+              className="p-1.5 rounded-lg border border-slate-300/80 dark:border-slate-700 text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition cursor-pointer shadow-2xs"
               title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
             >
               {isDark ? (
                 <Sun size={15} className="text-amber-500 dark:text-amber-300" />
               ) : (
-                <Moon size={15} className="text-blue-600 dark:text-blue-300" />
+                <Moon size={15} className="text-slate-700 dark:text-slate-300" />
               )}
             </button>
 
             <button
               type="button"
               onClick={handleTogglePause}
-              className="px-2.5 sm:px-3 py-1.5 rounded border border-amber-500/80 text-amber-700 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/60 dark:hover:bg-amber-900/40 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              className="px-3 py-1.5 rounded-lg border border-amber-400/80 dark:border-amber-600 text-amber-800 dark:text-amber-300 bg-amber-50/70 dark:bg-amber-950/40 hover:bg-amber-100 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
               title={examPaused ? "Resume Exam" : "Pause Exam"}
             >
               <Pause size={13} className="fill-current" />
@@ -1822,7 +1826,7 @@ export default function LiveExamPage() {
             <button
               type="button"
               onClick={() => setShowSubmitConfirm(true)}
-              className="px-2.5 sm:px-3 py-1.5 rounded border border-red-500/80 text-red-700 dark:text-red-400 bg-red-50/50 dark:bg-red-950/30 hover:bg-red-100/60 dark:hover:bg-red-900/40 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              className="px-3 py-1.5 rounded-lg border border-rose-400/80 dark:border-rose-600 text-rose-800 dark:text-rose-300 bg-rose-50/70 dark:bg-rose-950/40 hover:bg-rose-100 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
               title="End Exam"
             >
               <SquarePower size={13} />
@@ -2052,19 +2056,19 @@ export default function LiveExamPage() {
       {/* ─────────────────────────────────────────────────────────────────── */}
       {/* 4. STICKY BOTTOM FOOTER NAVIGATION */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <footer className="fixed bottom-0 inset-x-0 bg-[#E8EDF5] dark:bg-[#071321] border-t border-slate-300/80 dark:border-white/10 py-2 px-3 sm:px-6 shadow-md z-40 transition-colors">
+      <footer className="fixed bottom-0 inset-x-0 bg-white/95 dark:bg-[#071321] backdrop-blur-md border-t border-slate-200 dark:border-white/10 py-2.5 px-3 sm:px-6 shadow-lg z-40 transition-colors">
         {/* DESKTOP & TABLET MODE (sm: and up) - exactly original computer mode */}
         <div className="hidden sm:flex max-w-[1440px] mx-auto items-center justify-between gap-2 sm:gap-4">
           {/* Left: Previous */}
           <div className="flex items-center gap-2 sm:gap-3">
             {currentIndex > 0 && (
               <button
-              type="button"
-              onClick={handlePrev}
-              className="px-3.5 sm:px-4 py-1.5 rounded border border-[#800000]/60 dark:border-rose-500/60 text-[#800000] dark:text-rose-300 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 font-semibold text-xs sm:text-sm transition cursor-pointer shadow-2xs shrink-0 active:scale-[0.98]"
-            >
-              ← Previous
-            </button>
+                type="button"
+                onClick={handlePrev}
+                className="px-4 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-xs sm:text-sm transition cursor-pointer shadow-2xs shrink-0 active:scale-[0.98]"
+              >
+                ← Previous
+              </button>
             )}
           </div>
 
@@ -2072,7 +2076,7 @@ export default function LiveExamPage() {
           <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
             <button
               onClick={() => setChooseExamOpen(true)}
-              className="px-3 sm:px-4 py-1.5 rounded border border-emerald-500/80 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/60 text-xs sm:text-sm font-semibold transition cursor-pointer shadow-2xs shrink-0"
+              className="px-3.5 sm:px-4 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/70 hover:bg-teal-50 hover:text-teal-700 hover:border-teal-400 dark:hover:bg-teal-950/30 dark:hover:text-teal-300 text-xs sm:text-sm font-semibold transition cursor-pointer shadow-2xs shrink-0"
             >
               ← Choose Different Exam
             </button>
@@ -2082,7 +2086,7 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={() => scaleGlobal(-1)}
                 title="Decrease Font Size (A-)"
-                className="px-3 py-1 rounded border border-red-300 dark:border-red-900/60 text-xs font-bold text-red-500 dark:text-red-400 bg-white/80 dark:bg-white/5 hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95 transition cursor-pointer"
+                className="px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer"
               >
                 A-
               </button>
@@ -2090,7 +2094,7 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={() => scaleGlobal(1)}
                 title="Increase Font Size (A+)"
-                className="px-3 py-1 rounded border border-blue-400 dark:border-blue-900/60 text-xs font-bold text-blue-600 dark:text-blue-400 bg-white/80 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-950/30 active:scale-95 transition cursor-pointer"
+                className="px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-teal-600 dark:text-teal-400 bg-slate-50 dark:bg-white/5 hover:bg-teal-50 dark:hover:bg-teal-950/30 active:scale-95 transition cursor-pointer"
               >
                 A+
               </button>
@@ -2098,7 +2102,7 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={resetFontSizes}
                 title="Reset Font Size"
-                className="px-3 py-1 rounded border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer"
+                className="px-3 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer"
               >
                 Reset Font
               </button>
@@ -2110,7 +2114,7 @@ export default function LiveExamPage() {
             <button
               type="button"
               onClick={() => setShowSubmitConfirm(true)}
-              className="shrink-0 flex items-center gap-1.5 px-5 sm:px-6 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-sm transition cursor-pointer active:scale-[0.98]"
+              className="shrink-0 flex items-center gap-1.5 px-6 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow transition cursor-pointer active:scale-[0.98]"
             >
               <span>Submit Exam</span>
               <CheckCircle2 size={16} />
@@ -2119,7 +2123,7 @@ export default function LiveExamPage() {
             <button
               type="button"
               onClick={() => handleNext(flatTotal)}
-              className="shrink-0 flex items-center gap-1.5 px-4 sm:px-5 py-1.5 rounded bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs sm:text-sm shadow-sm transition cursor-pointer active:scale-[0.98]"
+              className="shrink-0 flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-lg bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs sm:text-sm shadow-sm transition cursor-pointer active:scale-[0.98]"
             >
               <span>{isGuest ? "Next (Sign in to Continue) 🔒" : "Unlock Full Exam 👑"}</span>
             </button>
@@ -2127,7 +2131,7 @@ export default function LiveExamPage() {
             <button
               type="button"
               onClick={() => handleNext(flatTotal)}
-              className="shrink-0 flex items-center gap-1.5 px-5 sm:px-7 py-1.5 rounded border border-blue-500/80 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 font-semibold text-xs sm:text-sm shadow-2xs transition cursor-pointer active:scale-[0.98]"
+              className="shrink-0 flex items-center gap-1.5 px-7 py-2 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow-md transition cursor-pointer active:scale-[0.98]"
             >
               <span>Next →</span>
             </button>
@@ -2143,7 +2147,7 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={() => scaleGlobal(-1)}
                 title="Decrease Font Size (A-)"
-                className="px-2.5 py-1 rounded border border-red-300 dark:border-red-900/60 text-xs font-bold text-red-500 dark:text-red-400 bg-white/80 dark:bg-white/5 hover:bg-red-50 dark:hover:bg-red-950/30 active:scale-95 transition cursor-pointer"
+                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer"
               >
                 A-
               </button>
@@ -2151,7 +2155,7 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={() => scaleGlobal(1)}
                 title="Increase Font Size (A+)"
-                className="px-2.5 py-1 rounded border border-blue-400 dark:border-blue-900/60 text-xs font-bold text-blue-600 dark:text-blue-400 bg-white/80 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-950/30 active:scale-95 transition cursor-pointer"
+                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-teal-600 dark:text-teal-400 bg-slate-50 dark:bg-white/5 hover:bg-teal-50 dark:hover:bg-teal-950/30 active:scale-95 transition cursor-pointer"
               >
                 A+
               </button>
@@ -2159,7 +2163,7 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={resetFontSizes}
                 title="Reset Font Size"
-                className="px-2.5 py-1 rounded border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer"
+                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition cursor-pointer"
               >
                 Reset font
               </button>
@@ -2171,9 +2175,9 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("exam:star"))}
                 title="Star"
-                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${mobileToolbarState.starred
+                className={`p-1.5 rounded-lg border transition cursor-pointer shadow-2xs ${mobileToolbarState.starred
                   ? "bg-amber-400 border-amber-400 text-white"
-                  : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
+                  : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-amber-50 hover:text-amber-600 bg-white/80 dark:bg-white/5"
                   }`}
               >
                 <Star size={14} className={mobileToolbarState.starred ? "fill-current" : ""} />
@@ -2184,9 +2188,9 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("exam:bookmark"))}
                 title="Bookmark"
-                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${mobileToolbarState.bookmarked
-                  ? "bg-blue-600 border-blue-600 text-white"
-                  : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
+                className={`p-1.5 rounded-lg border transition cursor-pointer shadow-2xs ${mobileToolbarState.bookmarked
+                  ? "bg-teal-600 border-teal-600 text-white"
+                  : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-teal-50 hover:text-teal-600 bg-white/80 dark:bg-white/5"
                   }`}
               >
                 <Bookmark size={14} className={mobileToolbarState.bookmarked ? "fill-current" : ""} />
@@ -2197,9 +2201,9 @@ export default function LiveExamPage() {
                 type="button"
                 onClick={() => window.dispatchEvent(new CustomEvent("exam:pin"))}
                 title="Pin"
-                className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${mobileToolbarState.pinned
-                  ? "bg-green-600 border-green-600 text-white"
-                  : "border-blue-300 dark:border-blue-700/60 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 bg-white/80 dark:bg-white/5"
+                className={`p-1.5 rounded-lg border transition cursor-pointer shadow-2xs ${mobileToolbarState.pinned
+                  ? "bg-emerald-600 border-emerald-600 text-white"
+                  : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 bg-white/80 dark:bg-white/5"
                   }`}
               >
                 <Pin size={14} className={mobileToolbarState.pinned ? "fill-current" : ""} />
@@ -2211,9 +2215,9 @@ export default function LiveExamPage() {
                   type="button"
                   onClick={() => window.dispatchEvent(new CustomEvent("exam:flag"))}
                   title="Flag"
-                  className={`p-1.5 rounded-md border transition cursor-pointer shadow-2xs ${mobileToolbarState.flagged
-                    ? "bg-red-600 border-red-600 text-white"
-                    : "border-red-300 dark:border-red-500/60 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 bg-white/80 dark:bg-white/5"
+                  className={`p-1.5 rounded-lg border transition cursor-pointer shadow-2xs ${mobileToolbarState.flagged
+                    ? "bg-rose-600 border-rose-600 text-white"
+                    : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600 bg-white/80 dark:bg-white/5"
                     }`}
                 >
                   <Flag size={14} className={mobileToolbarState.flagged ? "fill-current" : ""} />
@@ -2226,12 +2230,12 @@ export default function LiveExamPage() {
           <div className="flex items-center justify-between gap-1.5 w-full">
             {currentIndex > 0 ? (
               <button
-              type="button"
-              onClick={handlePrev}
-              className="px-3 py-1.5 rounded border border-[#800000]/60 dark:border-rose-500/60 text-[#800000] dark:text-rose-300 bg-rose-50/60 dark:bg-rose-950/30 hover:bg-rose-100/70 dark:hover:bg-rose-900/40 font-semibold text-xs transition cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
-            >
-              ← Previous
-            </button>
+                type="button"
+                onClick={handlePrev}
+                className="px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-xs transition cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
+              >
+                ← Previous
+              </button>
             ) : (
               <div className="w-[72px]" />
             )}
@@ -2239,7 +2243,7 @@ export default function LiveExamPage() {
             <button
               type="button"
               onClick={() => setChooseExamOpen(true)}
-              className="px-2 py-1.5 rounded border border-emerald-500/80 text-emerald-700 dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 hover:bg-emerald-100/60 text-xs font-semibold transition cursor-pointer shadow-2xs truncate text-center"
+              className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800/70 hover:bg-teal-50 hover:text-teal-700 dark:hover:bg-teal-950/30 text-xs font-semibold transition cursor-pointer shadow-2xs truncate text-center"
             >
               ← Choose Different Exam
             </button>
@@ -2248,7 +2252,7 @@ export default function LiveExamPage() {
               <button
                 type="button"
                 onClick={() => setShowSubmitConfirm(true)}
-                className="shrink-0 flex items-center justify-center gap-1 px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-[0.98] whitespace-nowrap"
+                className="shrink-0 flex items-center justify-center gap-1 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-[0.98] whitespace-nowrap"
               >
                 <span>Submit</span>
                 <CheckCircle2 size={14} />
@@ -2257,7 +2261,7 @@ export default function LiveExamPage() {
               <button
                 type="button"
                 onClick={() => handleNext(flatTotal)}
-                className="shrink-0 flex items-center justify-center gap-1 px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-[0.98] whitespace-nowrap"
+                className="shrink-0 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-[0.98] whitespace-nowrap"
               >
                 <span>{isGuest ? "Login 🔒" : "Subscribe 👑"}</span>
               </button>
@@ -2265,7 +2269,7 @@ export default function LiveExamPage() {
               <button
                 type="button"
                 onClick={() => handleNext(flatTotal)}
-                className="shrink-0 flex items-center gap-1 px-4 py-1.5 rounded border border-blue-500/80 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 font-semibold text-xs shadow-2xs transition cursor-pointer active:scale-[0.98] whitespace-nowrap"
+                className="shrink-0 flex items-center gap-1 px-5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition cursor-pointer active:scale-[0.98] whitespace-nowrap"
               >
                 <span>Next →</span>
               </button>

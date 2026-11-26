@@ -533,11 +533,11 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
             }
 
             case "casebaseddistinctdraganddrop": {
-                return q.questionCorrectAnswers
+                return (q.questionCorrectAnswers ?? [])
                     .slice()
                     .sort((a, b) => Number(a.correctOrder ?? 0) - Number(b.correctOrder ?? 0))
                     .map((ca) => {
-                        const opt = q.questionOptions.find((o) => o.id === ca.questionOptionId);
+                        const opt = (q.questionOptions ?? []).find((o) => o.id === ca.questionOptionId);
                         const answer = opt ? `${opt.option} → ${opt.answerContent}` : ca.description ?? null;
                         return answer ? { answer, description: opt?.description ?? undefined } : null;
                     })
@@ -545,11 +545,11 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
             }
 
             case "casebasedstratifieddraganddrop": {
-                return q.questionCorrectAnswers
+                return (q.questionCorrectAnswers ?? [])
                     .slice()
                     .sort((a, b) => Number(a.correctOrder ?? 0) - Number(b.correctOrder ?? 0))
                     .map((ca, i) => {
-                        const opt = q.questionOptions.find((o) => o.id === ca.questionOptionId);
+                        const opt = (q.questionOptions ?? []).find((o) => o.id === ca.questionOptionId);
                         const label = opt?.option ?? opt?.answerContent ?? ca.description ?? null;
                         return label ? { answer: `${i + 1}. ${label}`, description: opt?.description ?? undefined } : null;
                     })
@@ -557,7 +557,7 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
             }
 
             default: {
-                return q.questionCorrectAnswers
+                return (q.questionCorrectAnswers ?? [])
                     .map((ca) => {
                         const answer = ca.openEndedAnswer ?? ca.description ?? null;
                         return answer ? { answer } : null;
@@ -886,7 +886,7 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
                     <button
                         type="button"
                         onClick={() => window.dispatchEvent(new CustomEvent("exam:next"))}
-                        className="order-3 px-2.5 sm:px-4 py-1.5 rounded-md border border-blue-500/80 text-blue-700 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 font-semibold text-xs sm:text-sm transition flex items-center gap-1 cursor-pointer shadow-2xs shrink-0 active:scale-[0.98] whitespace-nowrap"
+                        className="order-3 px-3 sm:px-5 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs sm:text-sm shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-[0.98] whitespace-nowrap"
                     >
                         Next →
                     </button>

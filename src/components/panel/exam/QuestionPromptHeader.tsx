@@ -40,7 +40,7 @@ export function QuestionPromptHeader({
 
       {showMeta && (
         <div
-          className="exam-title-heading text-base sm:text-lg text-blue-700 dark:text-blue-400 font-bold italic pl-6 leading-snug [&_*]:!text-inherit [&_*]:!font-inherit [&_*]:!leading-snug"
+          className="exam-title-heading text-base sm:text-lg text-slate-900 dark:text-white font-bold pl-6 leading-snug [&_*]:!text-inherit [&_*]:!font-inherit [&_*]:!leading-snug"
           dangerouslySetInnerHTML={{ __html: cleanMeta }}
         />
       )}
