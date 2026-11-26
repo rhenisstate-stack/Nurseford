@@ -321,16 +321,16 @@ export default function HeroVisualShowcase() {
                   <div
                     className={`flex items-center gap-1.5 p-1 rounded-lg transition-all ${
                       activeTrack === "RN" && cursor.clicking
-                        ? "bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 ring-2 ring-teal-400 scale-[0.98]"
-                        : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
+                        ? "bg-emerald-500/30 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-400/50 scale-[0.98]"
+                        : "hover:bg-emerald-500/15 active:bg-emerald-500/30 text-slate-800 dark:text-slate-200"
                     }`}
                   >
-                    <div className="w-6 h-6 rounded-md bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
                       <GraduationCap className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10.5px] font-bold text-teal-700 dark:text-teal-400">
+                        <span className="text-[10.5px] font-bold text-emerald-900 dark:text-emerald-200">
                           RN Nursing Subjects
                         </span>
                         <ArrowRight className="w-2.5 h-2.5 text-slate-400" />
@@ -345,16 +345,16 @@ export default function HeroVisualShowcase() {
                   <div
                     className={`flex items-center gap-1.5 p-1 rounded-lg transition-all ${
                       activeTrack === "LPN" && cursor.clicking
-                        ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-2 ring-blue-400 scale-[0.98]"
-                        : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
+                        ? "bg-emerald-500/30 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-400/50 scale-[0.98]"
+                        : "hover:bg-emerald-500/15 active:bg-emerald-500/30 text-slate-800 dark:text-slate-200"
                     }`}
                   >
-                    <div className="w-6 h-6 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <div className="w-6 h-6 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
                       <Stethoscope className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10.5px] font-bold text-blue-700 dark:text-blue-400">
+                        <span className="text-[10.5px] font-bold text-emerald-900 dark:text-emerald-200">
                           LPN Nursing Subjects
                         </span>
                         <ArrowRight className="w-2.5 h-2.5 text-slate-400" />

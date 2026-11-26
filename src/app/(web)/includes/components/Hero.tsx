@@ -142,14 +142,14 @@ export default function Hero() {
                         e.preventDefault();
                         handleSelectTrack("/subjects?track=rn");
                       }}
-                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all cursor-pointer"
+                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-500/15 active:bg-emerald-500/30 transition-all cursor-pointer"
                     >
-                      <div className="w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-[#2FD9C4] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                         <GraduationCap className="w-5 h-5" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-navy dark:text-white group-hover:text-teal-600 dark:group-hover:text-[#2FD9C4] transition-colors">
+                          <span className="text-sm font-bold text-navy dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
                             RN Nursing Subjects
                           </span>
                           <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -167,14 +167,14 @@ export default function Hero() {
                         e.preventDefault();
                         handleSelectTrack("/subjects?track=lpn");
                       }}
-                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all cursor-pointer"
+                      className="group flex items-center gap-3 p-2.5 rounded-xl hover:bg-emerald-500/15 active:bg-emerald-500/30 transition-all cursor-pointer"
                     >
-                      <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-sky-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                         <Stethoscope className="w-5 h-5" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-bold text-navy dark:text-white group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors">
+                          <span className="text-sm font-bold text-navy dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
                             LPN Nursing Subjects
                           </span>
                           <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />
@@ -355,13 +355,13 @@ export default function Hero() {
               <Link
                 key={btn.label}
                 href={btn.href}
-                className="group flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] shadow-2xs hover:shadow-md hover:border-teal-500/70 dark:hover:border-teal-400/60 active:scale-[0.99] transition-all duration-200 cursor-pointer"
+                className="group flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] shadow-2xs hover:shadow-md hover:border-emerald-500/60 hover:bg-emerald-500/10 active:bg-emerald-500/30 active:scale-[0.99] transition-all duration-200 cursor-pointer"
               >
-                <span className="text-xs sm:text-[13px] font-bold tracking-wider uppercase text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-300 transition-colors truncate">
+                <span className="text-xs sm:text-[13px] font-bold tracking-wider uppercase text-navy dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors truncate">
                   {btn.label}
                 </span>
                 <ArrowRight
-                  className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:translate-x-1 transition-all shrink-0 ml-1.5"
+                  className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-1 transition-all shrink-0 ml-1.5"
                   strokeWidth={2}
                 />
               </Link>

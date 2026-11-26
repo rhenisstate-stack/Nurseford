@@ -779,16 +779,16 @@ export default function SubjectsCatalogView() {
                   onClick={() => handleTrackSwitch("rn")}
                   className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     activeTrack === "rn"
-                      ? "bg-white dark:bg-[#0A2540] text-teal-700 dark:text-[#2FD9C4] shadow-xs border border-teal-500/20"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      ? "bg-emerald-500/30 text-emerald-950 dark:text-emerald-100 shadow-xs border border-emerald-500/40"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white active:bg-emerald-500/30"
                   }`}
                 >
-                  <GraduationCap className="w-4 h-4" />
+                  <GraduationCap className={`w-4 h-4 ${activeTrack === "rn" ? "text-emerald-700 dark:text-emerald-300" : ""}`} />
                   <span>RN Nursing Subjects</span>
                   <span
                     className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
                       activeTrack === "rn"
-                        ? "bg-teal-100 dark:bg-teal-950/80 text-teal-800 dark:text-[#2FD9C4]"
+                        ? "bg-emerald-500/25 text-emerald-900 dark:text-emerald-200"
                         : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                     }`}
                   >
@@ -801,16 +801,16 @@ export default function SubjectsCatalogView() {
                   onClick={() => handleTrackSwitch("lpn")}
                   className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     activeTrack === "lpn"
-                      ? "bg-white dark:bg-[#0A2540] text-blue-700 dark:text-sky-300 shadow-xs border border-blue-500/20"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      ? "bg-emerald-500/30 text-emerald-950 dark:text-emerald-100 shadow-xs border border-emerald-500/40"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white active:bg-emerald-500/30"
                   }`}
                 >
-                  <Stethoscope className="w-4 h-4" />
+                  <Stethoscope className={`w-4 h-4 ${activeTrack === "lpn" ? "text-emerald-700 dark:text-emerald-300" : ""}`} />
                   <span>LPN Nursing Subjects</span>
                   <span
                     className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
                       activeTrack === "lpn"
-                        ? "bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-sky-300"
+                        ? "bg-emerald-500/25 text-emerald-900 dark:text-emerald-200"
                         : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                     }`}
                   >
@@ -823,16 +823,16 @@ export default function SubjectsCatalogView() {
                   onClick={() => handleTrackSwitch("all")}
                   className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     activeTrack === "all"
-                      ? "bg-white dark:bg-[#0A2540] text-purple-700 dark:text-purple-300 shadow-xs border border-purple-500/20"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      ? "bg-emerald-500/30 text-emerald-950 dark:text-emerald-100 shadow-xs border border-emerald-500/40"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white active:bg-emerald-500/30"
                   }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className={`w-3.5 h-3.5 ${activeTrack === "all" ? "text-emerald-700 dark:text-emerald-300" : ""}`} />
                   <span>View Both</span>
                   <span
                     className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
                       activeTrack === "all"
-                        ? "bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300"
+                        ? "bg-emerald-500/25 text-emerald-900 dark:text-emerald-200"
                         : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                     }`}
                   >
