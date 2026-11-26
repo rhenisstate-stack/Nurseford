@@ -1,5 +1,7 @@
-// src/app/dashboards/nclex-pn/vista/subscriptions/packages/descrete/page.tsx
 "use client";
+
+import Link from "next/link";
+// src/app/dashboards/nclex-pn/vista/subscriptions/packages/descrete/page.tsx
 
 import { useMemo, useState } from "react";
 import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClasp";
@@ -12,7 +14,7 @@ import SearchBar from "@/lib/utils/data/SearchBar";
 import PerPageSelect from "@/lib/utils/data/PerPageSelect";
 import { APP_TITLE } from "@/lib/config/config";
 import { VISTA_QUOTES } from "@/lib/constants/dashboards/nexus/vista/quotes";
-import { RefreshCw, XCircle } from "lucide-react";
+import { RefreshCw, XCircle, ArrowLeft, ArrowRight } from "lucide-react";
 
 // ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -414,6 +416,23 @@ export default function DiscreteSubscriptionPackagesPage() {
         }}
       >
         <div className="p-1 space-y-1 w-full">
+          {/* Back to Dashboard Navigation */}
+          <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 mb-2">
+            <Link
+              href="/dashboards/nclex-pn"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-teal-600 dark:hover:text-teal-400 transition"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-teal-600" />
+              <span>Back to Dashboard</span>
+            </Link>
+            <Link
+              href="/dashboards/nclex-pn/vista/subscriptions/items"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-teal-600 dark:text-teal-400 hover:underline"
+            >
+              <span>Explore Plans</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
           {/* Header */}
           <div className="relative border border-[var(--text-color)] rounded-2xl bg-[var(--content-bg)] text-[var(--text-color)] px-4 py-0">
             <div className="text-center">

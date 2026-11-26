@@ -3,6 +3,7 @@
 import Link from "next/link";
 import {
   LayoutDashboard,
+  Home,
   TrendingUp,
   FileCheck2,
   Crown,
@@ -80,12 +81,25 @@ export default function CoursesLeftSidebar() {
         {/* Scrollable Nav Items */}
         <nav className="flex-1 overflow-y-auto space-y-1 p-2.5 pb-4 left-sidebar-scroll">
           {/* Return Home */}
+                    {/* Return to Dashboard */}
+          <Link href={isLpn ? "/dashboards/lpn-nursing" : "/dashboards/rn-nursing"} onClick={handleItemClick}>
+            <div className="group flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 text-slate-800 dark:text-slate-100 select-none cursor-pointer">
+              <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 group-hover:scale-105 transition-transform shrink-0">
+                <LayoutDashboard className="w-4 h-4" />
+              </span>
+              <span className={`ml-3 font-bold tracking-tight text-teal-700 dark:text-teal-300 ${isMobile ? "text-xs" : "text-sm"}`}>
+                Dashboard
+              </span>
+            </div>
+          </Link>
+
+          {/* Return Home */}
           <Link href="/" onClick={handleItemClick}>
             <div className="group flex items-center py-2 px-2.5 rounded-xl transition hover:bg-slate-100/90 dark:hover:bg-slate-800/70 text-slate-800 dark:text-slate-100 select-none cursor-pointer">
               <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-500/10 text-slate-700 dark:text-slate-300 group-hover:scale-105 transition-transform shrink-0">
-                <LayoutDashboard className="w-4 h-4" />
+                <Home className="w-4 h-4" />
               </span>
-              <span className={`ml-3 font-bold tracking-tight text-slate-900 dark:text-white ${isMobile ? "text-xs" : "text-sm"}`}>
+              <span className={`ml-3 font-medium tracking-tight text-slate-600 dark:text-slate-400 ${isMobile ? "text-xs" : "text-sm"}`}>
                 Return Home
               </span>
             </div>

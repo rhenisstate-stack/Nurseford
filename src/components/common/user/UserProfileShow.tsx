@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import React from "react";
-import { FiEdit2, FiLock, FiUser } from "react-icons/fi";
+import { FiEdit2, FiLock, FiUser, FiArrowLeft } from "react-icons/fi";
 import { useFlexPageClasp } from "@/lib/contexts/panel/layout/utils/FlexPageClasp";
 import { useCurrentSystemUser } from "@/lib/hooks/users/account/current/useCurrentSystemUser";
 
@@ -124,12 +124,21 @@ export default function UserProfileShow({
         <p className="text-sm font-bold opacity-70 text-[var(--text-color)]">
           You need to be signed in to view this profile.
         </p>
-        <Link
-          href={`/dashboards/${panel}/auth/login`}
-          className="px-5 py-2.5 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg hover:scale-105 transition-transform"
-        >
-          Log In
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/dashboards/${panel}`}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-semibold text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+          >
+            <FiArrowLeft className="w-3.5 h-3.5 text-teal-600" />
+            <span>Back to Dashboard</span>
+          </Link>
+          <Link
+            href={`/dashboards/${panel}/auth/login`}
+            className="px-5 py-2 rounded-xl font-semibold text-xs bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md hover:scale-105 transition-transform"
+          >
+            Log In
+          </Link>
+        </div>
       </main>
     );
   }
@@ -155,6 +164,17 @@ export default function UserProfileShow({
       }}
     >
       <div className="p-3 md:p-4 space-y-5 w-full max-w-7xl mx-auto">
+        {/* Navigation Bar */}
+        <div className="flex items-center justify-between">
+          <Link
+            href={`/dashboards/${panel}`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-[#1E293B] text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-navy dark:hover:text-white shadow-2xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+          >
+            <FiArrowLeft className="w-3.5 h-3.5 text-teal-600" />
+            <span>Back to Dashboard</span>
+          </Link>
+        </div>
+
         {/* Header card */}
         <div className="rounded-2xl border border-[var(--text-color)]/15 bg-gradient-to-br from-emerald-500/10 via-indigo-500/10 to-cyan-500/10 backdrop-blur-xl px-5 py-6 md:px-8 md:py-8 flex flex-col sm:flex-row items-center sm:items-start gap-5">
           <div className="flex-1 text-center sm:text-left">

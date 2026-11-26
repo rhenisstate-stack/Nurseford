@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  Home,
   X,
   ChevronDown,
   ChevronRight,
@@ -393,7 +394,28 @@ export default function LeftSidebar() {
         </div>
 
         <nav className={`flex-1 overflow-y-auto space-y-1 p-2 pb-4 left-sidebar-scroll ${isMobile ? "text-xs" : ""}`}>
-          <Link href="/" onClick={handleItemClick}>
+                  {/* Dashboard Link */}
+        <Link href={`/dashboards/${DASHBOARD_NAME}`} onClick={handleItemClick}>
+          <div
+            onClick={handleItemClick}
+            onMouseEnter={(e) => handleItemHover("Dashboard", e)}
+            onMouseLeave={handleMouseLeave}
+            className={`relative flex items-center py-2 px-1 rounded-lg transition
+              border border-transparent hover:border-[var(--text-color)]/30 hover:bg-slate-100/70 dark:hover:bg-slate-800/60 text-slate-800 dark:text-slate-100 select-none
+              ${!isOpened && "justify-center"}`}
+          >
+            <LayoutDashboard className="w-5 h-5 shrink-0 text-teal-600 dark:text-teal-400" />
+            {isOpened && <span className={`ml-3 font-semibold text-teal-700 dark:text-teal-300 ${isMobile ? "text-xs" : "text-sm"}`}>Dashboard</span>}
+
+            {isCollapsed && hoveredItem === "Dashboard" && (
+              <Tooltip x={tooltipPosition.x} y={tooltipPosition.y}>
+                Dashboard
+              </Tooltip>
+            )}
+          </div>
+        </Link>
+
+<Link href="/" onClick={handleItemClick}>
             <div
               onClick={handleItemClick}
               onMouseEnter={(e) => handleItemHover("Return Home", e)}

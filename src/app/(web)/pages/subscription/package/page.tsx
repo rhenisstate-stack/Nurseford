@@ -70,6 +70,7 @@ function SubscriptionPackageContent() {
   // Determine user's target dashboard panel
   const panel =
     searchParams.get("panel") ||
+    searchParams.get("dashboard") ||
     searchParams.get("examType") ||
     user?.categories?.[0]?.dashboard ||
     "rn-nursing";

@@ -244,6 +244,15 @@ export default function DashboardAuthRegisterView({
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-[385px] space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <Link
+            href={`/dashboards/${targetProgram}`}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+          >
+            <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+            <span>Back to Dashboard</span>
+          </Link>
+        </div>
         {/* Brand Header */}
         <div className="text-center space-y-1">
           <div className="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-teal-50 dark:bg-teal-950/50 border border-teal-200/80 dark:border-teal-800/60 shadow-2xs mb-0.5">
