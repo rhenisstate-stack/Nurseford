@@ -55,10 +55,7 @@ const CLIENT_ENV_KEYS: string[] = [
   "SKEW_LINE_DEVELOPER_GITHUB",
   "SKEW_LINE_API_BASE_URL",
   "SKEW_LINE_ACTIVE_BACKEND",
-  "SKEW_LINE_APP_KEY",
-  "SKEW_LINE_LARAVEL_BASE_URL",
-  "SKEW_LINE_FASTAPI_BASE_URL",
-  "SKEW_LINE_DOTNET_BASE_URL",
+  // Backend base URLs and private app keys are strictly server-side (Node.js) and intentionally omitted from CLIENT_ENV_KEYS to prevent exposing backend IP or secret keys in client bundles.
   "SKEW_LINE_GOOGLE_CLIENT_ID",
   "SKEW_LINE_NCLEX_RN_URL",
   "SKEW_LINE_NCLEX_PN_URL",
