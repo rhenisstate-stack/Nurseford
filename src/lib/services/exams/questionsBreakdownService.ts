@@ -73,11 +73,9 @@ interface BreakdownPayload {
   };
 }
 
-// Server-side fallback session token so unauthenticated guests can also preview real question breakdown
-const cachedGuestBadge: string | null =
-  "F4DE69A8298A79F5E879B9C263B2234988E2585175FCBB41556FB29D8F918272E3FD63B7F72C9DA13B8E2DF9C9A08651";
-let cachedGuestLine: string | null =
-  "344EC969CE01E11DFB887695733B603796E128B49293C08048711DB305F20AD8B5BF70607741606198DC23ED3C01BB9D7D8D2B8A0FDBEDD5D008E4F0264B8ABB";
+// In-memory guest token cache for public question breakdown queries
+let cachedGuestBadge: string | null = null;
+let cachedGuestLine: string | null = null;
 let guestTokenPromise: Promise<{ line: string; badge: string } | null> | null = null;
 
 export async function getGuestPreviewToken(): Promise<{ line: string; badge: string } | null> {
@@ -88,10 +86,16 @@ export async function getGuestPreviewToken(): Promise<{ line: string; badge: str
 
   guestTokenPromise = (async () => {
     try {
+      const email = process.env.PREVIEW_GUEST_EMAIL || "preview_guest@rhenis.internal";
+      const password = process.env.PREVIEW_GUEST_PASSWORD;
+
+      if (!password) {
+        console.warn("⚠️ [questions-breakdown] PREVIEW_GUEST_PASSWORD is not configured in server environment.");
+        return null;
+      }
+
       const backendBaseUrl = getBackendBaseUrl();
       const loginUrl = `${backendBaseUrl}/api/castoline/auth/login`;
-      const email = "preview_guest@rhenis.internal";
-      const password = "PreviewGuest2026!#";
 
       const loginRes = await fetch(loginUrl, {
         method: "POST",
@@ -111,10 +115,10 @@ export async function getGuestPreviewToken(): Promise<{ line: string; badge: str
       });
 
       let loginData = await loginRes.json().catch(() => null);
-      console.log("🔑 [questions-breakdown] Login attempt response:", loginData);
       if (!loginData?.user?.castoLine) {
         const regUrl = `${backendBaseUrl}/api/castoline/auth/register`;
-        console.log("🔑 [questions-breakdown] Registering guest at:", regUrl);
+        const username = process.env.PREVIEW_GUEST_USERNAME || "preview_guest";
+        const phone = process.env.PREVIEW_GUEST_PHONE || "+1234567890";
         const regRes = await fetch(regUrl, {
           method: "POST",
           headers: {
@@ -122,9 +126,9 @@ export async function getGuestPreviewToken(): Promise<{ line: string; badge: str
             ...(await getSiteHeaders()),
           },
           body: JSON.stringify({
-            username: "preview_guest",
+            username,
             email,
-            phone: "+1234567890",
+            phone,
             password,
             passwordConfirmation: password,
             loginMethod: "password",
@@ -140,7 +144,6 @@ export async function getGuestPreviewToken(): Promise<{ line: string; badge: str
         });
         if (regRes) {
           const regJson = await regRes.json().catch(() => null);
-          console.log(`🔑 [questions-breakdown] Registration response (HTTP ${regRes.status}):`, regJson);
           if (regJson?.user?.castoLine) {
             loginData = regJson;
           }
@@ -149,12 +152,12 @@ export async function getGuestPreviewToken(): Promise<{ line: string; badge: str
 
       if (loginData?.user?.castoLine) {
         const line = String(loginData.user.castoLine);
-        const badge = String(loginData.user.castoBadge || cachedGuestBadge);
+        const badge = String(loginData.user.castoBadge || cachedGuestBadge || "");
         cachedGuestLine = line;
-        console.log("🔑 [questions-breakdown] Successfully acquired guest preview token for live questions breakdown!");
+        cachedGuestBadge = badge;
         return { line, badge };
       } else {
-        console.warn("⚠️ [questions-breakdown] Guest login/registration response lacked castoLine:", loginData);
+        console.warn("⚠️ [questions-breakdown] Guest login/registration response lacked castoLine");
       }
     } catch (e) {
       console.error("Failed to acquire guest preview token:", e);

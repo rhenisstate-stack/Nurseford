@@ -3,6 +3,7 @@ import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
 import { toSlug } from "@/lib/data/exam-subjects";
+import { getGuestPreviewToken } from "@/lib/services/exams/questionsBreakdownService";
 import {
   inferNursingPanelFromText,
   isAllowedNursingCourse,
@@ -126,59 +127,6 @@ export interface SearchApiResultItem {
 const searchCache = new Map<string, { results: SearchApiResultItem[]; timestamp: number }>();
 const CACHE_TTL_MS = 30 * 1000; // 30 seconds
 
-// Guest preview auth cache
-let cachedGuestBadge: string | null = "B536816D72FA09B200042157A4140BB5ADF8F2CA9D1BF7FEA592AB1A759D33C29696C0D09522571C8081FA69512A97AA";
-let cachedGuestLine: string | null = null;
-let guestTokenPromise: Promise<{ line: string; badge: string } | null> | null = null;
-
-async function getGuestAuth(): Promise<{ line: string; badge: string } | null> {
-  if (cachedGuestLine && cachedGuestBadge) {
-    return { line: cachedGuestLine, badge: cachedGuestBadge };
-  }
-  if (guestTokenPromise) return guestTokenPromise;
-
-  guestTokenPromise = (async () => {
-    try {
-      const baseUrl = getBackendBaseUrl();
-      const loginUrl = `${baseUrl}/api/castoline/auth/login`;
-      const res = await fetch(loginUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(await getSiteHeaders()),
-        },
-        body: JSON.stringify({
-          email: "preview_guest@rhenis.internal",
-          password: "PreviewGuest2026!#",
-          loginMethod: "password",
-          LoginProvider: "email",
-          dashboardName: "web",
-          role: "Learner",
-          challenge: "learner.login.skew8lancasto",
-        }),
-        signal: AbortSignal.timeout(4000),
-      });
-
-      if (!res.ok) return null;
-      const loginData = await res.json().catch(() => null);
-      if (loginData?.user?.castoLine) {
-        const line = String(loginData.user.castoLine);
-        const badge = String(loginData.user.castoBadge || cachedGuestBadge);
-        cachedGuestLine = line;
-        cachedGuestBadge = badge;
-        return { line, badge };
-      }
-      return null;
-    } catch {
-      return null;
-    } finally {
-      guestTokenPromise = null;
-    }
-  })();
-
-  return guestTokenPromise;
-}
-
 function resolvePanelFromText(text: string, fallback = "rn-nursing"): "rn-nursing" | "lpn-nursing" {
   const safeFallback = fallback === "lpn-nursing" ? "lpn-nursing" : "rn-nursing";
   return inferNursingPanelFromText(text, safeFallback);
@@ -228,7 +176,7 @@ export async function GET(req: NextRequest) {
 
   // Fallback to guest credentials if unauthenticated or Void
   if (!castoLine || castoLine === "Void") {
-    const guest = await getGuestAuth();
+    const guest = await getGuestPreviewToken();
     if (guest) {
       castoLine = guest.line;
       if (!castoBadge || castoBadge === "Void") castoBadge = guest.badge;
