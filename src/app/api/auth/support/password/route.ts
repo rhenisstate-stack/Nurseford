@@ -32,7 +32,6 @@ async function forwardToBackend(
     const url = `${backendBaseUrl}${backendPath}${queryParams ? `?${queryParams}` : ""}`;
 
     console.log(`🌿 [${STRATA_NAME} Route] Forwarding ${method} To :`, url);
-    if (method !== "GET") console.log("Request Body : ", JSON.stringify(body));
 
     // EXTRACT SESSION HEADERS FIRST
     const castoLine = req.headers.get("x-casto-line");

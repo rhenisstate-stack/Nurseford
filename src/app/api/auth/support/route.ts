@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
 
     // Log the request URL and body for debugging
     console.log("💡 [support route] Forwarding POST request to:", backendUrl);
-    console.log("💡 [support route] Request body:", JSON.stringify(body));
 
     // Forward request to the actual backend
     const backendResponse = await fetch(backendUrl, {

@@ -61,7 +61,6 @@ export async function POST(req: NextRequest) {
 
     const backendUrl = `${backendBaseUrl}${backendPath}`;
     console.log(`💡 [recovery/social route] Forwarding ${method} request to:`, backendUrl);
-    console.log("💡 [recovery/social route] Request body:", JSON.stringify(body));
 
     // Extract session headers
     const castoLine = req.headers.get("x-casto-line");

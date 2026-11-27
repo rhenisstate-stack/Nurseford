@@ -34,9 +34,8 @@ export async function POST(req: NextRequest) {
     const backendBaseUrl = getBackendBaseUrl(); // e.g., "http://127.0.0.1:8000"
     const backendUrl = `${backendBaseUrl}/api/castoline/auth/register`;
 
-    // Log request for debugging
+    // Log request for debugging (body sanitized to prevent logging plaintext credentials)
     console.log("💡 [register route] Forwarding POST request to:", backendUrl);
-    console.log("💡 [register route] Request body:", JSON.stringify(body));
 
     // Forward request to backend
     const backendResponse = await fetch(backendUrl, {
@@ -62,10 +61,9 @@ export async function POST(req: NextRequest) {
       }),
     });
 
-    // Log backend response status and body
+    // Log backend response status
     console.log("💡 [register route] Backend response status:", backendResponse.status);
     const responseBody = await backendResponse.json().catch(() => ({ error: "Failed to parse backend response" }));
-    console.log("💡 [register route] Backend response body:", responseBody);
 
     // Return response to frontend
     return NextResponse.json(responseBody, { status: backendResponse.status });
