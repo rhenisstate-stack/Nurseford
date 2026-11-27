@@ -18,6 +18,7 @@ import { resolveExamSchool } from "@/lib/utils/exams/resolveExamSchool";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
 import { registerSearchExams } from "@/lib/services/search/searchRegistry";
 import { formatCourseDropdownName, formatCourseToggleLabel, compareCourses } from "@/lib/utils/exams/formatCourseDropdownName";
+import { formatProgramDropdownName, getProgramRank, CANONICAL_PROGRAM_ORDER } from "@/lib/utils/exams/formatProgramDropdownName";
 import { useExamAccessGuard } from "@/components/common/dashboards/modals/useExamAccessGuard";
 
 const PER_PAGE = 100;
@@ -837,26 +838,29 @@ export function SubjectExamsHierarchyPage({
     return Array.from(schools).sort((a, b) => a.localeCompare(b));
   }, [exams, dynamicCourseName, courseSlug]);
 
-  // Programme filter options
+  // Programme filter options (canonical order, deduplicated & normalized)
   const availableProgramOptions = useMemo(() => {
-    const defaultPrograms = [
-      "RN Nursing Exam",
-      "LPN Nursing Exam",
-      "RN Exit",
-      "PN Exit",
-    ];
-    const set = new Set<string>(defaultPrograms);
+    const set = new Set<string>();
+    CANONICAL_PROGRAM_ORDER.forEach((p) => set.add(p));
     if (Array.isArray(programs)) {
       programs.forEach((p) => {
-        if (p?.name) set.add(p.name);
+        if (p?.name) {
+          const formatted = formatProgramDropdownName(p.name);
+          if (formatted) set.add(formatted);
+        }
       });
     }
-    return Array.from(set);
+    return Array.from(set).sort((a, b) => {
+      const rankA = getProgramRank(a);
+      const rankB = getProgramRank(b);
+      if (rankA !== rankB) return rankA - rankB;
+      return a.localeCompare(b);
+    });
   }, [programs]);
 
   const selectedProgramValue = useMemo(() => {
-    if (selectedProgramFilter && selectedProgramFilter !== "all" && selectedProgramFilter !== "All Programmes") {
-      return selectedProgramFilter;
+    if (selectedProgramFilter && selectedProgramFilter !== "all" && selectedProgramFilter !== "All Programmes" && selectedProgramFilter !== "Programme") {
+      return formatProgramDropdownName(selectedProgramFilter);
     }
     return "all";
   }, [selectedProgramFilter]);
