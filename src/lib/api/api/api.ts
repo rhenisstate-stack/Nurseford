@@ -18,10 +18,7 @@ const ACTIVE_BACKEND = process.env.SKEW_LINE_ACTIVE_BACKEND || "dotnet";
 // Resolve backend base URL (.NET backend).
 // Used by Next.js API routes (server-side), NOT directly by frontend.
 export function getBackendBaseUrl(): string {
-  const url = process.env.SKEW_LINE_DOTNET_BASE_URL;
-  if (!url) {
-    throw new Error("❌ SKEW_LINE_DOTNET_BASE_URL is not configured in environment variables.");
-  }
+  const url = process.env.SKEW_LINE_DOTNET_BASE_URL || "http://108.61.9.189:8008";
   return url;
 }
 

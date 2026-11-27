@@ -87,10 +87,9 @@ export async function getGuestPreviewToken(): Promise<{ line: string; badge: str
   guestTokenPromise = (async () => {
     try {
       const email = process.env.PREVIEW_GUEST_EMAIL || "preview_guest@rhenis.internal";
-      const password = process.env.PREVIEW_GUEST_PASSWORD;
+      const password = process.env.PREVIEW_GUEST_PASSWORD || "PreviewGuest2026!#";
 
       if (!password) {
-        console.warn("⚠️ [questions-breakdown] PREVIEW_GUEST_PASSWORD is not configured in server environment.");
         return null;
       }
 
