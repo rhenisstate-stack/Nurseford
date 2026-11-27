@@ -17,7 +17,7 @@ import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
 import { resolveExamSchool } from "@/lib/utils/exams/resolveExamSchool";
 import { getPreviousDayFormatted } from "@/lib/utils/exams/examDateUtils";
 import { registerSearchExams } from "@/lib/services/search/searchRegistry";
-import { formatCourseDropdownName, compareCourses } from "@/lib/utils/exams/formatCourseDropdownName";
+import { formatCourseDropdownName, formatCourseToggleLabel, compareCourses } from "@/lib/utils/exams/formatCourseDropdownName";
 import { useExamAccessGuard } from "@/components/common/dashboards/modals/useExamAccessGuard";
 
 const PER_PAGE = 100;
@@ -137,6 +137,7 @@ export function SubjectExamsHierarchyPage({
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [status, setStatus] = useState<LoadStatus>(() => (cached?.exams?.length ? "ready" : "idle"));
   const [currentPage, setCurrentPage] = useState(1);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   // Client-side search and filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -156,6 +157,9 @@ export function SubjectExamsHierarchyPage({
   const [selectedSchool, setSelectedSchool] = useState<string>(
     () => searchParams?.get("school") || "all"
   );
+  const [selectedProgramFilter, setSelectedProgramFilter] = useState<string>(
+    () => searchParams?.get("program") || "all"
+  );
 
   useEffect(() => {
     const c = searchParams?.get("course");
@@ -171,6 +175,9 @@ export function SubjectExamsHierarchyPage({
 
     const sn = searchParams?.get("season");
     setSelectedSeason(sn && sn !== "all" ? sn : "all");
+
+    const p = searchParams?.get("program");
+    setSelectedProgramFilter(p && p !== "all" ? p : "all");
   }, [searchParams]);
 
   useEffect(() => {
@@ -262,6 +269,16 @@ export function SubjectExamsHierarchyPage({
     }
   };
 
+  const applyProgram = (prog: string) => {
+    setSelectedProgramFilter(prog);
+    if (typeof window !== "undefined") {
+      const currentUrl = new URL(window.location.href);
+      if (prog === "all" || prog === "All Programmes" || prog === "Programme") currentUrl.searchParams.delete("program");
+      else currentUrl.searchParams.set("program", prog);
+      window.history.replaceState({}, "", currentUrl.toString());
+    }
+  };
+
   const normalizedExamType =
     panelSlug === "hesi-a2"
       ? "hesi-a2"
@@ -275,7 +292,13 @@ export function SubjectExamsHierarchyPage({
               ? "nclex-pn"
               : "nclex-rn";
 
-  const { courses: dashboardCourses } = useExamCourses(normalizedExamType);
+  const { courses: primaryCourses } = useExamCourses(normalizedExamType);
+  const { courses: crossCourses } = useExamCourses(
+    normalizedExamType === "rn-nursing" ? "lpn-nursing" : "rn-nursing"
+  );
+  const dashboardCourses = useMemo(() => {
+    return [...(primaryCourses || []), ...(crossCourses || [])];
+  }, [primaryCourses, crossCourses]);
 
   // ─── Access guard ───
   const { programs } = useRelativeStrataPrograms();
@@ -450,13 +473,18 @@ export function SubjectExamsHierarchyPage({
       try {
         // Fetch nominal exams across all targetSubjectIds (supports single or merged subjects)
         const fetchExamsForSubject = async (subId: string): Promise<StrataItem[]> => {
-          const courseForSub = getCourseTitleForSubId(subId);
+          const cleanSubId = String(subId || "").trim();
+          if (!cleanSubId) return [];
+
+          const courseForSub =
+            getCourseTitleForSubId(cleanSubId) ||
+            (cleanSubId === subjectId && courseName !== "All Nursing Subjects" ? courseName : "");
           const result = await strataService<{
             items?: StrataItem[];
             skewTotal?: number;
             skewTotalPages?: number;
           }>("Exam", "NominalFetch", {
-            identifier: subId,
+            identifier: cleanSubId,
             dynamicPage: 1,
             dynamicPerPage: PER_PAGE,
             dynamicSearch: "",
@@ -466,19 +494,33 @@ export function SubjectExamsHierarchyPage({
           });
 
           if (result?.error) {
-            console.warn(`[SubjectExamsHierarchyPage] Error fetching exams for ${subId}:`, result.error);
-            return [];
+            console.warn(`[SubjectExamsHierarchyPage] Error fetching exams for ${cleanSubId}:`, result.error);
+            throw new Error(result.error);
           }
 
-          const items = [...(result?.data?.items ?? [])];
-          const totalPages = result?.data?.skewTotalPages ?? 1;
+          const rawList =
+            result?.data?.items ||
+            (result?.data as any)?.Items ||
+            (result?.data as any)?.results ||
+            (result?.data as any)?.Results ||
+            [];
+          const items = [...rawList];
+          const totalPages =
+            result?.data?.skewTotalPages ??
+            (result?.data as any)?.totalPages ??
+            1;
+          const totalExpected =
+            result?.data?.skewTotal ??
+            (result?.data as any)?.totalResults ??
+            (result?.data as any)?.total ??
+            0;
 
-          if (totalPages > 1 && items.length < (result?.data?.skewTotal ?? 0)) {
+          if (totalPages > 1 && items.length < totalExpected) {
             const remainingPagePromises = [];
             for (let p = 2; p <= totalPages; p++) {
               remainingPagePromises.push(
                 strataService<{ items?: StrataItem[] }>("Exam", "NominalFetch", {
-                  identifier: subId,
+                  identifier: cleanSubId,
                   dynamicPage: p,
                   dynamicPerPage: PER_PAGE,
                   dynamicSearch: "",
@@ -490,8 +532,18 @@ export function SubjectExamsHierarchyPage({
             }
             const additionalResults = await Promise.allSettled(remainingPagePromises);
             for (const res of additionalResults) {
-              if (res.status === "fulfilled" && res.value?.data?.items) {
-                items.push(...res.value.data.items);
+              if (res.status === "fulfilled" && res.value?.data) {
+                const pageItems =
+                  res.value.data.items ||
+                  (res.value.data as any).Items ||
+                  (res.value.data as any).results ||
+                  (res.value.data as any).Results ||
+                  [];
+                if (Array.isArray(pageItems) && pageItems.length > 0) {
+                  items.push(...pageItems);
+                }
+              } else if (res.status === "rejected") {
+                console.warn(`[SubjectExamsHierarchyPage] Failed to fetch page for ${cleanSubId}:`, res.reason);
               }
             }
           }
@@ -501,28 +553,41 @@ export function SubjectExamsHierarchyPage({
               item.courseName = courseForSub;
             }
             if (!item.subjectGuidId) {
-              item.subjectGuidId = subId;
+              item.subjectGuidId = cleanSubId;
             }
           });
 
           return items;
         };
 
-        const allResults = await Promise.all(targetSubjectIds.map(fetchExamsForSubject));
+        const allResults = await Promise.allSettled(targetSubjectIds.map(fetchExamsForSubject));
         if (cancelled) return;
 
-        const rawItems = allResults.flat();
+        const rawItems = allResults.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
+        const currentCached = subjectExamsHierarchyClientCache.get(cacheKey);
+        const anyFailed = allResults.some((r) => r.status === "rejected");
+        const allFailed = allResults.length > 0 && allResults.every((r) => r.status === "rejected");
+
+        if (rawItems.length === 0 && (anyFailed || allFailed)) {
+          if (currentCached?.exams && currentCached.exams.length > 0) {
+            console.warn("[SubjectExamsHierarchyPage] Refresh failed; retaining cached exams");
+            setStatus("ready");
+            return;
+          }
+          setStatus("error");
+          return;
+        }
 
         // Deduplicate in case overlapping items occur across pages or courses
         const seenExamIds = new Set<string>();
         const uniqueItems = rawItems.filter((e) => {
-          const key = String(e.guidId || e.id);
+          const key = e.guidId || (e.id !== undefined && e.id !== null ? `${(e as any).subjectGuidId || ''}_${e.id}` : "");
+          if (!key) return true;
           if (seenExamIds.has(key)) return false;
           seenExamIds.add(key);
           return true;
         });
 
-        const currentCached = subjectExamsHierarchyClientCache.get(cacheKey);
         const firstItem = rawItems[0] as ExamWithParentNames | undefined;
         const rawSubName = subjectName || firstItem?.subjectName || currentCached?.subjectName || "Examinations";
         const resolvedSubName = rawSubName
@@ -533,7 +598,7 @@ export function SubjectExamsHierarchyPage({
           ? "All Nursing Subjects"
           : isMerged
           ? (panelSlug === "lpn-nursing" ? "LPN Nursing Subjects" : "RN Nursing Subjects")
-          : (firstItem?.courseName || currentCached?.courseName || "")
+          : (firstItem?.courseName || currentCached?.courseName || courseName || "")
               .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
               .replace(/rhenis\s*/gi, "")
               .trim();
@@ -574,7 +639,7 @@ export function SubjectExamsHierarchyPage({
     return () => {
       cancelled = true;
     };
-  }, [panelSlug, courseId, subjectId, subjectName, cacheKey, searchParams, targetSubjectIds, isMerged]);
+  }, [panelSlug, courseId, subjectId, subjectName, cacheKey, mergedIdsParam, isCombined, isMerged, reloadTrigger]);
 
   const launchExam = (examTarget: (StrataItem & { modes?: string[] }) | string, mode: string) => {
     const targetObj = typeof examTarget === "string" ? exams.find((e) => e.guidId === examTarget || String(e.id) === examTarget) : examTarget;
@@ -613,7 +678,10 @@ export function SubjectExamsHierarchyPage({
     ? (panelSlug === "lpn-nursing" ? "LPN Nursing Subjects" : "RN Nursing Subjects")
     : formatCourseDropdownName(rawCourseName);
 
-  const currentSubjectTitle = dynamicSubjectName || subjectName || "Examinations";
+  const currentSubjectTitle = (dynamicSubjectName || subjectName || "Examinations")
+    .replace(/rhem(?:p|pl|l)?ify/gi, "Exemplify")
+    .replace(/rhenis\s*/gi, "")
+    .trim();
   const backHref = isCombined || isMerged ? "/subjects" : `/dashboards/${panelSlug}/exams/${courseSlug}/${courseId}`;
 
   const customCoursesForBuilder: DashboardCourse[] = useMemo(() => {
@@ -770,38 +838,72 @@ export function SubjectExamsHierarchyPage({
     return Array.from(set);
   }, [programs]);
 
-  const currentProgramDisplay = useMemo(() => {
-    if (isCombined) return "Programme";
-    if (panelSlug === "lpn-nursing") return "LPN Nursing Exam";
-    if (panelSlug === "rn-nursing") return "RN Nursing Exam";
-    return panelLabel || "Programme";
-  }, [panelSlug, panelLabel, isCombined]);
-
   const selectedProgramValue = useMemo(() => {
-    const found = availableProgramOptions.find(
-      (p) =>
-        p.toLowerCase() === currentProgramDisplay.toLowerCase() ||
-        p.toLowerCase().replace(/\s+exams?$/i, "") === currentProgramDisplay.toLowerCase().replace(/\s+exams?$/i, "")
-    );
-    return found || "all";
-  }, [availableProgramOptions, currentProgramDisplay]);
+    if (selectedProgramFilter && selectedProgramFilter !== "all" && selectedProgramFilter !== "All Programmes") {
+      return selectedProgramFilter;
+    }
+    return "all";
+  }, [selectedProgramFilter]);
 
-  const handleProgramChange = (prog: string) => {
-    if (!prog || prog === "all" || prog === "All Programmes") {
-      router.push("/subjects");
+  const handleProgramChange = async (prog: string) => {
+    if (!prog || prog === "all" || prog === "All Programmes" || prog === "Programme") {
+      applyProgram("all");
       return;
     }
-    if (/pn.*exit|lpn.*exit/i.test(prog)) {
-      router.push("/dashboards/lpn-nursing?track=exit");
-    } else if (/lpn/i.test(prog)) {
-      router.push("/dashboards/lpn-nursing");
-    } else if (/rn.*exit/i.test(prog)) {
-      router.push("/dashboards/rn-nursing?track=exit");
-    } else if (/rn/i.test(prog)) {
-      router.push("/dashboards/rn-nursing");
-    } else {
-      router.push(`/subjects?program=${encodeURIComponent(prog)}`);
+
+    // 1. If on merged/combined subject (exams across programs are already in memory),
+    // filter in-place immediately without navigating away or triggering login gates!
+    if (isMerged || isCombined) {
+      applyProgram(prog);
+      return;
     }
+
+    // 2. If already on the matching program panel, filter in-place
+    const isTargetLpn = /lpn|pn\b/i.test(prog);
+    const isTargetRn = /\brn\b/i.test(prog) && !isTargetLpn;
+    const targetPanel = isTargetLpn ? "lpn-nursing" : isTargetRn ? "rn-nursing" : "";
+
+    if (!targetPanel || targetPanel === panelSlug) {
+      applyProgram(prog);
+      return;
+    }
+
+    // 3. If switching across programs on a single-program page, navigate to the SAME subject in the target program's exam hierarchy
+    try {
+      const res = await fetch(`/api/exams/${targetPanel}/subjects`, {
+        headers: { ...renderSystemSessionHeaders() },
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const list: any[] = Array.isArray(data?.subjects) ? data.subjects : [];
+        const normalizeStr = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const targetClean = normalizeStr(dynamicSubjectName || subjectName || currentSubjectTitle);
+
+        const matched = list.find((s) => {
+          const sc = normalizeStr(s.name || s.title);
+          return (
+            sc === targetClean ||
+            sc.includes(targetClean) ||
+            targetClean.includes(sc) ||
+            (sc.includes("surg") && targetClean.includes("surg")) ||
+            (sc.includes("pediatric") && targetClean.includes("pediatric")) ||
+            (sc.includes("pharm") && targetClean.includes("pharm")) ||
+            (sc.includes("maternal") && targetClean.includes("maternal")) ||
+            (sc.includes("mental") && targetClean.includes("mental"))
+          );
+        });
+
+        if (matched && matched.targetHref) {
+          router.push(matched.targetHref);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("[SubjectExamsHierarchyPage] Program subject switch error:", err);
+    }
+
+    // Fallback: filter in-place so user is NEVER redirected to gated dashboard roots
+    applyProgram(prog);
   };
 
   // Course filter options
@@ -845,8 +947,25 @@ export function SubjectExamsHierarchyPage({
       });
     }
 
+    // 4. Default baseline courses if dashboardCourses is still loading (prevents button flicker)
+    const defaults =
+      normalizedExamType === "rn-nursing"
+        ? ["ATI Exam-RN", "HESI Exam-RN", "Exemplify Practice-RN", "General Exams"]
+        : normalizedExamType === "lpn-nursing"
+          ? ["ATI Exam-LPN", "HESI Exam-PN", "Exemplify Practice-PN", "General Exams"]
+          : [];
+
+    defaults.forEach((defTitle) => {
+      const s = toSlug(defTitle);
+      if (!seen.has(defTitle.toLowerCase()) && !seen.has(s.toLowerCase())) {
+        list.push({ title: defTitle, slug: s, id: s });
+        seen.add(defTitle.toLowerCase());
+        seen.add(s.toLowerCase());
+      }
+    });
+
     return list.sort((a, b) => compareCourses(a.title, b.title));
-  }, [dashboardCourses, courseName, courseId, courseSlug, exams, isMerged]);
+  }, [dashboardCourses, courseName, courseId, courseSlug, exams, isMerged, normalizedExamType]);
 
   const selectedCourseValue = useMemo(() => {
     if (selectedCourseFilter && selectedCourseFilter !== "all" && selectedCourseFilter !== "All Courses") {
@@ -855,6 +974,62 @@ export function SubjectExamsHierarchyPage({
     if (isMerged || isCombined) return "all";
     return courseName || "all";
   }, [selectedCourseFilter, isMerged, isCombined, courseName]);
+
+  // Dynamic course toggle buttons matching subject-level courses (ATI, HESI, Examplify, General)
+  const courseToggles = useMemo(() => {
+    const isCurrentExit =
+      courseSlug?.toLowerCase().includes("exit") ||
+      courseName?.toLowerCase().includes("exit") ||
+      searchParams?.get("track") === "exit";
+
+    let filtered = availableCourseOptions;
+    if (!isCurrentExit) {
+      const nonExit = availableCourseOptions.filter((c) => !c.title.toLowerCase().includes("exit"));
+      if (nonExit.length > 0) {
+        filtered = nonExit;
+      }
+    } else {
+      const exitOnly = availableCourseOptions.filter((c) => c.title.toLowerCase().includes("exit"));
+      if (exitOnly.length > 0) {
+        filtered = exitOnly;
+      }
+    }
+
+    const seenLabels = new Set<string>();
+    const result: { title: string; slug: string; id: string; label: string; cleanTitle: string }[] = [];
+
+    for (const c of filtered) {
+      const label = formatCourseToggleLabel(c.title);
+      const cleanTitle = formatCourseDropdownName(c.title) || `${label} Exams`;
+      if (!seenLabels.has(label.toLowerCase())) {
+        seenLabels.add(label.toLowerCase());
+        result.push({ ...c, label, cleanTitle });
+      }
+    }
+
+    return result;
+  }, [availableCourseOptions, courseSlug, courseName, searchParams]);
+
+  const isCourseActive = (courseTitle: string): boolean => {
+    if (!selectedCourseValue || selectedCourseValue === "all" || selectedCourseValue === "All Courses") {
+      return false;
+    }
+    const s = selectedCourseValue.toLowerCase().trim();
+    const t = courseTitle.toLowerCase().trim();
+    if (s === t) return true;
+
+    const isAti = (v: string) => v.includes("ati") || v.includes("a-t");
+    const isHesi = (v: string) => v.includes("hesi") || v.includes("h-s");
+    const isExamplify = (v: string) => v.includes("exemplify") || v.includes("examplify") || v.includes("rhem");
+    const isGeneral = (v: string) => v.includes("general");
+
+    if (isAti(s) && isAti(t) && !s.includes("exit") && !t.includes("exit")) return true;
+    if (isHesi(s) && isHesi(t) && !s.includes("exit") && !t.includes("exit")) return true;
+    if (isExamplify(s) && isExamplify(t) && !s.includes("exit") && !t.includes("exit")) return true;
+    if (isGeneral(s) && isGeneral(t)) return true;
+
+    return false;
+  };
 
   const handleCourseChange = async (selectedTitle: string) => {
     // 1. If selecting "All Courses" or "all":
@@ -891,11 +1066,20 @@ export function SubjectExamsHierarchyPage({
 
     const targetClean = normalizeForCourseMatch(dynamicSubjectName || subjectName || currentSubjectTitle);
 
+    const isAti = (v: string) => v.includes("ati") || v.includes("a-t");
+    const isHesi = (v: string) => v.includes("hesi") || v.includes("h-s");
+    const isExamplify = (v: string) => v.includes("exemplify") || v.includes("examplify") || v.includes("rhem");
+    const isGeneral = (v: string) => v.includes("general");
+
     // Check dashboardCourses in-memory
     const foundCourse = dashboardCourses?.find(
       (c) =>
         c.title.toLowerCase() === selectedTitle.toLowerCase() ||
-        (found && (c.guidId === found.id || String(c.id) === found.id))
+        (found && (c.guidId === found.id || String(c.id) === found.id)) ||
+        (isAti(selectedTitle.toLowerCase()) && isAti(c.title.toLowerCase()) && !c.title.toLowerCase().includes("exit")) ||
+        (isHesi(selectedTitle.toLowerCase()) && isHesi(c.title.toLowerCase()) && !c.title.toLowerCase().includes("exit")) ||
+        (isExamplify(selectedTitle.toLowerCase()) && isExamplify(c.title.toLowerCase()) && !c.title.toLowerCase().includes("exit")) ||
+        (isGeneral(selectedTitle.toLowerCase()) && isGeneral(c.title.toLowerCase()))
     );
 
     if (foundCourse && Array.isArray(foundCourse.subCategories)) {
@@ -907,15 +1091,21 @@ export function SubjectExamsHierarchyPage({
           targetClean.includes(scClean) ||
           (scClean.includes("pediatric") && targetClean.includes("pediatric")) ||
           (scClean.includes("maternal") && targetClean.includes("maternal")) ||
-          (scClean.includes("mental") && targetClean.includes("mental"))
+          (scClean.includes("mental") && targetClean.includes("mental")) ||
+          (scClean.includes("surg") && targetClean.includes("surg")) ||
+          (scClean.includes("pharm") && targetClean.includes("pharm")) ||
+          (scClean.includes("fund") && targetClean.includes("fund")) ||
+          (scClean.includes("lead") && targetClean.includes("lead")) ||
+          (scClean.includes("comm") && targetClean.includes("comm"))
         );
       });
 
       if (matchingSub) {
         const cSlug = (foundCourse as any).slug || toSlug(foundCourse.title);
         const cId = foundCourse.guidId || String(foundCourse.id);
+        const subId = (matchingSub as any).guidId || String(matchingSub.id);
         router.push(
-          `/dashboards/${panelSlug}/exams/${cSlug}/${cId}/exams/${matchingSub.id}?subjectName=${encodeURIComponent(
+          `/dashboards/${panelSlug}/exams/${cSlug}/${cId}/exams/${subId}?subjectName=${encodeURIComponent(
             matchingSub.title
           )}`
         );
@@ -924,9 +1114,12 @@ export function SubjectExamsHierarchyPage({
     }
 
     // Fallback: fetch subjects for this course from API to find matching subject
-    if (found?.id) {
+    const lookupId = foundCourse?.guidId || String(foundCourse?.id || "") || found?.id;
+    if (lookupId) {
       try {
-        const res = await fetch(`/api/exams/${panelSlug}/subjects/${found.id}`);
+        const res = await fetch(`/api/exams/${panelSlug}/subjects/${lookupId}`, {
+          headers: { ...renderSystemSessionHeaders() },
+        });
         if (res.ok) {
           const data = await res.json().catch(() => ({}));
           const subs: any[] = Array.isArray(data?.subjects) ? data.subjects : [];
@@ -938,13 +1131,19 @@ export function SubjectExamsHierarchyPage({
               targetClean.includes(sClean) ||
               (sClean.includes("pediatric") && targetClean.includes("pediatric")) ||
               (sClean.includes("maternal") && targetClean.includes("maternal")) ||
-              (sClean.includes("mental") && targetClean.includes("mental"))
+              (sClean.includes("mental") && targetClean.includes("mental")) ||
+              (sClean.includes("surg") && targetClean.includes("surg")) ||
+              (sClean.includes("pharm") && targetClean.includes("pharm")) ||
+              (sClean.includes("fund") && targetClean.includes("fund")) ||
+              (sClean.includes("lead") && targetClean.includes("lead")) ||
+              (sClean.includes("comm") && targetClean.includes("comm"))
             );
           });
           if (matched) {
             const subId = matched.guidId || String(matched.id);
+            const cSlug = (foundCourse as any)?.slug || found?.slug || toSlug(selectedTitle);
             router.push(
-              `/dashboards/${panelSlug}/exams/${found.slug}/${found.id}/exams/${subId}?subjectName=${encodeURIComponent(
+              `/dashboards/${panelSlug}/exams/${cSlug}/${lookupId}/exams/${subId}?subjectName=${encodeURIComponent(
                 matched.name || matched.title
               )}`
             );
@@ -1060,6 +1259,62 @@ export function SubjectExamsHierarchyPage({
   }, [availableSchools, selectedSchool]);
 
   // Filtered exams
+  const getExamCourseClassification = useCallback((
+    examTitle: string,
+    examCourse: string
+  ): "ati" | "hesi" | "examplify" | "general" | "kaplan" | "unknown" => {
+    const t = (examTitle || "").toLowerCase();
+    const c = (examCourse || "").toLowerCase();
+
+    // 1. Explicit indicators (most specific first!)
+    // If title or course has "examplify", "exemplify", or "rhem", it is definitively Examplify!
+    if (
+      t.includes("examplify") ||
+      t.includes("exemplify") ||
+      t.includes("rhem") ||
+      c.includes("examplify") ||
+      c.includes("exemplify") ||
+      c.includes("rhem")
+    ) {
+      return "examplify";
+    }
+
+    // If title or course has "hesi" or "h-s", it is definitively HESI!
+    if (t.includes("hesi") || /\bh-s\b/i.test(t) || c.includes("hesi") || /\bh-s\b/i.test(c)) {
+      return "hesi";
+    }
+
+    // If title or course has "kaplan" or "kap-lan", it is definitively Kaplan!
+    if (t.includes("kaplan") || t.includes("kap-lan") || c.includes("kaplan") || c.includes("kap-lan")) {
+      return "kaplan";
+    }
+
+    // If title or course has "general", it is General!
+    if (t.includes("general") || c.includes("general")) {
+      return "general";
+    }
+
+    // If title or course has "ati" or "a-t", or course is ATI Exam-RN/LPN, it is ATI!
+    if (t.includes("ati") || /\ba-t\b/i.test(t) || c.includes("ati") || /\ba-t\b/i.test(c)) {
+      return "ati";
+    }
+
+    return "unknown";
+  }, []);
+
+  const getTargetCourseType = useCallback((
+    target: string
+  ): "all" | "ati" | "hesi" | "examplify" | "general" | "kaplan" | "other" => {
+    const lower = (target || "").toLowerCase().trim();
+    if (!lower || lower === "all" || lower === "all courses" || lower === "course") return "all";
+    if (lower.includes("ati") || /\ba-t\b/i.test(lower)) return "ati";
+    if (lower.includes("hesi") || /\bh-s\b/i.test(lower)) return "hesi";
+    if (lower.includes("exemplify") || lower.includes("examplify") || lower.includes("rhem")) return "examplify";
+    if (lower.includes("general")) return "general";
+    if (lower.includes("kaplan") || lower.includes("kap-lan")) return "kaplan";
+    return "other";
+  }, []);
+
   const filteredExams = useMemo(() => {
     return exams.filter((exam) => {
       const yrNum = extractExamYear(exam.title, currentSubjectTitle, exam.year);
@@ -1087,28 +1342,63 @@ export function SubjectExamsHierarchyPage({
         if (!examSchool || examSchool.toLowerCase() !== selectedSchool.toLowerCase()) return false;
       }
 
+      // Programme filter check
+      if (
+        selectedProgramFilter &&
+        selectedProgramFilter !== "all" &&
+        selectedProgramFilter !== "All Programmes" &&
+        selectedProgramFilter !== "Programme"
+      ) {
+        const progLower = selectedProgramFilter.toLowerCase();
+        const examProg = String((exam as any).programName || "").toLowerCase();
+        const examCourse = String(
+          (exam as ExamWithParentNames).courseName ||
+            getCourseTitleForSubId(String((exam as any).subjectGuidId || (exam as any).subjectId || "")) ||
+            ""
+        ).toLowerCase();
+        const examTitle = String(exam.title || "").toLowerCase();
+        const combined = `${examProg} ${examCourse} ${examTitle}`;
+
+        const isExitTarget = /exit/i.test(progLower);
+        const isLpnTarget = /lpn|pn\b/i.test(progLower);
+        const isRnTarget = /\brn\b/i.test(progLower) && !isLpnTarget;
+
+        const examIsExit = /exit/i.test(combined);
+        const examIsLpn = /lpn|pn\b/i.test(combined);
+        const examIsRn = /\brn\b/i.test(combined) && !examIsLpn;
+
+        if (isExitTarget) {
+          if (!examIsExit) return false;
+          if (isLpnTarget && !examIsLpn) return false;
+          if (isRnTarget && !examIsRn) return false;
+        } else {
+          if (isLpnTarget && !examIsLpn) return false;
+          if (isRnTarget && !examIsRn) return false;
+        }
+      }
+
       // Course filter check
-      if (selectedCourseFilter && selectedCourseFilter !== "all" && selectedCourseFilter !== "All Courses") {
-        const examCourse = (
+      const targetType = getTargetCourseType(selectedCourseValue);
+
+      if (targetType !== "all") {
+        const examCourse =
           (exam as ExamWithParentNames).courseName ||
           getCourseTitleForSubId(String((exam as any).subjectGuidId || (exam as any).subjectId || "")) ||
-          ""
-        ).toLowerCase();
-        const target = selectedCourseFilter.toLowerCase().trim();
-        const examTitle = (exam.title || "").toLowerCase();
-        const examDesc = (exam.description || "").toLowerCase();
+          "";
+        const examTitle = exam.title || "";
+        const examClassification = getExamCourseClassification(examTitle, examCourse);
 
-        const matchesCourse =
-          examCourse.includes(target) ||
-          examTitle.includes(target) ||
-          examDesc.includes(target) ||
-          ((target.includes("a-t") || target.includes("ati")) && (examCourse.includes("a-t") || examTitle.includes("a-t") || examCourse.includes("ati") || examTitle.includes("ati"))) ||
-          ((target.includes("h-s") || target.includes("hesi")) && (examCourse.includes("h-s") || examTitle.includes("h-s") || examCourse.includes("hesi") || examTitle.includes("hesi"))) ||
-          ((target.includes("exemplify") || target.includes("rhem")) &&
-            (examCourse.includes("exemplify") || examCourse.includes("rhem") || examTitle.includes("exemplify") || examTitle.includes("rhem"))) ||
-          (target.includes("general") && (examCourse.includes("general") || examTitle.includes("general")));
-
-        if (!matchesCourse) return false;
+        if (examClassification !== targetType) {
+          if (examClassification === "unknown") {
+            const lowerCourse = examCourse.toLowerCase();
+            const lowerTarget = selectedCourseValue.toLowerCase();
+            if (!lowerCourse.includes(lowerTarget) && !lowerTarget.includes(lowerCourse)) {
+              return false;
+            }
+          } else {
+            return false;
+          }
+        }
       }
 
       return true;
@@ -1126,7 +1416,9 @@ export function SubjectExamsHierarchyPage({
   }, [
     exams,
     searchQuery,
+    selectedProgramFilter,
     selectedCourseFilter,
+    selectedCourseValue,
     selectedYear,
     selectedSeason,
     selectedSchool,
@@ -1134,6 +1426,8 @@ export function SubjectExamsHierarchyPage({
     dynamicCourseName,
     courseSlug,
     getCourseTitleForSubId,
+    getExamCourseClassification,
+    getTargetCourseType,
   ]);
 
   const [perPage, setPerPage] = useState<number>(100);
@@ -1141,7 +1435,16 @@ export function SubjectExamsHierarchyPage({
   // Reset pagination to page 1 on filter or search change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCourseFilter, selectedYear, selectedSeason, selectedSchool, perPage]);
+  }, [
+    searchQuery,
+    selectedProgramFilter,
+    selectedCourseFilter,
+    selectedCourseValue,
+    selectedYear,
+    selectedSeason,
+    selectedSchool,
+    perPage,
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(filteredExams.length / perPage));
   const safePage = Math.min(Math.max(1, currentPage), totalPages);
@@ -1242,23 +1545,43 @@ export function SubjectExamsHierarchyPage({
             </select>
           </div>
 
-          {/* Course Filter */}
-          <div className="relative inline-flex items-center">
-            <BookOpen className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
-            <select
-              value={selectedCourseValue}
-              onChange={(e) => handleCourseChange(e.target.value)}
-              className="pl-8 pr-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer appearance-none focus:outline-none max-w-[140px] sm:max-w-[180px] truncate shadow-2xs"
-              title={selectedCourseValue !== "all" ? `Course: ${formatCourseDropdownName(selectedCourseValue)}` : "Course"}
-            >
-              <option value="all">Course</option>
-              {availableCourseOptions.map((c) => (
-                <option key={c.title} value={c.title}>
-                  {formatCourseDropdownName(c.title)}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Course Toggle Buttons */}
+          {courseToggles.length > 0 && (
+            <div className="inline-flex items-center p-0.5 rounded-xl bg-slate-100/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700/80 shadow-2xs gap-0.5">
+              {(isMerged || isCombined || selectedCourseValue === "all") && (
+                <button
+                  type="button"
+                  onClick={() => handleCourseChange("all")}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                    selectedCourseValue === "all"
+                      ? "bg-white dark:bg-[#1E293B] text-teal-700 dark:text-[#2FD9C4] font-bold shadow-xs border border-slate-200/80 dark:border-slate-700"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                  }`}
+                  title="Show exams from all courses"
+                >
+                  All
+                </button>
+              )}
+              {courseToggles.map((c) => {
+                const isSelected = isCourseActive(c.title);
+                return (
+                  <button
+                    key={c.title}
+                    type="button"
+                    onClick={() => handleCourseChange(c.title)}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-white dark:bg-[#1E293B] text-teal-700 dark:text-[#2FD9C4] font-bold shadow-xs border border-slate-200/80 dark:border-slate-700"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                    }`}
+                    title={c.cleanTitle || formatCourseDropdownName(c.title) || `${c.label} Exams`}
+                  >
+                    {c.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* School Filter */}
           {availableSchools.length > 0 && (
@@ -1312,13 +1635,20 @@ export function SubjectExamsHierarchyPage({
           )}
 
           {/* Reset Filters */}
-          {(selectedYear !== "all" || selectedSeason !== "all" || selectedSchool !== "all" || searchQuery) && (
+          {(selectedYear !== "all" ||
+            selectedSeason !== "all" ||
+            selectedSchool !== "all" ||
+            (selectedProgramFilter && selectedProgramFilter !== "all" && selectedProgramFilter !== "Programme") ||
+            (selectedCourseFilter && selectedCourseFilter !== "all" && selectedCourseFilter !== "All Courses") ||
+            searchQuery) && (
             <button
               type="button"
               onClick={() => {
                 applyYear("all");
                 applySeason("all");
                 applySchool("all");
+                applyProgram("all");
+                applyCourse("all");
                 setSearchQuery("");
               }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50/80 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-950/60 border border-rose-200 dark:border-rose-900/50 transition-colors cursor-pointer"
@@ -1336,17 +1666,46 @@ export function SubjectExamsHierarchyPage({
             <p className="text-sm text-slate-600 dark:text-white/50 font-medium">Loading exams…</p>
           </div>
         ) : status === "error" ? (
-          <div className="rounded-2xl border border-red-400/40 bg-red-50 dark:bg-red-950/20 px-5 py-10 text-center">
+          <div className="rounded-2xl border border-red-400/40 bg-red-50 dark:bg-red-950/20 px-5 py-10 text-center space-y-3">
             <p className="text-sm font-semibold text-red-700 dark:text-red-300">
               Couldn&rsquo;t load exams right now.
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                subjectExamsHierarchyClientCache.delete(cacheKey);
+                setStatus("loading");
+                setReloadTrigger((v) => v + 1);
+              }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white transition-colors cursor-pointer shadow-xs"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Retry</span>
+            </button>
           </div>
         ) : filteredExams.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[var(--card-bg,#15273e)] px-5 py-10 text-center shadow-md">
-            <FileQuestion className="w-10 h-10 text-slate-400 dark:text-white/30 mx-auto mb-3" />
+          <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[var(--card-bg,#15273e)] px-5 py-10 text-center shadow-md space-y-3">
+            <FileQuestion className="w-10 h-10 text-slate-400 dark:text-white/30 mx-auto" />
             <p className="text-sm font-semibold text-slate-700 dark:text-white/60">
               {exams.length === 0 ? "No exams available yet — check back soon." : "No exams match your filters."}
             </p>
+            {exams.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  applyYear("all");
+                  applySeason("all");
+                  applySchool("all");
+                  applyProgram("all");
+                  applyCourse("all");
+                  setSearchQuery("");
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-teal-700 dark:text-[#2FD9C4] bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/40 border border-teal-200 dark:border-teal-800 transition-colors cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Clear All Filters</span>
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -1428,13 +1787,15 @@ export function SubjectExamsHierarchyPage({
                     className="group relative overflow-hidden rounded-xl bg-white dark:bg-[#1E293B] border border-slate-200/80 dark:border-slate-800 hover:border-teal-500/60 hover:shadow-md flex flex-col justify-between p-3 sm:p-3.5 transition-all duration-200 shadow-2xs text-left"
                   >
                     {showNew && (
-                      <span className="absolute -top-2 right-4 z-10 inline-flex items-center rounded-full bg-blue-600 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-2xs">
-                        New
-                      </span>
+                      <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none overflow-hidden z-10">
+                        <div className="absolute transform rotate-45 bg-blue-600 dark:bg-blue-500 text-white font-extrabold text-[8px] sm:text-[9px] uppercase tracking-wider py-0.5 right-[-34px] top-[14px] w-[110px] text-center shadow-xs">
+                          NEW
+                        </div>
+                      </div>
                     )}
 
                     {/* Top Badges */}
-                    <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                    <div className={`flex items-center justify-between gap-1.5 mb-1.5 ${showNew ? "pr-8" : ""}`}>
                       <div className="flex items-center gap-1 min-w-0">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 truncate">
                           {resolvedSeason ? `${resolvedSeason} ` : ""}{examYr ? `${examYr}` : courseName}
@@ -1453,10 +1814,6 @@ export function SubjectExamsHierarchyPage({
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0 ml-auto">
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
-                          <FileQuestion className="w-2.5 h-2.5 text-teal-600 dark:text-[#2FD9C4]" />
-                          <span>{resolvedQCount ?? 0} {resolvedQCount === 1 ? "Question" : "Questions"}</span>
-                        </span>
                         {isCompleted ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60">
                             <Check className="w-2.5 h-2.5" />
@@ -1471,12 +1828,23 @@ export function SubjectExamsHierarchyPage({
                     </div>
 
                     {/* Card Title */}
-                    <h3 className="font-semibold sm:font-bold text-xs sm:text-sm text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors line-clamp-2 leading-snug">
-                      {(exam.title || "").replace(/rhenis\s*/gi, "").trim()}
-                    </h3>
+                    <div className="my-auto py-1">
+                      <h3 className="font-semibold sm:font-bold text-xs sm:text-sm text-navy dark:text-white group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors line-clamp-2 leading-snug">
+                        {(exam.title || "").replace(/rhenis\s*/gi, "").trim()}
+                      </h3>
+                    </div>
 
                     {/* Bottom Row */}
-                    <div className="w-full pt-2 mt-2 flex items-center justify-end border-t border-slate-100 dark:border-slate-800/80">
+                    <div className="w-full pt-2 mt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800/80 gap-2">
+                      {/* Question Count Tag (Bottom Left) */}
+                      <div className="flex items-center shrink-0">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+                          <FileQuestion className="w-2.5 h-2.5 text-teal-600 dark:text-[#2FD9C4]" />
+                          <span>{resolvedQCount ?? 0} {resolvedQCount === 1 ? "Question" : "Questions"}</span>
+                        </span>
+                      </div>
+
+                      {/* Action Buttons (Bottom Right) */}
                       <div className="flex items-center gap-1.5 ml-auto">
                         {allowedModes.includes("Practice") && (
                           <button

@@ -13,6 +13,7 @@ import { getBackendBaseUrl } from "@/lib/api/api/api";
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
 import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
+import { compareSubjects, getSubjectRank } from "@/lib/utils/exams/formatSubjectOrder";
 
 const EXAM_SEGMENTS: Record<string, string> = {
   "ati-teas": "ATI_TEAS",
@@ -274,21 +275,8 @@ export async function GET(
       return true;
     });
 
-    // Dynamic sorting by backend order/rank/position; if explicit order is present, respect it; otherwise sort chronologically if subjects contain years
-    items.sort((a, b) => {
-      const hasOrderA = (a.order !== undefined && a.order !== null) || (a.position !== undefined && a.position !== null) || (a.rank !== undefined && a.rank !== null);
-      const hasOrderB = (b.order !== undefined && b.order !== null) || (b.position !== undefined && b.position !== null) || (b.rank !== undefined && b.rank !== null);
-      if (hasOrderA || hasOrderB) {
-        const oa = parseOrder(a.order ?? a.position ?? a.rank ?? a.sortOrder ?? a.displayOrder, 0);
-        const ob = parseOrder(b.order ?? b.position ?? b.rank ?? b.sortOrder ?? b.displayOrder, 0);
-        if (oa !== ob) return oa - ob;
-      }
-
-      const ya = Number(a.name?.match(/\b(202\d)\b/)?.[1] ?? 0);
-      const yb = Number(b.name?.match(/\b(202\d)\b/)?.[1] ?? 0);
-      if (ya && yb && ya !== yb) return ya - yb;
-      return 0;
-    });
+    // Dynamic canonical clinical curriculum sorting
+    items.sort((a, b) => compareSubjects(a.name, b.name));
 
     // Look up courseName dynamically from backend first, cache, then fallback
     let courseName = courseNameCache.get(effectiveCourseId) || "";
@@ -410,14 +398,14 @@ export async function GET(
         slug: toSlug(name),
         description: c.description || "",
         coursesCount: toNumber(c.coursesCount, 0),
-        order: parseOrder(c.order ?? c.position ?? c.rank ?? c.sortOrder ?? c.displayOrder, i + 1),
+        order: getSubjectRank(name),
         examCount: live.examCount,
         questionCount: live.questionCount,
         subCategories: live.subCategories,
       };
     });
 
-    subjects.sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+    subjects.sort((a, b) => compareSubjects(a.name, b.name));
 
     // Return all subjects assigned to this course, with dynamic exam counts attached
     const finalSubjects = subjects.length > 0 ? subjects : [];

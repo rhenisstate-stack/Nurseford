@@ -11,6 +11,7 @@ import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
 import { resolveExamSeason } from "@/lib/utils/exams/resolveExamSeason";
 import { resolveExamSchool } from "@/lib/utils/exams/resolveExamSchool";
 import { formatCourseDropdownName } from "@/lib/utils/exams/formatCourseDropdownName";
+import { compareSubjects } from "@/lib/utils/exams/formatSubjectOrder";
 
 export interface UnifiedSubject {
   id: string | number;
@@ -297,8 +298,10 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Dynamic Sort: Purely by dynamic exam count descending, then by question count descending
+    // Dynamic Sort: Guaranteed clinical curriculum ordering (Med-Surg, Pediatrics, Maternal, Mental Health, Fundamentals, Pharmacology...)
     aggregated.sort((a, b) => {
+      const subjectDiff = compareSubjects(a.name, b.name);
+      if (subjectDiff !== 0) return subjectDiff;
       const examDiff = (b.examCount || 0) - (a.examCount || 0);
       if (examDiff !== 0) return examDiff;
       return (b.questionCount || 0) - (a.questionCount || 0);

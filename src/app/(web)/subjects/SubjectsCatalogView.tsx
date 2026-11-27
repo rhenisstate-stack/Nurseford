@@ -29,6 +29,7 @@ import {
   formatProgramDropdownName,
   matchesProgram,
 } from "@/lib/utils/exams/formatProgramDropdownName";
+import { compareSubjects } from "@/lib/utils/exams/formatSubjectOrder";
 import type { UnifiedSubject } from "@/app/api/exams/all-subjects/route";
 
 export function getCanonicalSubjectInfo(name: string): { key: string; name: string; category: string; isMedSurg: boolean } {
@@ -515,8 +516,10 @@ export default function SubjectsCatalogView() {
         });
       });
 
-      // Dynamic Sort: Purely by dynamic exam count descending, then by question count descending
+      // Dynamic Sort: Guaranteed clinical curriculum ordering (Med-Surg, Pediatrics, Maternal, Mental Health, Fundamentals, Pharmacology...)
       return merged.sort((a, b) => {
+        const subDiff = compareSubjects(a.name, b.name);
+        if (subDiff !== 0) return subDiff;
         const diff = (b.examCount || 0) - (a.examCount || 0);
         if (diff !== 0) return diff;
         return (b.questionCount || 0) - (a.questionCount || 0);
@@ -525,6 +528,8 @@ export default function SubjectsCatalogView() {
 
     const sortByDynamicRank = (list: UnifiedSubject[]) =>
       [...list].sort((a, b) => {
+        const subDiff = compareSubjects(a.name, b.name);
+        if (subDiff !== 0) return subDiff;
         const diff = (b.examCount || 0) - (a.examCount || 0);
         if (diff !== 0) return diff;
         return (b.questionCount || 0) - (a.questionCount || 0);
@@ -724,10 +729,16 @@ export default function SubjectsCatalogView() {
         <div className="mx-auto w-full max-w-[1500px] px-4 sm:px-6 md:px-10 lg:px-14">
           
           {/* ────────────────────────────────────────────────────────────────────────────────
-              CURRICULUM FILTERS (Programme, Course, School, Year, Season, Reset)
+              CURRICULUM FILTERS (Programme, Reset) - Course, School, Year, Season removed at subject level
           ────────────────────────────────────────────────────────────────────────────────── */}
           <div className="flex items-center gap-2 flex-wrap mb-4 sm:mb-6">
-            <CoursesNavbarFilters activeTrack={activeTrack} />
+            <CoursesNavbarFilters
+              activeTrack={activeTrack}
+              hideCourse
+              hideSchool
+              hideYear
+              hideSeason
+            />
           </div>
 
           {/* ────────────────────────────────────────────────────────────────────────────────

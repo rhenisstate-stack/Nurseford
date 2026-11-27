@@ -21,9 +21,19 @@ import {
 
 interface CoursesNavbarFiltersProps {
   activeTrack?: "rn" | "lpn" | "all";
+  hideCourse?: boolean;
+  hideSchool?: boolean;
+  hideYear?: boolean;
+  hideSeason?: boolean;
 }
 
-export default function CoursesNavbarFilters({ activeTrack }: CoursesNavbarFiltersProps = {}) {
+export default function CoursesNavbarFilters({
+  activeTrack,
+  hideCourse = false,
+  hideSchool = false,
+  hideYear = false,
+  hideSeason = false,
+}: CoursesNavbarFiltersProps = {}) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const trackParam = searchParams?.get("track");
@@ -40,7 +50,6 @@ export default function CoursesNavbarFilters({ activeTrack }: CoursesNavbarFilte
     selectedSeason,
     setSelectedSeason,
     clearAllFilters,
-    hasActiveFilters,
     dynamicPrograms,
     dynamicCourses,
     dynamicYears,
@@ -170,6 +179,13 @@ export default function CoursesNavbarFilters({ activeTrack }: CoursesNavbarFilte
   const isYearActive = !!selectedYear && selectedYear !== "All Years" && selectedYear !== "all";
   const isSeasonActive = !!selectedSeason && selectedSeason !== "All Seasons" && selectedSeason !== "all";
 
+  const hasAnyActiveFilter =
+    isProgramActive ||
+    (!hideCourse && isCourseActive) ||
+    (!hideSchool && isSchoolActive) ||
+    (!hideYear && isYearActive) ||
+    (!hideSeason && isSeasonActive);
+
   return (
     <div className="flex items-center gap-2 flex-wrap">
       
@@ -204,127 +220,135 @@ export default function CoursesNavbarFilters({ activeTrack }: CoursesNavbarFilte
       </div>
 
       {/* 2. Course Filter */}
-      <div className="relative inline-flex items-center">
-        <BookOpen
-          className={`w-3.5 h-3.5 absolute left-2.5 pointer-events-none transition-colors ${
-            isCourseActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"
-          }`}
-        />
-        <select
-          value={selectedCourseDisplay}
-          onChange={(e) => setSelectedCourse(e.target.value)}
-          className={`pl-8 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer appearance-none focus:outline-none max-w-[120px] sm:max-w-[160px] truncate ${
-            isCourseActive
-              ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-500/60 ring-2 ring-indigo-500/20"
-              : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-          }`}
-          title={isCourseActive ? `Course: ${formatCourseDropdownName(selectedCourse)}` : "Course"}
-        >
-          <option value="All Courses" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-            Course
-          </option>
-          {availableCourses
-            .filter((c) => c !== "All Courses")
-            .map((crs) => (
-              <option key={crs} value={crs} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-                {formatCourseDropdownName(crs)}
-              </option>
-            ))}
-        </select>
-      </div>
+      {!hideCourse && (
+        <div className="relative inline-flex items-center">
+          <BookOpen
+            className={`w-3.5 h-3.5 absolute left-2.5 pointer-events-none transition-colors ${
+              isCourseActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"
+            }`}
+          />
+          <select
+            value={selectedCourseDisplay}
+            onChange={(e) => setSelectedCourse(e.target.value)}
+            className={`pl-8 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer appearance-none focus:outline-none max-w-[120px] sm:max-w-[160px] truncate ${
+              isCourseActive
+                ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-300 border-indigo-500/60 ring-2 ring-indigo-500/20"
+                : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+            }`}
+            title={isCourseActive ? `Course: ${formatCourseDropdownName(selectedCourse)}` : "Course"}
+          >
+            <option value="All Courses" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+              Course
+            </option>
+            {availableCourses
+              .filter((c) => c !== "All Courses")
+              .map((crs) => (
+                <option key={crs} value={crs} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                  {formatCourseDropdownName(crs)}
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
 
       {/* 3. School Filter */}
-      <div className="relative inline-flex items-center">
-        <School
-          className={`w-3.5 h-3.5 absolute left-2.5 pointer-events-none transition-colors ${
-            isSchoolActive ? "text-blue-600 dark:text-sky-400" : "text-slate-400"
-          }`}
-        />
-        <select
-          value={selectedSchool || "All Schools"}
-          onChange={(e) => setSelectedSchool(e.target.value)}
-          className={`pl-8 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer appearance-none focus:outline-none max-w-[120px] sm:max-w-[150px] truncate ${
-            isSchoolActive
-              ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 border-blue-500/60 ring-2 ring-blue-500/20"
-              : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-          }`}
-          title={isSchoolActive ? `School: ${selectedSchool}` : "School"}
-        >
-          <option value="All Schools" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-            School
-          </option>
-          {availableSchools
-            .filter((s) => s !== "All Schools")
-            .map((sch) => (
-              <option key={sch} value={sch} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-                {sch}
-              </option>
-            ))}
-        </select>
-      </div>
+      {!hideSchool && (
+        <div className="relative inline-flex items-center">
+          <School
+            className={`w-3.5 h-3.5 absolute left-2.5 pointer-events-none transition-colors ${
+              isSchoolActive ? "text-blue-600 dark:text-sky-400" : "text-slate-400"
+            }`}
+          />
+          <select
+            value={selectedSchool || "All Schools"}
+            onChange={(e) => setSelectedSchool(e.target.value)}
+            className={`pl-8 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer appearance-none focus:outline-none max-w-[120px] sm:max-w-[150px] truncate ${
+              isSchoolActive
+                ? "bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-sky-300 border-blue-500/60 ring-2 ring-blue-500/20"
+                : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+            }`}
+            title={isSchoolActive ? `School: ${selectedSchool}` : "School"}
+          >
+            <option value="All Schools" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+              School
+            </option>
+            {availableSchools
+              .filter((s) => s !== "All Schools")
+              .map((sch) => (
+                <option key={sch} value={sch} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                  {sch}
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
 
       {/* 4. Year Filter */}
-      <div className="relative inline-flex items-center">
-        <Calendar
-          className={`w-3.5 h-3.5 absolute left-2.5 pointer-events-none transition-colors ${
-            isYearActive ? "text-amber-600 dark:text-amber-400" : "text-slate-400"
-          }`}
-        />
-        <select
-          value={selectedYear || "All Years"}
-          onChange={(e) => setSelectedYear(e.target.value)}
-          className={`pl-8 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer appearance-none focus:outline-none max-w-[100px] sm:max-w-[120px] truncate ${
-            isYearActive
-              ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-500/60 ring-2 ring-amber-500/20"
-              : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-          }`}
-          title={isYearActive ? `Year: ${selectedYear}` : "Year"}
-        >
-          <option value="All Years" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-            Year
-          </option>
-          {availableYears
-            .filter((y) => y !== "All Years")
-            .map((yr) => (
-              <option key={yr} value={yr} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-                {yr}
-              </option>
-            ))}
-        </select>
-      </div>
+      {!hideYear && (
+        <div className="relative inline-flex items-center">
+          <Calendar
+            className={`w-3.5 h-3.5 absolute left-2.5 pointer-events-none transition-colors ${
+              isYearActive ? "text-amber-600 dark:text-amber-400" : "text-slate-400"
+            }`}
+          />
+          <select
+            value={selectedYear || "All Years"}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className={`pl-8 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer appearance-none focus:outline-none max-w-[100px] sm:max-w-[120px] truncate ${
+              isYearActive
+                ? "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-500/60 ring-2 ring-amber-500/20"
+                : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+            }`}
+            title={isYearActive ? `Year: ${selectedYear}` : "Year"}
+          >
+            <option value="All Years" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+              Year
+            </option>
+            {availableYears
+              .filter((y) => y !== "All Years")
+              .map((yr) => (
+                <option key={yr} value={yr} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                  {yr}
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
 
       {/* 5. Season Filter */}
-      <div className="relative inline-flex items-center">
-        <Sun
-          className={`w-3.5 h-3.5 absolute left-2.5 pointer-events-none transition-colors ${
-            isSeasonActive ? "text-purple-600 dark:text-purple-400" : "text-slate-400"
-          }`}
-        />
-        <select
-          value={selectedSeason || "All Seasons"}
-          onChange={(e) => setSelectedSeason(e.target.value)}
-          className={`pl-8 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer appearance-none focus:outline-none max-w-[110px] sm:max-w-[130px] truncate ${
-            isSeasonActive
-              ? "bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border-purple-500/60 ring-2 ring-purple-500/20"
-              : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
-          }`}
-          title={isSeasonActive ? `Season: ${selectedSeason}` : "Season"}
-        >
-          <option value="All Seasons" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-            Season
-          </option>
-          {availableSeasons
-            .filter((s) => s !== "All Seasons")
-            .map((seas) => (
-              <option key={seas} value={seas} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-                {seas}
-              </option>
-            ))}
-        </select>
-      </div>
+      {!hideSeason && (
+        <div className="relative inline-flex items-center">
+          <Sun
+            className={`w-3.5 h-3.5 absolute left-2.5 pointer-events-none transition-colors ${
+              isSeasonActive ? "text-purple-600 dark:text-purple-400" : "text-slate-400"
+            }`}
+          />
+          <select
+            value={selectedSeason || "All Seasons"}
+            onChange={(e) => setSelectedSeason(e.target.value)}
+            className={`pl-8 pr-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer appearance-none focus:outline-none max-w-[110px] sm:max-w-[130px] truncate ${
+              isSeasonActive
+                ? "bg-purple-50 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border-purple-500/60 ring-2 ring-purple-500/20"
+                : "bg-white dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-slate-300"
+            }`}
+            title={isSeasonActive ? `Season: ${selectedSeason}` : "Season"}
+          >
+            <option value="All Seasons" className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+              Season
+            </option>
+            {availableSeasons
+              .filter((s) => s !== "All Seasons")
+              .map((seas) => (
+                <option key={seas} value={seas} className="bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                  {seas}
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
 
       {/* 6. Reset Filter Button */}
-      {hasActiveFilters && (
+      {hasAnyActiveFilter && (
         <button
           type="button"
           onClick={clearAllFilters}

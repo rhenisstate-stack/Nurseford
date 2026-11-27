@@ -9,6 +9,7 @@ import {
 import { getSiteHeaders } from "@/lib/config/siteHeaders";
 import { convertBackendKeysToCamel } from "@/lib/utils/convertors/pascalToCamelCase";
 import { extractExamYear } from "@/lib/utils/exams/extractExamYear";
+import { compareSubjects, getSubjectRank } from "@/lib/utils/exams/formatSubjectOrder";
 import {
   fetchExamBreakdown,
   fetchMultipleExamsBreakdown,
@@ -493,7 +494,7 @@ async function fetchBackendStandaloneSubjectsAsCourses(
         easyCount,
         mediumCount,
         hardCount,
-        order: parseOrder(s.order ?? s.position ?? s.rank ?? s.sortOrder ?? s.displayOrder, i + 1),
+        order: getSubjectRank(title),
         subCategories,
       };
 
@@ -501,8 +502,8 @@ async function fetchBackendStandaloneSubjectsAsCourses(
     })
   );
 
-  // Dynamic sorting strictly by backend order/rank/position
-  subjectCards.sort((a, b) => a.order - b.order);
+  // Dynamic canonical clinical curriculum sorting
+  subjectCards.sort((a, b) => compareSubjects(a.title, b.title));
 
   // Fetch real clientNeed categories from backend course if present (e.g. Course 30 "Client Needs" for NCLEX-RN)
   let clientNeedCards: DashboardCourse[] = [];

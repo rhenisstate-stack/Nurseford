@@ -23,6 +23,7 @@ import {
 import { registerSearchSubjects } from "@/lib/services/search/searchRegistry";
 import { useNursingSchools } from "@/lib/data/nursingSchools";
 import { formatCourseDropdownName, compareCourses } from "@/lib/utils/exams/formatCourseDropdownName";
+import { compareSubjects } from "@/lib/utils/exams/formatSubjectOrder";
 
 const cleanSubjectStr = (s?: string) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -201,6 +202,9 @@ export function CourseSubjectsPage({
         const res = await fetch(`/api/exams/${panelSlug}/subjects/${courseId}`, {
           headers: { ...renderSystemSessionHeaders() },
         });
+        if (!res.ok) {
+          throw new Error(`Failed to load subjects (Status ${res.status})`);
+        }
         const data = await res.json();
         if (!cancelled) {
           const resolvedCourseName = data?.courseName || "";
@@ -213,7 +217,7 @@ export function CourseSubjectsPage({
               ...s,
               slug: s.slug || toSlug(s.name),
             }))
-            .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+            .sort((a, b) => compareSubjects(a.name, b.name));
 
           courseSubjectsClientCache.set(cacheKey, {
             subjects: mapped,
@@ -313,21 +317,21 @@ export function CourseSubjectsPage({
       return;
     }
     if (/pn.*exit|lpn.*exit/i.test(prog)) {
-      router.push("/dashboards/lpn-nursing?track=exit");
+      router.push("/subjects?track=exit&panel=lpn-nursing");
     } else if (/lpn/i.test(prog)) {
-      router.push("/dashboards/lpn-nursing");
+      router.push("/subjects?panel=lpn-nursing");
     } else if (/rn.*exit/i.test(prog)) {
-      router.push("/dashboards/rn-nursing?track=exit");
+      router.push("/subjects?track=exit&panel=rn-nursing");
     } else if (/rn/i.test(prog)) {
-      router.push("/dashboards/rn-nursing");
+      router.push("/subjects?panel=rn-nursing");
     } else if (/hesi/i.test(prog)) {
-      router.push("/dashboards/hesi-a2");
+      router.push("/subjects?panel=hesi-a2");
     } else if (/teas/i.test(prog)) {
-      router.push("/dashboards/ati-teas");
+      router.push("/subjects?panel=ati-teas");
     } else if (/nclex.*rn/i.test(prog)) {
-      router.push("/dashboards/nclex-rn");
+      router.push("/dashboards/nclex-rn/vista/assessment/exams/distinct/overview");
     } else if (/nclex.*pn/i.test(prog)) {
-      router.push("/dashboards/nclex-pn");
+      router.push("/dashboards/nclex-pn/vista/assessment/exams/distinct/overview");
     } else {
       router.push(`/subjects?program=${encodeURIComponent(prog)}`);
     }
@@ -438,15 +442,11 @@ export function CourseSubjectsPage({
     }
   };
 
-  const isSchoolActive = selectedSchool !== "all" && selectedSchool !== "All Schools";
-  const isYearActive = selectedYear !== "all" && selectedYear !== "All Years";
-  const isSeasonActive = selectedSeason !== "all" && selectedSeason !== "All Seasons";
-  const hasAnyActiveFilter = isSchoolActive || isYearActive || isSeasonActive;
+  const isProgramActive = selectedProgramValue !== "all" && selectedProgramValue !== "All Programmes";
+  const hasAnyActiveFilter = isProgramActive;
 
   const handleResetFilters = () => {
-    applySchool("all");
-    applyYear("all");
-    applySeason("all");
+    handleProgramChange("all");
   };
 
   const openSubjectExams = (card: BackendSubject) => {
@@ -501,7 +501,7 @@ export function CourseSubjectsPage({
             </span>
           </div>
 
-          {/* 5 Filters Toolbar: Programme, Course, School, Year, Season */}
+          {/* Programme Filter */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* 1. Programme Filter */}
             <div className="relative inline-flex items-center">
@@ -520,84 +520,6 @@ export function CourseSubjectsPage({
                 ))}
               </select>
             </div>
-
-            {/* 2. Course Filter */}
-            <div className="relative inline-flex items-center">
-              <BookOpen className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
-              <select
-                value={selectedCourseValue}
-                onChange={(e) => handleCourseChange(e.target.value)}
-                className="pl-8 pr-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer appearance-none focus:outline-none max-w-[140px] sm:max-w-[180px] truncate shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-                title={selectedCourseValue !== "all" ? `Course: ${formatCourseDropdownName(selectedCourseValue)}` : "Course"}
-              >
-                <option value="all">Course</option>
-                {availableCourseOptions.map((c) => (
-                  <option key={c.title} value={c.title}>
-                    {formatCourseDropdownName(c.title)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* 3. School Filter */}
-            {availableSchools.length > 0 && (
-              <div className="relative inline-flex items-center">
-                <School className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
-                <select
-                  value={selectedSchool === "All Schools" ? "all" : selectedSchool}
-                  onChange={(e) => applySchool(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer appearance-none focus:outline-none max-w-[160px] truncate shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-                  title={selectedSchool !== "all" && selectedSchool !== "All Schools" ? `School: ${selectedSchool}` : "School"}
-                >
-                  <option value="all">All Schools</option>
-                  {availableSchools.map((sch) => (
-                    <option key={sch} value={sch}>
-                      {sch}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* 4. Year Filter */}
-            {availableYears.length > 0 && (
-              <div className="relative inline-flex items-center">
-                <Calendar className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
-                <select
-                  value={selectedYear === "All Years" ? "all" : selectedYear}
-                  onChange={(e) => applyYear(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer appearance-none focus:outline-none shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-                  title={selectedYear !== "all" && selectedYear !== "All Years" ? `Year: ${selectedYear}` : "Year"}
-                >
-                  <option value="all">All Years</option>
-                  {availableYears.map((yr) => (
-                    <option key={yr} value={yr}>
-                      {yr}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {/* 5. Season Filter */}
-            {availableSeasons.length > 0 && (
-              <div className="relative inline-flex items-center">
-                <Sun className="w-3.5 h-3.5 absolute left-2.5 text-slate-400 pointer-events-none" />
-                <select
-                  value={selectedSeason === "All Seasons" ? "all" : selectedSeason}
-                  onChange={(e) => applySeason(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 cursor-pointer appearance-none focus:outline-none shadow-2xs hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
-                  title={selectedSeason !== "all" && selectedSeason !== "All Seasons" ? `Season: ${selectedSeason}` : "Season"}
-                >
-                  <option value="all">All Seasons</option>
-                  {availableSeasons.map((sn) => (
-                    <option key={sn} value={sn}>
-                      {sn}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
 
             {/* Reset Filters Button */}
             {hasAnyActiveFilter && (

@@ -272,4 +272,40 @@ export function formatCourseDropdownName(rawName?: string | null): string {
   );
 }
 
+/**
+ * Returns a short, clean label for course toggle buttons at the exam level
+ * (e.g. ATI, HESI, Examplify, General).
+ */
+export function formatCourseToggleLabel(rawName?: string | null): string {
+  if (!rawName || typeof rawName !== "string") return "";
+  const lower = rawName.toLowerCase().trim();
+  if (lower === "all" || lower === "all courses" || lower === "course") return "All";
+
+  const isExit = lower.includes("exit");
+
+  if (lower.includes("ati") || lower.includes("a-t")) {
+    return isExit ? "ATI Exit" : "ATI";
+  }
+  if (lower.includes("hesi") || lower.includes("h-s")) {
+    return isExit ? "HESI Exit" : "HESI";
+  }
+  if (lower.includes("exemplify") || lower.includes("examplify") || lower.includes("rhem")) {
+    return isExit ? "Examplify Exit" : "Examplify";
+  }
+  if (lower.includes("general")) {
+    return "General";
+  }
+  if (lower.includes("kaplan") || lower.includes("kap-lan")) {
+    return "Kaplan";
+  }
+
+  const cleaned = formatCourseDropdownName(rawName);
+  return (
+    cleaned
+      .replace(/\s*exam(?:s)?(?:-rn|-lpn|-pn)?\b/gi, "")
+      .replace(/\s*practice(?:-rn|-pn)?\b/gi, "")
+      .trim() || cleaned
+  );
+}
+
 export default formatCourseDropdownName;
