@@ -590,20 +590,20 @@ export function ExamCorrectAnswerView({
               {formattedAnswers.map((item, idx) => (
                 <div
                   key={idx}
-                  className="rounded-lg border border-emerald-300/80 dark:border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 px-3 py-1 sm:px-3.5 sm:py-1.5 flex items-center justify-between gap-3 transition-all"
+                  className="correct-answer-item rounded-lg border border-emerald-300/80 dark:border-emerald-500/30 bg-emerald-50/40 dark:bg-emerald-950/20 px-3 py-1 sm:px-3.5 sm:py-1.5 flex items-center justify-between gap-3 transition-all"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     {item.label ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-950 dark:text-emerald-200 font-bold text-xs sm:text-sm shrink-0 border border-emerald-300 dark:border-emerald-500/30">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-950 dark:text-emerald-200 font-bold shrink-0 border border-emerald-300 dark:border-emerald-500/30">
                         {item.label}
                       </span>
                     ) : null}
-                    <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate sm:whitespace-normal">
+                    <span className="font-bold text-slate-900 dark:text-white truncate sm:whitespace-normal">
                       {item.value}
                     </span>
                   </div>
 
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold bg-emerald-600 text-white shrink-0 shadow-2xs">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-semibold bg-emerald-600 text-white shrink-0 shadow-2xs">
                     ✓ Correct
                   </span>
                 </div>
@@ -625,7 +625,7 @@ export function ExamCorrectAnswerView({
             </div>
 
             <div
-              className={`exhibit-content-body rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 p-2.5 sm:p-3.5 text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed space-y-1.5 transition-all duration-300 ${
+              className={`clinical-rationale-body exhibit-content-body rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 p-2.5 sm:p-3.5 text-slate-800 dark:text-slate-200 leading-relaxed space-y-1.5 transition-all duration-300 ${
                 !isAnswerRevealed ? "filter blur-md select-none pointer-events-none opacity-30" : ""
               }`}
             >

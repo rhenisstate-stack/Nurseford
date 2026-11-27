@@ -101,7 +101,7 @@ export const CaseBasedStencil = ({
           </div>
           {activeContent && (
             <div
-              className="exhibit-content-body py-1 sm:py-1.5 px-0.5 sm:px-1 text-sm sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar-button]:hidden [&_p]:my-1 [&_p]:leading-relaxed [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:leading-relaxed [&_p:empty]:my-1 [&_p:empty]:min-h-[0.5rem]"
+              className="exhibit-content-body py-1 sm:py-1.5 px-0.5 sm:px-1 text-slate-800 dark:text-slate-200 leading-relaxed w-full overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar-button]:hidden [&_p]:my-1 [&_p]:leading-relaxed [&_p:first-child]:mt-0 [&_p:last-child]:mb-0 [&_ul]:my-1 [&_ol]:my-1 [&_li]:leading-relaxed [&_p:empty]:my-1 [&_p:empty]:min-h-[0.5rem]"
               dangerouslySetInnerHTML={{ __html: activeDesc }}
             />
           )}

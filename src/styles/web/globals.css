@@ -249,29 +249,34 @@ body {
   @apply !text-green-600;
 }
 
-/* ── Dynamic Exhibit & Case Study Passage Spacing & Sizing (+1.5px) ── */
-.exhibit-content-body {
-  white-space: normal !important;
-  word-break: break-word;
+/* ── Unified Body Font Size: Nurses' Notes, Vital Signs, Answers, Explanations, Correct Answers & Rationale (+1.5px) ── */
+.exhibit-content-body,
+.exhibit-content-body *,
+.exhibit-tab-btn,
+.correct-answer-item,
+.correct-answer-item *,
+.clinical-rationale-body,
+.clinical-rationale-body *,
+.exam-clue-box,
+.exam-clue-box * {
   font-size: calc(var(--exam-font-desktop-base, 13.5px) + 1.5px) !important;
 }
 
-.exhibit-content-body * {
-  font-size: inherit;
+.exhibit-content-body {
+  white-space: normal !important;
+  word-break: break-word;
 }
 
 @media (max-width: 639px) {
-  .exhibit-content-body {
+  .exhibit-content-body,
+  .exhibit-content-body *,
+  .exhibit-tab-btn,
+  .correct-answer-item,
+  .correct-answer-item *,
+  .clinical-rationale-body,
+  .clinical-rationale-body *,
+  .exam-clue-box,
+  .exam-clue-box * {
     font-size: calc(var(--exam-font-mobile-base, 12px) + 1.5px) !important;
-  }
-}
-
-.exhibit-tab-btn {
-  font-size: calc(var(--exam-font-desktop-sm, 11px) + 1.5px) !important;
-}
-
-@media (max-width: 639px) {
-  .exhibit-tab-btn {
-    font-size: calc(var(--exam-font-mobile-sm, 10px) + 1.5px) !important;
   }
 }

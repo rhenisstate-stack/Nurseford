@@ -895,7 +895,7 @@ export function QuestionToolbar({ q, mode, examId, examGuidId, sectionId, sectio
 
             {/* ── HINT BOX (Clue 💡 banner matching reference) ── */}
             {showHint && hint && (
-                <div className="w-full rounded-md bg-[#fffbeb] dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 p-3 sm:p-4 text-xs sm:text-sm text-amber-950 dark:text-amber-100 flex items-start justify-between gap-3 shadow-2xs mt-3 animate-in fade-in duration-200">
+                <div className="exam-clue-box w-full rounded-md bg-[#fffbeb] dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 p-3 sm:p-4 text-amber-950 dark:text-amber-100 flex items-start justify-between gap-3 shadow-2xs mt-3 animate-in fade-in duration-200">
                     <div className="leading-relaxed">
                         <span className="font-bold text-amber-800 dark:text-amber-300">Clue 💡 : </span>
                         <span dangerouslySetInnerHTML={{ __html: hint }} />

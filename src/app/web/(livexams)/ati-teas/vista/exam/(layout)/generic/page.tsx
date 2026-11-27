@@ -1883,18 +1883,25 @@ export default function LiveExamPage() {
           #exam-question-viewport .text-xl {
             font-size: var(--exam-font-mobile-xl, 18px) !important;
           }
-          #exam-question-viewport .exhibit-content-body {
-            font-size: calc(var(--exam-font-mobile-base, 12px) + 1.5px) !important;
-          }
-          #exam-question-viewport .exhibit-tab-btn {
-            font-size: calc(var(--exam-font-mobile-sm, 10px) + 1.5px) !important;
-          }
+          /* UNIFIED BODY FONT SIZE (Mobile < 640px): Nurses' Notes, Vital Signs, Answers/Options, Case Explanations, Correct Answers, and Clinical Rationale */
+          #exam-question-viewport .exhibit-content-body,
+          #exam-question-viewport .exhibit-content-body *,
+          #exam-question-viewport .exhibit-tab-btn,
           #exam-question-viewport table th,
           #exam-question-viewport table td,
           #exam-question-viewport label:has(input[type="checkbox"]),
           #exam-question-viewport label:has(input[type="radio"]),
-          #exam-question-viewport label:has(input[type="checkbox"]) span,
-          #exam-question-viewport label:has(input[type="radio"]) span {
+          #exam-question-viewport label:has(input[type="checkbox"]) *,
+          #exam-question-viewport label:has(input[type="radio"]) *,
+          #exam-question-viewport .exam-clue-box,
+          #exam-question-viewport .exam-clue-box *,
+          #exam-question-viewport .correct-answer-item,
+          #exam-question-viewport .correct-answer-item *,
+          #exam-question-viewport .clinical-rationale-body,
+          #exam-question-viewport .clinical-rationale-body *,
+          #exam-question-viewport select,
+          #exam-question-viewport input[type="text"],
+          #exam-question-viewport input[type="number"] {
             font-size: calc(var(--exam-font-mobile-base, 12px) + 1.5px) !important;
           }
 
@@ -1923,18 +1930,26 @@ export default function LiveExamPage() {
             #exam-question-viewport .sm\\:text-xl {
               font-size: var(--exam-font-desktop-xl, 20px) !important;
             }
-            #exam-question-viewport .exhibit-content-body {
-              font-size: calc(var(--exam-font-desktop-base, 13.5px) + 1.5px) !important;
-            }
-            #exam-question-viewport .exhibit-tab-btn {
-              font-size: calc(var(--exam-font-desktop-sm, 11px) + 1.5px) !important;
-            }
+
+            /* UNIFIED BODY FONT SIZE (Desktop >= 640px): Nurses' Notes, Vital Signs, Answers/Options, Case Explanations, Correct Answers, and Clinical Rationale */
+            #exam-question-viewport .exhibit-content-body,
+            #exam-question-viewport .exhibit-content-body *,
+            #exam-question-viewport .exhibit-tab-btn,
             #exam-question-viewport table th,
             #exam-question-viewport table td,
             #exam-question-viewport label:has(input[type="checkbox"]),
             #exam-question-viewport label:has(input[type="radio"]),
-            #exam-question-viewport label:has(input[type="checkbox"]) span,
-            #exam-question-viewport label:has(input[type="radio"]) span {
+            #exam-question-viewport label:has(input[type="checkbox"]) *,
+            #exam-question-viewport label:has(input[type="radio"]) *,
+            #exam-question-viewport .exam-clue-box,
+            #exam-question-viewport .exam-clue-box *,
+            #exam-question-viewport .correct-answer-item,
+            #exam-question-viewport .correct-answer-item *,
+            #exam-question-viewport .clinical-rationale-body,
+            #exam-question-viewport .clinical-rationale-body *,
+            #exam-question-viewport select,
+            #exam-question-viewport input[type="text"],
+            #exam-question-viewport input[type="number"] {
               font-size: calc(var(--exam-font-desktop-base, 13.5px) + 1.5px) !important;
             }
           }
@@ -2015,7 +2030,7 @@ export default function LiveExamPage() {
           /* On mobile phones (< 640px): tight horizontal padding so all columns fit within the screen as a whole */
           @media (max-width: 639px) {
             #exam-question-viewport .exhibit-content-body table {
-              font-size: var(--exam-font-mobile-base, 12px) !important;
+              font-size: calc(var(--exam-font-mobile-base, 12px) + 1.5px) !important;
               display: table !important;
             }
             #exam-question-viewport .exhibit-content-body th,

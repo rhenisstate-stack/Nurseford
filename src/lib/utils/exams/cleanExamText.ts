@@ -207,11 +207,12 @@ export function formatExhibitHtml(val?: string | null): string {
           prevWasEmpty = true;
         }
       } else {
-        // Strip intrusive Word/editor inline margins & fixed line-height from attrs
+        // Strip intrusive Word/editor inline margins & fixed line-height & fixed font-size from attrs
         const cleanAttrs = (part.attrs || "").replace(/style=(["'])(.*?)\1/gi, (_, quote, styleStr) => {
           const cleanedStyle = styleStr
             .replace(/\bmargin(-top|-bottom|-left|-right)?\s*:\s*[^;]+;?/gi, "")
             .replace(/\bline-height\s*:\s*[^;]+;?/gi, "")
+            .replace(/\bfont-size\s*:\s*[^;]+;?/gi, "")
             .trim();
           return cleanedStyle ? `style=${quote}${cleanedStyle}${quote}` : "";
         });
