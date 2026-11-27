@@ -15,28 +15,14 @@ import { renderSystemSessionHeaders } from "@/lib/services/partial/helper/system
 const ACTIVE_BACKEND = process.env.SKEW_LINE_ACTIVE_BACKEND || "dotnet";
 
 
-// Resolve backend base URL based on active backend type.
+// Resolve backend base URL (.NET backend).
 // Used by Next.js API routes (server-side), NOT directly by frontend.
-// But frontend must send the correct backend ID to internal routes.
-
 export function getBackendBaseUrl(): string {
-  switch (ACTIVE_BACKEND) {
-    case "laravel": {
-      const url = process.env.SKEW_LINE_LARAVEL_BASE_URL?.split(",")[0] || "http://108.61.9.189:8008";
-      return url;
-    }
-
-    case "dotnet": {
-      const url = process.env.SKEW_LINE_DOTNET_BASE_URL || "http://108.61.9.189:8008";
-      return url;
-    }
-
-    case "fastapi":
-    default: {
-      const url = process.env.SKEW_LINE_FASTAPI_BASE_URL?.split(",")[1] || "http://108.61.9.189:8008";
-      return url;
-    }
+  const url = process.env.SKEW_LINE_DOTNET_BASE_URL;
+  if (!url) {
+    throw new Error("❌ SKEW_LINE_DOTNET_BASE_URL is not configured in environment variables.");
   }
+  return url;
 }
 
 // -------------------------------------------------------------------------------------------------

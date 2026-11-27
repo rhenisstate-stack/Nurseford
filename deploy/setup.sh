@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Rhenis Nursing — server setup for 108.61.9.189 (Ubuntu/Debian assumed)
+# PubNurse — server setup (Ubuntu/Debian assumed)
 # Run as root or with sudo.
 
 # 1. Node.js 20 LTS + PM2
@@ -32,4 +32,4 @@ mkdir -p /etc/caddy
 cp /var/www/rhenis/deploy/Caddyfile /etc/caddy/Caddyfile
 systemctl reload caddy
 
-echo "Done. Point your DNS A record for rhenisnursing.com and www at 108.61.9.189"
+echo "Done. Point your DNS A record at your server IP."
