@@ -334,7 +334,11 @@ export default function UserAccountDropdown({
             className={`absolute mt-2 w-[220px] sm:w-[240px] max-w-[calc(100vw-1rem)] rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#1E293B] shadow-2xl z-[100] p-2 space-y-1 right-0`}
           >
             <Link
-              href={`/dashboards/${targetDashboard}/auth/login`}
+              href={
+                typeof window !== "undefined" && window.location.pathname && !window.location.pathname.includes("/auth/")
+                  ? `/dashboards/${targetDashboard}/auth/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`
+                  : `/dashboards/${targetDashboard}/auth/login`
+              }
               onClick={() => setIsOpen(false)}
               className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-navy dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition"
             >
@@ -343,7 +347,11 @@ export default function UserAccountDropdown({
             </Link>
 
             <Link
-              href={`/dashboards/${targetDashboard}/auth/register`}
+              href={
+                typeof window !== "undefined" && window.location.pathname && !window.location.pathname.includes("/auth/")
+                  ? `/dashboards/${targetDashboard}/auth/register?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`
+                  : `/dashboards/${targetDashboard}/auth/register`
+              }
               onClick={() => setIsOpen(false)}
               className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-navy dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition"
             >

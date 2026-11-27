@@ -1754,16 +1754,44 @@ export default function LiveExamPage() {
       className="min-h-screen bg-white dark:bg-[#001326] text-slate-900 dark:text-slate-100 flex flex-col select-none transition-colors duration-200"
     >
       {/* ─────────────────────────────────────────────────────────────────── */}
-      {/* 1. TOP HEADER (ROW 1: BRAND, TITLE, STATS, CALCULATOR) */}
+      {/* 1. TOP HEADER (ROW 1: EXAM INFO, CENTERED BRAND FAVICON & NAME, STATS/USER) */}
       {/* ─────────────────────────────────────────────────────────────────── */}
-      <header className="relative z-50 w-full bg-[#EBF1FA] dark:bg-[#071321] text-slate-900 dark:text-slate-100 px-6 sm:px-10 py-2 sm:py-2.5 border-b border-blue-200/60 dark:border-white/10 transition-colors">
-        <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
-          {/* Left: Brand Logo, Exam Title, Total Questions */}
-          <div className="min-w-0 flex-1 space-y-0.5">
+      <header className="relative z-50 w-full bg-[#EBF1FA] dark:bg-[#071321] text-slate-900 dark:text-slate-100 px-4 sm:px-8 py-1.5 sm:py-2 border-b border-blue-200/60 dark:border-white/10 transition-colors">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4">
+          {/* Left: Exam Title & Total Questions */}
+          <div className="min-w-0 flex flex-col justify-center space-y-0.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 tracking-tight truncate max-w-[240px] sm:max-w-md">
+                {examSession?.exam?.title || "Exam"}
+              </span>
+              {(() => {
+                const s = resolveExamSeason(examSession?.exam?.season, examSession?.exam?.title, examSession?.exam?.description);
+                if (!s) return null;
+                return (
+                  <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/25 shrink-0">
+                    {s} {examSession?.exam?.year ? examSession.exam.year : ""}
+                  </span>
+                );
+              })()}
+            </div>
+
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-400">
+              <span>Total Questions: <span className="font-bold text-slate-900 dark:text-white">{flatTotal}</span></span>
+              {isSubscribed && (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Full Access
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Center: Brand Favicon & Name Placeholder */}
+          <div className="flex items-center justify-center shrink-0">
             <Link
               href="/"
               title="Return to Home"
-              className="inline-flex items-center gap-2 group cursor-pointer hover:opacity-90 transition-opacity duration-150 w-fit"
+              className="inline-flex items-center gap-2 group cursor-pointer hover:opacity-90 transition-opacity duration-150"
             >
               <div className="relative w-6 h-6 sm:w-7 sm:h-7 shrink-0 group-hover:scale-105 transition-transform">
                 <Image
@@ -1777,35 +1805,10 @@ export default function LiveExamPage() {
                 Pub<span className="text-teal-600 dark:text-teal-400">Nurse</span>
               </span>
             </Link>
-
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 tracking-tight truncate max-w-[280px] sm:max-w-md">
-                {examSession?.exam?.title || "Exam"}
-              </span>
-              {(() => {
-                const s = resolveExamSeason(examSession?.exam?.season, examSession?.exam?.title, examSession?.exam?.description);
-                if (!s) return null;
-                return (
-                  <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/25">
-                    {s} {examSession?.exam?.year ? examSession.exam.year : ""}
-                  </span>
-                );
-              })()}
-            </div>
-
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
-              <span>Total Questions: <span className="font-bold text-slate-900 dark:text-white">{flatTotal}</span></span>
-              {isSubscribed && (
-                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  Full Access
-                </span>
-              )}
-            </div>
           </div>
 
           {/* Right: Username, Questions Left, Time Left */}
-          <div className="shrink-0 text-right space-y-0.5 whitespace-nowrap">
+          <div className="shrink-0 flex flex-col items-end justify-center space-y-0.5 whitespace-nowrap">
             <div className="flex items-center justify-end gap-1.5">
               <UserAccountDropdown
                 currentDashboard={programSlug}
@@ -1814,11 +1817,11 @@ export default function LiveExamPage() {
                   <button
                     type="button"
                     onClick={toggle}
-                    className="group inline-flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer text-left"
+                    className="group inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer text-left"
                     aria-expanded={isOpen}
                     title="Account Menu"
                   >
-                    <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 text-[11px] font-bold shrink-0 border border-teal-300/60 dark:border-teal-700/60">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden flex items-center justify-center bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 text-[10px] sm:text-[11px] font-bold shrink-0 border border-teal-300/60 dark:border-teal-700/60">
                       {avatarSrc ? (
                         <Image
                           src={avatarSrc}
@@ -1831,7 +1834,7 @@ export default function LiveExamPage() {
                         isDevPreview ? "M" : (uInitial || userInitial || "U")
                       )}
                     </div>
-                    <span className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate max-w-[120px] sm:max-w-[180px]">
+                    <span className="font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 uppercase tracking-wide truncate max-w-[100px] sm:max-w-[160px]">
                       {isDevPreview ? "MACHOKOMBO" : (uName || userName)}
                     </span>
                     <FiChevronDown
@@ -1848,14 +1851,16 @@ export default function LiveExamPage() {
               )}
             </div>
 
-            <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-              Questions Left: <span className="font-bold text-teal-600 dark:text-teal-400">{questionsRemaining}</span>
-            </div>
-
-            <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
-              Time Left:{" "}
-              <span className="text-red-600 dark:text-red-400 font-bold font-mono whitespace-nowrap inline-block">
-                {totalSeconds > 0 ? formatCountdown(secondsLeft) : "Untimed"}
+            <div className="flex items-center justify-end gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+              <span>
+                Questions Left: <span className="font-bold text-teal-600 dark:text-teal-400">{questionsRemaining}</span>
+              </span>
+              <span className="text-slate-300 dark:text-slate-600">•</span>
+              <span>
+                Time Left:{" "}
+                <span className="text-red-600 dark:text-red-400 font-bold font-mono inline-block">
+                  {totalSeconds > 0 ? formatCountdown(secondsLeft) : "Untimed"}
+                </span>
               </span>
             </div>
           </div>

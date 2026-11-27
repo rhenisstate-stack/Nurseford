@@ -118,17 +118,26 @@ export function SubjectExamsPopup({
   }, [isOpen, subject]);
 
   const panelTitle = panelSlug.replace(/-/g, " ").toUpperCase();
-  const { guard, modal: accessModal } = useExamAccessGuard(panelSlug, panelTitle);
+  const currentPopupUrl =
+    typeof window !== "undefined"
+      ? window.location.pathname + window.location.search
+      : undefined;
+  const { guard, modal: accessModal } = useExamAccessGuard(panelSlug, panelTitle, currentPopupUrl);
 
   const startExam = (exam: StrataItem) => {
-    guard(exam.accessType !== "Public", () => {
-      const params = new URLSearchParams({
-        mode: "Exam",
-        identifier: String(exam.guidId ?? exam.id),
-      });
-      router.push(`/web/${livePanelSlug ?? panelSlug}/vista/exam/generic?${params.toString()}`);
-      onClose();
+    const params = new URLSearchParams({
+      mode: "Exam",
+      identifier: String(exam.guidId ?? exam.id),
     });
+    const questionsUrl = `/web/${livePanelSlug ?? panelSlug}/vista/exam/generic?${params.toString()}`;
+    guard(
+      exam.accessType !== "Public",
+      () => {
+        router.push(questionsUrl);
+        onClose();
+      },
+      questionsUrl
+    );
   };
 
   if (!isOpen || !subject) return null;

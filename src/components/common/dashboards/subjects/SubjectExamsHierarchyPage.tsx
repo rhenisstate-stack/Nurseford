@@ -302,7 +302,11 @@ export function SubjectExamsHierarchyPage({
 
   // ─── Access guard ───
   const { programs } = useRelativeStrataPrograms();
-  const { guard, modal: accessModal } = useExamAccessGuard(panelSlug, panelLabel);
+  const currentExamListUrl =
+    typeof window !== "undefined"
+      ? window.location.pathname + window.location.search
+      : undefined;
+  const { guard, modal: accessModal } = useExamAccessGuard(panelSlug, panelLabel, currentExamListUrl);
   const openBuilder = () => guard(true, () => setIsBuilderOpen(true));
 
   const matchingDashboardCourse = useMemo(() => {
@@ -657,11 +661,23 @@ export function SubjectExamsHierarchyPage({
   };
 
   const startExam = (examTarget: (StrataItem & { modes?: string[] }) | string, mode: string) => {
-    const gateTarget =
+    const targetObj =
       typeof examTarget === "string"
         ? exams.find((e) => e.guidId === examTarget || String(e.id) === examTarget)
         : examTarget;
-    guard(gateTarget?.accessType !== "Public", () => launchExam(examTarget, mode));
+    const idToUse = typeof examTarget === "string" ? examTarget : (examTarget.guidId ?? String(examTarget.id));
+    let effectivePanel = livePanelSlug;
+    if (targetObj) {
+      const pName = ((targetObj as any).programName || (targetObj as ExamWithParentNames).courseName || targetObj.title || "").toLowerCase();
+      if (/lpn|pn\b/i.test(pName)) {
+        effectivePanel = "lpn-nursing";
+      } else if (/rn\b/i.test(pName)) {
+        effectivePanel = "rn-nursing";
+      }
+    }
+    const questionsUrl = `/web/${effectivePanel}/vista/exam/generic?mode=${mode}&identifier=${idToUse}`;
+    const gateTarget = targetObj;
+    guard(gateTarget?.accessType !== "Public", () => launchExam(examTarget, mode), questionsUrl);
   };
 
   const rawCourseName =

@@ -16,14 +16,17 @@ import { EXAM_OPTIONS, examDashboardHref } from "@/lib/constants/dashboards/exam
 function LoginSearchParamsHandler({
   onRegistered,
   onDashboard,
+  onRedirectFound,
 }: {
   onRegistered: (email: string, message: string) => void;
   onDashboard: (slug: string) => void;
+  onRedirectFound?: (url: string) => void;
 }) {
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
   const registeredEmail = searchParams.get("email") ?? "";
   const dashboard = searchParams.get("dashboard") ?? "";
+  const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || searchParams.get("returnUrl");
 
   useEffect(() => {
     if (justRegistered && registeredEmail) {
@@ -35,7 +38,10 @@ function LoginSearchParamsHandler({
     if (dashboard) {
       onDashboard(dashboard);
     }
-  }, [justRegistered, registeredEmail, dashboard, onRegistered, onDashboard]);
+    if (redirect && onRedirectFound) {
+      onRedirectFound(decodeURIComponent(redirect));
+    }
+  }, [justRegistered, registeredEmail, dashboard, redirect, onRegistered, onDashboard, onRedirectFound]);
 
   return null;
 }
@@ -59,10 +65,31 @@ export default function WebLoginPage() {
   const [loginMethod, setLoginMethod] = useState<"password" | "pin" | "both">("password");
   const [selectedExam, setSelectedExam] = useState<string>("");
 
+  const [redirectTarget, setRedirectTarget] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return sessionStorage.getItem("pubnurse_login_redirect") || "";
+      } catch {}
+    }
+    return "";
+  });
+
+  const handleRedirectFound = useCallback((url: string) => {
+    if (url) {
+      setRedirectTarget(url);
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("pubnurse_login_redirect", url);
+        } catch {}
+      }
+    }
+  }, []);
+
   const role = DEFAULT_USER_ROLE;
 
   const handleSocialClick = (provider: Parameters<typeof redirectToSocialProvider>[0]["provider"]) => {
-    redirectToSocialProvider({ provider, context: "login", redirectPath: "/pages/entrance" }).catch((err) => {
+    const dest = redirectTarget || "/pages/entrance";
+    redirectToSocialProvider({ provider, context: "login", redirectPath: dest }).catch((err) => {
       console.error(`Social redirect (${provider}) failed:`, err);
       setError("Could not start social sign-in. Please try again.");
     });
@@ -159,10 +186,16 @@ export default function WebLoginPage() {
         return;
       }
 
-      setSuccess("Login Successful! Redirecting to your dashboard...");
+      setSuccess("Login Successful! Redirecting to your exam...");
       setError("");
+      const destination = redirectTarget || examDashboardHref(selectedExam);
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.removeItem("pubnurse_login_redirect");
+        } catch {}
+      }
       setTimeout(() => {
-        window.location.href = examDashboardHref(selectedExam);
+        window.location.href = destination;
       }, 500);
       return;
     } catch (err: unknown) {
@@ -182,6 +215,7 @@ export default function WebLoginPage() {
         <LoginSearchParamsHandler
           onRegistered={handleRegisteredRedirect}
           onDashboard={handleDashboardRedirect}
+          onRedirectFound={handleRedirectFound}
         />
       </Suspense>
 

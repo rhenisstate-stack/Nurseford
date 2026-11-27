@@ -129,6 +129,11 @@ function PanelGate({ slug }: { slug: string }) {
     return out;
   }, [filteredSubscriptionPackages, programs, matchingSegments, slug]);
 
+  const currentUrl = typeof window !== "undefined" && !window.location.pathname.includes("/auth/")
+    ? window.location.pathname + window.location.search
+    : "";
+  const redirectParam = currentUrl ? `?redirect=${encodeURIComponent(currentUrl)}` : "";
+
   return (
     <AccessGate
       isUserLoading={isUserLoading}
@@ -138,8 +143,8 @@ function PanelGate({ slug }: { slug: string }) {
       otherSubscriptions={otherSubscriptions}
       panelName={PANELS[slug]}
       badge={segment.replace(/_/g, " ")}
-      loginHref={`/dashboards/${slug}/auth/login`}
-      verifyHref={`/dashboards/${slug}/auth/account/verify/email`}
+      loginHref={`/dashboards/${slug}/auth/login${redirectParam}`}
+      verifyHref={`/dashboards/${slug}/auth/account/verify/email${redirectParam}`}
       packagesHref={`/dashboards/${slug}/vista/subscriptions/items`}
       homeHref="/"
       lock

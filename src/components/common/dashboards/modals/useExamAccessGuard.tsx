@@ -20,12 +20,9 @@ type PkgWithCluster = DiscreteSubscriptionPackage & {
 
 type Reason = null | "login" | "verify" | "subscribe";
 
-export function useExamAccessGuard(slug: string, panelName: string) {
+export function useExamAccessGuard(slug: string, panelName: string, defaultRedirectUrl?: string) {
   const segment = slug.toUpperCase().replace(/-/g, "_");
   const badge = segment.replace(/_/g, " ");
-  const loginHref = `/dashboards/${slug}/auth/login`;
-  const verifyHref = `/dashboards/${slug}/auth/account/verify/email`;
-  const packagesHref = `/dashboards/${slug}/vista/subscriptions/items`;
 
   const { user, loading } = useCurrentSystemUser();
   const { programs } = useRelativeStrataPrograms();
@@ -37,6 +34,24 @@ export function useExamAccessGuard(slug: string, panelName: string) {
   });
 
   const [reason, setReason] = useState<Reason>(null);
+  const [pendingRedirectUrl, setPendingRedirectUrl] = useState<string | null>(null);
+
+  const effectiveRedirect = useMemo(() => {
+    if (pendingRedirectUrl) return pendingRedirectUrl;
+    if (defaultRedirectUrl) return defaultRedirectUrl;
+    if (typeof window !== "undefined" && !window.location.pathname.includes("/auth/")) {
+      return window.location.pathname + window.location.search;
+    }
+    return "";
+  }, [pendingRedirectUrl, defaultRedirectUrl]);
+
+  const loginHref = effectiveRedirect
+    ? `/dashboards/${slug}/auth/login?redirect=${encodeURIComponent(effectiveRedirect)}`
+    : `/dashboards/${slug}/auth/login`;
+  const verifyHref = effectiveRedirect
+    ? `/dashboards/${slug}/auth/account/verify/email?redirect=${encodeURIComponent(effectiveRedirect)}`
+    : `/dashboards/${slug}/auth/account/verify/email`;
+  const packagesHref = `/dashboards/${slug}/vista/subscriptions/items`;
 
   const isEmailVerified = useMemo(() => {
     const u = user as unknown as {
@@ -120,12 +135,23 @@ export function useExamAccessGuard(slug: string, panelName: string) {
     return out;
   }, [filteredSubscriptionPackages, programs, matchingSegments, slug]);
 
-  const close = useCallback(() => setReason(null), []);
+  const close = useCallback(() => {
+    setReason(null);
+    setPendingRedirectUrl(null);
+  }, []);
 
   /** Runs all checks. Calls onPass only if everything is valid. */
   const guard = useCallback(
-    (needsSubscription: boolean, onPass: () => void) => {
+    (needsSubscription: boolean, onPass: () => void, targetRedirectUrl?: string) => {
       if (loading || subscriptionsLoading) return;
+      if (targetRedirectUrl) {
+        setPendingRedirectUrl(targetRedirectUrl);
+        if (typeof window !== "undefined") {
+          try {
+            sessionStorage.setItem("pubnurse_login_redirect", targetRedirectUrl);
+          } catch {}
+        }
+      }
       if (!user) return setReason("login");
       if (!isEmailVerified) return setReason("verify");
       if (needsSubscription && !hasActiveSubscription) return setReason("subscribe");

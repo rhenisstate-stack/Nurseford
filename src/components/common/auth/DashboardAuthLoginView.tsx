@@ -21,12 +21,15 @@ interface DashboardAuthLoginViewProps {
 // ── SearchParams Handler ──
 function LoginSearchParamsHandler({
   onRegistered,
+  onRedirectFound,
 }: {
   onRegistered: (email: string, message: string) => void;
+  onRedirectFound?: (url: string) => void;
 }) {
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get("registered") === "true";
   const registeredEmail = searchParams.get("email") ?? "";
+  const redirect = searchParams.get("redirect") || searchParams.get("callbackUrl") || searchParams.get("returnUrl");
 
   useEffect(() => {
     if (justRegistered && registeredEmail) {
@@ -35,7 +38,10 @@ function LoginSearchParamsHandler({
         `Account created successfully! You can now log in with ${decodeURIComponent(registeredEmail)}`
       );
     }
-  }, [justRegistered, registeredEmail, onRegistered]);
+    if (redirect && onRedirectFound) {
+      onRedirectFound(decodeURIComponent(redirect));
+    }
+  }, [justRegistered, registeredEmail, redirect, onRegistered, onRedirectFound]);
 
   return null;
 }
@@ -67,8 +73,29 @@ export default function DashboardAuthLoginView({
   const role = DEFAULT_USER_ROLE;
   const resolvedLandingPath = landingPath || `/dashboards/${targetProgram}`;
 
+  const [redirectTarget, setRedirectTarget] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return sessionStorage.getItem("pubnurse_login_redirect") || "";
+      } catch {}
+    }
+    return "";
+  });
+
+  const handleRedirectFound = useCallback((url: string) => {
+    if (url) {
+      setRedirectTarget(url);
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("pubnurse_login_redirect", url);
+        } catch {}
+      }
+    }
+  }, []);
+
   const handleSocialClick = (provider: Parameters<typeof redirectToSocialProvider>[0]["provider"]) => {
-    redirectToSocialProvider({ provider, context: "login", redirectPath: "/pages/entrance" }).catch((err) => {
+    const dest = redirectTarget || "/pages/entrance";
+    redirectToSocialProvider({ provider, context: "login", redirectPath: dest }).catch((err) => {
       console.error(`Social redirect (${provider}) failed:`, err);
       setError("Could not start social sign-in. Please try again.");
     });
@@ -155,10 +182,16 @@ export default function DashboardAuthLoginView({
         return;
       }
 
-      setSuccess("Login Successful! Redirecting to your dashboard...");
+      setSuccess("Login Successful! Redirecting to your exam...");
       setError("");
+      const destination = redirectTarget || resolvedLandingPath;
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.removeItem("pubnurse_login_redirect");
+        } catch {}
+      }
       setTimeout(() => {
-        window.location.href = resolvedLandingPath;
+        window.location.href = destination;
       }, 700);
       return;
     } catch (err: unknown) {
@@ -181,7 +214,10 @@ export default function DashboardAuthLoginView({
       }}
     >
       <Suspense fallback={null}>
-        <LoginSearchParamsHandler onRegistered={handleRegisteredRedirect} />
+        <LoginSearchParamsHandler
+          onRegistered={handleRegisteredRedirect}
+          onRedirectFound={handleRedirectFound}
+        />
       </Suspense>
 
       {/* Decorative ambient background */}
@@ -365,7 +401,11 @@ export default function DashboardAuthLoginView({
               <div className="pt-2 text-center text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800">
                 Don&apos;t have an account?{" "}
                 <Link
-                  href={`/dashboards/${targetProgram}/auth/register`}
+                  href={
+                    redirectTarget
+                      ? `/dashboards/${targetProgram}/auth/register?redirect=${encodeURIComponent(redirectTarget)}`
+                      : `/dashboards/${targetProgram}/auth/register`
+                  }
                   className="font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400 hover:underline"
                 >
                   Create one now
